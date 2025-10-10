@@ -8,11 +8,11 @@
 
         - src/
             - core/
-                eg: core.py
+                - eg: core.py
                 - frontend/
                 - backend/
                 
             - mem/
-                eg: dcache.py
+                - eg: dcache.py
 
         - tests/             # test cases
