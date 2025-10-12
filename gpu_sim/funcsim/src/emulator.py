@@ -19,7 +19,19 @@ def tbs(x, y, z):
     return csr
 
 # actual emulator
-def emulator():
+def emulator(csr, regfile, input_file, mem):
+    # PC IS NOT IMPLEMENTED CURRENTLY ALL, JUMP AND LINK HAS NO FUNCTIONALITY YET
+    with input_file.open("r") as f:
+    
+        while(line := f.readline()):
+            line = line.strip()
+            instr_type = int(line[0:3], 2) # bits 31:29
+            funct = int(line[3:7], 2) # bits 28:25
+
+            match instr_type:
+                case 0b000:
+                    print("rtype")  
+
     return
 
 # main function
@@ -34,5 +46,7 @@ if __name__ == "__main__":
         print("fuck u again lol")
         sys.exit(1)
 
-    csr = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]));
+    csr = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+    regfile = [[0 for i in range(32)] for j in range(32)]
+
     # print_csr(csr) # uncomment to print out csr
