@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from reg_file import * 
 from instr import *
+from warp import *
+from mem import *
 # print csr helper
 def print_csr(csr):
     for i in range(len(csr["x"])):
@@ -22,39 +24,39 @@ def tbs(x, y, z):
 # actual emulator
 def emulator(csr, regfile, input_file, mem):
     # PC IS NOT IMPLEMENTED CURRENTLY ALL, JUMP AND LINK HAS NO FUNCTIONALITY YET
-    with input_file.open("meminit.hex") as f:
+    f = open("meminit.hex")
     
-        while(line := f.readline()):
-            line = line.strip()
-            #compiler is big endian:MSB at smallest addr
-            instr_type = Bits(bin=bin(line[0:4]), length=3) # bits 31:29
-            funct = Bits(bin=line[3:8], length=4) # bits 28:25
-            #(rs1, rs2, rd, imm) = parser.py
-            match instr_type:
-                case Instr_Type.R_TYPE:
-                    print("rtype")  
-                    instruction = Instr(ABC)
-                    execution = R_Type(instruction)
-                    execution.eval()
-                    
-                case Instr_Type.I_TYPE_1:
-                    print("itype_1")
-                case Instr_Type.I_TYPE_2:
-                    print("itype_2")
-                case Instr_Type.S_TYPE:
-                    print("stype")
-                case Instr_Type.B_TYPE:
-                    print("btype")
-                case Instr_Type.U_TYPE:
-                    print("utype")
-                case Instr_Type.J_TYPE:
-                    print("jtype")
-                case Instr_Type.P_TYPE:
-                    print("ptype")
-                case Instr_Type.C_TYPE:
-                    print("ctype")
-                case _:
-                    print("Undefined opcode")
+    while(line := f.readline()):
+        line = line.strip()
+        #compiler is big endian:MSB at smallest addr
+        instr_type = Bits(bin=line[0:4], length=3) # bits 31:29
+        funct = Bits(bin=line[3:8], length=4) # bits 28:25
+        #(rs1, rs2, rd, imm) = parser.py
+        match instr_type:
+            case Instr_Type.R_TYPE:
+                print("rtype")  
+                instruction = Instr(ABC)
+                execution = R_Type(instruction)
+                execution.eval()
+                
+            case Instr_Type.I_TYPE_1:
+                print("itype_1")
+            case Instr_Type.I_TYPE_2:
+                print("itype_2")
+            case Instr_Type.S_TYPE:
+                print("stype")
+            case Instr_Type.B_TYPE:
+                print("btype")
+            case Instr_Type.U_TYPE:
+                print("utype")
+            case Instr_Type.J_TYPE:
+                print("jtype")
+            case Instr_Type.P_TYPE:
+                print("ptype")
+            case Instr_Type.C_TYPE:
+                print("ctype")
+            case _:
+                print("Undefined opcode")
                 
     return
 
@@ -71,6 +73,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     csr = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+    warp = Warp(0)
+    emulator(csr, warp.reg_files, sys.argv[1], "e")
     # regfile = [[0 for i in range(32)] for j in range(32)]
 
     # print_csr(csr) # uncomment to print out csr

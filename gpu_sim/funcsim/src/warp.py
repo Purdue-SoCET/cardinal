@@ -1,9 +1,9 @@
-from funcsim.src.reg_file import Reg_File
-from funcsim.src.instr import Instr
+from reg_file import *
+from instr import *
 
 class Warp:
     def __init__(self, warpId: int) -> None:
-        self.threadIds: list[Bits] = [Bits(int=(i+32*warpId), length=5) for i in range(32)]
+        self.threadIds: list[Bits] = [Bits(int=(i+32*warpId), length=32) for i in range(32)]
         self.reg_files: list[Reg_File] = [Reg_File(64) for i in range(64)]
         self.masks: list[list[int]] = [[0 for i in range(16)] for j in range(32)]
 
