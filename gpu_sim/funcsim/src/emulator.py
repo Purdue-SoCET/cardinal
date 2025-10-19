@@ -24,20 +24,25 @@ def tbs(x, y, z):
 # actual emulator
 def emulator(csr, regfile, input_file, mem):
     # PC IS NOT IMPLEMENTED CURRENTLY ALL, JUMP AND LINK HAS NO FUNCTIONALITY YET
-    f = open("meminit.hex")
+    f = open(input_file)
     
     while(line := f.readline()):
         line = line.strip()
         #compiler is big endian:MSB at smallest addr
-        instr_type = Bits(bin=line[0:4], length=3) # bits 31:29
-        funct = Bits(bin=line[3:8], length=4) # bits 28:25
+        instr_type = Bits(bin=line[29:32], length=3) # bits 31:29
+        funct = Bits(bin=line[25:29], length=4) # bits 28:25
+        # print(f'instr_type={instr_type}')
+        # print(f'funct={funct.bin}')
         #(rs1, rs2, rd, imm) = parser.py
-        match instr_type:
+        # print({Instr_Type.R_TYPE.value})
+        match Instr_Type(instr_type):
             case Instr_Type.R_TYPE:
                 print("rtype")  
-                instruction = Instr(ABC)
-                execution = R_Type(instruction)
-                execution.eval()
+                op = R_Op(funct)
+                rs2 = Bits(bin=line[8:13]) #12:8
+                rs1 = Bits(bin=line[13:19]) #18:13
+                rd = Bits(bin=line[19:25]) #24:19
+                instr = R_Instr(op=op, rs1=rs1, rs2=rs2, rd=rd)
                 
             case Instr_Type.I_TYPE_1:
                 print("itype_1")

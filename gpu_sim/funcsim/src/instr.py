@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Instruction Type Enum (first 3 MSBs of opcode)
 class Instr_Type(Enum):
-    R_TYPE = Bits(bin='000')
+    R_TYPE = Bits(bin='000', length=3)
     I_TYPE_1 = Bits(bin='001')
     I_TYPE_2 = Bits(bin='010') 
     S_TYPE = Bits(bin='011')
@@ -26,7 +26,7 @@ class Instr_Type(Enum):
 
 # R-Type Operations (opcode: 000)
 class R_Op(Enum):
-    ADD = Bits(bin='0000')
+    ADD = Bits(bin='0000', length=4)
     SUB = Bits(bin='0001')
     MUL = Bits(bin='0010')
     DIV = Bits(bin='0011')
