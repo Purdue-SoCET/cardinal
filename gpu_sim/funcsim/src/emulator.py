@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
-from reg_file.py import *
+from .reg_file import * 
+from .instr import *
 # print csr helper
 def print_csr(csr):
     for i in range(len(csr["x"])):
@@ -25,13 +26,36 @@ def emulator(csr, regfile, input_file, mem):
     
         while(line := f.readline()):
             line = line.strip()
-            instr_type = int(line[0:3], 2) # bits 31:29
-            funct = int(line[3:7], 2) # bits 28:25
-
+            #compiler is big endian:MSB at smallest addr
+            instr_type = Bits(bin=bin(line[0:4]), length=3) # bits 31:29
+            funct = Bits(bin=line[3:8], length=4) # bits 28:25
+            #(rs1, rs2, rd, imm) = parser.py
             match instr_type:
-                case 0b000:
+                case Instr_Type.R_TYPE:
                     print("rtype")  
-
+                    instruction = Instr(ABC)
+                    execution = R_Type(instruction)
+                    execution.eval()
+                    
+                case Instr_Type.I_TYPE_1:
+                    print("itype_1")
+                case Instr_Type.I_TYPE_2:
+                    print("itype_2")
+                case Instr_Type.S_TYPE:
+                    print("stype")
+                case Instr_Type.B_TYPE:
+                    print("btype")
+                case Instr_Type.U_TYPE:
+                    print("utype")
+                case Instr_Type.J_TYPE:
+                    print("jtype")
+                case Instr_Type.P_TYPE:
+                    print("ptype")
+                case Instr_Type.C_TYPE:
+                    print("ctype")
+                case _:
+                    print("Undefined opcode")
+                
     return
 
 # main function
