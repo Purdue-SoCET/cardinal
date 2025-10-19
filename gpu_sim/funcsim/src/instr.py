@@ -120,6 +120,9 @@ class Instr(ABC):
             case R_Op.MUL:
                 if result > 2147483647 or result < -2147483648:
                     logger.warning(f"Arithmetic overflow in MUL from thread ID {t_id}: R{self.rd.int} = R{self.rs1.int} * R{self.rs2.int}")
+            case R_Op.SLL:
+                if result > 2147483647 or result < -2147483648:
+                    logger.warning(f"Arithmetic overflow in SLL from thread ID {t_id}: R{self.rd.int} = R{self.rs1.int} << R{self.rs2.int}")
             case R_Op.ADDF:
                 if result == float('inf') or result == float('-inf') or result != result:
                     logger.warning(f"Invalid FP result in ADDF from thread ID {t_id}: R{self.rd} = R{self.rs1.int} + R{self.rs2.int}")
@@ -147,62 +150,49 @@ class R_Instr(Instr):
         match self.op:
             # INT Arithmetic Operations
             case R_Op.ADD:
-                result = rdat1.int + rdat2.int # does not handle overflow (Python will auto-expand int length in the case of overflow)
+                result = rdat1.int + rdat2.int # does not handle overflow (Python will auto-expand int size in the case of overflow)
                 out = result & 0xFFFFFFFF # does handle overflow by wrapping around
                 t_reg.write(self.rd, Bits(int=out, length=32))
             
             case R_Op.SUB:
                 result = rdat1.int - rdat2.int
-                out = result & 0xFFFFFFFF
-                t_reg.write(self.rd, Bits(int=out, length=32))
             
             case R_Op.MUL:
                 result = rdat1.int * rdat2.int
-                out = result & 0xFFFFFFFF
-                t_reg.write(self.rd, Bits(int=out, length=32))
             
             case R_Op.DIV:
                 if rdat2.int == 0:
                     logger.warning(f"Division by zero in DIV from thread ID {t_id}: R{self.rd} =R{self.rs1.uint} / {self.rs2.int}")
-                    t_reg.write(self.rd, Bits(int=0, length=32))
+                    result = 0
                 else:
                     result = rdat1.int // rdat2.int
-                    t_reg.write(self.rd, Bits(int=result, length=32))
             
             # Bitwise Logical Operators
             case R_Op.AND:
                 result = rdat1.int & rdat2.int
-                t_reg.write(self.rd, Bits(int=result, length=32))
             
             case R_Op.OR:
                 result = rdat1.int | rdat2.int
-                t_reg.write(self.rd, Bits(int=result, length=32))
             
             case R_Op.XOR:
                 result = rdat1.int ^ rdat2.int
-                t_reg.write(self.rd, Bits(int=result, length=32))
             
             # Comparison Operations
             case R_Op.SLT:
                 result = 1 if rdat1.int < rdat2.int else 0
-                t_reg.write(self.rd, Bits(uint=result, length=32))
             
             case R_Op.SLTU:
                 result = 1 if rdat1.uint < rdat2.uint else 0
-                t_reg.write(self.rd, Bits(uint=result, length=32))
             
             # Floating Point Arithmetic Operations
             case R_Op.ADDF:
                 result = rdat1.float + rdat2.float
-                t_reg.write(self.rd, Bits(float=result, length=32))
             
             case R_Op.SUBF:
                 result = rdat1.float - rdat2.float
-                t_reg.write(self.rd, Bits(float=result, length=32))
             
             case R_Op.MULF:
                 result = rdat1.float * rdat2.float
-                t_reg.write(self.rd, Bits(float=result, length=32))
             
             case R_Op.DIVF:
                 if rdat2.float == 0.0:
@@ -210,28 +200,27 @@ class R_Instr(Instr):
                     result = float('inf')
                 else:
                     result = rdat1.float / rdat2.float
-                t_reg.write(self.rd, Bits(float=result, length=32))
             
             # Bit Shifting Operations
             case R_Op.SLL:
                 shift_amount = rdat2.uint & 0x1F  # Mask to 5 bits
-                result = (rdat1.int << shift_amount) & 0xFFFFFFFF
-                t_reg.write(self.rd, Bits(int=result, length=32))
+                result = (rdat1.int << shift_amount)
             
             case R_Op.SRL:
                 shift_amount = rdat2.uint & 0x1F
                 result = rdat1.uint >> shift_amount
-                t_reg.write(self.rd, Bits(uint=result, length=32))
             
             case R_Op.SRA:
                 shift_amount = rdat2.uint & 0x1F
                 result = rdat1.int >> shift_amount  # Python's >> preserves sign for negative numbers
-                t_reg.write(self.rd, Bits(int=result, length=32))
             
             case _:
                 raise NotImplementedError(f"R-Type operation {self.op} not implemented yet or doesn't exist.")
 
         self.check_overflow(result, t_id)
+
+        out = result & 0xFFFFFFFF
+        t_reg.write(self.rd, Bits(int=out, length=32))
 
 class I_Instr_1(Instr):
     def __init__(self) -> None:
