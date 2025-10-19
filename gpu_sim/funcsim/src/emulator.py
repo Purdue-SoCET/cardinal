@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
-from .reg_file import * 
-from .instr import *
+from reg_file import * 
+from instr import *
 # print csr helper
 def print_csr(csr):
     for i in range(len(csr["x"])):
@@ -22,7 +22,7 @@ def tbs(x, y, z):
 # actual emulator
 def emulator(csr, regfile, input_file, mem):
     # PC IS NOT IMPLEMENTED CURRENTLY ALL, JUMP AND LINK HAS NO FUNCTIONALITY YET
-    with input_file.open("r") as f:
+    with input_file.open("meminit.hex") as f:
     
         while(line := f.readline()):
             line = line.strip()

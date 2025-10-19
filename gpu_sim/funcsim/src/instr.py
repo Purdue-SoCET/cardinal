@@ -4,9 +4,11 @@ from bitstring import Bits
 from typing import Union
 import logging
 
+from reg_file import *
+
 logger = logging.getLogger(__name__)
 
-from funcsim.src.reg_file import Reg_File
+# from funcsim.src.reg_file import Reg_File
 
 # ISA Teal Card (used for Enum declarations): https://docs.google.com/spreadsheets/d/1quvfY0Q_mLP5VfUaNGiiruGoqjCMpCyCKM9KlqbujYM/edit?usp=sharing
 
@@ -132,7 +134,7 @@ class Instr(ABC):
                     logger.warning(f"Invalid FP result in DIVF from thread ID {t_id}: R{self.rd} = R{self.rs1.int} / R{self.rs2.int}")
 
 class R_Instr(Instr):
-    def __init__(self, op: R_Op, rs1: Bits(size=6), rs2: Bits(size=6), rd: Bits(size=6)) -> None:
+    def __init__(self, op: R_Op, rs1: Bits(length=6), rs2: Bits(length=6), rd: Bits(length=6)) -> None:
         self.op = op
         self.rs1 = rs1
         self.rs2 = rs2
@@ -145,7 +147,7 @@ class R_Instr(Instr):
         match self.op:
             # INT Arithmetic Operations
             case R_Op.ADD:
-                result = rdat1.int + rdat2.int # does not handle overflow (Python will auto-expand int size in the case of overflow)
+                result = rdat1.int + rdat2.int # does not handle overflow (Python will auto-expand int length in the case of overflow)
                 out = result & 0xFFFFFFFF # does handle overflow by wrapping around
                 t_reg.write(self.rd, Bits(int=out, length=32))
             
