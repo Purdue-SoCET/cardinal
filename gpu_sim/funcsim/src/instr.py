@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Instr_Type(Enum):
     R_TYPE = Bits(bin='000')
     I_TYPE_1 = Bits(bin='001')
-    I_TYPE_2 = Bits(bin='010')
+    I_TYPE_2 = Bits(bin='010') 
     S_TYPE = Bits(bin='011')
     B_TYPE = Bits(bin='100')
     U_TYPE = Bits(bin='101')
@@ -146,7 +146,7 @@ class R_Instr(Instr):
     def eval(self, t_id: int, t_reg: Reg_File) -> None:
         rdat1 = t_reg.read(self.rs1)
         rdat2 = t_reg.read(self.rs2)
-        
+
         match self.op:
             # INT Arithmetic Operations
             case R_Op.ADD:

@@ -1,4 +1,9 @@
-- Please follow the following file structure:
+# SoCET GPU Emulator
+
+## File Structure
+
+Please follow the following file structure:
+
     - funcsim/
         - docs/              # document for the simulator
             - eg: isa.txt
@@ -16,3 +21,21 @@
                 - eg: dcache.py
 
         - tests/             # test cases
+
+## Usage
+
+> The SoCET GPU Emulator only supports usage on Linux
+
+To use the SoCET GPU Emulator, first activate the Python virtual environment by running the following commands in a Linux terminal:
+
+```
+cd ./gpu_sim/funcsim
+source venv/bin/activate
+```
+
+To run the emulator:
+- First add an assembled binary file named `meminit.hex`
+- Then run the command:
+  ```
+  make run
+  ```
