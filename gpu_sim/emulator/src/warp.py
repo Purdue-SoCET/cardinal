@@ -7,7 +7,7 @@ class Warp:
         self.reg_files: list[Reg_File] = [Reg_File(64) for i in range(64)]
         self.masks: list[list[int]] = [[0 for i in range(16)] for j in range(32)]
 
-    def eval(self, instr) -> None:
+    def eval(self, instr, mem=None) -> None:
         for t_id in self.threadIds:
             if self.masks[instr.mask_id][t_id]:
-                instr.eval(t_id, self.reg_files[t_id])
+                instr.eval(t_id, self.reg_files[t_id], mem)

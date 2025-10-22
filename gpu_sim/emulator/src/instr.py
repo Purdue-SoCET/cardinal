@@ -19,7 +19,7 @@ class Instr(ABC):
         pass
 
     @abstractmethod
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         pass
 
     def check_overflow(self, result: Union[int, float], t_id: int) -> None:
@@ -56,7 +56,7 @@ class R_Instr_0(Instr):
         self.rs2 = rs2
         self.rd = rd
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         rdat1 = t_reg.read(self.rs1)
         rdat2 = t_reg.read(self.rs2)
 
@@ -107,7 +107,7 @@ class R_Instr_1(Instr):
         self.rs2 = rs2
         self.rd = rd
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         rdat1 = t_reg.read(self.rs1)
         rdat2 = t_reg.read(self.rs2)
 
@@ -161,9 +161,31 @@ class I_Instr_0(Instr):
         self.rd = rd
         self.imm = imm
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
-        # TODO: Implement I-Type 0 operations (ADDI, SUBI, ORI, SLTI)
-        pass
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
+        rdat1 = t_reg.read(self.rs1)
+        imm_val = self.imm.int  # Sign-extended immediate
+
+        match self.op:
+            # Immediate INT Arithmetic
+            case I_Op_0.ADDI:
+                result = rdat1.int + imm_val
+            
+            case I_Op_0.SUBI:
+                result = rdat1.int - imm_val
+            
+            # Immediate Logical Operators
+            case I_Op_0.ORI:
+                result = rdat1.int | imm_val
+            
+            # Immediate Comparison
+            case I_Op_0.SLTI:
+                result = 1 if rdat1.int < imm_val else 0
+            
+            case _:
+                raise NotImplementedError(f"I-Type 0 operation {self.op} not implemented yet or doesn't exist.")
+
+        out = result & 0xFFFFFFFF
+        t_reg.write(self.rd, Bits(int=out, length=32))
 
 class I_Instr_1(Instr):
     def __init__(self, op: I_Op_1, rs1: Bits, rd: Bits, imm: Bits) -> None:
@@ -172,20 +194,89 @@ class I_Instr_1(Instr):
         self.rd = rd
         self.imm = imm
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
-        # TODO: Implement I-Type 1 operations (SLTIU, SRLI, SRAI)
-        pass
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
+        rdat1 = t_reg.read(self.rs1)
+        imm_val = self.imm.uint  # Unsigned immediate for shifts and unsigned compare
+
+        match self.op:
+            # Immediate Comparison
+            case I_Op_1.SLTIU:
+                result = 1 if rdat1.uint < imm_val else 0
+            
+            # Immediate Shifting
+            case I_Op_1.SRLI:
+                shift_amount = imm_val & 0x1F  # Mask to 5 bits
+                result = rdat1.uint >> shift_amount
+            
+            case I_Op_1.SRAI:
+                shift_amount = imm_val & 0x1F  # Mask to 5 bits
+                result = rdat1.int >> shift_amount  # Arithmetic right shift (sign-extends)
+            
+            case _:
+                raise NotImplementedError(f"I-Type 1 operation {self.op} not implemented yet or doesn't exist.")
+
+        out = result & 0xFFFFFFFF
+        t_reg.write(self.rd, Bits(int=out, length=32))
 
 class I_Instr_2(Instr):
-    def __init__(self, op: I_Op_2, rs1: Bits, rd: Bits, imm: Bits) -> None:
+    def __init__(self, op: I_Op_2, rs1: Bits, rd: Bits, imm: Bits, pc=None) -> None:
         self.op = op
         self.rs1 = rs1
         self.rd = rd
         self.imm = imm
+        self.pc = pc    # Program counter for JALR
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
-        # TODO: Implement I-Type 2 operations (LW, LH, LB, JALR)
-        pass
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
+        rdat1 = t_reg.read(self.rs1)
+        imm_val = self.imm.int  # Sign-extended immediate
+
+        match self.op:
+            # Memory Read Operations
+            case I_Op_2.LW:
+                if mem is None:
+                    raise RuntimeError("Memory object required for LW operation")
+                addr = rdat1.int + imm_val
+                result = mem.read(addr, 4)  # Read 32 bits (4 bytes)
+                t_reg.write(self.rd, Bits(int=result, length=32))
+                return  # Skip the default write at the end
+            
+            case I_Op_2.LH:
+                if mem is None:
+                    raise RuntimeError("Memory object required for LH operation")
+                addr = rdat1.int + imm_val
+                result = mem.read(addr, 2)  # Read 16 bits (2 bytes)
+                # Sign extend from 16 to 32 bits
+                if result & 0x8000:
+                    result |= 0xFFFF0000
+                t_reg.write(self.rd, Bits(int=result, length=32))
+                return  # Skip the default write at the end
+            
+            case I_Op_2.LB:
+                if mem is None:
+                    raise RuntimeError("Memory object required for LB operation")
+                addr = rdat1.int + imm_val
+                result = mem.read(addr, 1)  # Read 8 bits (1 byte)
+                # Sign extend from 8 to 32 bits
+                if result & 0x80:
+                    result |= 0xFFFFFF00
+                t_reg.write(self.rd, Bits(int=result, length=32))
+                return  # Skip the default write at the end
+            
+            # Jump and Link Register
+            case I_Op_2.JALR:
+                if self.pc is None:
+                    raise RuntimeError("Program counter required for JALR operation")
+                # Save return address (PC + 4)
+                return_addr = self.pc + 4
+                t_reg.write(self.rd, Bits(int=return_addr, length=32))
+                # Jump to rs1 + imm (new PC will be set by caller)
+                target_addr = rdat1.int + imm_val
+                # Store target address for caller to update PC
+                self.target_pc = target_addr
+                return  # Skip the default write at the end
+            
+            case _:
+                raise NotImplementedError(f"I-Type 2 operation {self.op} not implemented yet or doesn't exist.")
 
 class F_Instr(Instr):
     def __init__(self, op: F_Op, rs1: Bits, rd: Bits) -> None:
@@ -193,7 +284,7 @@ class F_Instr(Instr):
         self.rs1 = rs1
         self.rd = rd
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement F-Type operations (ISQRT, SIN, COS, ITOF, FTOI)
         pass
 
@@ -204,7 +295,7 @@ class S_Instr_0(Instr):
         self.rs2 = rs2
         self.imm = imm
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement S-Type 0 operations (SW, SH, SB)
         pass
 
@@ -215,7 +306,7 @@ class B_Instr_0(Instr):
         self.rs2 = rs2
         self.pred_dest = pred_dest
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement B-Type 0 operations (BEQ, BNE, BGE, BGEU, BLT, BLTU)
         # Note: B-Type now writes to predicate registers, not PC
         pass
@@ -226,7 +317,7 @@ class U_Instr(Instr):
         self.rd = rd
         self.imm = imm
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement U-Type operations (AUIPC, LLI, LMI, LUI)
         pass
 
@@ -236,7 +327,7 @@ class C_Instr(Instr):
         self.rd = rd
         self.csr = csr
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement C-Type operations (CSRR, CSRW)
         pass
 
@@ -247,7 +338,7 @@ class J_Instr(Instr):
         self.pred_dest = pred_dest
         self.imm = imm
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement J-Type operations (JAL)
         pass
 
@@ -257,7 +348,7 @@ class P_Instr(Instr):
         self.rs1 = rs1
         self.rs2 = rs2
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement P-Type operations (JPNZ)
         pass
 
@@ -265,6 +356,6 @@ class H_Instr(Instr):
     def __init__(self, op: H_Op) -> None:
         self.op = op
 
-    def eval(self, t_id: int, t_reg: Reg_File) -> None:
+    def eval(self, t_id: int, t_reg: Reg_File, mem=None) -> None:
         # TODO: Implement H-Type operations (HALT)
         pass
