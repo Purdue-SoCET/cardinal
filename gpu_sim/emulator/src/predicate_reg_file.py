@@ -1,9 +1,9 @@
-class Predicate_Reg_File:
+class Predicate_Reg_File(Reg_File):
     def __init__(self) -> None:
-        pass
+        super().__init__(32)
 
-    def read(self, addr, t_id: int) -> int:
-        pass
+    def read(self, addr: Bits) -> Bits:
+        return super().read(addr)
 
-    def write(self, addr, data, t_id: int) -> None:
-        pass
+    def write(self, addr: Bits, data: Bits) -> None:
+        super().write(addr, data)
