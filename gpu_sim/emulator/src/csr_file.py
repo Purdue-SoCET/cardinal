@@ -1,5 +1,5 @@
 
-class CSR:
+class CSR_File:
     def __init__(self) -> None:
         pass
 
