@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Small base class and an executable CLI entrypoint.
 
-This module provides a tiny BaseClass used for demonstration and a
-convenient `main()` function so the file can be executed directly.
-
-Features added:
-- BaseClass with a simple `process()` method
-- `argparse` based CLI with `--name` and `--repeat` options
-- basic `logging` configuration
-
-Run with: python -m src.base_class --name Alice --repeat 3
-"""
 
 from __future__ import annotations
 
@@ -21,6 +10,7 @@ import sys
 from dataclasses import dataclass
 from typing import Optional
 from unicodedata import name
+
 
 @dataclass
 class tb_data_params:
@@ -34,40 +24,38 @@ class tb_data_params:
 
 @dataclass
 class StageInterface:
-    """Represents the handshake and data path between two pipeline stages."""
-
-    def __init__(self, name, latency=1):
+    """Handshake data path between two pipeline stages."""
+    def __init__(self, name, latency=1, is_feedback=False):
         self.name = name
         self.latency = latency
-
-        # Current and next-cycle values
+        self.is_feedback = is_feedback  # control feedback paths bypass tick
         self.data = None
         self.next_data = None
-
-        # Control signals
         self.valid = False
         self.next_valid = False
-        self.ready = True      # downstream can accept
+        self.ready = True
         self.stall = False
-
-        # Timing
         self.remaining_latency = 0
 
-    # -------------------------------------------------------
-    # Data / control manipulation
-    # -------------------------------------------------------
     def send(self, data):
-        """Upstream stage pushes data into this interface."""
         if not self.ready:
             self.stall = True
             return False
         self.next_data = data
         self.next_valid = True
-        self.remaining_latency = self.latency
+        if not self.is_feedback:
+            self.remaining_latency = self.latency
+        else:
+            # Feedback bypasses delay
+            self.data = data
+            self.valid = True
         return True
 
     def receive(self):
-        """Downstream stage consumes data if valid and latency done."""
+        if self.is_feedback:
+            # Control paths behave as combinational connections
+            return self.data if self.valid else None
+
         if self.valid and self.remaining_latency <= 0:
             d = self.data
             self.data = None
@@ -77,48 +65,34 @@ class StageInterface:
         return None
 
     def flush(self):
-        """Clear any in-flight data (e.g., on branch mispredict)."""
         self.data = None
         self.next_data = None
         self.valid = self.next_valid = False
         self.remaining_latency = 0
-        self.stall = False
         self.ready = True
+        self.stall = False
 
-    # -------------------------------------------------------
-    # Cycle transition
-    # -------------------------------------------------------
     def tick(self):
-        """Advance one cycle of timing and commit next values."""
+        if self.is_feedback:
+            return  # bypass pipeline timing
+
         if self.remaining_latency > 0:
             self.remaining_latency -= 1
-
-        # Commit next values at cycle boundary
         if self.next_valid:
             self.data = self.next_data
             self.valid = True
-            self.ready = False  # data now occupied
-        else:
-            # If nothing new is sent and latency expired, free the latch
-            if not self.valid:
-                self.ready = True
-
-        # Clear transient signals
+            self.ready = False
+        elif not self.valid:
+            self.ready = True
         self.next_data = None
         self.next_valid = False
         self.stall = False
 
-    def can_accept(self) -> bool:
-        """Return True if this interface can accept a new push from upstream.
-
-        Definition of "can accept":
-        - interface is marked ready (downstream not currently holding data)
-        - nothing is already scheduled for the next cycle (next_valid is False)
-        - no remaining latency is active (data path is free)
-        """
+    def can_accept(self):
+        if self.is_feedback:
+            return True
         return bool(self.ready and not self.next_valid and self.remaining_latency <= 0)
-
-
+    
 @dataclass
 class SoCET_GPU():
 	"""A minimal base class used for demos and tests.
@@ -133,70 +107,68 @@ class SoCET_GPU():
 		self.semester = "F25"
 		self.version = "0.1.0"
 
-from dataclasses import dataclass
-
 @dataclass
-class SM():
-    """Streaming Multiprocessor (SM) containing a simple scalar pipeline."""
+class SM:
+    def __init__(self, stage_defs=None, connections=None, feedbacks=None):
+        # 1. Define stages (can be overridden)
+        if stage_defs is not None:
+            stages = dict(stage_defs)
+        else:
+            stages = {
+                "warp_scheduler": PipelineStage("WarpScheduler", self),
+                "fetch": PipelineStage("Fetch", self),
+                "decode": PipelineStage("Decode", self),
+                "execute": PipelineStage("Execute", self),
+                "writeback": PipelineStage("Writeback", self),
+            }
+        self.stages = stages
+        self.interfaces = []
 
-    def __init__(self):
-        # create the interfaces
-        self.if_scheduler_fetch = StageInterface("IF_SchedulerFetch", latency=1)
-        self.if_fetch_decode = StageInterface("IF_FetchDecode", latency=1)
-        self.if_decode_exec  = StageInterface("IF_DecodeExec", latency=1)
-        self.if_exec_wb      = StageInterface("IF_ExecWriteback", latency=1)
+        # 2. Build normal pipeline / parallel connections
+        if connections is not None:
+            pipeline_connections = connections
+        else:
+            pipeline_connections = [
+                ("warp_scheduler", "fetch"),
+                ("fetch", "decode"),
+                ("decode", "execute"),
+                ("execute", "writeback"),
+            ]
+        for src, dst in pipeline_connections:
+            iface = StageInterface(f"if_{src}_{dst}", latency=1)
+            stages[src].add_output(iface)
+            stages[dst].add_input(iface)
+            self.interfaces.append(iface)
+            print("Made: {}", format("if_{}_{}".format(src, dst)))
 
-        # creates the stages
-        self.warp_scheduler = PipelineStage("WarpScheduler", self)
-        self.fetch     = PipelineStage("Fetch", self)
-        self.decode    = PipelineStage("Decode", self)
-        self.execute   = PipelineStage("Execute", self)
-        self.writeback = PipelineStage("Writeback", self)
-
-        # connect 
-        self.warp_scheduler.connect_output(self.if_scheduler_fetch)
-        self.fetch.connect_input(self.if_scheduler_fetch)
-        self.fetch.connect_output(self.if_fetch_decode)
-        self.decode.connect_input(self.if_fetch_decode)
-        self.decode.connect_output(self.if_decode_exec)
-        self.execute.connect_input(self.if_decode_exec)
-        self.execute.connect_output(self.if_exec_wb)
-        self.writeback.connect_input(self.if_exec_wb)
-
-        #ordered list of the stages
-        self.stages = [self.warp_scheduler, self.fetch, self.decode, self.execute, self.writeback]
-        self.interfaces = [self.if_scheduler_fetch, self.if_fetch_decode, self.if_decode_exec, self.if_exec_wb]
+        # 3. Build control feedback connections (non-pipelined)
+        feedbacks = feedbacks or []
+        for src, dst in feedbacks:
+            fb = StageInterface(f"FB_{src}_{dst}", is_feedback=True)
+            stages[src].add_feedback(dst, fb)
+            stages[dst].add_feedback(src, fb)
 
         self.global_cycle = 0
-        self.completed_insts = 0
+
+    def get_interface(self, name):
+        return next((iface for iface in self.interfaces if iface.name == name), None)
 
     def cycle(self):
-        """Run one simulation cycle (back-to-front)."""
         self.global_cycle += 1
-
-        # 1. Advance timing in all interfaces (latency countdown)
+        # Tick data interfaces only (feedbacks are combinational)
         for iface in self.interfaces:
             iface.tick()
-
-        # 2. Run pipeline stages in back-to-front order
-        for stage in reversed(self.stages):
+        for stage in reversed(self.stages.values()):
+            stage.tick_internal()
             stage.cycle()
-
-        # 3. Gather metrics (optional)
-        for stage in self.stages:
-            self.completed_insts += stage.instruction_count
-
     def print_pipeline_state(self):
-        print(f"=== Cycle {self.global_cycle} ===")
-        for iface in self.interfaces:
-            state = (
-                f"[{iface.name}] valid={iface.valid}, "
-                f"ready={iface.ready}, "
-                f"latency_left={iface.remaining_latency}, "
-                f"data={iface.data}"
-            )
-            print(state)
-        print()
+        print("\n");
+        print(f"Cycle {self.global_cycle}:")
+        for name, stage in self.stages.items():
+            state = stage.debug_state()
+            print(f"  Stage {name}: {state}")
+# relevant to thread block scheduling. im sure this can be structured as a pipeline 
+# stage itself.
 
 @dataclass
 class TB_Scheduler:
@@ -216,105 +188,113 @@ class TB_Scheduler:
 from dataclasses import dataclass, field
 from typing import Optional
 
+
 @dataclass
 class PipelineStage:
     name: str
     parent_core: object
 
-    input_if: Optional["StageInterface"] = None
-    output_if: Optional["StageInterface"] = None
-
+    inputs: list[StageInterface] = field(default_factory=list)
+    outputs: list[StageInterface] = field(default_factory=list)
+    feedback_links: dict = field(default_factory=dict)
     subunits: list = field(default_factory=list)
 
-    # Performance metadata
     cycle_count: int = 0
     active_cycles: int = 0
     stall_cycles: int = 0
     instruction_count: int = 0
 
-    # ---------------------------------------------------------
-    # Connectivity
-    # ---------------------------------------------------------
-    def connect_input(self, interface: "StageInterface") -> None:
-        """Bind an incoming interface to this stage."""
-        self.input_if = interface
+    def add_input(self, interface: StageInterface):
+        self.inputs.append(interface)
 
-    def connect_output(self, interface: "StageInterface") -> None:
-        """Bind an outgoing interface to this stage."""
-        self.output_if = interface
+    def add_output(self, interface: StageInterface):
+        self.outputs.append(interface)
+    
+    def connect_interfaces(self, input_if: "StageInterface", output_if: "StageInterface"):
+        self.add_input(input_if)
+        self.add_output(output_if)
 
-    def add_subunit(self, fu) -> None:
-        """Attach a sub-functional unit (ALU, LSU, etc.)."""
+    def add_feedback(self, name: str, interface: StageInterface):
+        """Add a non-pipelined feedback signal."""
+        self.feedback_links[name] = interface
+
+    def add_subunit(self, fu):
         self.subunits.append(fu)
 
-    # ---------------------------------------------------------
-    # Simulation Cycle
-    # ---------------------------------------------------------
-    def cycle(self) -> None:
-        """Advance one cycle with handshake-based data flow."""
+    def process(self, inst):
+        """Process an instruction; to be overridden by subclasses."""
+        self.current_inst = inst
+        return inst
+    
+    def tick_internal(self):
+        for fu in self.subunits:
+            if hasattr(fu, "tick"):
+                fu.tick()
+
+    def cycle(self):
+        """Advance one cycle; handle multiple input/output interfaces."""
         self.cycle_count += 1
-        received_inst = None
+        received = None
 
-        # 1. Try to receive instruction from input interface
-        if self.input_if:
-            received_inst = self.input_if.receive()
+        # Try to receive from any valid input (simple priority arbiter)
+        for inp in self.inputs:
+            data = inp.receive()
+            if data:
+                received = data
+                break
 
-        if received_inst:
-            self.active_cycles += 1
-            result = self.process(received_inst)
-
-            # 2. Attempt to send to output interface, but only if downstream can accept
-            if self.output_if and result is not None:
-                if self.output_if.can_accept():
-                    sent = self.output_if.send(result)
-                    if not sent:
-                        # Downstream not ready → stall
+        if received:
+            # Only increment active_cycles if a real instruction is processed
+            if received is not None:
+                self.active_cycles += 1
+            self.current_inst = received
+            result = self.process(received) # sent to the process defined for this class 
+            if result is not None:
+                # Allow routing to a specific output
+                if isinstance(result, tuple):
+                    data, out_idx = result
+                    if self.outputs[out_idx].can_accept():
+                        self.outputs[out_idx].send(data)
+                    else:
                         self.stall_cycles += 1
-                        self.active_cycles -= 1  # didn’t complete
                 else:
-                    # Downstream cannot accept this cycle → stall
-                    self.stall_cycles += 1
-                    self.active_cycles -= 1
+                    # Default single output
+                    if self.outputs and self.outputs[0].can_accept():
+                        self.outputs[0].send(result)
+                    else:
+                        self.stall_cycles += 1
         else:
             self.stall_cycles += 1
-
-    # ---------------------------------------------------------
-    # Readiness helpers
-    # ---------------------------------------------------------
-    def accepting_input(self) -> bool:
-        """Return True if this stage's input interface can accept new data now."""
-        return bool(self.input_if and self.input_if.can_accept())
-
-    def can_forward_output(self) -> bool:
-        """Return True if this stage can forward data to its output this cycle."""
-        return bool(self.output_if and self.output_if.can_accept())
-
-    def process(self, inst):
-        """Override per-stage with functional behavior."""
-        # Default: simple pass-through
-        return inst
-
-    def stats(self):
+            # If nothing received, clear current_inst (optional: comment out if you want to keep last inst)
+            self.current_inst = None
+    def debug_state(self):
+        # Show a summary of the current instruction (e.g., PC or mnemonic)
+        inst_info = None
+        if hasattr(self, 'current_inst') and self.current_inst is not None:
+            inst = self.current_inst
+            if isinstance(inst, dict):
+                if 'pc' in inst:
+                    inst_info = f"pc=0x{inst['pc']:x}"
+                elif 'decoded_fields' in inst and 'orig_inst' in inst['decoded_fields'] and 'pc' in inst['decoded_fields']['orig_inst']:
+                    inst_info = f"pc=0x{inst['decoded_fields']['orig_inst']['pc']:x}"
+                else:
+                    inst_info = str(inst)
+            else:
+                inst_info = str(inst)
         return {
             "name": self.name,
-            "cycles": self.cycle_count,
-            "active": self.active_cycles,
-            "stalls": self.stall_cycles,
-            "utilization": (
-                self.active_cycles / self.cycle_count if self.cycle_count else 0.0
-            ),
+            "cycle_count": self.cycle_count,
+            "active_cycles": self.active_cycles,
+            "stall_cycles": self.stall_cycles,
+            "instruction_count": self.instruction_count,
+            "current_inst": inst_info,
         }
-
-            
+    
 class DecodeStage(PipelineStage):
     def __init__(self, parent_core):
         super().__init__("Decode", parent_core)
         self.flush_flag = False
         self.halt = False
-
-    def connect_interfaces(self, input_if: "StageInterface", output_if: "StageInterface"):
-        self.connect_input(input_if)
-        self.connect_output(output_if)
 
     def process(self, inst):
         if not inst:
@@ -511,10 +491,8 @@ class DecodeStage(PipelineStage):
             "flush_flag": self.flush_flag,
             "halt": self.halt,
         }
-     
-
-# class faux_SM():
-
+       
+# this function is for the building the test instruction sequences out of fields
 def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, packet_start: bool = False, packet_end: bool = False) -> int:
     """Construct a 32-bit instruction word according to the DecodeStage layout:
     bits [6:0]   = opcode7
@@ -536,20 +514,19 @@ def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, 
     )
     return raw
 
-
 #--------------------------------------------------------
 # THIS IS A SAMPLE CODE SEQUENCE TO TEST THE DECODER.
 # REPLACE WITH NAMING FOR YOUR UNIT CLASS NAME AS NEEDED.
 #--------------------------------------------------------
-# Build a small sequence of instructions that align with the decoder's expected opcode values
+# # Build a small sequence of instructions that align with the decoder's expected opcode values
 # test_in = StageInterface("IF_FetchDecode", latency=1)
 # test_out = StageInterface("IF_DecodeExec", latency=1)
-# decode = DecodeStage("SM_1")
+# decode = DecodeStage("SM_1") # putting in some bull shit SM right now
 # decode.connect_interfaces(test_in, test_out)
-# 
-# UNCOMMENT THIS WHEN YOU'RE READY TO TEST!
-# THIS IS NOT A CYCLE ACCURATE SIM JUST YET--JUST FUNCTIONAL. 
-# SM MODULE FOR SIMULATING CYCLE ACCURATE PROCESSES IS IN PROGRESS.
+# # 
+# # UNCOMMENT THIS WHEN YOU'RE READY TO TEST!
+# # THIS IS NOT A CYCLE ACCURATE SIM JUST YET--JUST FUNCTIONAL. 
+# # SM MODULE FOR SIMULATING CYCLE ACCURATE PROCESSES IS IN PROGRESS.
 # instructions = [
 #     {"pc": 0x100, "raw": make_raw(0x00, rd=1, rs1=2, mid6=3)},    # add (R-type)
 #     {"pc": 0x104, "raw": make_raw(0x10, rd=5, rs1=6, mid6=0)},    # addi (I-type)
@@ -559,26 +536,28 @@ def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, 
 #     {"pc": 0x114, "raw": make_raw(0x7F, rd=0, rs1=0, mid6=0)},    # halt (H-type)
 # ]
 
-for inst in instructions:
-    print(f"\nIssuing instruction pc=0x{inst['pc']:x} raw=0x{inst['raw']:08x}")
+
+# # this is only functional for modular testing of ONE stage. 
+# for inst in instructions:
+#     print(f"\nIssuing instruction pc=0x{inst['pc']:x} raw=0x{inst['raw']:08x}")
     
-    # Wait until decode can accept a new one
-    while not test_in.can_accept():
-        test_in.tick()
-        test_out.tick()
-        decode.cycle()
+#     # Wait until decode can accept a new one
+#     while not test_in.can_accept():
+#         test_in.tick() 
+#         test_out.tick()
+#         decode.cycle()
 
-    # Send and advance one cycle
-    test_in.send(inst)
-    test_in.tick()
-    test_out.tick()
+#     # Send and advance one cycle
+#     test_in.send(inst)
+#     test_in.tick()
+#     test_out.tick()
     
-    #REPLACE WITH YOUR UNIT CLASS.cycle()
-    #EX. decode.cycle()
+#     #REPLACE WITH YOUR UNIT CLASS.cycle()
+#     #EX. decode.cycle()
 
-    # Next cycle: promote and observe decode output
-    test_in.tick()
-    test_out.tick()
-    decode.cycle()
+#     # Next cycle: promote and observe decode output
+#     test_in.tick()
+#     test_out.tick()
+#     decode.cycle()
 
-    print(f"Output IF: valid={test_out.valid}, ready={test_out.ready}, data={test_out.data}")
+#     print(f"Output IF: valid={test_out.valid}, ready={test_out.ready}, data={test_out.data}")
