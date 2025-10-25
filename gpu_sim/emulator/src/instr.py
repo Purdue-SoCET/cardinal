@@ -245,7 +245,8 @@ class I_Instr_2(Instr):
             self.mem = mem # Memory object for LW/LH/LB
   
     def eval(self, global_thread_id: int, t_reg: Reg_File) -> Bits:
-        rdat1 = t_reg.read(self.rs1)
+        if(self.op != I_Op_2.JALR):
+            rdat1 = t_reg.read(self.rs1) #jalr doesn't read from reg file?
         imm_val = self.imm.int  # Sign-extended immediate
 
         match self.op:
