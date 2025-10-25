@@ -2,6 +2,7 @@ from reg_file import *
 from instr import *
 from bitstring import Bits
 from csr_file import *
+from mem import *
 
 class Warp:
     def __init__(self, warp_id: int, pc: Bits, csr: dict) -> None:
@@ -13,14 +14,15 @@ class Warp:
     #     for global_thread_id in self.csr_file["tid"]:
     #         self.CSR_File = CSR_File(warp_id=warp_id, block_id=warp_id) # NOTE: CHANGE!!!
 
-    def eval(self, instr: Instr, pred_reg_file: Predicate_Reg_File) -> Bits:
+    def eval(self, instr: Instr, pred_reg_file: Predicate_Reg_File, thread_id: int) -> Bits: #eventually change thread_id to Bits/csr_file
         # iterating through every thread is unncessesary, since threads will always share the same PC within a warp.
         # for global_thread_id in self.CSR_File.global_thread_ids: 
         #     if pred_reg_file.read(global_thread_id).int == 1:
         #         next_pc = instr.eval(global_thread_id, self.reg_files[Reg_File._get_local_thread_id_from(global_thread_id)], mem)
+        instr.eval(1, self.reg_files[thread_id])
         match instr.op:
             case I_Op_2.JALR | P_Op.JPNZ | J_Op.JAL:
-                instr.eval(1, self.reg_files)
+                # instr.eval(1, self.reg_files)
                 self.pc = instr.pc
             case _:
                 self.pc = Bits(int=self.pc.int + 4, length=32)

@@ -128,7 +128,7 @@ class R_Instr_1(Instr):
         match self.op:
             # Comparison Operations
             case R_Op_1.SLTU:
-                result = 1 if rdat1.uint < rdat2.uint else 0
+                result = Bits(int=1, length=32) if rdat1.uint < rdat2.uint else Bits(int=1, length=32)
             
             # Floating Point Arithmetic Operations
             case R_Op_1.ADDF:
@@ -165,8 +165,9 @@ class R_Instr_1(Instr):
 
         self.check_overflow(result, global_thread_id)
 
-        out = result & 0xFFFFFFFF
-        t_reg.write(self.rd, Bits(int=out, length=32))
+        # out = result & 0xFFFFFFFF #shouldn't need this, since Bits already protects against this
+        t_reg.write(self.rd, result) #result should already be Bits class
+        # t_reg.write(self.rd, Bits(int=out, length=32))
 
 class I_Instr_0(Instr):
     def __init__(self, op: I_Op_0, rs1: Bits, rd: Bits, imm: Bits) -> None:
@@ -245,8 +246,8 @@ class I_Instr_2(Instr):
             self.mem = mem # Memory object for LW/LH/LB
   
     def eval(self, global_thread_id: int, t_reg: Reg_File) -> Bits:
-        if(self.op != I_Op_2.JALR):
-            rdat1 = t_reg.read(self.rs1) #jalr doesn't read from reg file?
+        # if(self.op != I_Op_2.JALR):
+        rdat1 = t_reg.read(self.rs1) #jalr doesn't read from reg file?
         imm_val = self.imm.int  # Sign-extended immediate
 
         match self.op:

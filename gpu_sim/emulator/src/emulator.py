@@ -64,7 +64,6 @@ def emulator(input_file, warp, mem):
         for thread_id in range(64): 
             pc = warp.pc.int
             line = instructions[int(pc / 4)].strip()
-
             # remove inline comments before parsing
             for marker in ("//", "#"):
                 idx = line.find(marker)
@@ -93,7 +92,6 @@ def emulator(input_file, warp, mem):
                 case Instr_Type.R_TYPE_0:
                     op = R_Op_0(funct3)
                     instr = R_Instr_0(op=op, rs1=rs1, rs2=rs2, rd=rd)
-                    # instr.eval
                     print(f"rtype_0, funct={op}")  
                 case Instr_Type.R_TYPE_1:
                     op = R_Op_1(funct3)
@@ -121,11 +119,6 @@ def emulator(input_file, warp, mem):
                     op = B_Op_0(funct3)
                     instr = B_Instr_0(op=op, rs1=rs1, rs2=rs2, pred_reg_file=rd)
                     print(f"btype, funct={op}")
-                # case Instr_Type.B_TYPE_1:
-                #     op = B_Op_1(funct3)
-                #     instr = B_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
-                #     print(f"btype, funct={op},imm={imm.int}")
-                #     print("btype")
                 case Instr_Type.U_TYPE:
                     op = U_Op(funct3)
                     imm = imm + rs1 #concatenate
@@ -134,7 +127,7 @@ def emulator(input_file, warp, mem):
                 case Instr_Type.J_TYPE:
                     op = J_Op(funct3)
                     imm = rs1 + rs2 + pred #concatenate
-                    # instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc, pred_reg_file=warp.)
+                    instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc, pred_reg_file=pred_reg_file)
                     print("jtype")
                 case Instr_Type.P_TYPE:
                     op = P_Op(funct3)
@@ -151,7 +144,7 @@ def emulator(input_file, warp, mem):
                 case _:
                     print("Undefined opcode")
             # pc += 4 # NOTE: temporary until PC incrementing is figured out. How will this change with scheduling?
-            warp.eval(instr, pred_reg_file)
+            warp.eval(instr=instr, pred_reg_file=pred_reg_file, thread_id=thread_id) #how to pass in mem, when different eval want/don't want it?
             # print(f"pc={warp.pc.int}")
         # return
     return
