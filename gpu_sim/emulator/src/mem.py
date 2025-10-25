@@ -49,12 +49,17 @@ class Mem:
                 addr += 4  # next word starts 4 bytes later
         atexit.register(self.dump_on_exit)
 
-    def read(self, addr: int) -> int:
-        return self.memory.get(addr, 0)
+    def read(self, addr: int, bytes: int) -> int:
+        val = 0
 
-    def write(self, addr: int, data: int) -> None:
-        self.memory[addr] = data
+        for i in range(bytes):
+            b = self.memory[addr + 1] & 0xFF
+            val |= b << (8 * i)
+        return val
 
+    def write(self, addr: int, data: int, bytes: int) -> None:
+        for i in range(bytes):
+            self.memory[addr + i] = (data >> (8 * i)) & 0xFF
     def dump_on_exit(self) -> None:
         try:
             self.dump("memsim.hex")
@@ -64,9 +69,27 @@ class Mem:
     
     # CAN CHANGE THIS SHIT LATER IF WE WANT TO PRINT OUT MORE INFO
     def dump(self, path: str = "memsim.hex") -> None:
-        items = ((a, v) for a, v in self.memory.items() if v != 0)
+        """
+        Dump memory one 32-bit word per line.
+        Groups consecutive bytes [addr, addr+1, addr+2, addr+3] into one word.
+        Skips words that are entirely zero (uninitialized).
+        """
         with open(path, "w", encoding="utf-8") as f:
-            for addr, val in sorted(items, key=lambda x: x[0]):
-                f.write(f"{addr:#x} {val:#x}\n")
+            # round down to nearest word boundary
+            min_addr = min(self.memory.keys(), default=0) & ~0x3
+            max_addr = max(self.memory.keys(), default=0)
+            for base in range(min_addr, max_addr + 1, 4):
+                # collect 4 bytes for this word
+                b0 = self.memory.get(base + 0, 0)
+                b1 = self.memory.get(base + 1, 0)
+                b2 = self.memory.get(base + 2, 0)
+                b3 = self.memory.get(base + 3, 0)
+                if (b0 | b1 | b2 | b3) == 0:
+                    continue  # skip all-zero words
+
+                word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+
+                f.write(f"{base:#010x} {word:#010x}\n")
+
     #dump into memsim.hex
         #copy meminit.hex into memsim
