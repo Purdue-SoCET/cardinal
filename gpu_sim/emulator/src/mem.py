@@ -49,12 +49,17 @@ class Mem:
                 addr += 4  # next word starts 4 bytes later
         atexit.register(self.dump_on_exit)
 
-    def read(self, addr: int) -> int:
-        return self.memory.get(addr, 0)
+    def read(self, addr: int, bytes: int) -> int:
+        val = 0
 
-    def write(self, addr: int, data: int) -> None:
-        self.memory[addr] = data
+        for i in range(bytes):
+            b = self.memory[addr + 1] & 0xFF
+            val |= b << (8 * i)
+        return val
 
+    def write(self, addr: int, data: int, bytes: int) -> None:
+        for i in range(bytes):
+            self.memory[addr + i] = (data >> (8 * i)) & 0xFF
     def dump_on_exit(self) -> None:
         try:
             self.dump("memsim.hex")
