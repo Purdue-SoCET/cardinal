@@ -9,9 +9,9 @@ class Warp:
         self.pc = pc
         self.csr_file = csr # contains thread IDs and block IDs
 
-    def eval(self, instr: Instr, pred_reg_file: Predicate_Reg_File, mem: Mem) -> Bits:
-        for global_thread_id in self.csr_file["tid"]:
-        self.CSR_File = CSR_File(warp_id=warp_id, block_id=warp_id) # NOTE: CHANGE!!!
+    # def eval(self, instr: Instr, pred_reg_file: Predicate_Reg_File, mem: Mem) -> Bits:
+    #     for global_thread_id in self.csr_file["tid"]:
+    #         self.CSR_File = CSR_File(warp_id=warp_id, block_id=warp_id) # NOTE: CHANGE!!!
 
     def eval(self, instr: Instr, pred_reg_file: Predicate_Reg_File) -> Bits:
         for global_thread_id in self.CSR_File.global_thread_ids:
@@ -23,3 +23,6 @@ class Warp:
                         self.pc = next_pc
                     case _:
                         self.pc = Bits(int=self.pc.int + 4, length=32)
+            else:
+                self.pc += 4
+        return pred_reg_file

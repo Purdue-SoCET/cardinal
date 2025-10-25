@@ -8,6 +8,7 @@ from csr_file import *
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from common import custom_enums
+
 # print csr helper
 def print_csr(csr):
     for i in range(len(csr["x"])):
@@ -68,7 +69,7 @@ def emulator(input_file, warp, mem):
     while not halt and pc < len(instructions):
         line = instructions[pc].strip()
 
-        print(line)
+        # print(line)
         #compiler is big endian:MSB at smallest addr. That, or you can consider
         #no, compiler just put opcode, LSB, at the left for the teal card. So it is small endian...
         #python parses with highest index at the left 
@@ -82,44 +83,73 @@ def emulator(input_file, warp, mem):
         rs2 = Bits(bin=line[8:13], length=6) #24:19
         rs1 = Bits(bin=line[13:19], length=6) #18:13
         rd = Bits(bin=line[19:25], length=6) #12:7
-        # imm = Bits(bin=line[]) #
+        imm = Bits(bin=line[8:13], length=6) #default (I-Type). Make sure to shift for B-type
+        pred = Bits(bin=line[2:8], length=5)
         match Instr_Type(opcode):
             case Instr_Type.R_TYPE_0:
                 op = R_Op_0(funct3)
                 instr = R_Instr_0(op=op, rs1=rs1, rs2=rs2, rd=rd)
-                print(f"rtype_0, funct={op}={funct3}")  
+                instr.eval
+                print(f"rtype_0, funct={op}")  
             case Instr_Type.R_TYPE_1:
                 op = R_Op_1(funct3)
                 instr = R_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
-                print(f"rtype_1, {op}")  
+                print(f"rtype_1, funct={op}")  
             case Instr_Type.I_TYPE_0:
                 op = I_Op_0(funct3)
-                # instr = I_Type_0(op=op, rs1, imm=imm, rd=rd)
-                print("itype_0")
+                instr = I_Instr_0(op=op, rs1=rs1, imm=imm, rd=rd)
+                print(f"itype_0, funct={op},imm={imm.int}")
             case Instr_Type.I_TYPE_1:
-                print("itype_1")
+                op = I_Op_1(funct3)
+                instr = I_Instr_1(op=op, rs1=rs1, imm=imm, rd=rd)
+                print(f"itype_1, funct={op},imm={imm.int}")
             case Instr_Type.I_TYPE_2:
-                print("itype_2")
+                op = I_Op_2(funct3)
+                instr = I_Instr_2(op=op, rs1=rs1, imm=imm, rd=rd)
+                print(f"itype_2, funct={op}")
             case Instr_Type.S_TYPE_0:
-                print("stype_0")
-            case Instr_Type.S_TYPE_1:
-                print("stype_1")
+                op = S_Op_0(funct3)
+                rs2 = imm #reads rs2 in imm spot
+                mem = rd #reads imm in the normal rd spot
+                instr = S_Instr_0(op=op, rs1=rs1, rs2=rs2, imm=mem)
+                print(f"stype_0, funct={op},imm={imm.int}")
             case Instr_Type.B_TYPE_0:
-                print("btype")
-            case Instr_Type.B_TYPE_1:
-                print("btype")
+                op = B_Op_0(funct3)
+                instr = B_Instr_0(op=op, rs1=rs1, rs2=rs2, pred_reg_file=rd)
+                print(f"btype, funct={op}")
+            # case Instr_Type.B_TYPE_1:
+            #     op = B_Op_1(funct3)
+            #     instr = B_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
+            #     print(f"btype, funct={op},imm={imm.int}")
+            #     print("btype")
             case Instr_Type.U_TYPE:
-                print("utype")
+                op = U_Op(funct3)
+                imm = imm + rs1 #concatenate
+                instr = U_Instr(op=op, imm=imm, rd=rd)
+                print(f"utype, funct={op},imm={imm.int}")
             case Instr_Type.J_TYPE:
+                op = J_Op(funct3)
+                imm = rs1 + rs2 + pred #concatenate
+                # instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc, pred_reg_file=warp.)
                 print("jtype")
             case Instr_Type.P_TYPE:
+                op = P_Op(funct3)
                 print("ptype")
             case Instr_Type.C_TYPE:
+                op = C_Op(funct3)
                 print("ctype")
+            case Instr_Type.F_TYPE:
+                op = F_Op(funct3)
+                instr = F_Instr(op=op, rs1=rs1, rd=rd)
+                print(f"ftype, funct={op},imm={imm.int}")
+            case Instr_Type.H_TYPE:
+                print(f"halt")
             case _:
                 print("Undefined opcode")
-
-        return
+        # warp.eval
+        pc += 1
+        # print(f"pc={pc}")
+        # return
     return
 
 # main function

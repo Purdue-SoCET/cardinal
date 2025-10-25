@@ -55,7 +55,7 @@ class Instr(ABC):
             case R_Op_1.DIVF:
                 if result == float('inf') or result == float('-inf') or result != result:
                     logger.warning(f"Infinite/NaN FP result in DIVF from thread ID {global_thread_id}: R{self.rd} = R{self.rs1.int} / R{self.rs2.int}")
-            case U_Op_0.AUIPC:
+            case U_Op.AUIPC:
                 if result > 2147483647 or result < -2147483648:
                     logger.warning(f"Arithmetic overflow in AUIPC from thread ID {global_thread_id}: R{self.rd.int} = PC + {self.imm.int} << 12")
             case _:
@@ -345,12 +345,12 @@ class F_Instr(Instr):
             t_reg.write(self.rd, Bits(float=result, length=32))
 
 class S_Instr_0(Instr):
-    def __init__(self, op: S_Op_0, rs1: Bits, rs2: Bits, imm: Bits, mem: Mem) -> None:
+    def __init__(self, op: S_Op_0, rs1: Bits, rs2: Bits, imm: Bits) -> None:
         super().__init__(op)
         self.rs1 = rs1
         self.rs2 = rs2
         self.imm = imm
-        self.mem = mem
+        # self.mem = mem #does store need to extract memory?
 
     def eval(self, global_thread_id: int, t_reg: Reg_File) -> None:
         rdat1 = t_reg.read(self.rs1)
