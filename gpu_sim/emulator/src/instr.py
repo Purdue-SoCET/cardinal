@@ -26,7 +26,7 @@ class Instr(ABC):
         self.op = op
 
     @abstractmethod
-    def eval(self, global_thread_id: int, t_reg: Reg_File):
+    def eval(self, global_thread_id: int, t_reg: Reg_File, mem: Mem):
         pass
 
     def check_overflow(self, result: Union[int, float], global_thread_id: int) -> None:
@@ -489,13 +489,13 @@ class C_Instr(Instr):
             # Control Status Register Operations
             case C_Op.CSRR:
                 # CSR Read: R[rd] = CSR[csr]
-                csr_val = self.csr_file.read(csr_addr)
+                csr_val = self.csr_file[chr(119 + csr_addr)]
                 t_reg.write(self.rd, Bits(int=csr_val, length=32))
             
             case C_Op.CSRW:
                 # CSR Write: CSR[csr] = R[rd]
                 rd_val = t_reg.read(self.rd)
-                self.csr_file.write(csr_addr, rd_val.int)
+                # self.csr_file.write(csr_addr, rd_val.int)
             
             case _:
                 raise NotImplementedError(f"C-Type operation {self.op} not implemented yet or doesn't exist.")

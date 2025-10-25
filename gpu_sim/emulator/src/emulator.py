@@ -4,6 +4,9 @@ from reg_file import *
 from instr import *
 from warp import *
 from mem import *
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
 from custom_enums import *
 # print csr helper
 def print_csr(csr):
@@ -15,20 +18,51 @@ def print_csr(csr):
 def tbs(x, y, z):
     blocksize = x*y*z
 
-    if blocksize > 32:
+    if blocksize > 1024:
         print("fuck you 3")
         sys.exit(1)
 
-    csr = {"x": [i % x for i in range(blocksize)], "y": [(i // x) % y for i in range(blocksize)], "z": [i // (x * y) for i in range(blocksize)]}
-    return csr
+    csrs = []
+    # Build coordinates once and slice into chunks
+    X = [i % x for i in range(blocksize)]
+    Y = [(i // x) % y for i in range(blocksize)]
+    Z = [i // (x * y) for i in range(blocksize)]
+    TID = list(range(blocksize))
+
+    for w, start in enumerate(range(0, blocksize, 32)):
+        end = min(start + 32, blocksize)
+        chunk_x = X[start:end]
+        chunk_y = Y[start:end]
+        chunk_z = Z[start:end]
+        chunk_t = TID[start:end]
+
+        # Optional padding of the final partial warp
+        if True and end - start < 32:
+            pad_len = 32 - (end - start)
+            chunk_x += [None] * pad_len
+            chunk_y += [None] * pad_len
+            chunk_z += [None] * pad_len
+            chunk_t += [None] * pad_len
+
+        csrs.append({
+            "warp_id": w,
+            "x": chunk_x,
+            "y": chunk_y,
+            "z": chunk_z,
+            "tid": chunk_t,
+            "lanes": list(range(len(chunk_x))) if not True else list(range(32)),
+        })
+
+    return csrs
+
 
 # actual emulator
-def emulator(csr, regfile, input_file, pc, mem):
+def emulator(input_file, warp, mem):
     with open(input_file, "r") as f:
         instructions = f.readlines()
 
     ### STARTING PC IS ASSUMED ZERO FOR NOW BUT UPDATE IT ACCORDING TO WHAT SOFTWARE GIVES US
-    pc = pc.int
+    pc = warp.pc.int
     halt = False
 
     while not halt and pc < len(instructions):
@@ -100,10 +134,7 @@ if __name__ == "__main__":
         print("fuck u again lol")
         sys.exit(1)
 
-    csr = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
-    warp = Warp(0, Bits(int=int(sys.argv[5]), length=32))
+    csrs = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+    warp = Warp(0, Bits(int=int(sys.argv[5]), length=32), csrs[0])
     mem = Mem()
-    emulator(csr, warp.reg_files, sys.argv[1], warp.pc, mem)
-    # regfile = [[0 for i in range(32)] for j in range(32)]
-
-    # print_csr(csr) # uncomment to print out csr
+    emulator(sys.argv[1], warp, mem)
