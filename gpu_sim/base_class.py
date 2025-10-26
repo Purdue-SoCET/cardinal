@@ -235,7 +235,6 @@ class SM:
             stages[src].output_if = iface
             stages[dst].input_if = iface
             self.interfaces.append(iface)
-            print(f"Made: if_{src}_{dst}")
 
         # 3. Build control feedback connections (non-pipelined)
         feedbacks = feedbacks or []
@@ -307,15 +306,17 @@ class SM:
         self.perf.tick(1)
         self.perf.set_gauge("global_cycle", self.global_cycle)
 
-        # === PHASE 1: Evaluate stages (back-to-front prevents overwrite)
+
+        # === PHASE 1: Commit all interface values (clock edge)
         for iface in self.interfaces:
             iface.tick()
 
+
+        # === PHASE 1: Evaluate stages (back-to-front prevents overwrite)
         for stage in reversed(self.stages.values()):
             stage.tick_internal()
             stage.cycle()
 
-        # === PHASE 2: Commit all interface values (clock edge)
         self.logger.debug(f"Completed cycle {self.global_cycle}")
 
     def print_pipeline_state(self):
@@ -324,24 +325,6 @@ class SM:
             inst = stage.debug_state().get("current_inst", None)
             print(f"{name:>10}: {inst if inst else '-'}")
         print("\n")
-
-#     def print_pipeline_state(self):
-#         # Prefer structured logging over direct prints. Keep backward compatible info-level message.
-#         try:
-#             self.logger.info(f"Pipeline state at cycle {self.global_cycle}:")
-#             for name, stage in self.stages.items():
-#                 state = stage.debug_state()
-#                 # include per-stage counters if present
-#                 self.logger.info(f"  Stage {name}: {state}")
-#         except Exception:
-#             # Fallback to prints if logger fails
-#             print("\n")
-#             print(f"Cycle {self.global_cycle}:")
-#             for name, stage in self.stages.items():
-#                 state = stage.debug_state()
-#                 print(f"  Stage {name}: {state}")
-# # relevant to thread block scheduling. im sure this can be structured as a pipeline 
-# stage itself.
 
 @dataclass
 class TB_Scheduler:
@@ -424,6 +407,7 @@ class PipelineStage:
                 print(f"[{self.name}] Outputting result: {result}")
                 if isinstance(result, tuple):
                     data, out_idx = result
+                    print("Info: ", format(data))
                     if self.outputs[out_idx].can_accept():
                         self.outputs[out_idx].send(data)
                     else:
@@ -444,7 +428,7 @@ class PipelineStage:
             inst = self.current_inst
             if isinstance(inst, dict):
                 if 'pc' in inst:
-                    inst_info = f"pc=0x{inst['pc']:x}"
+                    inst_info = inst['pc']
                 elif 'decoded_fields' in inst and 'orig_inst' in inst['decoded_fields'] and 'pc' in inst['decoded_fields']['orig_inst']:
                     inst_info = f"pc=0x{inst['decoded_fields']['orig_inst']['pc']:x}"
                 else:
