@@ -201,7 +201,7 @@ class I_Instr_0(Instr):
             case _:
                 raise NotImplementedError(f"I-Type 0 operation {self.op} not implemented yet or doesn't exist.")
 
-        out = result & 0xFFFFFFFF
+        out = result
         t_reg.write(self.rd, Bits(int=out, length=32))
         return False
 
@@ -371,7 +371,7 @@ class S_Instr_0(Instr):
         
         # Calculate address
         addr = rdat1.int + imm_val
-
+        print(f"{addr}, rdat1={rdat1}, rdat2={rdat2}")
         match self.op:
             # Memory Write Operations
             case S_Op_0.SW:
@@ -572,14 +572,16 @@ class P_Instr(Instr):
         # return self.pc
 
 class H_Instr(Instr):
-    def __init__(self, op: H_Op, r_pred: Bits = Bits(bin='11111', length=5)) -> None:
+    def __init__(self, op: H_Op, funct3: Bits, r_pred: Bits = Bits(bin='11111', length=5)) -> None:
         super().__init__(op)
+        self.funct3 = funct3
 
     def eval(self, global_thread_id: int, t_reg: Reg_File, mem: Mem=None, pred_reg_file: Predicate_Reg_File=None) -> bool:
+        print(f"{self.funct3}, {self.op}")
         match self.op:
             # Halt Operation
             case H_Op.HALT:
-                logger.info(f"HALT instruction executed by thread ID {global_thread_id}")
+                print(f"HALT instruction executed by thread ID {global_thread_id}")
                 return True  # Signal that execution should halt
             
             case _:

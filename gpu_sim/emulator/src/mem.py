@@ -1,4 +1,6 @@
 #write into memsim.hex as hash table
+import sys
+from pathlib import Path
 import atexit
 from pathlib import Path
 from bitstring import Bits
@@ -24,10 +26,16 @@ class Mem:
                 bits = raw.strip().replace("_", "")
                 if not bits:
                     continue
-                if len(bits) != 32 or any(c not in "01" for c in bits):
+                # print(f"{sys.argv[6]}, {type(sys.argv[6])}")
+                if (sys.argv[6] != 0):
+                    if len(bits) != 8 or any(c not in "0123456789ABCDEF" for c in bits):
+                        raise ValueError(f"Line {line_no}: expected 8 hex, got {bits!r}")
+                    word = int(bits, 16) & 0xFFFF_FFFF
+                    
+                elif len(bits) != 32 or any(c not in "01" for c in bits):
                     raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
 
-                word = int(bits, 2) & 0xFFFF_FFFF
+                    word = int(bits, 2) & 0xFFFF_FFFF
 
                 # split into 4 bytes per chosen endianness
                 if endianness == "little":
@@ -58,9 +66,11 @@ class Mem:
             val |= b << (8 * i)
         return val
 
-    def write(self, addr: Bits, data: Bits, bytes: int) -> None:
-        for i in range(bytes):
-            self.memory[addr + i] = (data >> (8 * i)) & 0xFF
+    def write(self, addr: Bits, data: Bits, bytes_t: int) -> None:
+        # print(f"{addr},{data}")
+        for i in range(bytes_t):
+            self.memory[addr + i] =  data >> (8 * i)#
+            # print(f"{i}, {data << (8*i)}, {addr}")
     def dump_on_exit(self) -> None:
         try:
             self.dump("memsim.hex")

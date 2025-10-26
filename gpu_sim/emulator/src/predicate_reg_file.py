@@ -4,7 +4,8 @@ from reg_file import *
 
 class Predicate_Reg_File(Reg_File):
     def __init__(self) -> None:
-        super().__init__(num_regs=32, num_bits_per_reg=1)
+        super().__init__(num_regs=32, num_bits_per_reg=1, init_value=1)
+        
         
     @singledispatchmethod
     def read(self, addr):
