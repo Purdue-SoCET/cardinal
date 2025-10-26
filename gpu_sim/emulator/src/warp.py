@@ -14,13 +14,13 @@ class Warp:
         # iterating through every thread is unncessesary, since threads will always share the same PC within a warp.
         halt = False
         for global_thread_id in self.csr_file["tid"]: 
-            # if pred_reg_file.read(global_thread_id).int == 1:
+            if pred_reg_file.read(global_thread_id).int == 1:
                 halt = instr.eval(global_thread_id=global_thread_id, t_reg=self.reg_files[global_thread_id], mem=mem, pred_reg_file=pred_reg_file)
         # halt = instr.eval(1, self.reg_files[0], mem)
         match instr.op:
             case I_Op_2.JALR | P_Op.JPNZ | J_Op.JAL:
-                # instr.eval(1, self.reg_files)
-                self.pc = Bits(int=instr.pc.int, length=32)
+                instr.eval(global_thread_id = 0, t_reg=self.reg_files[0], mem=None)
+                self.pc = instr.pc
             case _:
                 self.pc = Bits(int=self.pc.int + 4, length=32)
         return halt

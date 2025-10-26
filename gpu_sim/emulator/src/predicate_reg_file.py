@@ -5,7 +5,7 @@ from reg_file import *
 class Predicate_Reg_File(Reg_File):
     def __init__(self) -> None:
         super().__init__(num_regs=32, num_bits_per_reg=1)
-        self.arr: list[Bits] = [Bits(uint=0, length=1) for i in range(32)] #uint error
+        
     @singledispatchmethod
     def read(self, addr):
         """
