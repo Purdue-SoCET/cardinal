@@ -7,6 +7,9 @@ import argparse
 import logging
 import struct
 import sys
+import threading
+import time
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional
 from unicodedata import name
@@ -92,6 +95,97 @@ class StageInterface:
         if self.is_feedback:
             return True
         return bool(self.ready and not self.next_valid and self.remaining_latency <= 0)
+
+
+class LoggerBase:
+    """Minimal logger base class used by SM and stages.
+
+    Features:
+    - Configurable python logging.Logger backend
+    - In-memory ring buffer of recent log records (for quick inspection)
+    - Thread-safe API
+    """
+
+    def __init__(self, name: str = "SoCET", level: int = logging.INFO, buffer_size: int = 1024):
+        self._logger = logging.getLogger(name)
+        self._logger.setLevel(level)
+        if not self._logger.handlers:
+            # default handler to stdout
+            ch = logging.StreamHandler(sys.stdout)
+            ch.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+            self._logger.addHandler(ch)
+
+        self._buf_size = buffer_size
+        self._buffer = []  # list of (ts, levelname, msg)
+        self._lock = threading.Lock()
+
+    def _record(self, level: int, msg: str):
+        with self._lock:
+            ts = time.time()
+            entry = (ts, logging.getLevelName(level), msg)
+            self._buffer.append(entry)
+            if len(self._buffer) > self._buf_size:
+                # simple ring behavior
+                self._buffer.pop(0)
+        self._logger.log(level, msg)
+
+    def info(self, msg: str):
+        self._record(logging.INFO, msg)
+
+    def debug(self, msg: str):
+        self._record(logging.DEBUG, msg)
+
+    def warning(self, msg: str):
+        self._record(logging.WARNING, msg)
+
+    def error(self, msg: str):
+        self._record(logging.ERROR, msg)
+
+    def get_buffer(self):
+        with self._lock:
+            return list(self._buffer)
+
+
+class PerfCounterBase:
+    """Simple performance counter base for cycle-level metrics.
+
+    API:
+    - tick(n=1): advance cycles and update cycle counter
+    - incr(name, amount=1): increment arbitrary counter
+    - set(name, value): set gauge
+    - snapshot(): return a shallow copy of counters
+    - reset(): clear counters
+    Thread-safe.
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.cycle = 0
+        self.counters = defaultdict(int)  # event counters
+        self.gauges = {}  # named gauges
+
+    def tick(self, n: int = 1):
+        with self._lock:
+            self.cycle += n
+            self.counters["cycles"] += n
+
+    def incr(self, name: str, amount: int = 1):
+        with self._lock:
+            self.counters[name] += amount
+
+    def set_gauge(self, name: str, value):
+        with self._lock:
+            self.gauges[name] = value
+
+    def snapshot(self) -> dict:
+        with self._lock:
+            return {"cycle": self.cycle, "counters": dict(self.counters), "gauges": dict(self.gauges)}
+
+    def reset(self):
+        with self._lock:
+            self.cycle = 0
+            self.counters.clear()
+            self.gauges.clear()
     
 @dataclass
 class SoCET_GPU():
@@ -109,7 +203,7 @@ class SoCET_GPU():
 
 @dataclass
 class SM:
-    def __init__(self, stage_defs=None, connections=None, feedbacks=None):
+    def __init__(self, stage_defs=None, connections=None, feedbacks=None, logger: Optional[LoggerBase]=None, perf: Optional[PerfCounterBase]=None):
         # 1. Define stages (can be overridden)
         if stage_defs is not None:
             stages = dict(stage_defs)
@@ -138,8 +232,10 @@ class SM:
             iface = StageInterface(f"if_{src}_{dst}", latency=1)
             stages[src].add_output(iface)
             stages[dst].add_input(iface)
+            stages[src].output_if = iface
+            stages[dst].input_if = iface
             self.interfaces.append(iface)
-            print("Made: {}", format("if_{}_{}".format(src, dst)))
+            print(f"Made: if_{src}_{dst}")
 
         # 3. Build control feedback connections (non-pipelined)
         feedbacks = feedbacks or []
@@ -149,25 +245,102 @@ class SM:
             stages[dst].add_feedback(src, fb)
 
         self.global_cycle = 0
+        # Attach logger and perf counters (create defaults if none supplied)
+        self.logger = logger if logger is not None else LoggerBase(name="SM")
+        self.perf = perf if perf is not None else PerfCounterBase()
 
     def get_interface(self, name):
         return next((iface for iface in self.interfaces if iface.name == name), None)
+    
+    def push_instruction(self, inst, at_stage: str = "if_user_fetch"):
+        """
+        Inject an instruction or data payload into any pipeline stage or interface.
+
+        Parameters
+        ----------
+        inst : dict
+            The instruction or payload to inject.
+        at_stage : str
+            Target injection point. Can be a stage name ("fetch", "decode", etc.)
+            or a pipeline interface name ("if_user_fetch", "if_fetch_decode", etc.).
+        """
+        target_if = None
+
+        # --- Case 1: Direct interface name (e.g., "if_user_fetch", "if_fetch_decode")
+        if at_stage.startswith("if_"):
+            target_if = self.get_interface(at_stage)
+            if not target_if:
+                print(f"[SM] No interface named '{at_stage}' found.")
+                return False
+
+        # --- Case 2: Stage name (inject into first input)
+        else:
+            stage = self.stages.get(at_stage)
+            if not stage:
+                print(f"[SM] No stage named '{at_stage}' found.")
+                return False
+
+            if stage.inputs:
+                target_if = stage.inputs[0]
+            else:
+                print(f"[SM] Stage '{at_stage}' has no input interfaces.")
+                return False
+
+        # --- Perform send if ready
+        if target_if.can_accept():
+            print(f"[SM] Injecting into {target_if.name}: {inst}")
+            target_if.send(inst)
+            return True
+        else:
+            print(f"[SM] Interface {target_if.name} not ready (stall).")
+            return False
+
+    # def push_instruction(self, inst):
+    #     target_if = None
+    #     fetch = self.stages.get("fetch")
+    #     if fetch and fetch.outputs and fetch.outputs[0].can_accept():
+    #         print(f"[SM] Pushing instruction to fetch stage: {inst}")
+    #         fetch.outputs[0].send(inst)
 
     def cycle(self):
         self.global_cycle += 1
-        # Tick data interfaces only (feedbacks are combinational)
+        self.perf.tick(1)
+        self.perf.set_gauge("global_cycle", self.global_cycle)
+
+        # === PHASE 1: Evaluate stages (back-to-front prevents overwrite)
         for iface in self.interfaces:
             iface.tick()
+
         for stage in reversed(self.stages.values()):
             stage.tick_internal()
             stage.cycle()
+
+        # === PHASE 2: Commit all interface values (clock edge)
+        self.logger.debug(f"Completed cycle {self.global_cycle}")
+
     def print_pipeline_state(self):
-        print("\n");
-        print(f"Cycle {self.global_cycle}:")
+        print(f"\n=== Cycle {self.global_cycle} ===")
         for name, stage in self.stages.items():
-            state = stage.debug_state()
-            print(f"  Stage {name}: {state}")
-# relevant to thread block scheduling. im sure this can be structured as a pipeline 
+            inst = stage.debug_state().get("current_inst", None)
+            print(f"{name:>10}: {inst if inst else '-'}")
+        print("\n")
+
+#     def print_pipeline_state(self):
+#         # Prefer structured logging over direct prints. Keep backward compatible info-level message.
+#         try:
+#             self.logger.info(f"Pipeline state at cycle {self.global_cycle}:")
+#             for name, stage in self.stages.items():
+#                 state = stage.debug_state()
+#                 # include per-stage counters if present
+#                 self.logger.info(f"  Stage {name}: {state}")
+#         except Exception:
+#             # Fallback to prints if logger fails
+#             print("\n")
+#             print(f"Cycle {self.global_cycle}:")
+#             for name, stage in self.stages.items():
+#                 state = stage.debug_state()
+#                 print(f"  Stage {name}: {state}")
+# # relevant to thread block scheduling. im sure this can be structured as a pipeline 
 # stage itself.
 
 @dataclass
@@ -244,13 +417,11 @@ class PipelineStage:
                 break
 
         if received:
-            # Only increment active_cycles if a real instruction is processed
-            if received is not None:
-                self.active_cycles += 1
-            self.current_inst = received
-            result = self.process(received) # sent to the process defined for this class 
+            self.active_cycles += 1
+            result = self.process(received)
+            self.current_inst = result if result is not None else received
             if result is not None:
-                # Allow routing to a specific output
+                print(f"[{self.name}] Outputting result: {result}")
                 if isinstance(result, tuple):
                     data, out_idx = result
                     if self.outputs[out_idx].can_accept():
@@ -258,15 +429,14 @@ class PipelineStage:
                     else:
                         self.stall_cycles += 1
                 else:
-                    # Default single output
                     if self.outputs and self.outputs[0].can_accept():
                         self.outputs[0].send(result)
                     else:
                         self.stall_cycles += 1
         else:
             self.stall_cycles += 1
-            # If nothing received, clear current_inst (optional: comment out if you want to keep last inst)
             self.current_inst = None
+
     def debug_state(self):
         # Show a summary of the current instruction (e.g., PC or mnemonic)
         inst_info = None

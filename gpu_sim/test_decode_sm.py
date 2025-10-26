@@ -1,4 +1,4 @@
-from base_class import StageInterface, PipelineStage, SM
+from base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase
 import importlib
 import argparse
 import logging
@@ -220,7 +220,8 @@ class DummyFetch(PipelineStage):
         self.inst_queue.extend(instructions) ## add to whatever queue you have
 
     def process(self, inst):
-        print("PASSTHROUGH: Fetching instruction: {}\n", format(inst))
+        # print("PASSTHROUGH: Fetching instruction: {}\n", format(inst))
+        print(f"[{self.name}] Processing instruction: {inst}")
         return inst
 
 class DummyExec(PipelineStage):
@@ -232,29 +233,40 @@ class DummyExec(PipelineStage):
         self.inst_queue.extend(instructions) ## add to whatever queue you have
 
     def process(self, inst):
-        print("PASSTHROUGH: Executing instruction: {}\n", format(inst))
+        # print("PASSTHROUGH: Executing instruction: {}\n", format(inst))
+        print(f"[{self.name}] Processing instruction: {inst}")
         return inst
         return None
     
 class SM_Test(SM):
     def __init__(self):
         
-        fetch = DummyFetch(self)
-        decode = DecodeStage(self)
-        execute = DummyExec(self)
+        fetch = PipelineStage("DummyFetch", self)
+        decode = PipelineStage("Decode", self)
+        execute = PipelineStage("DummyExec", self)
 
         stage_defs = {
             "fetch": fetch,
             "decode": decode,
             "execute": execute
         }
-        connections = {
+        # use an ordered list of connections to preserve interface naming/ordering
+        connections = [
             ("fetch", "decode"),
-            ("decode", "execute")
-        }
+            ("decode", "execute"),
+        ]
         feedbacks = [] # an empty set for now. assume a linear flow.
-        super().__init__(stage_defs=stage_defs, connections=connections)
+        # Create logger/perf and pass them into the SM so tests can inspect them
+        logger = LoggerBase(name="SM_Test", level=logging.INFO)
+        perf = PerfCounterBase()
 
+        user_if = StageInterface("if_user_fetch", latency=0)
+        fetch.add_input(user_if)
+
+        super().__init__(stage_defs=stage_defs, connections=connections, logger=logger, perf=perf)
+
+        self.user_if = user_if
+        self.interfaces.append(user_if) 
 
 def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, packet_start: bool = False, packet_end: bool = False) -> int:
     """Construct a 32-bit instruction word according to the DecodeStage layout:
@@ -280,7 +292,7 @@ def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, 
 
 if __name__ == "__main__":
     sm = SM_Test()
-    instructions = [
+    instructions = [ # this would be replaced by whateveer pc we r fetching from the i$
         {"pc": 0x100, "raw": make_raw(0x00, rd=1, rs1=2, mid6=3)},    # add (R-type)
         {"pc": 0x104, "raw": make_raw(0x10, rd=5, rs1=6, mid6=0)},    # addi (I-type)
         {"pc": 0x108, "raw": make_raw(0x20, rd=2, rs1=3, mid6=4)},    # lw  (I-type / load)
@@ -289,8 +301,14 @@ if __name__ == "__main__":
         {"pc": 0x114, "raw": make_raw(0x7F, rd=0, rs1=0, mid6=0)},    # halt (H-type)
     ]
 
-    for inst in instructions:
-        iface = sm.get_interface("if_fetch_decode")
-        iface.send(inst)
+    pc = 0;
+    max_cycles = 20;
+    for cycle in range(max_cycles):
+        if (pc < len(instructions)):
+            success = sm.push_instruction(instructions[pc], at_stage="if_user_fetch")
+            if success:
+                pc += 1
         sm.cycle()
         sm.print_pipeline_state()
+
+        print("Perf snapshot:", sm.perf.snapshot())
