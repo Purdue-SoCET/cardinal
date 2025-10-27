@@ -1,5 +1,15 @@
-from base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase, make_raw
+import sys, os
 
+# Dynamically locate the project root (SoCET_GPU_FuncSim)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from gpu.gpu_sim.cyclesim.src.base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase
+
+from collections import deque
+from dataclasses import dataclass, field
+from typing import List, Any, Optional
 
 # =========================================================
 #  FETCH → ICACHE → DECODE pipeline with iCache miss latency
@@ -45,7 +55,27 @@ class FetchStage(PipelineStage):
         self.pending_req = inst
         return inst
 
-
+def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, packet_start: bool = False, packet_end: bool = False) -> int:
+        """Construct a 32-bit instruction word according to the DecodeStage layout:
+        bits [6:0]   = opcode7
+        bits [12:7]  = rd (6)
+        bits [18:13] = rs1 (6)
+        bits [24:19] = mid6 (6)
+        bits [29:25] = pred (5)
+        bit  [30]    = packet_start
+        bit  [31]    = packet_end
+        """
+        raw = (
+            (int(packet_end) << 31)
+            | (int(packet_start) << 30)
+            | ((pred & 0x1F) << 25)
+            | ((mid6 & 0x3F) << 19)
+            | ((rs1 & 0x3F) << 13)
+            | ((rd & 0x3F) << 7)
+            | (op7 & 0x7F)
+        )
+        return raw
+    
 class ICacheStage(PipelineStage):
     def __init__(self, parent_core, miss_latency=3):
         super().__init__("ICache", parent_core)
@@ -288,10 +318,97 @@ class DecodeStage(PipelineStage):
         # Attach the original instruction for reference
         decoded["orig_inst"] = inst
         print('\n')
-        print(decoded)
         print(f"[Decode] Decoding pc=0x{pc:x}, raw=0x{inst['raw']:08x}")
-        return {"decoded": True, "decoded_fields": {"orig_inst": inst}}
+        return {"decoded": True, "decoded_fields": decoded}
 
+class IBufferStage(PipelineStage):
+    def __init__(self, parent_core, depth: int = 8):
+        super().__init__("IBuffer", parent_core)
+        self.q = deque(maxlen=depth)
+
+    def process(self, item):
+        # Enqueue whatever arrived this cycle.
+        if item is not None:
+            self.q.append(item)
+
+        print(self.q)
+
+        # Dequeue at most one item if downstream can accept.
+        if self.output_if and self.output_if.can_accept() and self.q:
+            return self.q.popleft()
+
+        return None
+
+    # ---------------------------
+    # Visibility helpers
+    # ---------------------------
+    def _compact(self, item: any) -> any:
+        """
+        Make entries easy to read. Pull common fields if present (mnemonic/opcode/warp/pc).
+        Falls back to a tiny dict or repr to avoid huge prints.
+        """
+        try:
+            if isinstance(item, dict):
+                out = {}
+                df = item.get("decoded_fields")
+                oc = item.get("oc")
+                if df and "mnemonic" in df: out["mn"] = df["mnemonic"]
+                if oc and "opcode" in oc:   out["op"] = oc["opcode"]
+                if oc and "warp_id" in oc:  out["warp"] = oc["warp_id"]
+                if "pc" in item:            out["pc"] = hex(item["pc"])
+                if out:
+                    return out
+                # fallback: keep only a few keys if present
+                keys = [k for k in ("pc", "raw", "opcode", "warp_id") if k in item]
+                return {k: item[k] for k in keys} or "dict"
+            return item
+        except Exception:
+            return repr(item)
+
+    def snapshot(self) -> List[Any]:
+        """Return a compact list of the queue contents (left=oldest)."""
+        return [self._compact(x) for x in list(self.q)]
+
+    def dump(self, *, cycle: Optional[int] = None, label: str = "IBUF") -> None:
+        """
+        Print a single-line summary of the buffer state.
+        Example: ibuf.dump(cycle=sm.global_cycle)
+        """
+        tag = f"[C{cycle}]" if cycle is not None else ""
+        snap = self.snapshot()
+        print(f"{tag} {label}:{self.name} depth={len(self.q)}/{self.q.maxlen} -> {snap}")
+
+    # (optional niceties)
+    def __len__(self) -> int:
+        return len(self.q)
+
+    def clear(self) -> None:
+        self.q.clear()
+
+class EndStage(PipelineStage):
+    def __init__(self, parent_core, accept_after_cycle=10):
+        super().__init__("EndStage", parent_core)
+        self.inst_queue = []
+        self.accept_after_cycle = accept_after_cycle
+        # Mark input as NOT ready initially
+        if self.inputs:
+            self.inputs[0].ready = False
+
+    def load_instructions(self, instructions):
+        self.inst_queue.extend(instructions)
+
+    def process(self, inst):
+        # Control when stage becomes ready to accept instructions
+        if self.cycle_count >= self.accept_after_cycle:
+            if self.inputs:
+                self.inputs[0].ready = True
+        
+        if inst:
+            print(f"PASSTHROUGH: Executing instruction: {inst}\n")
+            return inst
+        return None
+    
+    
 
 # =========================================================
 #  SM Wrapper
@@ -302,16 +419,22 @@ class SM_Test(SM):
         fetch = FetchStage(self)
         icache = ICacheStage(self, miss_latency=3)
         decode = DecodeStage(self)
+        ibuffer = IBufferStage(self)
+        end = PipelineStage("EndStage", "SM_Test")
 
         stage_defs = {
             "fetch": fetch,
             "icache": icache,
             "decode": decode,
+            "ibuffer": ibuffer,
+            "end": end
         }
 
         connections = [
             ("fetch", "icache"),
             ("icache", "decode"),
+            ("decode", "ibuffer"),
+            ("ibuffer", "end")
         ]
 
         feedbacks = [
@@ -339,11 +462,10 @@ class SM_Test(SM):
     def print_pipeline_state(self):
         print(f"\n=== Cycle {self.global_cycle} ===")
 
-        for nm in ["fetch", "icache", "decode"]:
+        for nm in ["fetch", "icache", "decode", "ibuffer"]:
             st = self.stages[nm]
             state = st.debug_state()
             inst = state.get("current_inst", None)
-
             pc_display = "-"
             if inst is None:
                 pc_display = "-"
@@ -371,8 +493,8 @@ class SM_Test(SM):
                     pc_display = str(inst)
             else:
                 pc_display = str(inst)
-
             print(f"{nm:>8}: {pc_display}")
+        self.stages['ibuffer'].dump()
         print("\n")    
 
 
@@ -385,11 +507,10 @@ if __name__ == "__main__":
     sm = SM_Test()
 
     fetch_reqs = [
-        # {"pc": 0x100, "warp_id": 0},  # hit
-        # {"pc": 0x104, "warp_id": 0},  # hit
-        # {"pc": 0x120, "warp_id": 0},  # miss
-        # {"pc": 0x108, "warp_id": 0},  # hit
-        
+        {"pc": 0x100, "warp_id": 0},  # hit
+        {"pc": 0x104, "warp_id": 0},  # hit
+        {"pc": 0x108, "warp_id": 0},  # hit
+        {"pc": 0x10C, "warp_id": 0}  # hit
     ]
 
     req_idx = 0

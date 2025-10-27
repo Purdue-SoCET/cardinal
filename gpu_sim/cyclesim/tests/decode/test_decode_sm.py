@@ -1,4 +1,4 @@
-from base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase
+from cyclesim.src.base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase
 import importlib
 import argparse
 import logging
