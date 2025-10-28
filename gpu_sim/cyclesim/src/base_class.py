@@ -462,9 +462,40 @@ class PipelineStage:
         return inst
     
     def tick_internal(self):
+        """
+        Advance all subunits (functional units) and automatically handle their outputs.
+        This makes every FU behave consistently w.r.t. clocking and result propagation.
+        """
         for fu in self.subunits:
             if hasattr(fu, "tick"):
                 fu.tick()
+
+                # Automatically retrieve results if FU completed this cycle
+                result = None
+                if hasattr(fu, "get_output"):
+                    result = fu.get_output()
+
+                if result is not None:
+                    # Forward to next stage (default first output)
+                    if self.outputs:
+                        sent = False
+                        for out in self.outputs:
+                            if out.can_accept():
+                                out.send(result)
+                                sent = True
+                                print(f"[{self.name}] auto-forwarded result from {fu.name}: {result}")
+                                break
+                        if not sent:
+                            print(f"[{self.name}] Output stalled for result from {fu.name}")
+                            self.stall_cycles += 1
+
+                    # Send feedbacks automatically (if FU defines ihit, etc.)
+                    if hasattr(self, "feedback_links"):
+                        for fb_name, fb_if in self.feedback_links.items():
+                            if fb_if.is_feedback:
+                                fb_if.send(result)
+                                print(f"[{self.name}] Sent feedback {fb_name} from {fu.name}: {result}")
+
 
     def cycle(self):
         """Advance one cycle; handle multiple input/output interfaces."""
@@ -479,8 +510,8 @@ class PipelineStage:
                 break
 
         if received:
-            self.active_cycles += 1
             result = self.process(received)
+
             self.current_inst = result if result is not None else received
             if result is not None:
                 print(f"[{self.name}] Outputting result: {result}")

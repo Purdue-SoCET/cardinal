@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import List, Any, Optional
 
 # =========================================================
-#  FETCH → ICACHE → DECODE pipeline with iCache miss latency
+#  DEFINE YOUR CLASSES HERE; LOOK AT BELOW FOR REFERENCE. TEMPLATE PROVIDED.
 # =========================================================
 
 class FetchStage(PipelineStage):
@@ -37,13 +37,11 @@ class FetchStage(PipelineStage):
             if ihit is True:
                 print(f"[Fetch] iCache hit resolved for pc=0x{self.pending_req['pc']:x}.")
                 self.waiting_for_hit = False
-                out = self.pending_req
+                resolved = self.pending_req
                 self.pending_req = None
-                return out
-            elif ihit is False:
-                print(f"[Fetch] Still waiting on iCache miss at pc=0x{self.pending_req['pc']:x}.")
-                return None
-            else:
+
+                # ✅ Do NOT re-output the same resolved PC downstream.
+                # Simply mark that you’re ready to accept the next request.
                 return None
 
         # Case 2: no stall, new fetch request incoming
@@ -76,53 +74,102 @@ def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, 
         )
         return raw
     
+class ICacheFU(FunctionalUnitBase):
+    def __init__(self, name="ICacheFU", latency=3):
+        super().__init__(name=name, latency=latency)
+        self.icache_lut = {
+            0x100: make_raw(0x00, rd=1, rs1=2, mid6=3),
+            0x104: make_raw(0x10, rd=5, rs1=6, mid6=0),
+            0x108: make_raw(0x20, rd=2, rs1=3, mid6=4),
+            0x10C: make_raw(0x30, rd=2, rs1=3, mid6=4),
+            0x110: make_raw(0x40, rd=0, rs1=1, mid6=2, pred=1, packet_start=True),
+            0x114: make_raw(0x7F, rd=0, rs1=0, mid6=0),
+        }
+
+        # Internal state
+        self.pending = []         # list of dicts: {"pc":..., "warp":..., "remaining":...}
+        self.completed = []       # ready results to forward next tick
+
+    def accept(self, op: dict) -> bool:
+        pc = op["pc"]
+        warp = op["warp_id"]
+
+        # Fast path: cache hit
+        if pc in self.icache_lut:
+            raw = self.icache_lut[pc]
+            result = {"pc": pc, "warp_id": warp, "raw": raw, "ihit": True}
+            self.completed.append(result)
+            print(f"[{self.name}] IMMEDIATE HIT  pc=0x{pc:x}")
+            return True
+
+        # Miss path: enqueue miss request
+        self.pending.append({"pc": pc, "warp": warp, "remaining": self.latency})
+        print(f"[{self.name}] MISS start for pc=0x{pc:x} ({self.latency} cycles)")
+
+        # 🔧 NEW: immediately tell fetch/decode there's a miss (ihit=False)
+        for fb_name, fb_if in self.parent_stage.feedback_links.items():
+            if fb_if.is_feedback:
+                fb_if.send({"pc": pc, "warp_id": warp, "ihit": False})
+                print(f"[{self.name}] Sent early miss feedback → {fb_name}")
+
+        return True
+
+    def tick(self):
+        # Advance outstanding misses
+        for req in self.pending:
+            req["remaining"] -= 1
+            if req["remaining"] == 0:
+                pc = req["pc"]
+                warp = req["warp"]
+                self.icache_lut[pc] = make_raw(0x20, rd=9, rs1=9, mid6=9)  # Fill line
+                raw = self.icache_lut[pc]
+                self.completed.append({"pc": pc, "warp_id": warp, "raw": raw, "ihit": True})
+                print(f"[{self.name}] MISS resolved pc=0x{pc:x}")
+        # Remove finished requests
+        self.pending = [r for r in self.pending if r["remaining"] > 0]
+
+        # Send completed results downstream (if outputs available)
+        while self.completed:
+            result = self.completed.pop(0)
+            for out in self.outputs:
+                if out.can_accept():
+                    out.send(result)
+                    print(f"[{self.name}] → sent result {result}")
+                    break
+
+
 class ICacheStage(PipelineStage):
     def __init__(self, parent_core, miss_latency=3):
         super().__init__("ICache", parent_core)
-        self.icache_lut = {
-            0x100: make_raw(0x00, rd=1, rs1=2, mid6=3),  # add
-            0x104: make_raw(0x10, rd=5, rs1=6, mid6=0),  # addi
-            0x108: make_raw(0x20, rd=2, rs1=3, mid6=4),  # lw
-            0x10C: make_raw(0x30, rd=2, rs1=3, mid6=4),  # sw
-            0x110: make_raw(0x40, rd=0, rs1=1, mid6=2, pred=1, packet_start=True),  # beq
-            0x114: make_raw(0x7F, rd=0, rs1=0, mid6=0),  # halt
-        }
-        self.miss_latency = miss_latency
-        self.active_misses = {}  # pc -> remaining cycles
+        self.fu = ICacheFU(latency=miss_latency)
+        self.fu.parent_stage = self      # 🔧 <---- add this line
+        self.add_subunit(self.fu)
 
     def process(self, inst):
         if not inst:
             return None
 
-        pc = inst["pc"]
-        warp = inst["warp_id"]
+        # Accept the instruction into the FU (handles hit/miss)
+        self.fu.accept(inst)
 
-        # Simulate cache lookup
-        ihit = pc in self.icache_lut
-        raw = self.icache_lut.get(pc, 0)
+        # Check if FU completed something this cycle
+        if self.fu.completed:
+            result = self.fu.completed.pop(0)
+            print("CACHE FINISHED SOMETHING ! \n")
+            # Send feedbacks
+            for dst in ("fetch", "decode"):
+                if dst in self.feedback_links:
+                    self.feedback_links[dst].send({
+                        "ihit": result["ihit"],
+                        "pc": result["pc"],
+                        "warp_id": result["warp_id"],
+                    })
+                    print(f"[ICache] Sent feedback {dst}: pc=0x{result['pc']:x}, ihit={result['ihit']}")
 
-        # Handle misses (simulate fetch delay)
-        if not ihit:
-            if pc not in self.active_misses:
-                self.active_misses[pc] = self.miss_latency
-                print(f"[ICache] MISS on pc=0x{pc:x} → starting memory fetch ({self.miss_latency} cycles)")
-            else:
-                self.active_misses[pc] -= 1
-                if self.active_misses[pc] <= 0:
-                    # Pretend it was fetched from memory
-                    self.icache_lut[pc] = make_raw(0x20, rd=9, rs1=9, mid6=9)  # dummy data
-                    del self.active_misses[pc]
-                    ihit = True
-                    raw = self.icache_lut[pc]
-                    print(f"[ICache] MISS resolved for pc=0x{pc:x}")
+            # ✅ Return the instruction to move forward down the pipeline
+            return result
 
-        # Feedback to Fetch + Decode
-        for dst in ("fetch", "decode"):
-            if dst in self.feedback_links:
-                self.feedback_links[dst].send({"ihit": ihit, "pc": pc, "warp_id": warp})
-
-        print(f"[ICache] pc=0x{pc:x}, ihit={ihit}")
-        return {"pc": pc, "warp_id": warp, "raw": raw, "ihit": ihit}
+        return None
 
 
 class DecodeStage(PipelineStage):
@@ -413,7 +460,23 @@ class EndStage(PipelineStage):
             return inst
         return None
     
- 
+# class YourStage(PipelineStage):
+#     def __init__(self, parent_core):
+#          super().__init__("YourStage", parent_core) 
+#          # this line initializes your class with the variables from the Pipeline stage class
+
+#     def process(self, inst):
+#         "Populate this with whatever process you want for your stage."
+#         "Inst is the dictionary of inputs you expect into the stage at any time"
+    
+#         pass
+
+#     def extraFunctions(self, args):
+#         "Feel free to define extra functions as needed to use internally."
+#         "refer with self.<functin_name>"
+
+#     def cycleMods(self):
+#         ""
 
 # =========================================================
 #  SM Wrapper
@@ -514,7 +577,7 @@ if __name__ == "__main__":
     fetch_reqs = [
         {"pc": 0x100, "warp_id": 0},  # hit
         {"pc": 0x104, "warp_id": 0},  # hit
-        {"pc": 0x108, "warp_id": 0},  # hit
+        {"pc": 0x120, "warp_id": 0},  # miss
         {"pc": 0x10C, "warp_id": 0}  # hit
     ]
 
