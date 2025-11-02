@@ -106,7 +106,7 @@ class Instr(ABC):
                 print(f"utype, funct={op},imm={imm.int}")
             case Instr_Type.J_TYPE:
                 op = J_Op(funct3)
-                imm = rs1 + rs2 + pred #concatenate
+                imm = pred + rs2 + rs1 #rs1 + rs2 + pred #concatenate
                 self = J_Instr(op=op, rd=rd, imm=imm, pc=pc)
                 print("jtype")
             case Instr_Type.P_TYPE:
@@ -511,7 +511,8 @@ class B_Instr_0(Instr):
         if(result):
             print(f"Thread{global_thread_id}: branch taken")
         else:
-            print(f"Thread{global_thread_id}: branch not taken")
+            # print(f"Thread{global_thread_id}: branch not taken")
+            pass
         return None
 
 class U_Instr(Instr):
@@ -606,13 +607,15 @@ class J_Instr(Instr):
             # Jump and Link
             case J_Op.JAL:
                 # R[rd] = PC + 4
-                self.pc = Bits(int=self.pc.int + 4, length=32)
+                return_addr = self.pc.int + 4
+                # self.pc = Bits(int=self.pc.int + 4, length=32)
 
                 # Set all predicate registers to 1
                 pred_reg_file.write_all(data=Bits(uint=1,length=1))  # writes to all 32 registers
                 
                 # Calculate new PC (PC = PC + imm)
                 self.pc = Bits(int=self.pc.int + self.imm.int, length=32)
+                t_reg.write(self.rd, Bits(int=return_addr, length=32))
 
             case _:
                 raise NotImplementedError(f"J-Type operation {self.op} not implemented yet or doesn't exist.")

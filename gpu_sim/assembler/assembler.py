@@ -230,6 +230,7 @@ class Assembler:
                 
                 self.instructions.append((self.pc, opcode, operands))
                 self.pc += 4  # Each instruction is 4 bytes
+        print(self.labels)
     
     def second_pass(self) -> List[str]:
         """Second pass: generate machine code"""
