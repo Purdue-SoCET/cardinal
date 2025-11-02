@@ -58,7 +58,9 @@ class PerfDomain:
 
     def snapshot(self):
         return dict(self.counters)
-
+    
+    def set_gauge(self, name, value):
+        self.set(name, value)
     # ------------------ CSV Dump ------------------
     def _init_csv(self):
         with open(self.csv_path, "w", newline="") as f:
@@ -262,17 +264,25 @@ class SM:
     replacing legacy StageInterface connections.
     """
     def __init__(self,
-                 stage_defs=None,
-                 connections=None,
-                 feedbacks=None,
-                 logger: Optional["LoggerBase"] = None,
-                 perf: Optional["PerfDomain"] = None):
+                stage_defs=None,
+                connections=None,
+                feedbacks=None,
+                logger: Optional["LoggerBase"] = None,
+                perf: Optional["PerfDomain"] = None):
+
+        # === 0. Initialize logging + perf BEFORE building stages ===
+        self.global_cycle = 0
+        self.logger = logger if logger else LoggerBase(name="SM")
+        self.perf = perf if perf else PerfDomain(name="SM_Global")
+
+        # Derived metrics
+        self.perf.derive("IPC", lambda c: c.get("instructions", 0) / max(c.get("cycles", 1), 1))
+        self.perf.derive("StallRatio", lambda c: c.get("stall_cycles", 0) / max(c.get("cycles", 1), 1))
 
         # === 1. Define stages ===
         if stage_defs is not None:
             self.stages = dict(stage_defs)
         else:
-            # You can substitute your own PipelineStage class here
             self.stages = OrderedDict({
                 "warp_scheduler": PipelineStage("WarpScheduler", self),
                 "fetch": PipelineStage("Fetch", self),
@@ -295,6 +305,10 @@ class SM:
             iface = LatchInterface(f"if_{src}_{dst}", latency=1)
             self.stages[src].out_latch = iface
             self.stages[dst].in_latch = iface
+
+            self.stages[src].add_output(iface)
+            self.stages[dst].add_input(iface)
+
             print(f"[SM] Connected {src} → {dst} via {iface.name}")
             self.interfaces.append(iface)
 
@@ -305,14 +319,10 @@ class SM:
             self.stages[src].feedbacks[dst] = fb
             self.stages[dst].feedbacks[src] = fb
             print(f"[SM] Feedback {src} ↔ {dst}")
-
-        # === 4. Initialize performance + logging ===
-        self.global_cycle = 0
-        self.logger = logger if logger else LoggerBase(name="SM")
-        self.perf = perf if perf else PerfDomain(name="SM_Global")
-
-        self.perf.derive("IPC", lambda c: c.get("instructions", 0) / max(c.get("cycles", 1), 1))
-        self.perf.derive("StallRatio", lambda c: c.get("stall_cycles", 0) / max(c.get("cycles", 1), 1))
+        
+        print("[SM] Stage connections summary:")
+        for name, st in self.stages.items():
+            print(f"  {name:>8}: inputs={len(st.inputs)} outputs={len(st.outputs)}")
 
     # ---------------------------------------
     # Interface helpers
@@ -403,10 +413,10 @@ class PipelineStage:
     def __init__(self, name, parent_core):
         self.name = name
         self.parent_core = parent_core
-        self.perf = PerfDomain(self.name, parent=self.parent_core.perf)
+        self.perf = PerfDomain(self.name, parent=getattr(self.parent_core, "perf", None))
         self.inputs: list[LatchInterface] = []
         self.outputs: list[LatchInterface] = []
-        self.feedback_links: dict[str, LatchInterface] = {}
+        self.feedbacks: dict[str, LatchInterface] = {}
         self.subunits = []
 
         self.cycle_count = 0
@@ -430,7 +440,7 @@ class PipelineStage:
 
     def add_feedback(self, name: str, latch: LatchInterface):
         """Attach a combinational (non-pipelined) feedback connection."""
-        self.feedback_links[name] = latch
+        self.feedbacks[name] = latch
 
     def add_subunit(self, fu):
         self.subunits.append(fu)

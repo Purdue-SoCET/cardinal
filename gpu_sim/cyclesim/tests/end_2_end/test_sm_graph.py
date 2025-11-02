@@ -5,7 +5,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from gpu.gpu_sim.cyclesim.src.base_class import StageInterface, PipelineStage, SM, LoggerBase, PerfCounterBase, FunctionalUnitBase
+from gpu.gpu_sim.cyclesim.src.base_class import PipelineStage, SM, LoggerBase, PerfDomain, LatchInterface
 
 from collections import deque
 from dataclasses import dataclass, field
@@ -22,7 +22,7 @@ class FetchStage(PipelineStage):
         self.pending_req = None
 
     def process(self, inst):
-        fb = self.feedback_links.get("icache")
+        fb = self.feedbacks.get("icache")
         ihit = None
         if fb:
             fb_msg = fb.receive()
@@ -74,9 +74,10 @@ def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, 
         )
         return raw
     
-class ICacheFU(FunctionalUnitBase):
+class ICacheFU:
     def __init__(self, name="ICacheFU", latency=3):
-        super().__init__(name=name, latency=latency)
+        self.name = name
+        self.latency = latency
         self.icache_lut = {
             0x100: make_raw(0x00, rd=1, rs1=2, mid6=3),
             0x104: make_raw(0x10, rd=5, rs1=6, mid6=0),
@@ -89,10 +90,16 @@ class ICacheFU(FunctionalUnitBase):
         # Internal state
         self.pending = []         # list of dicts: {"pc":..., "warp":..., "remaining":...}
         self.completed = []       # ready results to forward next tick
+        self.parent_stage = None 
+        self.busy = False 
 
     def accept(self, op: dict) -> bool:
         pc = op["pc"]
         warp = op["warp_id"]
+
+        if self.busy:
+            print(f"[{self.name}] Busy with miss — cannot accept pc=0x{pc:x}")
+            return False
 
         # Fast path: cache hit
         if pc in self.icache_lut:
@@ -103,40 +110,53 @@ class ICacheFU(FunctionalUnitBase):
             return True
 
         # Miss path: enqueue miss request
+        self.busy = True
         self.pending.append({"pc": pc, "warp": warp, "remaining": self.latency})
         print(f"[{self.name}] MISS start for pc=0x{pc:x} ({self.latency} cycles)")
 
-        # 🔧 NEW: immediately tell fetch/decode there's a miss (ihit=False)
-        for fb_name, fb_if in self.parent_stage.feedback_links.items():
-            if fb_if.is_feedback:
-                fb_if.send({"pc": pc, "warp_id": warp, "ihit": False})
-                print(f"[{self.name}] Sent early miss feedback → {fb_name}")
-
+                # feedbacks: fetch/decode notified of miss
+        if self.parent_stage:
+            for fb_name, fb_if in self.parent_stage.feedbacks.items():
+                if fb_if.is_feedback:
+                    fb_if.send({"pc": pc, "warp_id": warp, "ihit": False})
+                    print(f"[{self.name}] Sent early miss feedback → {fb_name}")
         return True
 
+    # BOO
     def tick(self):
-        # Advance outstanding misses
+        if not self.pending:
+            # handle delayed unblocking
+            if getattr(self, "_just_resolved", 0) > 0:
+                self._just_resolved -= 1
+                if self._just_resolved == 0:
+                    self.busy = False
+                    print(f"[{self.name}] Ready for new requests after miss resolve")
+            return
+
+        resolved = []
         for req in self.pending:
             req["remaining"] -= 1
             if req["remaining"] == 0:
                 pc = req["pc"]
                 warp = req["warp"]
-                self.icache_lut[pc] = make_raw(0x20, rd=9, rs1=9, mid6=9)  # Fill line
+                self.icache_lut[pc] = make_raw(0x20, rd=9, rs1=9, mid6=9)
                 raw = self.icache_lut[pc]
                 self.completed.append({"pc": pc, "warp_id": warp, "raw": raw, "ihit": True})
                 print(f"[{self.name}] MISS resolved pc=0x{pc:x}")
-        # Remove finished requests
-        self.pending = [r for r in self.pending if r["remaining"] > 0]
+                resolved.append(req)
 
-        # Send completed results downstream (if outputs available)
-        while self.completed:
-            result = self.completed.pop(0)
-            for out in self.outputs:
-                if out.can_accept():
-                    out.send(result)
-                    print(f"[{self.name}] → sent result {result}")
-                    break
+        self.pending = [r for r in self.pending if r not in resolved]
 
+        # stay busy for one more full cycle after resolving
+        if resolved:
+            self._just_resolved = 1     # ← delay clearing busy
+            self.busy = True
+
+
+    def get_output(self):
+        if self.completed:
+            return self.completed.pop(0)
+        return None
 
 class ICacheStage(PipelineStage):
     def __init__(self, parent_core, miss_latency=3):
@@ -150,16 +170,22 @@ class ICacheStage(PipelineStage):
             return None
 
         # Accept the instruction into the FU (handles hit/miss)
-        self.fu.accept(inst)
+        accepted = self.fu.accept(inst)
 
-        # Check if FU completed something this cycle
+        if not accepted:
+            # STALLING THIS BULLSHIT
+            if self.inputs:
+                self.inputs[0].set_wait(1)
+            
+            print(f"[ICACHE] Stalled on busy cache for pc0x{inst['pc']:x}")
+            return None
         if self.fu.completed:
             result = self.fu.completed.pop(0)
             print("CACHE FINISHED SOMETHING ! \n")
             # Send feedbacks
             for dst in ("fetch", "decode"):
-                if dst in self.feedback_links:
-                    self.feedback_links[dst].send({
+                if dst in self.feedbacks:
+                    self.feedbacks[dst].send({
                         "ihit": result["ihit"],
                         "pc": result["pc"],
                         "warp_id": result["warp_id"],
@@ -381,7 +407,7 @@ class IBufferStage(PipelineStage):
         print(self.q)
 
         # Dequeue at most one item if downstream can accept.
-        if self.output_if and self.output_if.can_accept() and self.q:
+        if self.outputs and self.outputs[0].can_accept() and self.q:
             return self.q.popleft()
 
         return None
@@ -441,8 +467,8 @@ class EndStage(PipelineStage):
         if self.inputs:
             self.inputs[0].ready = False
 
-        alu_to_fpu = StageInterface("if_ALU_FPU", latency=1)
-        fpu_to_alu = StageInterface("if_FPU_ALU", latency=1)
+        alu_to_fpu = LatchInterface("if_ALU_FPU", latency=1)
+        fpu_to_alu = LatchInterface("if_FPU_ALU", latency=1)
                 
 
     def load_instructions(self, instructions):
@@ -484,25 +510,37 @@ class EndStage(PipelineStage):
 
 class SM_Test(SM):
     def __init__(self):
+        # ✅ Initialize perf FIRST, before creating stages
+        logger = LoggerBase(name="SM_Test")
+        perf = PerfDomain(name="SM_Global", dump_interval=50)
+        
+        perf.derive("IPC", lambda c: c.get("instructions", 0) / max(c.get("cycles", 1), 1))
+        perf.derive("StallRatio", lambda c: c.get("stall_cycles", 0) / max(c.get("cycles", 1), 1))
+
+        # ✅ Attach perf & logger to self BEFORE building stages
+        self.perf = perf
+        self.logger = logger
+
+        # Now build stages
         fetch = FetchStage(self)
         icache = ICacheStage(self, miss_latency=3)
         decode = DecodeStage(self)
         ibuffer = IBufferStage(self)
-        end = PipelineStage("EndStage", "SM_Test")
+        end = PipelineStage("EndStage", self)   # ✅ second arg must be self, not "SM_Test" string
 
         stage_defs = {
             "fetch": fetch,
             "icache": icache,
             "decode": decode,
             "ibuffer": ibuffer,
-            "end": end
+            "end": end,
         }
 
         connections = [
             ("fetch", "icache"),
             ("icache", "decode"),
             ("decode", "ibuffer"),
-            ("ibuffer", "end")
+            ("ibuffer", "end"),
         ]
 
         feedbacks = [
@@ -510,14 +548,18 @@ class SM_Test(SM):
             ("icache", "decode"),
         ]
 
-        logger = LoggerBase(name="SM_Test")
-        perf = PerfCounterBase()
-        super().__init__(stage_defs=stage_defs, connections=connections, feedbacks=feedbacks,
-                         logger=logger, perf=perf)
+        # ✅ Now safe to call SM base constructor
+        super().__init__(stage_defs=stage_defs,
+                         connections=connections,
+                         feedbacks=feedbacks,
+                         logger=self.logger,
+                         perf=self.perf)
 
-        self.user_if = StageInterface("if_user_fetch", latency=0)
+        # ✅ Add user fetch interface
+        self.user_if = LatchInterface("if_user_fetch", latency=0)
         self.stages["fetch"].add_input(self.user_if)
         self.interfaces.append(self.user_if)
+
 
     def push_instruction(self, req: dict, at_iface="if_user_fetch"):
         iface = self.get_interface(at_iface)
@@ -563,6 +605,10 @@ class SM_Test(SM):
                 pc_display = str(inst)
             print(f"{nm:>8}: {pc_display}")
         self.stages['ibuffer'].dump()
+                # ---- optional perf summary every few cycles ----
+        if self.global_cycle % 10 == 0:
+            print(f"[Perf] Derived metrics at cycle {self.global_cycle}: {self.perf.compute_derived()}")
+
         print("\n")    
 
 
