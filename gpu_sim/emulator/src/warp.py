@@ -14,7 +14,8 @@ class Warp:
         for global_thread_id in self.csr_file["tid"]: 
             if pred_reg_file.read(global_thread_id).uint == 1:
                 halt = instr.eval(global_thread_id=global_thread_id, t_reg=self.reg_files[global_thread_id], mem=mem, pred_reg_file=pred_reg_file)
-                if(halt):
+                if(halt is True):
+                    print("halted")
                     return True
             else:
                 print("predicate false")

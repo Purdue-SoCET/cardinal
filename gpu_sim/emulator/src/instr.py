@@ -635,20 +635,21 @@ class P_Instr(Instr):
         return False
         # return self.pc
 
-class H_Instr(Instr):
+class H_Instr(Instr): #returns true
     def __init__(self, op: H_Op, funct3: Bits, r_pred: Bits = Bits(bin='11111', length=5)) -> None:
         super().__init__(op)
         self.funct3 = funct3
 
     def eval(self, global_thread_id: int, t_reg: Reg_File, mem: Mem=None, pred_reg_file: Predicate_Reg_File=None) -> bool:
         # print(f"{self.funct3}, {self.op}")
-        match self.op:
-            # Halt Operation
-            case H_Op.HALT:
-                print(f"HALT instruction executed by thread ID {global_thread_id}")
-                return True  # Signal that execution should halt
+        return True
+        # match self.op:
+        #     # Halt Operation
+        #     case H_Op.HALT:
+        #         print(f"HALT instruction executed by thread ID {global_thread_id}")
+        #         return True  # Signal that execution should halt
             
-            case _:
-                raise NotImplementedError(f"H-Type operation {self.op} not implemented yet or doesn't exist.")
+        #     case _:
+        #         raise NotImplementedError(f"H-Type operation {self.op} not implemented yet or doesn't exist.")
         
-        return False
+        # return False

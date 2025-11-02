@@ -67,7 +67,7 @@ def emulator(input_file, warp, mem):
     pc = warp.pc.int
     halt = False
     pred_reg_file = Predicate_Reg_File()
-    while not halt and warp.pc.int < len(instructions) * 4:
+    while not halt and warp.pc.int < 29 * 4:#len(instructions) * 4:
         pc = warp.pc.int
         line = instructions[int(pc / 4)].strip()
         # remove inline comments before parsing
@@ -89,8 +89,9 @@ def emulator(input_file, warp, mem):
         instr.decode(instruction=line,pc=warp.pc.int)
         # pc += 4 # NOTE: temporary until PC incrementing is figured out. How will this change with scheduling?
         halt = warp.eval(instr=instr, pred_reg_file=pred_reg_file, mem=mem) #how to pass in mem, when different eval want/don't want it?
-        # print(f"pc={warp.pc.int}, {halt}")
+        print(f"pc={warp.pc.int}, pred={pred_reg_file.arr}")
         if(halt):
+            print("halted")
             break
     return
 

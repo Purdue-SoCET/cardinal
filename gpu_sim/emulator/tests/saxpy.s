@@ -30,9 +30,9 @@ COMPUTE_LABEL:
     lw x10, x8,0, 2, 1, 0
     lw x11, x9,0, 2, 0, 1
     # a * x[i]
-    mul x12, x10, x5, 2, 0, 1
+    mulf x12, x10, x5, 2, 0, 1
     # + y[i]
-    add x13, x12, x11, 2, 1, 1
+    addf x13, x12, x11, 2, 1, 1
     #y[i] = 
     sw x13, x9,0, 2, 1, 1
     #end program
