@@ -19,7 +19,7 @@ typedef struct {
 
     // buffer info
     int buff_w, buff_h;
-    unsigned int* depth_buff;
+    float* depth_buff;
     int*    tag_buff;
 } triangle_arg_t;
 
