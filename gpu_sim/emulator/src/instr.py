@@ -190,7 +190,7 @@ class R_Instr_1(Instr):
     def eval(self, global_thread_id: int, t_reg: Reg_File, mem: Mem=None, pred_reg_file: Predicate_Reg_File=None) -> bool:
         rdat1 = t_reg.read(self.rs1)
         rdat2 = t_reg.read(self.rs2)
-
+        is_float_op = False
         match self.op:
             # Comparison Operations
             case R_Op_1.SLTU:
@@ -198,15 +198,19 @@ class R_Instr_1(Instr):
             
             # Floating Point Arithmetic Operations
             case R_Op_1.ADDF:
+                is_float_op = True
                 result = rdat1.float + rdat2.float
             
             case R_Op_1.SUBF:
+                is_float_op = True
                 result = rdat1.float - rdat2.float
             
             case R_Op_1.MULF:
+                is_float_op = True
                 result = rdat1.float * rdat2.float
             
             case R_Op_1.DIVF:
+                is_float_op = True
                 if rdat2.float == 0.0:
                     logger.warning(f"Division by zero in DIVF from thread ID {global_thread_id}: R{self.rd} = R{self.rs1.int} / R{self.rs2.int}")
                     result = float('inf')
@@ -232,7 +236,11 @@ class R_Instr_1(Instr):
         self.check_overflow(result, global_thread_id)
 
         # out = result & 0xFFFFFFFF #shouldn't need this, since Bits already protects against this
-        t_reg.write(self.rd, result) #result should already be Bits class
+        if is_float_op:
+            t_reg.write(self.rd, Bits(float=result, length=32))
+        else:
+            out = result & 0xFFFFFFFF
+            t_reg.write(self.rd, Bits(int=out, length=32)) #result should already be Bits class
         return None
         # t_reg.write(self.rd, Bits(int=out, length=32))
 
@@ -609,7 +617,7 @@ class J_Instr(Instr):
             case _:
                 raise NotImplementedError(f"J-Type operation {self.op} not implemented yet or doesn't exist.")
         
-        t_reg.write(self.rd, Bits(int=self.pc.int, length=32))
+        # t_reg.write(self.rd, Bits(int=self.pc.int, length=32))
         return None
         # return None.pc
 
