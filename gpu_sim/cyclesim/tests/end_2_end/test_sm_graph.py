@@ -18,40 +18,96 @@ from typing import List, Any, Optional
 class FetchStage(PipelineStage):
     def __init__(self, parent_core):
         super().__init__("Fetch", parent_core)
-        self.waiting_for_hit = False
-        self.pending_req = None
 
     def process(self, inst):
-        fb = self.feedbacks.get("icache")
-        ihit = None
-        if fb:
-            fb_msg = fb.receive()
-            if fb_msg is not None:
-                ihit = fb_msg.get("ihit", None)
-                print(f"[Fetch] Got iCache feedback: ihit={ihit}")
-            else:
-                print("Ihit not received.")
-
-        # Case 1: stalled waiting for hit
-        if self.waiting_for_hit:
-            if ihit is True:
-                print(f"[Fetch] iCache hit resolved for pc=0x{self.pending_req['pc']:x}.")
-                self.waiting_for_hit = False
-                resolved = self.pending_req
-                self.pending_req = None
-
-                # ✅ Do NOT re-output the same resolved PC downstream.
-                # Simply mark that you’re ready to accept the next request.
-                return None
-
-        # Case 2: no stall, new fetch request incoming
-        if inst is None:
+        """Process receives the instruction already extracted by base compute()"""
+        if not inst:
             return None
 
+        # Check if downstream (ICache) is ready
+        if not self.outputs or not self.outputs[0].can_accept():
+            print(f"[Fetch] Downstream ICache not ready, stalling")
+            # Set backpressure on input
+            if self.inputs:
+                self.inputs[0].set_wait(1)
+            return None
+
+        # Forward to ICache
         print(f"[Fetch] Sending fetch req → ICache: pc=0x{inst['pc']:x}")
-        self.waiting_for_hit = True
-        self.pending_req = inst
-        return inst
+        return inst  # Base class will send this to outputs[0]
+
+class ICacheStage(PipelineStage):
+    def __init__(self, parent_core, miss_latency=3):
+        super().__init__("ICache", parent_core)
+        self.fu = ICacheFU(latency=miss_latency)
+        self.fu.parent_stage = self
+        self.add_subunit(self.fu)
+
+    def process(self, inst):
+        """Process instruction through ICache FU"""
+        if not inst:
+            return None
+
+        # Check if FU can accept new request
+        if not self.fu.can_accept():
+            print(f"[ICache] FU busy, stalling pc=0x{inst['pc']:x}")
+            if self.inputs:
+                self.inputs[0].set_wait(1)
+            return None
+
+        # Check downstream ready
+        if not self.outputs or not self.outputs[0].can_accept():
+            print("[ICache] Downstream not ready, stalling")
+            if self.inputs:
+                self.inputs[0].set_wait(1)
+            return None
+
+        # Try to accept into FU
+        accepted = self.fu.accept(inst)
+        if not accepted:
+            if self.inputs:
+                self.inputs[0].set_wait(1)
+            print(f"[ICache] Cannot accept pc=0x{inst['pc']:x}")
+            return None
+
+        print(f"[ICache] Accepted pc=0x{inst['pc']:x} into FU")
+        
+        # Don't return anything yet - result will come from tick_subunits()
+        return None
+
+    def tick_subunits(self):
+        """Override to handle ICacheFU result forwarding"""
+        # Tick the FU first
+        self.fu.tick()
+
+        # Check if FU has result ready
+        if self.fu.has_result():
+            result = self.fu.consume_result()
+            print(f"[ICache] FU completed pc=0x{result['pc']:x}, ihit={result['ihit']}")
+            
+            # Try to send to output latch
+            if self.outputs and self.outputs[0].can_accept():
+                sent = self.outputs[0].send(result)
+                if sent:
+                    print(f"[ICache] Forwarded to Decode: pc=0x{result['pc']:x}")
+                    
+                    # Send feedbacks
+                    for dst in ("fetch", "decode"):
+                        if dst in self.feedbacks:
+                            self.feedbacks[dst].send({
+                                "ihit": result["ihit"],
+                                "pc": result["pc"],
+                                "warp_id": result["warp_id"],
+                            })
+                            print(f"[ICache] Feedback sent to {dst}: ihit={result['ihit']}")
+                else:
+                    print(f"[ICache] Could not send result, downstream not ready")
+                    # Put result back (this is a simplification - in real HW you'd need proper buffering)
+                    self.fu.result_buf = result
+            else:
+                print(f"[ICache] No output or not ready")
+                # Put result back
+                self.fu.result_buf = result
 
 #This can be removed and replaced with Bitstring!!
 def make_raw(op7: int, rd: int = 1, rs1: int = 2, mid6: int = 3, pred: int = 0, packet_start: bool = False, packet_end: bool = False) -> int:
@@ -100,10 +156,13 @@ class ICacheFU():
         if self.busy:
             print(f"[{self.name}] Busy with miss — cannot accept pc=0x{pc:x}")
             return False
-
-        # Fast path: cache hit
+        
+        pc = inst.get("pc", 0)
+        warp = inst.get("warp_id", 0)
+        
+        # Check if hit or miss
         if pc in self.icache_lut:
-            raw = self.icache_lut[pc] #doesn't pass opcode, since cache only contains register 
+            raw = self.icache_lut[pc]
             result = {"pc": pc, "warp_id": warp, "raw": raw, "ihit": True}
             self.completed.append(result)
             print(f"[{self.name}] IMMEDIATE HIT  pc=0x{pc:x}")
@@ -122,82 +181,48 @@ class ICacheFU():
                     print(f"[{self.name}] Sent early miss feedback → {fb_name}")
         return True
 
-    # BOO
     def tick(self):
-        if not self.pending:
-            # handle delayed unblocking
-            if getattr(self, "_just_resolved", 0) > 0:
-                self._just_resolved -= 1
-                if self._just_resolved == 0:
-                    self.busy = False
-                    print(f"[{self.name}] Ready for new requests after miss resolve")
-            return
-
-        resolved = []
-        for req in self.pending:
-            req["remaining"] -= 1
-            if req["remaining"] == 0:
-                pc = req["pc"]
-                warp = req["warp"]
-                self.icache_lut[pc] = make_raw(0x20, rd=9, rs1=9, mid6=9)
-                raw = self.icache_lut[pc]
-                self.completed.append({"pc": pc, "warp_id": warp, "raw": raw, "ihit": True})
-                print(f"[{self.name}] MISS resolved pc=0x{pc:x}")
-                resolved.append(req)
-
-        self.pending = [r for r in self.pending if r not in resolved]
-
-        # stay busy for one more full cycle after resolving
-        if resolved:
-            self._just_resolved = 1     # ← delay clearing busy
-            self.busy = True
-
-
-    def get_output(self):
-        if self.completed:
-            return self.completed.pop(0)
-        return None
-
-class ICacheStage(PipelineStage):
-    def __init__(self, parent_core, miss_latency=3):
-        super().__init__("ICache", parent_core)
-        self.fu = ICacheFU(latency=miss_latency)
-        self.fu.parent_stage = self      # 🔧 <---- add this line
-        self.add_subunit(self.fu)
-
-    def process(self, inst):
-        if not inst:
-            return None
-
-        # Accept the instruction into the FU (handles hit/miss)
-        accepted = self.fu.accept(inst)
-
-        if not accepted:
-            # STALLING THIS BULLSHIT
-            if self.inputs:
-                self.inputs[0].set_wait(1)
+        """Advance pending requests and prepare result when done."""
+        if self.pending:
+            self.pending[0]["remaining"] -= 1
             
-            print(f"[ICACHE] Stalled on busy cache for pc0x{inst['pc']:x}")
-            return None
-        if self.fu.completed:
-            result = self.fu.completed.pop(0)
-            print("CACHE FINISHED SOMETHING ! \n")
-            # Send feedbacks
-            for dst in ("fetch", "decode"):
-                if dst in self.feedbacks:
-                    self.feedbacks[dst].send({
-                        "ihit": result["ihit"],
-                        "pc": result["pc"],
-                        "warp_id": result["warp_id"],
-                    })
-                    print(f"[ICache] Sent feedback {dst}: pc=0x{result['pc']:x}, ihit={result['ihit']}")
+            if self.pending[0]["remaining"] <= 0:
+                req = self.pending.pop(0)
+                
+                # Prepare result
+                if req["hit"]:
+                    # Hit - return actual instruction
+                    self.result_buf = {
+                        "pc": req["pc"],
+                        "warp_id": req["warp"],
+                        "raw": self.icache_lut[req["pc"]],
+                        "ihit": True
+                    }
+                else:
+                    # Miss - return NOP
+                    self.result_buf = {
+                        "pc": req["pc"],
+                        "warp_id": req["warp"],
+                        "raw": 0,  # NOP
+                        "ihit": False
+                    }
+                
+                self.busy = len(self.pending) > 0  # Still busy if more pending
 
-            # ✅ Return the instruction to move forward down the pipeline
-            return result
+    def has_result(self):
+        """Check if a result is ready to be consumed"""
+        return self.result_buf is not None
 
-        return None
+    def peek_result(self):
+        """Look at result without consuming it"""
+        return self.result_buf
 
-
+    def consume_result(self):
+        """Retrieve and clear the result buffer"""
+        data = self.result_buf
+        self.result_buf = None
+        return data
+    
 class DecodeStage(PipelineStage):
     def __init__(self, parent_core):
         super().__init__("Decode", parent_core)
