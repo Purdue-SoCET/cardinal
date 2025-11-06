@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 
+
 @dataclass
 class Warp:
     pc: int
@@ -22,7 +23,7 @@ class Instruction:
     rs2: int
     rd: int
     pred: int
-    packet: int
+    packet: int # what is packet?
 
 
     # for perf
@@ -203,11 +204,54 @@ de_sched_B_GID = ForwardingIF(name = "Decode_Scheduler_BARRIER_GROUPID")
 de_sched_B_PC = ForwardingIF(name = "Decode_Scheduler_BARRIER_PC")
 icache_de_ihit = ForwardingIF(name = "ICache_Decode_Ihit")
 
-class PrecicateRegFile():
+# @dataclass
+# class FU():
+#     name = 
+class BranchFU():
+    def __init__(self, instructions: Instruction, prf_rd_data: Any, op_1: Any, op_2: Any):
+        # i get the instruction data class (probably) as an input.
+        # what I need from the instruction class for MY operation:
+        # warp, opcode
+        self.warp_id = instructions.warp
+        self.opcode = instructions.opcode
+        self.prf_rd_data = prf_rd_data
+        self.op1 = op_1
+        self.op2 = op_2
+
+class PredicateRegFile():
     def __init__(self, num_preds_per_warp: int, num_warps: int):
         num_cols = num_preds_per_warp *2 # the number of 
         num_threads = 32
-        self.reg_file = [[bitstring.BitArray(int=0, length=num_threads)]]
+
+        # 2D structure: warp -> predicate -> [bits per thread]
+        self.reg_file = [
+            [[[False] * self.num_threads, [False] * self.num_threads]
+              for _ in range(num_cols)]
+            for _ in range(num_warps)
+        ]
+    
+    def read_predicate(self, prf_rd_en: int, prf_rd_wsel: int, prf_rd_psel: int, prf_neg: int):
+        "Predicate register file reads by selecting a 1 from 32 warps, 1 from 16 predicates,"
+        " and whether it wants the inverted version or not..."
+
+        if (prf_rd_en):
+            return self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]
+        else: 
+            return None
+    
+    def write_predicate(self, prf_wr_en, prf_wr_wsel: int, prf_wr_psel: int, prf_wr_data):
+        # the write will autopopulate the negated version in the table)
+        if (prf_wr_en):
+                # Convert int to bit array if needed
+            if isinstance(prf_wr_data, int):
+                bits = [(prf_wr_data >> i) & 1 == 1 for i in range(self.num_threads)]
+            else:
+                bits = prf_wr_data  # assume already a list of bools
+
+            # Store positive version
+            self.reg_file[prf_wr_wsel][prf_wr_psel][0] = bits
+            # Store negated version
+            self.reg_file[prf_wr_wsel][prf_wr_psel][1] = [not b for b in bits]
 
 class DecodeStage(Stage):
     name = "Decode"

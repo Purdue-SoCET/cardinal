@@ -299,7 +299,7 @@ class DecodeStage(PipelineStage):
         packet_end = bool((raw >> 31) & 0x1)
 
         high4 = (opcode7 >> 3) & 0xF
-        low3 = opcode7 & 0x7
+        low3 = opcode7 & 0x7r
 
         # Build opcode -> mnemonic map from the provided table (subset implemented)
         opcode_map = {
