@@ -1,16 +1,21 @@
-from base import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry
+from base import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest
+from Memory import Mem
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
 from isa_packets import ISA_PACKETS
-
+from bitstring import Bits 
 global_cycle = 0
 
+# SETTING THE LATCHES 
 
 FetchICacheIF = LatchIF(name="Fetch_ICache_IF")
 ICacheDecodeIF = LatchIF(name = "ICacheDecodeIF")
+ICacheMemReqIF = LatchIF(name="ICacheMemReqIF")
+MemICacheRespIF = LatchIF(name="MemICacheRespIF")
 DecodeIssue_IbufferIF = LatchIF(name = "DecodeIIF")  
+
 de_sched_EOP = ForwardingIF(name = "Decode_Scheduler_EOP")
 de_sched_EOP_WID = ForwardingIF(name = "Decode_Scheduler_WARPID")
 de_sched_BARR = ForwardingIF(name = "Deecode_Schedular_BARRIER")
@@ -19,9 +24,7 @@ de_sched_B_GID = ForwardingIF(name = "Decode_Scheduler_BARRIER_GROUPID")
 de_sched_B_PC = ForwardingIF(name = "Decode_Scheduler_BARRIER_PC")
 icache_de_ihit = ForwardingIF(name = "ICache_Decode_Ihit")
 
-# @dataclass
-# class FU():
-#     name = 
+
 class BranchFU:
     def __init__(self, instructions: Instruction, prf_rd_data, op_1, op_2):
         self.warp_id = instructions.warp
@@ -104,13 +107,125 @@ class PredicateRegFile():
             # Store negated version
             self.reg_file[prf_wr_wsel][prf_wr_psel][1] = [not b for b in bits]
 
+from base import Stage, LatchIF, ForwardingIF
+from dataclasses import dataclass
+from typing import Optional, Any, Dict
+
+class FetchStage(Stage):
+    """
+    FetchStage: drives PC fetch requests into the ICache.
+    Uses Bits placeholders and supports non-blocking instruction requests.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        behind_latch: Optional[LatchIF],
+        ahead_latch: Optional[LatchIF],
+        start_pc: int = 0x1000,
+        warp_id: int = 0,
+        next_pc_stride: int = 0x4,
+    ):
+        super().__init__(name=name, behind_latch=behind_latch, ahead_latch=ahead_latch)
+        self.pc = start_pc
+        self.warp_id = warp_id
+        self.next_pc_stride = next_pc_stride
+        self.active = True
+
+    def compute(self, input_data: Optional[Any] = None) -> None:
+        """
+        Called each cycle to generate a fetch request for the next PC.
+        Sends a FetchRequest through ahead_latch if ready.
+        """
+        if not self.active:
+            print(f"[{self.name}] Idle (no more fetches).")
+            return None
+
+        if not self.ahead_latch.ready_for_push():
+            print(f"[{self.name}] Stall — next stage not ready.")
+            return None
+
+        # Build the fetch request payload
+        req = FetchRequest(
+            pc=self.pc,
+            warp_id=self.warp_id,
+            uuid=self.pc,  # could later become an instruction ID
+        )
+
+        # Optionally include an empty Bits packet placeholder
+        # (can be useful if later stages expect 'packet' field)
+        packet_placeholder = Bits(uint=0, length=32)
+        payload = {"pc": self.pc, "warp": self.warp_id, "uuid": self.pc, "packet": packet_placeholder}
+
+        # Push request to next stage
+        pushed = self.ahead_latch.push(payload)
+        if pushed:
+            print(f"[{self.name}] Fetch issued PC=0x{self.pc:X} → ICache")
+            # Advance to next PC
+            self.pc += self.next_pc_stride
+        else:
+            print(f"[{self.name}] Could not push — latch busy.")
+
+        return None
+
+class MemStage(Stage):
+    """Memory controller functional unit using Mem() backend."""
+
+    def __init__(
+        self,
+        name: str,
+        behind_latch: Optional[LatchIF],
+        ahead_latch: Optional[LatchIF],
+        mem_backend,                 # <-- existing Mem class instance
+        latency: int = 100,
+    ):
+        super().__init__(name=name, behind_latch=behind_latch, ahead_latch=ahead_latch)
+        self.mem_backend = mem_backend
+        self.latency = latency
+        self.inflight: list[MemRequest] = []
+
+    def compute(self, input_data: Optional[Any]):
+        """Simulate DRAM-like behavior per cycle."""
+        # Progress all inflight requests
+        completed = []
+        for req in self.inflight:
+            req.remaining -= 1
+            if req.remaining <= 0:
+                data = self.mem_backend.read(req.addr, req.size)
+                if self.ahead_latch.ready_for_push():
+                    self.ahead_latch.push({
+                        "uuid": req.uuid,
+                        "data": data,
+                        "warp": req.warp_id
+                    })
+                    print(f"[{self.name}] Completed read @0x{req.addr:X}")
+                completed.append(req)
+
+        for c in completed:
+            self.inflight.remove(c)
+
+       # --- Accept new requests ---
+        if input_data and self.behind_latch.valid:
+            if self.behind_latch.valid:
+                req_info = self.behind_latch.pop()
+                mem_req = MemRequest(
+                    addr=req_info["addr"],
+                    size=req_info.get("size", 4),
+                    uuid=req_info.get("uuid", 0),
+                    warp_id=req_info.get("warp", 0),
+                    remaining=self.latency,
+                )
+                self.inflight.append(mem_req)
+                print(f"[{self.name}] Accepted mem req @0x{mem_req.addr:X} lat={self.latency}")
+    
 class ICacheStage(Stage):
  def __init__(
         self,
         name: str,
         behind_latch: Optional[LatchIF],
         ahead_latch: Optional[LatchIF],
-        backend,
+        mem_req_if,
+        mem_resp_if, 
         cache_config: Dict[str, int],
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
     ):
@@ -120,112 +235,84 @@ class ICacheStage(Stage):
             ahead_latch=ahead_latch,
             forward_ifs_write=forward_ifs_write or {},
         )
-
-        # --- Core config ---
         self.cache_size = cache_config.get("cache_size", 32 * 1024)
         self.block_size = cache_config.get("block_size", 64)
         self.assoc = cache_config.get("associativity", 4)
-        self.miss_latency = cache_config.get("miss_latency", 5)
         self.num_sets = self.cache_size // (self.block_size * self.assoc)
-
-        # --- State ---
-        self.cache: Dict[int, List[ICacheEntry]] = {
-            s: [] for s in range(self.num_sets)
-        }
-        self.backend = backend
-        self.pending_misses: List[Dict[str, Any]] = []
+        self.miss_latency = cache_config.get("miss_latency", 5)
         self.mshr_limit = cache_config.get("mshr_entries", 8)
+
+        self.cache: Dict[int, List[ICacheEntry]] = {i: [] for i in range(self.num_sets)}
+        self.pending_misses: List[Dict[str, Any]] = []
+        self.mem_req_if = mem_req_if
+        self.mem_resp_if = mem_resp_if
         self.cycle_count = 0
 
-# ----------------------------------------------------------------------
-def _get_set_and_tag(self, pc: int):
+# -------------------
+def _get_set_tag(self, pc):
     block_addr = pc // self.block_size
     set_idx = block_addr % self.num_sets
     tag = block_addr // self.num_sets
     return set_idx, tag, block_addr
 
-def _lookup(self, pc: int):
-    set_idx, tag, block_addr = self._get_set_and_tag(pc)
-    way_list = self.cache[set_idx]
-    for way in way_list:
-        if way.valid and way.tag == tag:
-            way.last_used = self.cycle_count
-            return way
+def _lookup(self, pc):
+    set_idx, tag, _ = self._get_set_tag(pc)
+    for line in self.cache[set_idx]:
+        if line.valid and line.tag == tag:
+            line.last_used = self.cycle_count
+            return line
     return None
 
-def _fill_cache_line(self, set_idx: int, tag: int, data: bytes):
+def _fill_cache_line(self, set_idx, tag, data):
     ways = self.cache[set_idx]
     if len(ways) < self.assoc:
         ways.append(ICacheEntry(tag, data))
     else:
         victim = min(ways, key=lambda w: w.last_used)
-        victim.tag = tag
-        victim.data = data
-        victim.valid = True
-        victim.last_used = self.cycle_count
+        victim.tag, victim.data, victim.valid = tag, data, True
 
-# ----------------------------------------------------------------------
-def compute(self, input_data: Any):
-    """
-    Called once per global pipeline tick.
-    1. Progress outstanding misses
-    2. Handle new fetch requests
-    3. Send ihit forward and instruction to next stage
-    """
-    self.cycle_count += 1
-
-    # --- 1. Progress outstanding misses ---
-    finished = []
-    for miss in self.pending_misses:
-        miss["remaining"] -= 1
-        if miss["remaining"] == 0:
-            data = self.backend.read_block(miss["block_addr"], self.block_size)
-            self._fill_cache_line(miss["set_idx"], miss["tag"], data)
-            self._send_hit_signal(True)
-            # return fetched instruction
-            if self.ahead_latch.ready_for_push():
-                self.ahead_latch.push({"pc": miss["pc"], "packet": data})
-            finished.append(miss)
-    for m in finished:
-        self.pending_misses.remove(m)
-
-    # --- 2. Handle new fetch request ---
-    if input_data is None:
-        return None
-
-    pc = input_data.pc
-    entry = self._lookup(pc)
-    set_idx, tag, block_addr = self._get_set_and_tag(pc)
-
-    if entry is not None:
-        # Cache hit
-        self._send_hit_signal(True)
-        if self.ahead_latch.ready_for_push():
-            self.ahead_latch.push({"pc": pc, "packet": entry.data})
-        print(f"[{self.name}] ICache hit @ PC=0x{pc:X}")
-    else:
-        # Cache miss
-        self._send_hit_signal(False)
-        print(f"[{self.name}] ICache miss @ PC=0x{pc:X} → issuing memory read")
-
-        if len(self.pending_misses) < self.mshr_limit:
-            self.pending_misses.append({
-                "pc": pc,
-                "tag": tag,
-                "set_idx": set_idx,
-                "block_addr": block_addr,
-                "remaining": self.miss_latency,
-            })
-        else:
-            print(f"[{self.name}] MSHR full, stalling fetch.")
-
-    return None
-
-# ----------------------------------------------------------------------
-def _send_hit_signal(self, ihit: bool):
-    """Send a signal to Decode through ForwardingIF."""
+def _send_ihit(self, ihit: bool):
     if "ICache_Decode_Ihit" in self.forward_ifs_write:
         self.forward_ifs_write["ICache_Decode_Ihit"].push(ihit)
+
+# -------------------
+def compute(self, input_data: Optional[Any]):
+    self.cycle_count += 1
+
+    # --- 1. Handle completed memory responses ---
+    if self.mem_resp_if.valid:
+        resp = self.mem_resp_if.pop()
+        block_addr = resp["uuid"]
+        set_idx, tag, _ = self._get_set_tag(block_addr)
+        data_bits = resp["data"]                     # already a Bits object
+        self._fill_cache_line(set_idx, tag, data_bits)
+        print(f"[{self.name}] Filled cache line for block 0x{block_addr:X}")
+
+    # --- 2. Handle new fetch request ---
+    if not self.behind_latch.valid:
+        return None
+
+    req = self.behind_latch.pop()
+    pc = req.pc
+    set_idx, tag, block_addr = self._get_set_tag(pc)
+    line = self._lookup(pc)
+
+    if line:
+        # ✅ Cache hit
+        self._send_ihit(True)
+        if self.ahead_latch.ready_for_push():
+            # insr_bits = line.data[]
+            self.ahead_latch.push({"pc": pc, "packet": line.data})
+        print(f"[{self.name}] Hit @ PC=0x{pc:X}")
+    else:
+        # ❌ Cache miss
+        self._send_ihit(False)
+        if len(self.pending_misses) < self.mshr_limit and self.mem_req_if.ready_for_push():
+            self.mem_req_if.push({"addr": block_addr, "size": self.block_size, "uuid": block_addr})
+            print(f"[{self.name}] Miss @0x{pc:X} → Sent MemReq block=0x{block_addr:X}")
+        else:
+            print(f"[{self.name}] Stall (MSHR full or MemReq not ready)")
+
 
 class DecodeStage(Stage):
     """Decode stage that directly uses the Stage base class."""
@@ -271,15 +358,18 @@ class DecodeStage(Stage):
             return None
 
         raw_field = inst.packet
-        if isinstance(raw_field, str):
+        if isinstance(raw_field, Bits):
+            raw = raw_field.uint & 0xFFFFFFFF
+        elif isinstance(raw_field, bytes):
+            raw = int.from_bytes(raw_field[:4], byteorder="little")
+        elif isinstance(raw_field, int):
+            raw = raw_field & 0xFFFFFFFF
+        elif isinstance(raw_field, str):
             raw = int(raw_field, 0) & 0xFFFFFFFF
         elif isinstance(raw_field, list):
-            raw = 0
-            for i, byte in enumerate(raw_field):
-                raw |= (byte & 0xFF) << (8 * i)
-            raw &= 0xFFFFFFFF
+            raw = sum((byte & 0xFF) << (8 * i) for i, byte in enumerate(raw_field[:4])) & 0xFFFFFFFF
         else:
-            raw = int(raw_field) & 0xFFFFFFFF
+            raise TypeError(f"[{self.name}] Unsupported packet type: {type(raw_field)}")
 
         # === Decode bitfields ===
         opcode7 = raw & 0x7F
@@ -337,8 +427,17 @@ class DecodeStage(Stage):
 
 def make_test_pipeline():
     """Helper to build a test decode stage pipeline setup."""
+    mem_backend = Mem(start_pc=0x1000, \
+    input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu_sim/cyclesim/drafts/test.bin",
+    fmt="bin")
     prf = PredicateRegFile(num_preds_per_warp=16, num_warps=32)
-    
+    cache_cfg = {
+        "cache_size": 32 * 32,
+        "block_size": 32,
+        "associativity": 1,
+        "miss_latency": 5,
+        "mshr_entries": 0,
+    }
     # Preload predicate registers for warp 0
     prf.write_predicate(prf_wr_en=1, prf_wr_wsel=0, prf_wr_psel=0,
                         prf_wr_data=[True, False] * 16)
@@ -346,10 +445,31 @@ def make_test_pipeline():
     inst = Instruction(iid=1, pc=0x100, warp=0, warpGroup=0,
                        opcode=0, rs1=0, rs2=0, rd=0, pred=0, packet=None)
         # Build DecodeStage fully compatible with Stage
+    fetch_stage = FetchStage(name="Fetch", 
+                             ahead_latch=FetchICacheIF
+                            )
+    icache_stage = ICacheStage(name = "ICache",
+                               behind_latch=FetchICacheIF,
+                               ahead_latch=ICacheDecodeIF,
+                               mem_req_if=ICacheMemReqIF,
+                               mem_resp_if=MemICacheRespIF,
+                               backend=mem_backend,
+                               cache_config=cache_cfg,
+                               forward_ifs_write={"ihit": icache_de_ihit}
+                               )
+    
+    mem_stage = MemStage(
+        name = "Memory",
+        behind_latch=ICacheMemReqIF,
+        ahead_latch=MemICacheRespIF,
+        mem_backend=mem_backend,
+        latency=50
+    )
+
     decode_stage = DecodeStage(
         name="Decode",
         prf=prf, 
-        behind_latch=FetchDecodeIF,
+        behind_latch=ICacheDecodeIF,
         ahead_latch=DecodeIssue_IbufferIF,
         forward_ifs_read={"ICache_Decode_Ihit": icache_de_ihit},
         forward_ifs_write={
@@ -361,189 +481,46 @@ def make_test_pipeline():
             "Decode_Scheduler_BARRIER_PC": de_sched_B_PC,
         }
     )
-    FetchDecodeIF.clear_all()
-    DecodeIssue_IbufferIF.clear_all()
 
-    return decode_stage, inst, prf
+    for latch in [
+        FetchICacheIF, ICacheDecodeIF,
+        ICacheMemReqIF, MemICacheRespIF,
+        DecodeIssue_IbufferIF
+    ]:
+        latch.clear_all()
 
-
-def test_rtype_instruction():
-    decode, inst, prf = make_test_pipeline()
-
-    inst.packet = "0x0000190D89"
-    FetchDecodeIF.force_push(inst)
-    global global_cycle
-    print(f"\n=== Cycle {global_cycle} ===")
-    decode.compute(FetchDecodeIF.pop())
-    global_cycle += 1
-
-    decoded_out = DecodeIssue_IbufferIF.pop()
-    assert decoded_out is not None
-    print("[R-Type] Decoded:", decoded_out)
-
-def test_load_instruction():
-    decode, inst, prf = make_test_pipeline()
-    inst.packet = "0x0200112090"  # lw-like
-    FetchDecodeIF.force_push(inst)
-    decode.step()
-    decoded_out = DecodeIssue_IbufferIF.pop()
-    assert decoded_out.opcode != 0
-    assert decoded_out.rs1 == (int("0x0200112090", 16) >> 13) & 0x3F
-    print("[I-Type Load] Decoded:", decoded_out)
-
-
-def test_store_instruction():
-    decode, inst, prf = make_test_pipeline()
-    inst.packet = "0x03001928C0"  # sw-like
-    FetchDecodeIF.force_push(inst)
-    decode.step()
-    decoded_out = DecodeIssue_IbufferIF.pop()
-    print("[S-Type Store] Decoded:", decoded_out)
-    assert decoded_out.rs1 != 0
-    assert decoded_out.rs2 != 0
-
-
-def test_branch_instruction():
-    decode, inst, prf = make_test_pipeline()
-    inst.packet = "0x0800190980"  # beq-like
-    FetchDecodeIF.force_push(inst)
-    decode.step()
-    decoded_out = DecodeIssue_IbufferIF.pop()
-    print("[B-Type Branch] Decoded:", decoded_out)
-    assert decoded_out.opcode != 0
-    assert isinstance(decoded_out.pred, list)
-
-
-def test_jump_instruction():
-    decode, inst, prf = make_test_pipeline()
-    inst.packet = "0x0C00080900"  # jal-like
-    FetchDecodeIF.force_push(inst)
-    decode.step()
-    decoded_out = DecodeIssue_IbufferIF.pop()
-    print("[J-Type Jump] Decoded:", decoded_out)
-    assert decoded_out.opcode != 0
-    assert decoded_out.rd != 0
-
-def test_wait_on_ihit_false():
-    decode, inst, prf = make_test_pipeline()
-
-    # Simulate ICache miss (ihit=False)
-    icache_de_ihit.push(False)
-
-    inst.packet = "0x0000190D89"
-    FetchDecodeIF.force_push(inst)
-    decode.compute(FetchDecodeIF.pop())
-    global global_cycle
-    global_cycle +=1
-
-    # Decode should stall → not push to next stage
-    assert not DecodeIssue_IbufferIF.valid
-    print("[ForwardIF] Correctly stalled on ihit=False")
-
-
-def test_ready_on_ihit_true():
-    decode, inst, prf = make_test_pipeline()
-
-    icache_de_ihit.push(True)  # ihit=True
-    inst.packet = "0x0000190D89"
-    global global_cycle
-    FetchDecodeIF.force_push(inst)
-    decode.compute(FetchDecodeIF.pop())
-    global_cycle +=1
-
-    # Should have forwarded decode result
-    assert DecodeIssue_IbufferIF.valid
-    print("[ForwardIF] Correctly forwarded on ihit=True")
-
-def test_multiple_back_to_back_instructions():
-    global global_cycle
-    global_cycle = 0
-
-    decode, inst, prf = make_test_pipeline()
-
-    # 3 back-to-back packets (different raw encodings)
-    packets = [
-        "0x0000190D89",  # add-like
-        "0x0200112090",  # lw-like
-        "0x0800190980",  # beq-like
-    ]
-
-    print("\n=== Simulating multiple back-to-back instructions ===")
-
-    # feed one packet per cycle
-    for pkt in packets:
-        inst.packet = pkt
-        FetchDecodeIF.force_push(inst)
-        print(f"\n--- Cycle {global_cycle} ---")
-        decode.compute(FetchDecodeIF.pop())
-        global_cycle += 1
-
-        decoded_out = DecodeIssue_IbufferIF.pop()
-        if decoded_out:
-            print(f"[Cycle {global_cycle}] Forwarded: opcode={decoded_out.opcode}, "
-                  f"entry={decoded_out.stage_entry}, exit={decoded_out.stage_exit}")
-        else:
-            print(f"[Cycle {global_cycle}] No valid output this cycle.")
-
-    print("\n✅ Back-to-back simulation complete.")
-
-def test_set_outgoing_wait_and_clear():
-    decode, inst, prf = make_test_pipeline()
-    decode.set_outgoing_wait()
-    assert any(f.wait for f in decode.outgoing_ifs)
-    decode.clear_outgoing()
-    assert all(not f.wait and not f.valid for f in decode.outgoing_ifs)
-    print("[ForwardIF] Wait/Clear verified")
-
-def test_branch_fu_updates_predicate():
-    print("\n=== BranchFU → Predicate Interaction Test ===")
-
-    # Setup decode pipeline and predicate register file
-    decode, inst, prf = make_test_pipeline()
-    warp_id = 0
-    pred_index = 0  # test first predicate slot
-
-    # Preload alternating predicate values
-    initial_mask = [True if i % 2 == 0 else False for i in range(32)]
-    prf.write_predicate(prf_wr_en=1, prf_wr_wsel=warp_id,
-                        prf_wr_psel=pred_index, prf_wr_data=initial_mask)
-
-    # === Cycle 0: Decode a branch instruction ===
-    inst.packet = ISA_PACKETS["beq"]
-    FetchDecodeIF.force_push(inst)
-    decoded_inst = decode.compute(FetchDecodeIF.pop())
-
-    # Inputs for BranchFU (simulate operands)
-    op1 = [10] * 32
-    op2 = [10] * 32  # equal → taken branch
-    prf_rd_data = prf.read_predicate(1, warp_id, pred_index, 0)
-
-    branch_fu = BranchFU(decoded_inst, prf_rd_data, op1, op2)
-    new_mask = branch_fu.update_pred()
-
-    # Write result back to predicate register file
-    prf.write_predicate(1, warp_id, pred_index, new_mask)
-
-    print(f"[BranchFU] Updated predicate mask[0:8]: {new_mask[:8]}")
-
-    # === Cycle 1: Decode another instruction (add) that uses same warp/predicate ===
-    next_inst = Instruction(iid=2, pc=0x104, warp=warp_id, warpGroup=0,
-                            opcode=0, rs1=0, rs2=0, rd=0, pred=pred_index,
-                            packet=ISA_PACKETS["add"])
-    FetchDecodeIF.force_push(next_inst)
-    decoded_next = decode.compute(FetchDecodeIF.pop())
-
-    print(f"[Decode] Post-branch predicate mask[0:8]: {decoded_next.pred[:8]}")
-
-    # === Assertions ===
-    assert decoded_next is not None
-    assert decoded_next.pred != initial_mask, "Predicate mask did not update!"
-    assert all(decoded_next.pred), "Expected all True after beq taken"
-    print("✅ BranchFU predicate update successfully propagated.")
+    return {
+        "fetch": fetch_stage,
+        "icache": icache_stage,
+        "mem": mem_stage,
+        "decode": decode_stage,
+        "mem_backend": mem_backend,
+        "latches": {
+            "fetch_icache": FetchICacheIF,
+            "icache_decode": ICacheDecodeIF,
+            "icache_memreq": ICacheMemReqIF,
+            "mem_icache": MemICacheRespIF,
+            "decode_issue": DecodeIssue_IbufferIF
+        },
+        "fwd_ifs": {
+            "ihit": icache_de_ihit
+        },
+        "prf": prf
+    }
 
 if __name__ == "__main__":
-    test_rtype_instruction()
-    test_multiple_back_to_back_instructions()
-    test_wait_on_ihit_false()
-    test_ready_on_ihit_true()
-    print("\n✅ All DecodeStage tests passed.")
+    sim = make_test_pipeline()
+    fetch = sim["fetch"]
+    icache = sim["icache"]
+    mem = sim["mem"]
+    decode = sim["decode"]
+
+    for cycle in range(20):
+        print(f"\n=== Cycle {cycle} ===")
+        fetch.compute(None)
+        icache.compute(FetchICacheIF.snoop())
+        mem.compute(ICacheMemReqIF.snoop())
+        decode.compute(ICacheDecodeIF.snoop())
+
+
+

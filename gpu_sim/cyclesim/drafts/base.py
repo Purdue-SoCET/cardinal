@@ -1,15 +1,30 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
+from bitstring import Bits 
 
 ###TEST CODE BELOW###
 @dataclass
 class ICacheEntry:
     tag: int
-    data: bytes
+    data: Bits
     valid: bool = True
     last_used: int = 0
+
+@dataclass
+class FetchRequest:
+    pc: int
+    warp_id: int
+    uuid: Optional[int] = None
     
+@dataclass
+class MemRequest:
+    addr: int
+    size: int
+    uuid: int
+    warp_id: int
+    remaining: int = 0
+
 @dataclass
 class Warp:
     pc: int
