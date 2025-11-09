@@ -1,31 +1,151 @@
 import sys, os
-
-# Dynamically locate the project root (SoCET_GPU_FuncSim)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-from gpu.gpu_sim.cyclesim.src.base_class import PipelineStage, SM, LoggerBase, PerfDomain, LatchInterface
-
 from collections import deque
 from dataclasses import dataclass, field
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
+from enum import Enum
+
+@dataclass
+class Instruction:
+    iid: int
+    pc: int
+    issued_cycle: Optional[int] = None
+    stage_entry: Dict[str, int] = field(default_factory=dict)   # stage -> first cycle seen
+    stage_exit:  Dict[str, int] = field(default_factory=dict)   # stage -> last cycle completed
+    fu_entries:  List[Dict]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
+    wb_cycle: Optional[int] = None
+
+    def mark_stage_enter(self, stage: str, cycle: int):
+        self.stage_entry.setdefault(stage, cycle)
+
+    def mark_stage_exit(self, stage: str, cycle: int):
+        self.stage_exit[stage] = cycle
+
+    def mark_fu_enter(self, fu: str, cycle: int):
+        self.fu_entries.append({"fu": fu, "enter": cycle, "exit": None})
+
+    def mark_fu_exit(self, fu: str, cycle: int):
+        for e in reversed(self.fu_entries):
+            if e["fu"] == fu and e["exit"] is None:
+                e["exit"] = cycle
+                return
+
+    def mark_writeback(self, cycle: int):
+        self.wb_cycle = cycle
+
+class WarpState(Enum):
+    READY = "ready"
+    BARRIER = "barrier"
+    LONGSTALL = "long stall"
+    SHORTSTALL = "short stall"
+    HALT = "halt"
 
 @dataclass
 class Warp:
     pc: int
     group_id: int
-    can_issue: bool = True
+    in_flight: int = 0
+    state: WarpState = WarpState.READY
     halt: bool = True
 
-class SchedulerStage(PipelineStage):
-    def __init__(self, parent_core, start_pc, warp_count: int = 32, warp_size: int = 32):
-        super().__init__("Warp Scheduler", parent_core)
+### FORWARDING WITH DICTIONARIES ###
+
+@dataclass
+class ForwardingIF:
+    payload: Optional[Any] = None
+    wait: bool = False
+    name: str = field(default="BackwardIF", repr=False)
+
+    def push(self, data: Any) -> None:
+        self.payload = data
+        self.wait = False
+    
+    def pop(self) -> Optional[Any]:
+        return self.payload
+    
+    def set_wait(self, flag: bool) -> None:
+        self.wait = bool(flag)
+
+    def __repr__(self) -> str:
+        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+            f"payload={self.payload!r}>")
+
+@dataclass
+class LatchIF:
+    payload: Optional[Any] = None
+    valid: bool = False
+    read: bool = False
+    name: str = field(default="LatchIF", repr=False)
+    forward_if: Optional[ForwardingIF] = None
+
+    def ready_for_push(self) -> bool:
+        if self.valid:
+            return False
+        if self.forward_if is not None and self.forward_if.wait:
+            return False
+        return True
+
+    def push(self, data: Any) -> bool:
+        if not self.ready_for_push():
+            return False
+        self.payload = data
+        self.valid = True
+        return True
+    
+    def force_push(self, data: Any) -> None: # will most likely need a forceful push for squashing
+        self.payload = data
+        self.valid = True
+
+    def snoop(self) -> Optional[Any]: # may need this if we want to see the data without clearing the data
+        return self.payload if self.valid else None
+    
+    def pop(self) -> Optional[Any]:
+        if not self.valid:
+            return None
+        data = self.payload
+        self.payload = None
+        self.valid = False
+        return data
+    
+    def clear_all(self) -> None:
+        self.payload = None
+        self.valid = False
+    
+    def __repr__(self) -> str: # idk if we need this or not
+        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+                f"payload={self.payload!r}>")
+    
+@dataclass
+class Stage:
+    name: str
+    behind_latch: Optional[LatchIF] = None
+    ahead_latch: Optional[LatchIF] = None
+    # forward_if_read: Optional[ForwardingIF] = None
+    forward_ifs_read: Dict[str, ForwardingIF] = field(default_factory=dict)
+    # forward_if_write: Optional[ForwardingIF] = None
+    forward_ifs_write: Dict[str, ForwardingIF] = field(default_factory=dict)
+    
+    def get_data(self) -> Any:
+        self.behind_latch.pop()
+
+    def send_output(self, data: Any) -> None:
+        self.ahead_latch.push(data)
+
+    def forward_signals(self, forward_if: str, data: Any) -> None:
+        self.forward_ifs_write[forward_if].push(data)
+
+    def compute(self, input_data: Any) -> Any:
+        # default computation, subclassess will override this
+        return input_data
+
+class SchedulerStage(Stage):
+    def __init__(self, *args, start_pc, warp_count: int = 32, warp_size: int = 32, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # static shit
         self.warp_count: int = warp_count
         self.num_groups: int = (warp_count + 1) // 2
         self.warp_size: int = warp_size
+        self.at_barrier: int = 0
 
         # warp table
         self.warp_table: List[Warp] = [Warp(pc=start_pc, group_id=wid // 2) for wid in range(warp_count)]
@@ -40,8 +160,58 @@ class SchedulerStage(PipelineStage):
 
         # could add perf counters
     
-    # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
-    def schedule(self):
-        # arbitration
+    # figuring out which warps can/cant issue
+    # ALL PSEUDOCODE CURRENTLY I NEED TO KMS BAD LOL
+    def collision(self):
+        # pop from forwarding units
+        EOP = self.forward_ifs_read["Decode"].wait
+        issue = self.forward_ifs_read["Issue"].wait
+        memory = self.forward_ifs_read["Memory"].wait
+        WB = self.forward_ifs_read["Writeback"].pop()
 
-        # create instruction object with pc and warp ids/group ids
+        # check end of packet decode
+        if EOP is valid:
+            if self.warp_table[EOP.warp_id].state == WarpState.READY then self.warp_table[EOP.warp_id].state = WarpState.SHORTSTALL
+
+        # check from issue and memory
+        for warp_group in issue:
+            # set both warps
+            if warp_group is full:
+                self.warp_table[warp_group // 2].state = WarpState.LONGSTALL
+                self.warp_table[(warp_group // 2) + 1].state = WarpState.LONGSTALL
+            # clear both warps by setting to shortstall and then check the in flight counter last to see if i can really issue them (since from LONGSTALL idk if im going back to READY or SHORTSTALL)
+            else:
+                self.warp_table[warp_group // 2].state = WarpState.SHORTSTALL
+                self.warp_table[(warp_group // 2) + 1].state = WarpState.SHORTSTALL
+
+        # decrement counter from writeback from writeback
+        self.warp_table[WB.warp].in_flight = max(self.warp_table[WB.warp].in_flight - 1, 0)
+        if self.warp_table[WB.warp].state == WarpState.SHORTSTALL and self.warp_table[WB.warp].in_flight == 0:
+            self.warp_table[WB.warp].state = WarpState.READY
+
+        # BARRIER
+        if EOP is barrier:
+            self.warp_table[EOP.warp_id].state == WarpState.BARRIER
+            self.at_barrier = self.at_barrier + 1
+        if self.at_barrier == self.warp_count:
+            for warp in range(self.warp_count):
+                self.warp_table[warp].state = WarpState.READY
+
+        return
+
+    # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
+    def compute(self):
+        self.collision()
+
+        # round robin scheduling loop
+        for tries in range(self.warp_count):
+            warp = self.warp_table[self.rr_index]
+            self.rr_index = (self.rr_index + 1) % self.warp_count
+
+            # issue that specific warp
+            if warp.state == WarpState.READY and not warp.halt:
+                warp.in_flight = warp.in_flight + 1 # increment in flight counter by 1
+                return # ISSUE INSTRUCTION OBJECT
+        
+        # every warp is unable to issue
+        return None

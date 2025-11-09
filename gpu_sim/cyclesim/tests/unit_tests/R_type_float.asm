@@ -1,0 +1,20 @@
+    lli   r1, 0x0000                 # r1 = 0x3F800000 low12 for 1.0f
+    lmi   r1, 0x800                  # r1 = 0x3F800000 mid12 for 1.0f
+    lui   r1, 0x3F                   # r1 = 0x3F800000 (1.0f)
+    lli   r2, 0x0000                 # r2 = 0x40000000 low12 for 2.0f
+    lmi   r2, 0x000                  # r2 = 0x40000000 mid12 for 2.0f
+    lui   r2, 0x40                   # r2 = 0x40000000 (2.0f)
+    lli   r3, 0x0000                 # r3 = 0x40400000 low12 for 3.0f
+    lmi   r3, 0x400                  # r3 = 0x40400000 mid12 for 3.0f
+    lui   r3, 0x40                   # r3 = 0x40400000 (3.0f)
+    lli   r4, 0x0000                 # r4 = 0x3FC00000 low12 for 1.5f
+    lmi   r4, 0xC00                  # r4 = 0x3FC00000 mid12 for 1.5f
+    lui   r4, 0x3F                   # r4 = 0x3FC00000 (1.5f)
+    lli   r5, 0x0000                 # r5 = 0x40200000 low12 for 2.5f
+    lmi   r5, 0x200                  # r5 = 0x40200000 mid12 for 2.5f
+    lui   r5, 0x40                   # r5 = 0x40200000 (2.5f)
+    addf  r10, r1, r2                # r10 = 1.0f + 2.0f
+    subf  r11, r3, r4                # r11 = 3.0f - 1.5f
+    mulf  r12, r5, r2                # r12 = 2.5f * 2.0f
+    divf  r13, r3, r2                # r13 = 3.0f / 2.0f
+    halt                             # end
