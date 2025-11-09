@@ -163,14 +163,17 @@ class SchedulerStage(Stage):
     # figuring out which warps can/cant issue
     # ALL PSEUDOCODE CURRENTLY I NEED TO KMS BAD LOL
     def collision(self):
+        # waiting stuff
+        for fwd_if in self.forward_ifs_read.values():
+            if fwd_if.wait:
+                print(f"[{self.name}] Stalled due to wait from next stage")
+                return None
+            
         # pop from forwarding units
-        EOP = self.forward_ifs_read["Decode"].wait
-        issue = self.forward_ifs_read["Issue"].wait
-        memory = self.forward_ifs_read["Memory"].wait
-        WB = self.forward_ifs_read["Writeback"].pop()
+        
 
         # check end of packet decode
-        if EOP is valid:
+        if EOP:
             if self.warp_table[EOP.warp_id].state == WarpState.READY then self.warp_table[EOP.warp_id].state = WarpState.SHORTSTALL
 
         # check from issue and memory
