@@ -10,7 +10,7 @@ void kernel_vertexShader(void* arg)
     if(i > 1023) return;
 
     /****** ThreeD Rotation ******/ 
-    // - assuming radians  and following V3::RotateThisPointAboutArbitraryAxis and TM::RotateAboutArbitraryAxis
+    // - assuming radians and following V3::RotateThisPointAboutArbitraryAxis and TM::RotateAboutArbitraryAxis
 
     float lcs[9]; 
     float selAxis[3] = {0.0f, 0.0f, 0.0f};
@@ -36,7 +36,17 @@ void kernel_vertexShader(void* arg)
     lcs[2] = selAxis[0] * args->a_dist[3*i+1] - selAxis[1] * args->a_dist[3*i];
 
     //normalize(lcs[0 to 2])
+
+    // CPU Sim Version
+    #ifdef CPU_SIM
     float lcs_dist = sqrt(lcs[0]*lcs[0] + lcs[1]*lcs[1] + lcs[2]*lcs[2]);
+    #endif
+    // Hardware/Emulator Version (isqrt not sqrt)
+    #ifdef HARDWARE_SIM
+    float inv_lcs_dist = isqrt(lcs[0]*lcs[0] + lcs[1]*lcs[1] + lcs[2]*lcs[2]);
+    float lcs_dist = 1 / (inv_lcs_dist);
+    #endif
+
     for(int j = 0; j < 3; j++)
     {
         lcs[j] = lcs[j] / lcs_dist;
@@ -89,7 +99,7 @@ void kernel_vertexShader(void* arg)
     }
 
     /*world -> local*/
-    float p1[3] = {0.f, 0.f, 0.f};
+    float p1[3] = {0, 0, 0};
     for(int j = 0; j < 3; j++)
     {
         for(int k = 0; k < 3; k++)
@@ -99,7 +109,7 @@ void kernel_vertexShader(void* arg)
     }
 
     /* rotate in local space */
-    float p2[3] = {0.f, 0.f, 0.f};
+    float p2[3] = {0, 0, 0};
     for(int j = 0; j < 3; j++)
     {
         for(int k = 0; k < 3; k++)
@@ -109,7 +119,7 @@ void kernel_vertexShader(void* arg)
     }
 
     /* local -> world */
-    float p_world[3] = {0.f, 0.f, 0.f};
+    float p_world[3] = {0, 0, 0};
     for(int j = 0; j < 3; j++)
     {
         for(int k = 0; k < 3; k++)
