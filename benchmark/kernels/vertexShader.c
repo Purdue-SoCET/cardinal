@@ -13,20 +13,20 @@ void kernel_vertexShader(void* arg)
     // - assuming radians and following V3::RotateThisPointAboutArbitraryAxis and TM::RotateAboutArbitraryAxis
 
     float lcs[9]; 
-    float selAxis[3] = {0.0f, 0.0f, 0.0f};
+    float selAxis[3] = {0.0, 0.0, 0.0};
 
     /*
     if((args->a_dist[i]*args->a_dist[i]) < (args->a_dist[i+1]*args->a_dist[i+1]))
     { 
-        selAxis[0] = 1.0f;
+        selAxis[0] = 1.0;
     }
     else
     {
-        selAxis[1] = 1.0f;
+        selAxis[1] = 1.0;
     }
     */
 
-   selAxis[1] = 1.0f;
+   selAxis[1] = 1.0;
 
     /* Build Local Coordinates System*/
 
@@ -151,11 +151,11 @@ void kernel_vertexShader(void* arg)
         }
     }
 
-    if (q[2] <= 0.0f) return;
+    if (q[2] <= 0.0) return;
 
     args->twoDVert[3*i]   = q[0] / q[2];
     args->twoDVert[3*i+1] = q[1] / q[2];
-    args->twoDVert[3*i+2] = 1.0f / q[2];
+    args->twoDVert[3*i+2] = 1.0 / q[2];
 
     return;
 }
