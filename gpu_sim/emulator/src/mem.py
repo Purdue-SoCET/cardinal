@@ -86,16 +86,15 @@ class Mem:
         Groups consecutive bytes [addr, addr+1, addr+2, addr+3] into one word.
         Skips words that are entirely zero (uninitialized).
         """
+        word_bases = {addr & ~0x3 for addr in self.memory.keys()}
+
         with open(path, "w", encoding="utf-8") as f:
-            # round down to nearest word boundary
-            min_addr = min(self.memory.keys(), default=0) & ~0x3
-            max_addr = max(self.memory.keys(), default=0)
-            for base in range(min_addr, max_addr + 1, 4):
+            for base in sorted(word_bases):
                 # collect 4 bytes for this word
-                b0 = self.memory.get(base + 0, 0)
-                b1 = self.memory.get(base + 1, 0)
-                b2 = self.memory.get(base + 2, 0)
-                b3 = self.memory.get(base + 3, 0)
+                b0 = self.memory.get(base + 0, 0) & 0xFF
+                b1 = self.memory.get(base + 1, 0) & 0xFF
+                b2 = self.memory.get(base + 2, 0) & 0xFF
+                b3 = self.memory.get(base + 3, 0) & 0xFF
                 if (b0 | b1 | b2 | b3) == 0:
                     continue  # skip all-zero words
 
