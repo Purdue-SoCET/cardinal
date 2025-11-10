@@ -1,6 +1,5 @@
 #pragma once
 
-
 // Triangle Inputs
 //  - Bounding Box Starting pixel
 //  - 3 Projected Verticies for the known triangle
@@ -8,8 +7,7 @@
 //  - Triangle Tag
 //  - Pixel Buffer
 //  - Tag Buffer
-
-#define GET_1D_INDEX(idx_w, idx_h, arr_w) idx_h*arr_w + idx_w
+#include "graphics_lib.h"
 
 typedef struct {
     int bb_start[2];
