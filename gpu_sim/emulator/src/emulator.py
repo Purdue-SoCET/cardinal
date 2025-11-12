@@ -16,43 +16,24 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from common import custom_enums
 
-# thread block scheduler
-def tbs(x, y, z):
-    blocksize = x*y*z
+# thread block scheduler RIGHT NOT ONLY WORKS FOR TOTAL GLOBAL THREADS <= 1024, probably have to change main function to get that real functionality
+def tbs(blockdim, gridsize):
+    totalsize = blockdim * gridsize
 
-    if blocksize > 1024:
+    if totalsize > 1024:
         print("fuck you 3")
         sys.exit(1)
 
     csrs = []
-    # Build coordinates once and slice into chunks
-    X = [i % x for i in range(blocksize)]
-    Y = [(i // x) % y for i in range(blocksize)]
-    Z = [i // (x * y) for i in range(blocksize)]
-    TID = list(range(blocksize))
 
-    for w, start in enumerate(range(0, blocksize, 32)):
-        end = min(start + 32, blocksize)
-        chunk_x = X[start:end]
-        chunk_y = Y[start:end]
-        chunk_z = Z[start:end]
-        chunk_t = TID[start:end]
-
-        # Optional padding of the final partial warp
-        if True and end - start < 32:
-            pad_len = 32 - (end - start)
-            chunk_x += [None] * pad_len
-            chunk_y += [None] * pad_len
-            chunk_z += [None] * pad_len
-            chunk_t += [None] * pad_len
+    for w, gid_start in enumerate(range(0, totalsize, 32)):
+        tb_id = gid_start // blockdim
+        tid = [id for id in range(w-tb_id*blockdim, w+32-tb_id*blockdim)]
 
         csrs.append({
             "warp_id": w,
-            "x": chunk_x,
-            "y": chunk_y,
-            "z": chunk_z,
-            "tid": chunk_t,
-            "lanes": list(range(len(chunk_x))) if not True else list(range(32)),
+            "tb_id": tb_id,
+            "tid": tid
         })
 
     return csrs
@@ -103,7 +84,7 @@ def emulator(input_file, warp, mem):
 
 # main function
 if __name__ == "__main__":
-    if len(sys.argv) < 6:
+    if len(sys.argv) < 5:
         print("fuck u lol")
         sys.exit(1)
 
@@ -113,7 +94,7 @@ if __name__ == "__main__":
         print("fuck u again lol")
         sys.exit(1)
 
-    csrs = tbs(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
-    warp = Warp(0, Bits(int=int(sys.argv[5]), length=32), csrs[0])
-    mem = Mem(int(sys.argv[5]), sys.argv[1])
+    csrs = tbs(int(sys.argv[2]), int(sys.argv[3]))
+    warp = Warp(0, Bits(int=int(sys.argv[4]), length=32), csrs[0])
+    mem = Mem(int(sys.argv[4]), sys.argv[1])
     emulator(sys.argv[1], warp, mem)

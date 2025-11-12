@@ -1,7 +1,7 @@
 PYTHON := venv/bin/python3
 EMULATOR := src/emulator.py
 INPUT_FILE := meminit.hex
-BLOCK_DIM := 4 4 2
+KERNEL_DIM := 4 4
 START_PC := 0
 TYPE := "hex"
 
