@@ -394,6 +394,8 @@ class DecodeStage(Stage):
         # === Forward to next stage ===
         for name, f in self.forward_ifs_write.items():
             f.push({"decoded": True, "type": decode_flags, "pc": self.pc})
+        # @daniel_yang 
+            # check this part daniel
 
         pred_mask = self.prf.read_predicate(
             prf_rd_en=1, prf_rd_wsel=inst.warp, prf_rd_psel=pred, prf_neg=0
