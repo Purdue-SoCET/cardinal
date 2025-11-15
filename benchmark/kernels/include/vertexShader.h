@@ -1,5 +1,6 @@
 #pragma once
-#include<math.h>
+#include <math.h>
+#include "graphics_lib.h"
 
 //Note: All Vectors and Matrix are flat and expected to be 0 for all initaial values
 typedef struct {
@@ -9,10 +10,10 @@ typedef struct {
     float* Oa;              //rotation origin
     float* a_dist;          //distane of one origin axes 
     float* alpha_r;         //theta - angle for rotation matrix
-    float* threeDVert;      //input 3D vectors
+    vertex_t* threeDVert;      //input 3D vectors
 
     /*output*/
-    float* threeDVertTrans; //output 3D vertors after transformation
+    vertex_t* threeDVertTrans; //output 3D vertors after transformation
 
     /*3D Transformation -> 2D*/
 
@@ -22,7 +23,7 @@ typedef struct {
     // threeDVertTrans is also an input 
 
     /*output*/
-    float* twoDVert;        //output 2D  vertors
+    vertex_t* twoDVert;        //output 2D  vertors
 } vertexShader_arg_t;
 
 void kernel_vertexShader(void*);

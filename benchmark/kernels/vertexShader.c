@@ -76,9 +76,9 @@ void kernel_vertexShader(void* arg)
 
     // vertex normalized to rotation origin
     float p_tempAxis[3] = {
-        (args->threeDVert[3*i]   - args->Oa[3*i]),
-        (args->threeDVert[3*i+1] - args->Oa[3*i+1]),
-        (args->threeDVert[3*i+2] - args->Oa[3*i+2])
+        (args->threeDVert[i].coords.x   - args->Oa[3*i]),
+        (args->threeDVert[i].coords.y - args->Oa[3*i+1]),
+        (args->threeDVert[i].coords.z - args->Oa[3*i+2])
     };
 
     /*Create Rotation Matrix */
@@ -126,8 +126,20 @@ void kernel_vertexShader(void* arg)
         {
             p_world[j] += lcs[k*3 + j] * p2[k]; 
         }
-        args->threeDVertTrans[i*3 + j] = p_world[j] + args->Oa[3*i+j];
+        switch (j) {
+            case 0:
+                args->threeDVertTrans[i].coords.x = p_world[j] + args->Oa[3*i+j];
+                break;
+            case 1:
+                args->threeDVertTrans[i].coords.y = p_world[j] + args->Oa[3*i+j];
+                break;
+            case 2:
+                args->threeDVertTrans[i].coords.z = p_world[j] + args->Oa[3*i+j];
+                break;
+        }
     }
+    args->threeDVertTrans[i].s = args->threeDVert[i].s;
+    args->threeDVertTrans[i].t = args->threeDVert[i].t;
 
     
     /****** Projection ******/
@@ -135,9 +147,9 @@ void kernel_vertexShader(void* arg)
 
     /*Normalize 3D matrix w.r.t the camera*/
     float threeD_norm[3] = { 
-        args->threeDVertTrans[3*i] - args->camera[0],
-        args->threeDVertTrans[3*i + 1] - args->camera[1],
-        args->threeDVertTrans[3*i + 2] - args->camera[2]
+        args->threeDVertTrans[i].coords.x - args->camera[0],
+        args->threeDVertTrans[i].coords.y - args->camera[1],
+        args->threeDVertTrans[i].coords.z - args->camera[2]
     };
 
     float q[3] = {0, 0, 0};
@@ -153,9 +165,11 @@ void kernel_vertexShader(void* arg)
 
     if (q[2] <= 0.0) return;
 
-    args->twoDVert[3*i]   = q[0] / q[2];
-    args->twoDVert[3*i+1] = q[1] / q[2];
-    args->twoDVert[3*i+2] = 1.0 / q[2];
+    args->twoDVert[i].coords.x = q[0] / q[2];
+    args->twoDVert[i].coords.y = q[1] / q[2];
+    args->twoDVert[i].coords.z = 1.0 / q[2];
+    args->twoDVert[i].s = args->threeDVert[i].s;
+    args->twoDVert[i].t = args->threeDVert[i].t;
 
     return;
 }
