@@ -77,7 +77,6 @@ def emulator(input_file, warp, mem):
     return
 
 #pretty up code goal:
-        
         #instr.fetch 
         #instr.decode
         #warp.eval(instr=instr)
