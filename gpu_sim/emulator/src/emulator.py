@@ -77,7 +77,6 @@ def emulator(input_file, warp, mem):
     return
 
 #pretty up code goal:
-        
         #instr.fetch 
         #instr.decode
         #warp.eval(instr=instr)
@@ -95,6 +94,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     csrs = tbs(int(sys.argv[2]), int(sys.argv[3]))
+    # put in a for loop to loop thru all warps
     warp = Warp(0, Bits(int=int(sys.argv[4]), length=32), csrs[0])
     mem = Mem(int(sys.argv[4]), sys.argv[1])
     emulator(sys.argv[1], warp, mem)
