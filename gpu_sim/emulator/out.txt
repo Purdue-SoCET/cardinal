@@ -1,0 +1,68 @@
+make run TYPE="bin"
+make[1]: Entering directory '/home/shay/a/liu3422/Desktop/gpu/gpu_sim/emulator'
+venv/bin/python3 src/emulator.py meminit.hex 4 4 2 0 bin
+ctype
+pc=4
+ctype
+pc=8
+ctype
+pc=12
+rtype_0, funct=R_Op_0.MUL, rs1=3, rs2=4
+pc=16
+rtype_0, funct=R_Op_0.ADD, rs1=3, rs2=5
+pc=20
+utype, funct=U_Op.LLI,imm=108
+pc=24
+itype_2, funct=I_Op_2.LW
+pc=28
+utype, funct=U_Op.LLI,imm=112
+pc=32
+itype_2, funct=I_Op_2.LW
+pc=36
+utype, funct=U_Op.LLI,imm=116
+pc=40
+itype_2, funct=I_Op_2.LW
+pc=44
+utype, funct=U_Op.LLI,imm=116
+pc=48
+utype, funct=U_Op.LMI,imm=1
+pc=52
+itype_2, funct=I_Op_2.LW
+pc=56
+btype, funct=B_Op_0.BLT
+Thread0: branch not taken
+Thread1: branch not taken
+Thread2: branch not taken
+Thread3: branch not taken
+Thread4: branch not taken
+Thread5: branch not taken
+Thread6: branch not taken
+Thread7: branch not taken
+Thread8: branch not taken
+Thread9: branch not taken
+Thread10: branch not taken
+Thread11: branch not taken
+Thread12: branch not taken
+Thread13: branch not taken
+Thread14: branch not taken
+Thread15: branch not taken
+Thread16: branch not taken
+Thread17: branch not taken
+Thread18: branch not taken
+Thread19: branch not taken
+Thread20: branch not taken
+Thread21: branch not taken
+Thread22: branch not taken
+Thread23: branch not taken
+Thread24: branch not taken
+Thread25: branch not taken
+Thread26: branch not taken
+Thread27: branch not taken
+Thread28: branch not taken
+Thread29: branch not taken
+Thread30: branch not taken
+Thread31: branch not taken
+pc=60
+jtype
+pc=2306496
+make[1]: Leaving directory '/home/shay/a/liu3422/Desktop/gpu/gpu_sim/emulator'

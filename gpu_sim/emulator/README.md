@@ -26,10 +26,14 @@ Please follow the following file structure:
 
 > The SoCET GPU Emulator only supports usage on Linux
 
-To use the SoCET GPU Emulator, first activate the Python virtual environment by running the following commands in a Linux terminal:
+To use the SoCET GPU Emulator, first install and activate the Python virtual environment by running the following commands in a Linux terminal:
 
 ```
 cd ./gpu_sim/emulator
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
 source venv/bin/activate
 ```
 
