@@ -41,16 +41,16 @@ class Warp:
 
 @dataclass
 class Instruction:
-    iid: int
-    pc: int
-    warp: int
-    warpGroup: int
+    iid: Optional[int]
+    pc: Optional[int]
+    warp: Optional[int]
+    warpGroup: Optional[int]
     
     # instruction
-    opcode: int
-    rs1: int
-    rs2: int
-    rd: int
+    opcode: Optional[int]
+    rs1: Optional[int]
+    rs2: Optional[int]
+    rd: Optional[int]
     pred: Optional[Any] = None
     packet: Optional[Any] = None
     type: Optional[DecodeType] = None
