@@ -27,12 +27,12 @@ class Mem:
                 if not bits:
                     continue
                 # print(f"{sys.argv[6]}, {type(sys.argv[6])}")
-                if (sys.argv[6] == "hex"):
+                if (sys.argv[5] == "hex"):
                     if len(bits) != 8 or any(c not in "0123456789ABCDEF" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 8 hex, got {bits!r}")
                     word = int(bits, 16) & 0xFFFF_FFFF
                 
-                elif (sys.argv[6] == "bin"):
+                elif (sys.argv[5] == "bin"):
                     if len(bits) != 32 or any(c not in "01" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
