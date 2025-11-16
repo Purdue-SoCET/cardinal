@@ -1,0 +1,1498 @@
+
+[1m[95m================================================================================[0m[0m
+[1m[95m  EXECUTE STAGE COMPREHENSIVE UNIT TEST SUITE[0m[0m
+[1m[96m  Testing Multiple Inflight Instructions with Varied Data[0m[0m
+[1m[96m  Including: Stalls, Contention, Divergence, and Multi-Warp[0m[0m
+[1m[95m================================================================================[0m[0m
+
+[1/16] Running integer operations...
+
+[96m================================================================================[0m
+[1m[96m  INTEGER OPERATIONS[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADD: varied inputs
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 0
+  Expected latency: 1 cycles
+  Actual completion: cycle 1 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 96 R_Op.ADD 46 = 142
+    Lane 31: 103 R_Op.ADD 53 = 156
+
+[92m✓ PASS[0m | SUB: varied inputs
+  Op: R_Op.SUB, FSU: Alu_int_0
+  Requested issue: cycle 1
+  Expected latency: 1 cycles
+  Actual completion: cycle 2 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL: varied inputs
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 2
+  Expected latency: 2 cycles
+  Actual completion: cycle 4 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | AND: bitwise pattern
+  Op: R_Op.AND, FSU: Alu_int_0
+  Requested issue: cycle 4
+  Expected latency: 1 cycles
+  Actual completion: cycle 5 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 240 R_Op.AND 170 = 160
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | OR: bitwise pattern
+  Op: R_Op.OR, FSU: Alu_int_0
+  Requested issue: cycle 5
+  Expected latency: 1 cycles
+  Actual completion: cycle 6 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 192 R_Op.OR 170 = 234
+    Lane 15: 207 R_Op.OR 170 = 239
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | XOR: bitwise pattern
+  Op: R_Op.XOR, FSU: Alu_int_0
+  Requested issue: cycle 6
+  Expected latency: 1 cycles
+  Actual completion: cycle 7 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 240 R_Op.XOR 170 = 90
+    Lane 15: PREDICATED OFF
+    Lane 31: 271 R_Op.XOR 170 = 421
+
+[92m✓ PASS[0m | SLL: varied shift amounts
+  Op: R_Op.SLL, FSU: Alu_int_0
+  Requested issue: cycle 7
+  Expected latency: 1 cycles
+  Actual completion: cycle 8 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 32768 R_Op.SLL 7 = 4194304
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SRL: varied shift amounts
+  Op: R_Op.SRL, FSU: Alu_int_0
+  Requested issue: cycle 8
+  Expected latency: 1 cycles
+  Actual completion: cycle 9 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 2524 R_Op.SRL 7 = 19
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SRA: arithmetic shift varied
+  Op: R_Op.SRA, FSU: Alu_int_0
+  Requested issue: cycle 9
+  Expected latency: 1 cycles
+  Actual completion: cycle 10 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -1000 R_Op.SRA 0 = -1000
+    Lane 15: PREDICATED OFF
+    Lane 31: 550 R_Op.SRA 7 = 4
+
+[92m✓ PASS[0m | SLT: graduated values
+  Op: R_Op.SLT, FSU: Alu_int_0
+  Requested issue: cycle 10
+  Expected latency: 1 cycles
+  Actual completion: cycle 11 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 150 R_Op.SLT 150 = 0
+    Lane 31: 310 R_Op.SLT 150 = 0
+
+[92m✓ PASS[0m | SLTU: unsigned comparison varied
+  Op: R_Op.SLTU, FSU: Alu_int_0
+  Requested issue: cycle 11
+  Expected latency: 1 cycles
+  Actual completion: cycle 12 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -1 R_Op.SLTU 100 = 0
+    Lane 15: -15001 R_Op.SLTU 100 = 0
+    Lane 31: -31001 R_Op.SLTU 100 = 0
+
+[92m✓ PASS[0m | DIV: varied inputs
+  Op: R_Op.DIV, FSU: Div_int_0
+  Requested issue: cycle 3
+  Expected latency: 17 cycles
+  Actual completion: cycle 20 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 120 R_Op.DIV 12 = 10
+    Lane 15: 93 R_Op.DIV 10 = 9
+    Lane 31: 101 R_Op.DIV 8 = 12
+
+[96m================================================================================[0m
+Total Tests: 12
+[92mPassed: 12[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[2/16] Running overflow/underflow tests...
+
+[96m================================================================================[0m
+[1m[96m  INT OVERFLOW/UNDERFLOW[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADD overflow: MAX_INT + x
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 21
+  Expected latency: 1 cycles
+  Actual completion: cycle 22 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 2147483647 R_Op.ADD 1 = -2147483648
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUB underflow: x - (x+1)
+  Op: R_Op.SUB, FSU: Alu_int_0
+  Requested issue: cycle 22
+  Expected latency: 1 cycles
+  Actual completion: cycle 23 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 15 R_Op.SUB 16 = -1
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL overflow (lower 32 bits)
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 23
+  Expected latency: 2 cycles
+  Actual completion: cycle 25 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 65385 R_Op.MUL 65685 = -153571
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 3
+[92mPassed: 3[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[3/16] Running division by zero tests...
+
+[96m================================================================================[0m
+[1m[96m  DIVISION BY ZERO[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | INT DIV by zero (varied numerators)
+  Op: R_Op.DIV, FSU: Div_int_0
+  Requested issue: cycle 26
+  Expected latency: 17 cycles
+  Actual completion: cycle 43 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 250 R_Op.DIV 0 = 0
+    Lane 31: 410 R_Op.DIV 0 = 0
+
+[92m✓ PASS[0m | FLOAT DIV by zero (varied numerators)
+  Op: R_Op.DIVF, FSU: Div_float_0
+  Requested issue: cycle 27
+  Expected latency: 24 cycles
+  Actual completion: cycle 51 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 100.0000 R_Op.DIVF 0.0000 = 0.0000
+    Lane 15: 182.5000 R_Op.DIVF 0.0000 = 0.0000
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 2
+[92mPassed: 2[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[4/16] Running float operations...
+
+[96m================================================================================[0m
+[1m[96m  FLOATING-POINT OPERATIONS[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADDF: varied inputs
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 52
+  Expected latency: 1 cycles
+  Actual completion: cycle 53 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 11.3943 R_Op.ADDF 5.5577 = 16.9520
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUBF: varied inputs
+  Op: R_Op.SUBF, FSU: AddSub_float_0
+  Requested issue: cycle 53
+  Expected latency: 1 cycles
+  Actual completion: cycle 54 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 21.3943 R_Op.SUBF 5.5577 = 15.8366
+    Lane 15: PREDICATED OFF
+    Lane 31: 22.2973 R_Op.SUBF 5.9189 = 16.3784
+
+[92m✓ PASS[0m | MULF: varied inputs
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 54
+  Expected latency: 4 cycles
+  Actual completion: cycle 58 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 5.1798 R_Op.MULF 3.0899 = 16.0049
+    Lane 31: 5.9189 R_Op.MULF 3.4595 = 20.4763
+
+[92m✓ PASS[0m | DIVF: varied inputs
+  Op: R_Op.DIVF, FSU: Div_float_0
+  Requested issue: cycle 55
+  Expected latency: 24 cycles
+  Actual completion: cycle 79 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 101.7977 R_Op.DIVF 10.1798 = 10.0000
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 4
+[92mPassed: 4[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[5/16] Running float edge cases...
+
+[96m================================================================================[0m
+[1m[96m  FLOATING-POINT EDGE CASES[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADDF: inf + normal (all lanes)
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 80
+  Expected latency: 1 cycles
+  Actual completion: cycle 81 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: inf R_Op.ADDF 1.0000 = inf
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADDF: NaN propagation (all lanes)
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 82
+  Expected latency: 1 cycles
+  Actual completion: cycle 83 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: nan R_Op.ADDF 32.0000 = nan
+
+[92m✓ PASS[0m | MULF: -inf * positive (all lanes)
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 81
+  Expected latency: 4 cycles
+  Actual completion: cycle 85 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADDF: mixed special values per lane
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 84
+  Expected latency: 1 cycles
+  Actual completion: cycle 85 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: inf R_Op.ADDF 1.0000 = inf
+    Lane 15: 15.0000 R_Op.ADDF 16.0000 = 31.0000
+    Lane 31: 31.0000 R_Op.ADDF 32.0000 = 63.0000
+
+[92m✓ PASS[0m | MULF: 0.0 * x (all lanes)
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 83
+  Expected latency: 4 cycles
+  Actual completion: cycle 87 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0.0000 R_Op.MULF 100.0000 = 0.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 5
+[92mPassed: 5[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[6/16] Running trigonometric operations...
+
+[96m================================================================================[0m
+[1m[96m  TRIGONOMETRIC OPERATIONS (CORDIC)[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | SIN: 0 to π across lanes
+  Op: F_Op.SIN, FSU: Trig_float_0
+  Requested issue: cycle 88
+  Expected latency: 16 cycles
+  Actual completion: cycle 104 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0.0000 F_Op.SIN 0.0000 = 0.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | COS: 0 to π across lanes
+  Op: F_Op.COS, FSU: Trig_float_0
+  Requested issue: cycle 89
+  Expected latency: 16 cycles
+  Actual completion: cycle 105 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 3.1416 F_Op.COS 0.0000 = -0.1716
+
+[92m✓ PASS[0m | SIN: -π to π across lanes
+  Op: F_Op.SIN, FSU: Trig_float_0
+  Requested issue: cycle 90
+  Expected latency: 16 cycles
+  Actual completion: cycle 106 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | COS: -π to π across lanes
+  Op: F_Op.COS, FSU: Trig_float_0
+  Requested issue: cycle 91
+  Expected latency: 16 cycles
+  Actual completion: cycle 107 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 2.9452 F_Op.COS 0.0000 = -0.1716
+
+[96m================================================================================[0m
+Total Tests: 4
+[92mPassed: 4[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[7/16] Running inverse square root...
+
+[96m================================================================================[0m
+[1m[96m  INVERSE SQUARE ROOT[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ISQRT: positive perfect squares
+  Op: F_Op.ISQRT, FSU: InvSqrt_float_0
+  Requested issue: cycle 108
+  Expected latency: 12 cycles
+  Actual completion: cycle 120 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 1.0000 F_Op.ISQRT 0.0000 = 1.0000
+    Lane 15: 256.0000 F_Op.ISQRT 0.0000 = 0.0625
+    Lane 31: 1024.0000 F_Op.ISQRT 0.0000 = 0.0312
+
+[92m✓ PASS[0m | ISQRT: mixed positive/negative
+  Op: F_Op.ISQRT, FSU: InvSqrt_float_0
+  Requested issue: cycle 109
+  Expected latency: 12 cycles
+  Actual completion: cycle 121 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 1.0000 F_Op.ISQRT 0.0000 = 1.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ISQRT: edge cases (0, negative, positive)
+  Op: F_Op.ISQRT, FSU: InvSqrt_float_0
+  Requested issue: cycle 110
+  Expected latency: 12 cycles
+  Actual completion: cycle 122 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 49.0000 F_Op.ISQRT 0.0000 = 0.1429
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 3
+[92mPassed: 3[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[8/16] Running signed/unsigned tests...
+
+[96m================================================================================[0m
+[1m[96m  SIGNED VS UNSIGNED BEHAVIOR[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | SLT: negative < positive (signed)
+  Op: R_Op.SLT, FSU: Alu_int_0
+  Requested issue: cycle 123
+  Expected latency: 1 cycles
+  Actual completion: cycle 124 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: -16 R_Op.SLT 16 = 1
+    Lane 31: -32 R_Op.SLT 32 = 1
+
+[92m✓ PASS[0m | SLTU: large unsigned > small (unsigned)
+  Op: R_Op.SLTU, FSU: Alu_int_0
+  Requested issue: cycle 124
+  Expected latency: 1 cycles
+  Actual completion: cycle 125 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: -15001 R_Op.SLTU 16 = 0
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 2
+[92mPassed: 2[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[9/16] Running unsupported operations...
+
+[96m================================================================================[0m
+[1m[96m  UNSUPPORTED OPERATIONS[0m[0m
+[96m================================================================================[0m
+
+--- Float op on Int unit (should fail) ---
+[92mPASS: Correctly raised ValueError: ALU does not support operation R_Op.ADDF[0m
+
+--- Int op on Float unit (should fail) ---
+[92mPASS: Correctly raised ValueError: AddSub does not support operation R_Op.ADD[0m
+
+[10/16] Running predicate masking tests...
+
+[96m================================================================================[0m
+[1m[96m  PREDICATE MASKING[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADD: all lanes disabled
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 126
+  Expected latency: 1 cycles
+  Actual completion: cycle 127 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL: random predicate pattern (50% sparsity)
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 127
+  Expected latency: 2 cycles
+  Actual completion: cycle 129 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 1 R_Op.MUL 2 = 2
+    Lane 15: 16 R_Op.MUL 2 = 32
+    Lane 31: 32 R_Op.MUL 2 = 64
+
+[92m✓ PASS[0m | XOR: alternating lane pattern
+  Op: R_Op.XOR, FSU: Alu_int_0
+  Requested issue: cycle 128
+  Expected latency: 1 cycles
+  Actual completion: cycle 129 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 65295 R_Op.XOR 255 = 65520
+    Lane 31: 65311 R_Op.XOR 255 = 65504
+
+[96m================================================================================[0m
+Total Tests: 3
+[92mPassed: 3[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[11/16] Running mixed sign operands tests...
+
+[96m================================================================================[0m
+[1m[96m  MIXED SIGN OPERANDS[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADD: pos + pos
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 130
+  Expected latency: 1 cycles
+  Actual completion: cycle 131 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 5 R_Op.ADD 5 = 10
+    Lane 15: 155 R_Op.ADD 155 = 310
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADD: pos + neg
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 131
+  Expected latency: 1 cycles
+  Actual completion: cycle 132 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 5 R_Op.ADD -5 = 0
+    Lane 15: 155 R_Op.ADD -155 = 0
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADD: neg + pos
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 132
+  Expected latency: 1 cycles
+  Actual completion: cycle 133 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: -315 R_Op.ADD 315 = 0
+
+[92m✓ PASS[0m | ADD: neg + neg
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 133
+  Expected latency: 1 cycles
+  Actual completion: cycle 134 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: -155 R_Op.ADD -155 = -310
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUB: pos - neg (addition)
+  Op: R_Op.SUB, FSU: Alu_int_0
+  Requested issue: cycle 134
+  Expected latency: 1 cycles
+  Actual completion: cycle 135 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUB: neg - pos (neg result)
+  Op: R_Op.SUB, FSU: Alu_int_0
+  Requested issue: cycle 135
+  Expected latency: 1 cycles
+  Actual completion: cycle 136 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: -155 R_Op.SUB 155 = -310
+    Lane 31: -315 R_Op.SUB 315 = -630
+
+[92m✓ PASS[0m | MUL: pos * neg
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 136
+  Expected latency: 2 cycles
+  Actual completion: cycle 138 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 155 R_Op.MUL -155 = -24025
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL: neg * neg (pos result)
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 137
+  Expected latency: 2 cycles
+  Actual completion: cycle 139 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -5 R_Op.MUL -5 = 25
+    Lane 15: -155 R_Op.MUL -155 = 24025
+    Lane 31: -315 R_Op.MUL -315 = 99225
+
+[92m✓ PASS[0m | ADDF: pos + neg
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 139
+  Expected latency: 1 cycles
+  Actual completion: cycle 140 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 5.0000 R_Op.ADDF -5.0000 = 0.0000
+    Lane 15: 155.0000 R_Op.ADDF -155.0000 = 0.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUBF: neg - pos
+  Op: R_Op.SUBF, FSU: AddSub_float_0
+  Requested issue: cycle 140
+  Expected latency: 1 cycles
+  Actual completion: cycle 141 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -5.0000 R_Op.SUBF 5.0000 = -10.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MULF: mixed * neg
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 141
+  Expected latency: 4 cycles
+  Actual completion: cycle 145 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0.0000 R_Op.MULF -2.5000 = -0.0000
+    Lane 15: -150.0000 R_Op.MULF -2.5000 = 375.0000
+    Lane 31: -310.0000 R_Op.MULF -2.5000 = 775.0000
+
+[92m✓ PASS[0m | DIV: mixed signs
+  Op: R_Op.DIV, FSU: Div_int_0
+  Requested issue: cycle 138
+  Expected latency: 17 cycles
+  Actual completion: cycle 155 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0 R_Op.DIV 1 = 0
+    Lane 15: PREDICATED OFF
+    Lane 31: -310 R_Op.DIV -4 = 77
+
+[92m✓ PASS[0m | DIVF: mixed / neg
+  Op: R_Op.DIVF, FSU: Div_float_0
+  Requested issue: cycle 142
+  Expected latency: 24 cycles
+  Actual completion: cycle 166 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: -100.0000 R_Op.DIVF -10.0000 = 10.0000
+
+[96m================================================================================[0m
+Total Tests: 13
+[92mPassed: 13[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[12/16] Running immediate instruction variants...
+
+[96m================================================================================[0m
+[1m[96m  IMMEDIATE INSTRUCTION VARIANTS[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADDI: varied immediates
+  Op: I_Op.ADDI, FSU: Alu_int_0
+  Requested issue: cycle 167
+  Expected latency: 1 cycles
+  Actual completion: cycle 168 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0 I_Op.ADDI 1 = 1
+    Lane 15: PREDICATED OFF
+    Lane 31: 155 I_Op.ADDI 32 = 187
+
+[92m✓ PASS[0m | SUBI: varied immediates
+  Op: I_Op.SUBI, FSU: Alu_int_0
+  Requested issue: cycle 168
+  Expected latency: 1 cycles
+  Actual completion: cycle 169 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 162 I_Op.SUBI 31 = 131
+
+[92m✓ PASS[0m | ORI: bitwise with immediate
+  Op: I_Op.ORI, FSU: Alu_int_0
+  Requested issue: cycle 169
+  Expected latency: 1 cycles
+  Actual completion: cycle 170 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0 I_Op.ORI 0 = 0
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | XORI: constant immediate
+  Op: I_Op.XORI, FSU: Alu_int_0
+  Requested issue: cycle 170
+  Expected latency: 1 cycles
+  Actual completion: cycle 171 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 43690 I_Op.XORI 255 = 43605
+    Lane 15: PREDICATED OFF
+    Lane 31: 43721 I_Op.XORI 255 = 43574
+
+[92m✓ PASS[0m | SLLI: varied shift amounts
+  Op: I_Op.SLLI, FSU: Alu_int_0
+  Requested issue: cycle 171
+  Expected latency: 1 cycles
+  Actual completion: cycle 172 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 1 I_Op.SLLI 0 = 1
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SRLI: varied shift amounts
+  Op: I_Op.SRLI, FSU: Alu_int_0
+  Requested issue: cycle 172
+  Expected latency: 1 cycles
+  Actual completion: cycle 173 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 32768 I_Op.SRLI 0 = 32768
+    Lane 15: 34268 I_Op.SRLI 7 = 267
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SRAI: arithmetic shift immediate
+  Op: I_Op.SRAI, FSU: Alu_int_0
+  Requested issue: cycle 173
+  Expected latency: 1 cycles
+  Actual completion: cycle 174 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: -1750 I_Op.SRAI 7 = -14
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SLTI: compare with 0
+  Op: I_Op.SLTI, FSU: Alu_int_0
+  Requested issue: cycle 174
+  Expected latency: 1 cycles
+  Actual completion: cycle 175 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -16 I_Op.SLTI 0 = 1
+    Lane 15: PREDICATED OFF
+    Lane 31: 15 I_Op.SLTI 0 = 0
+
+[92m✓ PASS[0m | SLTIU: unsigned compare immediate
+  Op: I_Op.SLTIU, FSU: Alu_int_0
+  Requested issue: cycle 175
+  Expected latency: 1 cycles
+  Actual completion: cycle 176 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: -1 I_Op.SLTIU 100 = 0
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 9
+[92mPassed: 9[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[13/16] Running subnormal float handling...
+
+[96m================================================================================[0m
+[1m[96m  SUBNORMAL FLOAT HANDLING[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADDF: subnormal + tiny
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 177
+  Expected latency: 1 cycles
+  Actual completion: cycle 178 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0.0000 R_Op.ADDF 0.0000 = 0.0000
+    Lane 15: 0.0000 R_Op.ADDF 0.0000 = 0.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADDF: subnormal + normal (should be normal)
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 178
+  Expected latency: 1 cycles
+  Actual completion: cycle 179 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 0.0000 R_Op.ADDF 2.5000 = 2.5000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MULF: subnormal * 2
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 179
+  Expected latency: 4 cycles
+  Actual completion: cycle 183 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 0.0000 R_Op.MULF 2.0000 = 0.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SUBF: tiny - tiny (near zero)
+  Op: R_Op.SUBF, FSU: AddSub_float_0
+  Requested issue: cycle 182
+  Expected latency: 1 cycles
+  Actual completion: cycle 183 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MULF: subnormal * subnormal (may underflow to 0)
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 180
+  Expected latency: 4 cycles
+  Actual completion: cycle 184 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | DIVF: normal / huge (result subnormal)
+  Op: R_Op.DIVF, FSU: Div_float_0
+  Requested issue: cycle 181
+  Expected latency: 24 cycles
+  Actual completion: cycle 205 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 1.0000 R_Op.DIVF inf = 0.0000
+    Lane 15: 2.5000 R_Op.DIVF inf = 0.0000
+    Lane 31: 4.1000 R_Op.DIVF inf = 0.0000
+
+[96m================================================================================[0m
+Total Tests: 6
+[92mPassed: 6[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[14/16] Running warp divergence patterns...
+
+[96m================================================================================[0m
+[1m[96m  WARP DIVERGENCE PATTERNS[0m[0m
+[96m================================================================================[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ADD: Single lane active
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 206
+  Expected latency: 1 cycles
+  Actual completion: cycle 207 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 50 R_Op.ADD 5 = 55
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL: 30/32 lanes active
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 207
+  Expected latency: 2 cycles
+  Actual completion: cycle 209 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 50 R_Op.MUL 5 = 250
+    Lane 15: 200 R_Op.MUL 20 = 4000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADDF: First half active
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 208
+  Expected latency: 1 cycles
+  Actual completion: cycle 209 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 10.0000 R_Op.ADDF 5.0000 = 15.0000
+    Lane 15: 25.0000 R_Op.ADDF 20.0000 = 45.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADD: Second half active
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 209
+  Expected latency: 1 cycles
+  Actual completion: cycle 210 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 360 R_Op.ADD 36 = 396
+
+[92m✓ PASS[0m | MUL: Even lanes
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 210
+  Expected latency: 2 cycles
+  Actual completion: cycle 212 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 200 R_Op.MUL 20 = 4000
+    Lane 31: 360 R_Op.MUL 36 = 12960
+
+[92m✓ PASS[0m | ADDF: Odd lanes
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 211
+  Expected latency: 1 cycles
+  Actual completion: cycle 212 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 10.0000 R_Op.ADDF 5.0000 = 15.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADD: Every 4th lane
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 212
+  Expected latency: 1 cycles
+  Actual completion: cycle 213 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 50 R_Op.ADD 5 = 55
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL: 25% sparsity
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 213
+  Expected latency: 2 cycles
+  Actual completion: cycle 215 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 200 R_Op.MUL 20 = 4000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | ADDF: 75% sparsity
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 214
+  Expected latency: 1 cycles
+  Actual completion: cycle 215 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 10.0000 R_Op.ADDF 5.0000 = 15.0000
+    Lane 15: 25.0000 R_Op.ADDF 20.0000 = 45.0000
+    Lane 31: 41.0000 R_Op.ADDF 36.0000 = 77.0000
+
+[96m================================================================================[0m
+Total Tests: 9
+[92mPassed: 9[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[15/16] Running latency verification...
+
+[96m================================================================================[0m
+[1m[96m  LATENCY VERIFICATION[0m[0m
+[96m================================================================================[0m
+
+--- Testing ALU latency: expected 1 cycles ---
+[92m  ✓ Latency verified: 1 cycles[0m
+
+--- Testing MUL latency: expected 2 cycles ---
+[92m  ✓ Latency verified: 2 cycles[0m
+
+--- Testing DIV latency: expected 17 cycles ---
+[92m  ✓ Latency verified: 17 cycles[0m
+
+--- Testing ADDF latency: expected 1 cycles ---
+[92m  ✓ Latency verified: 1 cycles[0m
+
+--- Testing SIN latency: expected 16 cycles ---
+[92m  ✓ Latency verified: 16 cycles[0m
+
+--- Testing ISQRT latency: expected 12 cycles ---
+[92m  ✓ Latency verified: 12 cycles[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | ALU latency (1 cycles)
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 216
+  Expected latency: 1 cycles
+  Actual completion: cycle 217 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 10 R_Op.ADD 5 = 15
+    Lane 15: 25 R_Op.ADD 5 = 30
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | MUL latency (2 cycles)
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 218
+  Expected latency: 2 cycles
+  Actual completion: cycle 220 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 32 R_Op.MUL 2 = 64
+
+[92m✓ PASS[0m | DIV latency (17 cycles)
+  Op: R_Op.DIV, FSU: Div_int_0
+  Requested issue: cycle 221
+  Expected latency: 17 cycles
+  Actual completion: cycle 238 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 100 R_Op.DIV 10 = 10
+    Lane 15: 115 R_Op.DIV 10 = 11
+    Lane 31: 131 R_Op.DIV 10 = 13
+
+[92m✓ PASS[0m | ADDF latency (1 cycles)
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 239
+  Expected latency: 1 cycles
+  Actual completion: cycle 240 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 25.0000 R_Op.ADDF 5.0000 = 30.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | SIN latency (16 cycles)
+  Op: F_Op.SIN, FSU: Trig_float_0
+  Requested issue: cycle 241
+  Expected latency: 16 cycles
+  Actual completion: cycle 257 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0.0000 F_Op.SIN 0.0000 = 0.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: 3.1416 F_Op.SIN 0.0000 = 0.9852
+
+[92m✓ PASS[0m | ISQRT latency (12 cycles)
+  Op: F_Op.ISQRT, FSU: InvSqrt_float_0
+  Requested issue: cycle 258
+  Expected latency: 12 cycles
+  Actual completion: cycle 270 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: 256.0000 F_Op.ISQRT 0.0000 = 0.0625
+    Lane 31: PREDICATED OFF
+
+[96m================================================================================[0m
+Total Tests: 6
+[92mPassed: 6[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[16/16] Running cross-warp interleaving (may take time)...
+
+[96m================================================================================[0m
+[1m[96m  CROSS-WARP INSTRUCTION INTERLEAVING[0m[0m
+[96m================================================================================[0m
+
+--- Issuing interleaved instructions from 4 warps ---
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Warp 0 Op 0: ADD
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 271
+  Expected latency: 1 cycles
+  Actual completion: cycle 272 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 0 R_Op.ADD 0 = 0
+    Lane 15: 15 R_Op.ADD 15 = 30
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | Warp 1 Op 0: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 272
+  Expected latency: 2 cycles
+  Actual completion: cycle 274 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 100 R_Op.MUL 2 = 200
+    Lane 15: PREDICATED OFF
+    Lane 31: 131 R_Op.MUL 2 = 262
+
+[92m✓ PASS[0m | Warp 2 Op 0: ADDF
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 273
+  Expected latency: 1 cycles
+  Actual completion: cycle 274 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 200.0000 R_Op.ADDF 1.0000 = 201.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: 231.0000 R_Op.ADDF 4.1000 = 235.1000
+
+[92m✓ PASS[0m | Warp 3 Op 0: ADD
+  Op: R_Op.ADD, FSU: Alu_int_0
+  Requested issue: cycle 274
+  Expected latency: 1 cycles
+  Actual completion: cycle 275 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 300 R_Op.ADD 1 = 301
+    Lane 15: 315 R_Op.ADD 16 = 331
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | Warp 0 Op 1: SUB
+  Op: R_Op.SUB, FSU: Alu_int_0
+  Requested issue: cycle 275
+  Expected latency: 1 cycles
+  Actual completion: cycle 276 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 10 R_Op.SUB 5 = 5
+    Lane 15: PREDICATED OFF
+    Lane 31: 41 R_Op.SUB 36 = 5
+
+[92m✓ PASS[0m | Warp 1 Op 1: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 276
+  Expected latency: 2 cycles
+  Actual completion: cycle 278 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 101 R_Op.MUL 3 = 303
+    Lane 15: PREDICATED OFF
+    Lane 31: 132 R_Op.MUL 3 = 396
+
+[92m✓ PASS[0m | Warp 2 Op 1: SUBF
+  Op: R_Op.SUBF, FSU: AddSub_float_0
+  Requested issue: cycle 277
+  Expected latency: 1 cycles
+  Actual completion: cycle 278 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: PREDICATED OFF
+    Lane 15: PREDICATED OFF
+    Lane 31: 241.0000 R_Op.SUBF 5.1000 = 235.9000
+
+[92m✓ PASS[0m | Warp 3 Op 1: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 278
+  Expected latency: 2 cycles
+  Actual completion: cycle 280 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 310 R_Op.MUL 2 = 620
+    Lane 15: 325 R_Op.MUL 17 = 5525
+    Lane 31: 341 R_Op.MUL 33 = 11253
+
+[92m✓ PASS[0m | Warp 0 Op 2: AND
+  Op: R_Op.AND, FSU: Alu_int_0
+  Requested issue: cycle 279
+  Expected latency: 1 cycles
+  Actual completion: cycle 280 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 20 R_Op.AND 10 = 0
+    Lane 15: 35 R_Op.AND 25 = 1
+    Lane 31: 51 R_Op.AND 41 = 33
+
+[92m✓ PASS[0m | Warp 1 Op 2: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 280
+  Expected latency: 2 cycles
+  Actual completion: cycle 282 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 102 R_Op.MUL 4 = 408
+    Lane 15: 117 R_Op.MUL 4 = 468
+    Lane 31: 133 R_Op.MUL 4 = 532
+
+[92m✓ PASS[0m | Warp 3 Op 2: ADDF
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 282
+  Expected latency: 1 cycles
+  Actual completion: cycle 283 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 320.0000 R_Op.ADDF 3.0000 = 323.0000
+    Lane 15: 335.0000 R_Op.ADDF 3.0000 = 338.0000
+    Lane 31: 351.0000 R_Op.ADDF 3.0000 = 354.0000
+
+[92m✓ PASS[0m | Warp 0 Op 3: OR
+  Op: R_Op.OR, FSU: Alu_int_0
+  Requested issue: cycle 283
+  Expected latency: 1 cycles
+  Actual completion: cycle 284 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 30 R_Op.OR 15 = 31
+    Lane 15: 45 R_Op.OR 30 = 63
+    Lane 31: 61 R_Op.OR 46 = 63
+
+[92m✓ PASS[0m | Warp 2 Op 2: MULF
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 281
+  Expected latency: 4 cycles
+  Actual completion: cycle 285 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 220.0000 R_Op.MULF 3.0000 = 660.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: 251.0000 R_Op.MULF 6.1000 = 1531.1000
+
+[92m✓ PASS[0m | Warp 1 Op 3: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 284
+  Expected latency: 2 cycles
+  Actual completion: cycle 286 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 103 R_Op.MUL 5 = 515
+    Lane 15: 118 R_Op.MUL 5 = 590
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | Warp 2 Op 3: ADDF
+  Op: R_Op.ADDF, FSU: AddSub_float_0
+  Requested issue: cycle 285
+  Expected latency: 1 cycles
+  Actual completion: cycle 286 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 230.0000 R_Op.ADDF 4.0000 = 234.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: 261.0000 R_Op.ADDF 7.1000 = 268.1000
+
+[92m✓ PASS[0m | Warp 0 Op 4: XOR
+  Op: R_Op.XOR, FSU: Alu_int_0
+  Requested issue: cycle 287
+  Expected latency: 1 cycles
+  Actual completion: cycle 288 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 40 R_Op.XOR 20 = 60
+    Lane 15: 55 R_Op.XOR 35 = 20
+    Lane 31: 71 R_Op.XOR 51 = 116
+
+[92m✓ PASS[0m | Warp 1 Op 4: MUL
+  Op: R_Op.MUL, FSU: Mul_int_0
+  Requested issue: cycle 288
+  Expected latency: 2 cycles
+  Actual completion: cycle 290 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 104 R_Op.MUL 6 = 624
+    Lane 15: 119 R_Op.MUL 6 = 714
+    Lane 31: 135 R_Op.MUL 6 = 810
+
+[92m✓ PASS[0m | Warp 2 Op 4: SUBF
+  Op: R_Op.SUBF, FSU: AddSub_float_0
+  Requested issue: cycle 289
+  Expected latency: 1 cycles
+  Actual completion: cycle 290 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 240.0000 R_Op.SUBF 5.0000 = 235.0000
+    Lane 15: PREDICATED OFF
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | Warp 3 Op 4: MULF
+  Op: R_Op.MULF, FSU: Mul_float_0
+  Requested issue: cycle 290
+  Expected latency: 4 cycles
+  Actual completion: cycle 294 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 340.0000 R_Op.MULF 5.0000 = 1700.0000
+    Lane 15: 355.0000 R_Op.MULF 5.0000 = 1775.0000
+    Lane 31: PREDICATED OFF
+
+[92m✓ PASS[0m | Warp 3 Op 3: DIV
+  Op: R_Op.DIV, FSU: Div_int_0
+  Requested issue: cycle 286
+  Expected latency: 17 cycles
+  Actual completion: cycle 303 [92m✓[0m
+  Sample results (lanes 0, 15, 31):
+    Lane 0: 330 R_Op.DIV 4 = 82
+    Lane 15: 345 R_Op.DIV 19 = 18
+    Lane 31: 361 R_Op.DIV 35 = 10
+
+[96m================================================================================[0m
+Total Tests: 20
+[92mPassed: 20[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[96m================================================================================[0m
+
+
+[17/18] Running WB backpressure test - single FSU...
+
+[96m================================================================================[0m
+[1m[96m  WB STAGE BACKPRESSURE - SINGLE FSU (DIV)[0m[0m
+[96m================================================================================[0m
+
+Target FSU: Div_int_0
+FSU Latency: 17 cycles
+FSU Pipeline Depth: 16 stages
+FSU Input Stage: 1 stage
+Total FSU Capacity: 17 instructions
+
+--- Phase 1: Fill FSU pipeline with 11 instructions ---
+  Pipeline fill after Phase 1: 11 / 16
+  Pipeline is_full: False
+  FSU ready_out: True
+  WB output latch ready: False
+
+--- Phase 2: Disable WB pops to block output latch ---
+  Attempting to issue 10 instructions with WB latch blocked...
+  After ticks with WB blocked:
+    Pipeline fill: 16 / 16
+    Pipeline is_full: True
+    FSU ready_out: False
+    WB output latch ready: False
+[92m  ✓ PASS: Backpressure detected - WB blocked, pipeline full, and FSU ready_out=False[0m
+
+--- Phase 3: Re-enable WB pops ---
+
+[96m================================================================================[0m
+Backpressure Test Results:
+[96m================================================================================[0m
+[92m  ✓ PASS: Backpressure mechanism confirmed working[0m
+
+Backpressure Flow:
+  1. WB latch pop disabled → WB latch becomes full (not ready)
+  2. WB latch not ready → FSU can't push results → pipeline fills
+  3. Pipeline full + WB not ready → FSU ready_out goes False
+  4. FSU ready_out=False → Issue stage stops accepting instructions (no new stalls)
+[96m================================================================================[0m
+
+[18/18] Running WB backpressure test - multiple FSUs...
+
+[96m================================================================================[0m
+[1m[96m  WB STAGE BACKPRESSURE - MULTIPLE FSUs[0m[0m
+[96m================================================================================[0m
+
+Target FSUs:
+  Alu_int_0: latency 1, opcode ADD
+  Mul_int_0: latency 2, opcode MUL
+  Div_int_0: latency 17, opcode DIV
+
+--- Phase 1: Normal operation (cycles 0-5) ---
+
+--- Phase 2: Backpressure enabled (disable WB pops) ---
+
+--- Phase 3: Backpressure disabled (re-enable WB pops) ---
+
+[96m================================================================================[0m
+Multi-FSU Backpressure Test Results:
+[96m================================================================================[0m
+
+Alu_int_0 (ADD):
+  Successful issues: 19
+  Stalled issues: 0
+  Rejected issues: 0
+[93m  ⚠ Limited backpressure detected (total: 19)[0m
+
+Mul_int_0 (MUL):
+  Successful issues: 19
+  Stalled issues: 0
+  Rejected issues: 0
+[93m  ⚠ Limited backpressure detected (total: 19)[0m
+
+Div_int_0 (DIV):
+  Successful issues: 18
+  Stalled issues: 0
+  Rejected issues: 0
+[93m  ⚠ Limited backpressure detected (total: 18)[0m
+[96m================================================================================[0m
+
+================================================================================
+  PERFORMANCE COUNTER COLLECTION
+================================================================================
+
+[96m================================================================================[0m
+[1m[96m  PERFORMANCE COUNTER DUMP[0m[0m
+[96m================================================================================[0m
+[92mPerformance counters dumped to ./test_results/Combined_ExStage_PerfCount_Stats.csv[0m
+[1m
+--- Performance Summary ---[0m
+[94m
+Alu_int_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 43
+[93m  Stall cycles: 60[0m
+[93m  Pipeline full cycles: 17[0m
+  NOP cycles: 482
+[94m
+Mul_int_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 17
+[93m  Stall cycles: 60[0m
+[93m  Pipeline full cycles: 49[0m
+  NOP cycles: 508
+[94m
+Div_int_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 35
+[93m  Stall cycles: 60[0m
+[93m  Pipeline full cycles: 15[0m
+  NOP cycles: 498
+[94m
+AddSub_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 19
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 523
+[94m
+Mul_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 8
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 534
+[94m
+Div_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 4
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 538
+[94m
+Sqrt_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 0
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 542
+[94m
+Trig_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 5
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 537
+[94m
+InvSqrt_float_0_Performance_Counter:[0m
+  Total cycles: 542
+  Total instructions: 542
+  Utilization cycles: 4
+[93m  Stall cycles: 60[0m
+  Pipeline full cycles: 0
+  NOP cycles: 538
+
+[96m================================================================================[0m
+[1m[96m  FINAL TEST SUMMARY[0m[0m
+[96m================================================================================[0m
+
+Total Tests Run: [1m103[0m
+[92mTests Passed: 103[0m
+Tests Failed: 0
+[92m[1mPass Rate: 100.0%[0m[0m
+[92m[1m
+✓ All tests passed![0m[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST SUITE COMPLETE[0m[0m
+[96m================================================================================[0m
+

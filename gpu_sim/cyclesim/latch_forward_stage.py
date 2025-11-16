@@ -1,24 +1,28 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
- 
+from custom_enums_multi import Op
+from bitstring import Bits
+
 @dataclass
 class Instruction:
-    pc: int
-    intended_FU: str
+    pc: Bits
+    intended_FSU: str 
     warp_id: int
     warp_group_id: int
-    rs1: int
-    rs2: int
-    rd: int
-    opcode: str # this probably isn't right
-    rdat1: int # needs to be bits type I believe
-    rdat2: int # needs to be bits type I believe
-    wdat: int # needs to be bits type I believe
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+    opcode: Op
+    rdat1: list[Bits]
+    rdat2: list[Bits]
+    wdat: list[Bits]
+    predicate: list[Bits] # list of Bits instances, each of length 1
     issued_cycle: Optional[int] = None
     stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
     stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed
     fu_entries:  Optional[List[Dict]]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
     wb_cycle: Optional[int] = None
+    target_bank: int = None
 
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)

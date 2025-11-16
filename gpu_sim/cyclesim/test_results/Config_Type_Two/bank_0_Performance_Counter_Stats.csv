@@ -1,0 +1,2 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_buffer_age,percentile_10_buffer_occupancy,percentile_1_buffer_occupancy
+bank_0_Performance_Counter,131,0,0,101,95,0.7709923664122137,0.0,0.0,0.0

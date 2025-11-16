@@ -1,0 +1,2 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_buffer_age,percentile_10_buffer_occupancy,percentile_1_buffer_occupancy
+Trig_float_0_Performance_Counter,109,0,0,3,0,0.9357798165137615,17.294117647058822,0.0,0.0
