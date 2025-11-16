@@ -7,9 +7,9 @@ typedef struct {
     /*3D -> 3D Transformation*/
 
     /*inputs*/
-    float* Oa;              //rotation origin
-    float* a_dist;          //distane of one origin axes 
-    float* alpha_r;         //theta - angle for rotation matrix
+    vector_t* Oa;              //rotation origin
+    vector_t* a_dist;          //distane of one origin axes 
+    float* alpha_r;            //theta - angle for rotation matrix
     vertex_t* threeDVert;      //input 3D vectors
 
     /*output*/
@@ -18,7 +18,7 @@ typedef struct {
     /*3D Transformation -> 2D*/
 
     /*inputs*/
-    float* camera;          //camera location
+    vector_t* camera;          //camera location
     float* invTrans;        //inverse transformation matrix
     // threeDVertTrans is also an input 
 

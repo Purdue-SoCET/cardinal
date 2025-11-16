@@ -63,17 +63,15 @@ int main() {
         arg.twoDVert[a].t = 0.f;
     }
 
-    for (int c = 0; c < THREAD_NUM; c++) {
-        for (int b = 0; b < 3; b++) {
-            for (int a = 0; a < 3; a++) {
-            arg.invTrans[c * 9 + a + 3 * b] = (a == b) ? 1.f : 0.f;
-            }
+    for (int b = 0; b < 3; b++) {
+        for (int a = 0; a < 3; a++) {
+        arg.invTrans[a + 3 * b] = (a == b) ? 1.f : 0.f;
         }
     }
 
     printf("*****************\n");
     printf("Trans:");
-    for(int a = 0; a < (THREAD_NUM*3*3); a++){
+    for(int a = 0; a < (3*3); a++){
         if(a%3 == 0) printf("\n");
         if(a%9 == 0) printf("---------------\ni=%d\n", a/9);
         printf("%.2f ", arg.invTrans[a]);
