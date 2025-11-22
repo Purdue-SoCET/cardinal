@@ -12,6 +12,7 @@
 typedef struct {
     // Per Triangle Information
     int bb_start[2];
+    int bb_size[2];
     float bc_im[3][3];
     int tag;
     vector_t pVs[3];

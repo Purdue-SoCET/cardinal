@@ -3,8 +3,8 @@
 
 void kernel_triangle(void* arg) {
     triangle_arg_t* args = (triangle_arg_t*) arg;
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int ix = mod(threadIdx, args->bb_size[0]);
+    int iy = mod(threadIdx / args->bb_size[0], args->bb_size[1]);
 
     int u = ix + args->bb_start[0];
     int v = iy + args->bb_start[1];
@@ -34,5 +34,13 @@ void kernel_triangle(void* arg) {
 
     // Current pixel is closest - set as so
     args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)] = pix_z;
+    if(GET_1D_INDEX(u, v, args->buff_w) == 3130) {
+        printf("\assigning tag = %d\n", args->tag);
+        printf("\tidx = %d\n", threadIdx);
+        printf("\t<ix,iy> = <%d, %d>\n", ix, iy);
+        printf("\t<u,v> = <%d, %d>\n", u, v);
+        printf("\tTag Buff idx = %d\n", GET_1D_INDEX(u, v, args->buff_w));
+        printf("\tbb = <%d, %d>\n", args->bb_start[0], args->bb_start[1]);
+    }
     args->tag_buff[GET_1D_INDEX(u, v, args->buff_w)] = args->tag;
 }

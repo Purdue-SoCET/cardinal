@@ -18,7 +18,7 @@ uint8_t* memory_ptr;
 #define OUTPUT_W 800 // 680
 #define OUTPUT_H 800 // 480
 
-#define VERTEX_DEBUG 1
+#define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
 
@@ -58,6 +58,9 @@ uint8_t* memory_ptr;
 
 
 int main(int argc, char** argv) {
+    int frame = 999;
+    // for (int frame = 0; frame < 300; frame++)
+    {
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
     uint8_t* memory_ptr = memory_base;
 
@@ -166,11 +169,11 @@ int main(int argc, char** argv) {
 
         ALLOCATE_MEM(a_dist, vector_t, 1);
         vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 0, 1, 0); // Rotate around z
+        MAKE_VECTOR((*a_dist), 1, 1, 0); // Rotate around z
 
         ALLOCATE_MEM(alpha_r, float, 1);
         vertex_args->alpha_r = alpha_r;
-        *alpha_r = 3.14f * 0.2f; // Assume no rotation for now
+        *alpha_r = 3.14f * 2 * frame / 300.0f;
 
     // Give geometry inputs
         vertex_args->threeDVert = verts;
@@ -185,7 +188,7 @@ int main(int argc, char** argv) {
     
     // Running the Kernel
     {
-        dim_t grid_dim = {1, 1, 1}; dim_t block_dim = {num_verts, 1, 1};
+        int grid_dim = 1; int block_dim = num_verts;
         run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
     }
 
@@ -244,6 +247,8 @@ int main(int argc, char** argv) {
 
         triangle_args->bb_start[0] = u_min;
         triangle_args->bb_start[1] = v_min;
+        triangle_args->bb_size[0] = u_max-u_min;
+        triangle_args->bb_size[1] = v_max-v_min;
 
         // Find barycentric Matrix
         float m[3][3] = {
@@ -254,8 +259,10 @@ int main(int argc, char** argv) {
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
         // Running the Kernel
-        dim_t grid_dim = {1, 1, 1}; dim_t block_dim = {u_max, v_max, 1};
+        int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
+        printf("%d: tbuff[3130] = %d\n", tri, tbuff[3130]);
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
+        printf("\ttbuff[3130] = %d\n", tri, tbuff[3130]);
     }
 
     // Checking TRIANGLE Output
@@ -276,6 +283,7 @@ int main(int argc, char** argv) {
         printf(" --- Post Triangle Tags --- \n");
         printf("\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
+            if(tbuff[i]+1 > 50)
             printf("%d", tbuff[i]+1);
             if(((i+1) % frame_w)) {
                 printf("");
@@ -313,8 +321,7 @@ int main(int argc, char** argv) {
 
     // Running the kernel
     {
-        dim_t grid_dim = {1, 1, 1}; dim_t block_dim = {frame_w, frame_h, 1};
-        printf("Running kernel_pixel\n");
+        int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
@@ -326,6 +333,12 @@ int main(int argc, char** argv) {
         int_color_output[i*3 + 0] = color_output[i].x * 255 + .5;
         int_color_output[i*3 + 1] = color_output[i].y * 255 + .5;
         int_color_output[i*3 + 2] = color_output[i].z * 255 + .5;
+        // int_color_output[i*3 + 0] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
+        // int_color_output[i*3 + 1] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
+        // int_color_output[i*3 + 2] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
+        // int_color_output[i*3 + 0] = tbuff[i] != -1 ? (((tbuff[i]+1) % 3)+1.0f) / 3.0f * 255 : 0;
+        // int_color_output[i*3 + 1] = tbuff[i] != -1 ? (((tbuff[i]+2) % 4)+1.0f) / 4.0f * 255 : 0;
+        // int_color_output[i*3 + 2] = tbuff[i] != -1 ? (((tbuff[i]+3) % 5)+1.0f) / 5.0f * 255 : 0;
         // if(tbuff[i] != -1) {
         //     int_color_output[i*3 + 0] = 255;
         //     int_color_output[i*3 + 1] = 255;
@@ -337,10 +350,14 @@ int main(int argc, char** argv) {
         // }
     }
 
-    createPPMFile("frame0.ppm", int_color_output);
+    char fname[25];
+    snprintf(fname, sizeof(fname), "output/frame_%03d.ppm", frame);
+
+    createPPMFile(fname, int_color_output);
     free(int_color_output);
 
     // --- Clean Up ---
     free(memory_base);
+    }
     
 }

@@ -9,5 +9,5 @@
 typedef void (*kernel_ptr_t)(void*);
 
 // Function Headers
-void run_kernel(kernel_ptr_t, dim_t, dim_t, void*);
+void run_kernel(kernel_ptr_t, int, int, void*);
 void createPPMFile(char*, int*);

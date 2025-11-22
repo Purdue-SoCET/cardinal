@@ -3,13 +3,17 @@
 #include "include/graphics_lib.h"
 
 void kernel_pixel(void* arg) {
-    // TBD: Need to use strides to fit all operation 
     pixel_arg_t* args = (pixel_arg_t*) arg;
     
     int u, v;
-    u = threadIdx.x; v = threadIdx.y;
+    u = mod(threadIdx, args->buff_w);
+    v = mod(threadIdx / args->buff_w, args->buff_h);
     
-    int tag = args->tag_buff[GET_1D_INDEX(u, v, args->buff_w)];
+    int tag = args->tag_buff[threadIdx];
+    if(tag > 100) {
+        printf("Pixel Kernel on p = <%d, %d>\n", u, v);
+        printf("\t Got tag = %d\n", tag);
+    }
     if(tag < 0) return;
 
     triangle_t tri = args->tris[tag];
@@ -45,5 +49,5 @@ void kernel_pixel(void* arg) {
     float t = l.x * (pVs[0].t * pVs[0].coords.z) + l.y * (pVs[1].t * pVs[1].coords.z) + l.z * (pVs[2].t * pVs[2].coords.z);
     t = t / (correction_factor);
 
-    args->color[GET_1D_INDEX(u, v, args->buff_w)] = get_texture(args->texture, s, t);
+    args->color[threadIdx] = get_texture(args->texture, s, t);
 }
