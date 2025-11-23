@@ -71,14 +71,26 @@ void kernel_vertexShader(void* arg)
     lcs[8] = lcs[0] * lcs[4] - lcs[1] * lcs[3];
 
     //normalize(lcs[3 to 5])
+    #ifdef CPU_SIM
+    lcs_dist = sqrt(lcs[3]*lcs[3] + lcs[4]*lcs[4] + lcs[5]*lcs[5]);
+    inv_lcs_dist = 1/lcs_dist;
+    #endif
+    #ifdef GPU_SIM
     inv_lcs_dist = isqrt(lcs[3]*lcs[3] + lcs[4]*lcs[4] + lcs[5]*lcs[5]);
+    #endif
     for(int j = 3; j < 6; j++)
     {
         lcs[j] = lcs[j] * inv_lcs_dist;
     }
 
     //normalize(lcs[6 to 8])
+    #ifdef CPU_SIM
+    lcs_dist = sqrt(lcs[6]*lcs[6] + lcs[7]*lcs[7] + lcs[8]*lcs[8]);
+    inv_lcs_dist = 1/lcs_dist;
+    #endif
+    #ifdef GPU_SIM
     inv_lcs_dist = isqrt(lcs[6]*lcs[6] + lcs[7]*lcs[7] + lcs[8]*lcs[8]);
+    #endif
     for(int j = 6; j < 9; j++)
     {
         lcs[j] = lcs[j] * inv_lcs_dist;
@@ -192,7 +204,7 @@ void kernel_vertexShader(void* arg)
     args->twoDVert[i].coords.y = q[1] / q[2];
 
     #ifdef CPU_SIM
-    args->twoDVert[3*i+2] = 1.0f / q[2];
+    args->twoDVert[i].coords.z = 1.0f / q[2];
     #endif
     
     #ifdef GPU_SIM
