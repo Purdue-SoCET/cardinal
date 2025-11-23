@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
-from base import ForwardingIF, LatchIF, Stage, Addr, Instruction, dMemRequest, dCacheFrame, MSHREntry
+from base import ForwardingIF, LatchIF, Stage, Addr, Instruction, dCacheRequest, dCacheFrame, MSHREntry, MemRequest
 
 
 # --- Cache Configuration ---
@@ -32,7 +32,6 @@ TAG_BIT_LEN = 32 - (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BY
 
 # Other constants
 MSHR_BUFFER_LEN = 16    # The number of latches inside each MSHR buffer/Number of miss requests that can fit in each buffer
-RAM_LATENCY_CYCLES = 200    # Static latency for each RAM access
 HIT_LATENCY = 2         # Parameterized cache hit latency
 
 
@@ -91,7 +90,7 @@ class MSHRBuffer:
         self.bank_stall = False
         return False
 
-    def add_miss(self, req: dMemRequest) -> Tuple[int, bool]:    # Add a miss to the MSHR buffer
+    def add_miss(self, req: dCacheRequest) -> Tuple[int, bool]:    # Add a miss to the MSHR buffer
         secondary = self.find_secondary_miss(req.addr.block_addr_val)   # See if the current request is a secondary miss
         if secondary:   # If the entry for that address exists (secondary miss)
             # Handle secondary miss
@@ -149,10 +148,12 @@ class MSHRBuffer:
         return len(self.buffer) == 0
 
 class CacheBank:
-    def __init__(self, bank_id: int, num_sets: int, num_ways: int):
+    def __init__(self, bank_id: int, num_sets: int, num_ways: int, mem_req_if: LatchIF):
         self.bank_id = bank_id  # bank id
         self.num_sets = num_sets    # Number of sets in a bank
         self.num_ways = num_ways    # Number of ways in each set
+        self.mem_req_if = mem_req_if    # The memory request to memory
+
         self.sets: List[List[dCacheFrame]] = [
             [dCacheFrame() for _ in range(num_ways)] for _ in range(num_sets)    # Create a cache frame for every way in all the sets
         ]
@@ -168,8 +169,9 @@ class CacheBank:
         self.fill_buffer = dCacheFrame()     # Used to hold the data for a miss
         self.busy = False   # Default is that each bank is not busy
         
-        # New field for fixed latency
-        self.ram_cycles_left: int = 0   # Used to simulate the 200-cycles RAM access time
+        # Defaulting Memory Interface States
+        self.waiting_for_mem = False
+        self.incoming_mem_data = None
 
     def _update_lru(self, set_index: int, way: int):
         if way in self.lru[set_index]:
@@ -203,7 +205,6 @@ class CacheBank:
         """
         self.active_mshr = mshr_entry   # Latch the oldest and valid MSHR entry
         self.busy = True    # Mark the bank as busy and can't accept more miss requests
-        self.ram_cycles_left = 0 # Will be set on state transition
         
         set_idx = mshr_entry.original_request.addr.set_index    # Get the set indes for the victim/MSHR
         victim_way = self._get_lru_way(set_idx)     # Find out the LRU way (victim)
@@ -220,87 +221,120 @@ class CacheBank:
         
         # Transition FSM
         if self.latched_victim.valid and self.latched_victim.dirty:     # if the victim is valid and dirty
-            self.state = 'VICTIM_EJECT'     # Need to write back the data 
-            self.ram_cycles_left = RAM_LATENCY_CYCLES # Start latency timer
-            logging.debug(f"Bank {self.bank_id}: Miss. Dirty victim. -> VICTIM_EJECT ({RAM_LATENCY_CYCLES} cycles)")
+            self.state = 'VICTIM_EJECT'     # Need to write back the data
+            logging.debug(f"Bank {self.bank_id}: Miss. Dirty victim. -> VICTIM_EJECT")
         else:
             self.state = 'BLOCK_PULL'   # Otherwise, get the data from the RAM for the oldest missed request
-            self.ram_cycles_left = RAM_LATENCY_CYCLES # Start latency timer
-            logging.debug(f"Bank {self.bank_id}: Miss. Clean victim. -> BLOCK_PULL ({RAM_LATENCY_CYCLES} cycles)")
+            logging.debug(f"Bank {self.bank_id}: Miss. Clean victim. -> BLOCK_PULL")
         
         # 2. NOW, invalidate the line in the cache
         self.sets[set_idx][victim_way].valid = False
-
         return self.state
+
+    def complete_mem_access(self, data):
+        self.incoming_mem_data = data
+        self.waiting_for_mem = False
 
     def cycle(self) -> Dict: # No longer takes ram_resp
         """
         Advances the cache bank FSM by one cycle.
         """
-        
         # Default outputs (RAM ports are no longer used) --> Sent to the lockupFreeCacheStage
         outputs = {
             'uuid_ready': False, 'uuid_out': 0, 'busy': self.busy
         }
-        
-        # Handle RAM latency countdown
-        if self.ram_cycles_left > 0:
-            self.ram_cycles_left -= 1   # Decrement the timer
-            outputs['busy'] = self.busy # Stay busy
-            return outputs # Do nothing else this cycle
-        
-        # --- If timer is 0, proceed with state logic ---
         
         next_state = self.state     # Default next state (needed for START state)
         
         if self.state == 'START':   # Current state: START
             self.busy = False   # If in the START state, the cache bank is not busy
         
-        elif self.state == 'BLOCK_PULL':    # Current state: BLOCK_PULL (The RAM finished giving all the data)
-            # Timer just finished.
-            logging.debug(f"Bank {self.bank_id}: BLOCK_PULL complete.")
-            
-            # Simulate the fill "instantaneously"
-            for i in range(BLOCK_SIZE_WORDS):
-                if self.active_mshr.write_status[i]:    # If it's a write request to that block of data
-                    # Get data from MSHR for writes
-                    self.fill_buffer.block[i] = self.active_mshr.write_block[i]
+        elif self.state == 'BLOCK_PULL':    # Current state: BLOCK_PULL 
+            if not self.waiting_for_mem and self.incoming_mem_data is None:     # (The RAM finished giving all the data)
+                if self.mem_req_if.ready_for_push():
+                    block_addr = self.active_mshr.block_addr_val << (BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)  # Calculating the block address in BYTE
+                    # The request that's being sent to RAM
+                    request = {
+                        "addr": block_addr,
+                        "size": BLOCK_SIZE_WORDS * 4,
+                        "uuid": self.active_mshr.uuid,
+                        "warp_id": self.bank_id,    # IMPORTANT: warp field stores the bank id
+                        "rw_mode": "read"
+                    }
+                    self.mem_req_if.push(request)   # Push the request to memory
+                    self.waiting_for_mem = True     # Wait for memory flag goes high
+                    print(f"Bank {self.bank_id}: Sent READ req to Memory for 0x{block_addr:X}")
                 else:
-                    # Fill with placeholder data for reads (RAM isn't simulated)
-                    self.fill_buffer.block[i] = 0xDEADBEEF
+                    # Interface is busy, try again next cycle
+                    pass
             
-            next_state = 'FINISH'   # Next state is FINISH
+            # Data has arrived from the memory
+            elif not self.waiting_for_mem and self.incoming_mem_data is not None:
+                logging.debug(f"Bank {self.bank_id}: BLOCK_PULL complete.")
+                raw_bytes = self.incoming_mem_data.tobytes()    # Convert the incoming data to bytes
 
-        elif self.state == 'VICTIM_EJECT':  # Current state: VICTIM_EJECT (dirty data in the LRU cache frame)
-            # Timer just finished.
-            logging.debug(f"Bank {self.bank_id}: VICTIM_EJECT complete.")
+                for i in range(BLOCK_SIZE_WORDS):
+                    if (self.active_mshr.write_status[i]):
+                        self.fill_buffer.block[i] = self.active_mshr.write_block[i]
+                    else:
+                        start = i * 4
+                        end = start + 4
+                        if (start < len(raw_bytes)):
+                            word_bytes = raw_bytes[start:end]
+                            self.fill_buffer.block[i] = int.from_bytes(word_bytes, byteorder='little')
+                        # The else block would be executed if the chunk of data returned from memory is smaller than the block size
+                        else:
+                            self.fill_buffer.block[i] = 0
+                
+                self.incoming_mem_data = None
+                next_state = 'FINISH'
             
-            # Now, start the block pull
-            next_state = 'BLOCK_PULL'   # Next state is BLOCK_PULL
-            self.ram_cycles_left = RAM_LATENCY_CYCLES # Start new timer
+        elif (self.state == 'VICTIM_EJECT'):
+            # Can send a write request to Memory
+            if not(self.waiting_for_mem) and self.incoming_mem_data is None:
+                if (self.mem_req_if.ready_for_push()):
+                    victim_tag = self.latched_victim.tag
+                    victim_set = self.active_mshr.original_request.addr.set_index
+
+                    addr = (victim_tag << (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
+                           (victim_set << (BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
+                           (self.bank_id << (BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN))
+                    
+                    req_payload = {
+                        "addr": addr,
+                        "size": BLOCK_SIZE_WORDS * 4,   # Size in bytes
+                        "uuid": self.active_mshr.uuid,
+                        "warp_id": self.bank_id,
+                        "rw_mode": "write",
+                        "data": self.latched_victim.block
+                    }
+                    self.mem_req_if.push(req_payload)
+                    self.waiting_for_mem = True
+                
+                else:   # Memory is not ready for a request
+                    pass
+
+            elif not(self.waiting_for_mem) and (self.incoming_mem_data == "WRITE_DONE"):
+                self.incoming_mem_data = None
+                next_state = 'BLOCK_PULL'
         
-        elif self.state == 'FINISH':    # Current state: FINISH
-            # Install the new block
-            set_idx = self.active_mshr.original_request.addr.set_index  # Set index
-            self.sets[set_idx][self.latched_victim_way] = self.fill_buffer  # Replace the victim cache frame with the new cache frame
-            self._update_lru(set_idx, self.latched_victim_way)  # Make the new cache frame the MRU
-            
-            # Signal completion
-            outputs['uuid_ready'] = True    # Signal that the speicific UUID is ready
-            outputs['uuid_out'] = self.active_mshr.uuid     # Give the UUID that's ready
-            
-            # Clear state
-            self.active_mshr = None     # No MSHR should be active
-            self.fill_buffer = dCacheFrame() # Overwrite the fill_buffer with a new CacheFrame
-            self.latched_victim = None  # No latched victim
-            self.busy = False   # Bank is not busy
-            next_state = 'START'    # Next state should be START
-            logging.debug(f"Bank {self.bank_id}: FINISH complete -> START")
+        # Finished victinm eject and block pull
+        elif self.state == 'FINISH':
+            set_idx = self.active_mshr.original_request.addr.set_index  # Get the set
+            self.sets[set_idx][self.latched_victim_way] = self.fill_buffer  
+            self._update_lru(set_idx, self.latched_victim_way)
 
-        self.state = next_state     # Update the state to be next state (posedge CLK)
-        outputs['busy'] = self.busy     # Update the busy output
+            outputs['uuid_ready'] = True
+            outputs['uuid_out'] = self.active_mshr.uuid
+            self.active_mshr = None
+            self.fill_buffer = dCacheFrame()
+            self.latched_victim = None
+            self.busy = False
+            next_state = 'START'
+        
+        self.state = next_state
+        outputs['busy'] = self.busy
         return outputs
-
 
 # --- Main Cache Stage ---
 
@@ -313,19 +347,21 @@ class LockupFreeCacheStage(Stage):
             name: str, 
             behind_latch: Optional[LatchIF], # LSU -> Cache
             forward_ifs_write: Optional[Dict[str, ForwardingIF]], # Cache -> LSU
-            mem_req_if, # Cache -> Memory
-            mem_resp_if # Memory -> Cache
+            mem_req_if: LatchIF, # Cache -> Memory
+            mem_resp_if: LatchIF # Memory -> Cache
         ):
         super().__init__(
             name = name,
             behind_latch = behind_latch,
             forward_ifs_write = forward_ifs_write or {}
         )
+        self.mem_req_if = mem_req_if    # The interface used by the cache to send to the memory
+        self.mem_resp_if = mem_resp_if # The interface used the memory to send data back to cache
         
         # Instantiate banks and MSHRs
         # Create NUM_BANKS number of banks each with NUM_SETS_PER_BANK of sets and NUM_WAYS of ways
         self.banks = [
-            CacheBank(i, NUM_SETS_PER_BANK, NUM_WAYS) for i in range(NUM_BANKS)
+            CacheBank(i, NUM_SETS_PER_BANK, NUM_WAYS, mem_req_if) for i in range(NUM_BANKS)
         ]
         # Create a MSHR buffer for each bank, PASSING IN THE BANK ID
         self.mshrs = [
@@ -333,9 +369,9 @@ class LockupFreeCacheStage(Stage):
         ]
         
         # State for the pipeline instruction this stage is processing
-        self.pending_request: Optional[dMemRequest] = None   # The current request
+        self.pending_request: Optional[dCacheRequest] = None   # The current request
         # Map of in-flight misses, keyed by UUID
-        self.active_misses: Dict[int, dMemRequest] = {}
+        self.active_misses: Dict[int, dCacheRequest] = {}
 
         # NEW: Create a pipeline for hit latency.
         # An item takes HIT_LATENCY cycles to pass through.
@@ -354,6 +390,16 @@ class LockupFreeCacheStage(Stage):
         self.cycle_count += 1   # Increment the cycle count by 1
         logging.info(f"--- Cache Cycle {self.cycle_count} ---")
         self.stall = False
+
+        # --- 1. Check for memory responses
+        if (self.mem_resp_if.valid):
+            resp = self.mem_resp_if.pop()
+            if (resp):
+                target_bank_id = resp["warp"]
+                data = resp["data"]
+
+                if (target_bank_id is not None) and (target_bank_id >= 0 and target_bank_id < NUM_BANKS):
+                    self.banks[target_bank_id].complete_mem_access(data)
         
         # --- 2. Process Hit Pipeline (Output Stage) ---
         # Pop the item that entered the pipeline HIT_LATENCY cycles ago
@@ -416,7 +462,6 @@ class LockupFreeCacheStage(Stage):
         if completed_hit_info: # This is the final cycle of the hit. The cache is busy outputting.
             req = completed_hit_info['req']
             logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}")
-            self.active_cycles += 1 # This cycle is active because it's completing a hit
             self.hit_pipeline_busy = False # The hit is complete, so unlock the pipeline.
 
             self.output_buffer.append({
@@ -439,14 +484,13 @@ class LockupFreeCacheStage(Stage):
                 if self.pending_request is None:    # if not handling any request
                     if (input_data):  
                         logging.info(f"Cache: Received new request: {input_data}")
-                        self.pending_request = dMemRequest(
+                        self.pending_request = dCacheRequest(
                             addr_val=input_data.get('addr', 0),
                             rw_mode=input_data.get('rw', 'read'),
                             store_value=input_data.get('data_in', 0),
                         )
                     else:   # If the cache doesn't receive a valid request
                         logging.debug("No request sent to dcache")
-                        self.idle_cycle += 1    # If the cache doesn't receive a valid request
                 
                 if self.pending_request:    # If currently handling a request
                     req = self.pending_request  # The request
@@ -469,7 +513,6 @@ class LockupFreeCacheStage(Stage):
                         self.hit_pipeline_busy = True # Lock the pipeline, it's now busy.
                         
                         self.pending_request = None # Consume the request
-                        self.active_cycles += 1 # Count the *acceptance* of the hit
                     else:
                         # This is a MISS
                         logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
@@ -503,7 +546,6 @@ class LockupFreeCacheStage(Stage):
                             })
                             
                             self.pending_request = None
-                            self.active_cycles += 1 # Count the *acceptance* of the miss
             
             else: # else for 'if not self.hit_pipeline_busy'
                 logging.debug(f"Cache: Input stage stalled, hit pipeline is busy.")
@@ -520,12 +562,18 @@ class LockupFreeCacheStage(Stage):
         self.hit_pipeline.append(this_cycle_lookup_result)
 
         # Pushing the top of the output buffer to the ahead latch (LSU)
-        # We must push to a *named* interface in the dictionary
         DCACHE_LSU_IF_NAME = "DCache_LSU_Resp" # Pick a name
         
-        if self.output_buffer and (DCACHE_LSU_IF_NAME in self.forward_ifs_write):
-            # Check if the LSU is stalled
-            if not self.forward_ifs_write[DCACHE_LSU_IF_NAME].wait:
-                event_to_send = self.output_buffer.popleft()
-                # Push to the named interface, not the dict
-                self.forward_ifs_write[DCACHE_LSU_IF_NAME].push(event_to_send)
+        if DCACHE_LSU_IF_NAME in self.forward_ifs_write:
+            interface = self.forward_ifs_write[DCACHE_LSU_IF_NAME]
+
+            if not(interface.wait):
+                if self.output_buffer:
+                    event_to_send = self.output_buffer.popleft()
+                    # Push to the named interface, not the dict
+                    self.forward_ifs_write[DCACHE_LSU_IF_NAME].push(event_to_send)
+                else:
+                    self.forward_ifs_write[DCACHE_LSU_IF_NAME].push(None)
+            else:
+                # The LSU is busy, hold the data
+                pass
