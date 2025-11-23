@@ -30,7 +30,7 @@ def fetch(instructions, pc: int):
 #32 threads per warp, 32 warps per threadblock. currently 1 threadblock
 def tbs(blockdim, gridsize): 
     totalsize = blockdim * gridsize #
-
+    print(f"blockdim = {blockdim}, gridsize = {gridsize}")
     if totalsize > 1024:
         print("fuck you 3")
         sys.exit(1)

@@ -77,7 +77,7 @@ class Instr(ABC):
             case Instr_Type.R_TYPE_1:
                 op = R_Op_1(funct3)
                 self = R_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
-                print(f"rtype_1, funct={op}, rd={rd.uint}")  
+                print(f"rtype_1, funct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
             case Instr_Type.I_TYPE_0:
                 op = I_Op_0(funct3)
                 self = I_Instr_0(op=op, rs1=rs1, imm=imm, rd=rd)
@@ -223,6 +223,7 @@ class R_Instr_1(Instr):
             case R_Op_1.SLL:
                 shift_amount = rdat2.uint & 0x1F  # Mask to 5 bits
                 result = (rdat1.int << shift_amount)
+                print(f"{rdat1.int} << {shift_amount} = {result}")
             
             case R_Op_1.SRL:
                 shift_amount = rdat2.uint & 0x1F
@@ -338,7 +339,9 @@ class I_Instr_2(Instr):
                 # if mem is None:
                 #     raise RuntimeError("Memory object required for LW operation")
                 addr = rdat1.int + imm_val
+                print(f"addr: {rdat1.int} + {imm_val} = {rdat1.int + imm_val}")
                 result = mem.read(addr, 4)  # Read 32 bits (4 bytes)
+                print(f"result: {result}")
 
             case I_Op_2.LH:
                 # if self.mem is None:
