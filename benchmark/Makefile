@@ -8,13 +8,20 @@ CPU_LDFLAGS = -lm
 GPU_CC = python3 ../../gpu-ppci-compiler/compile_twig.py
 GPU_CFLAGS = 
 
-# Larger project CPU kernel files
+# CPU files
 CPU_SRCS = cpu_sim/main.c cpu_sim/kernel_run.c kernels/graphics_lib.c \
        kernels/vertexShader.c kernels/triangle.c kernels/pixel.c
-CPU_BUILD_DIR = build/
-CPU_OUTPUT_DIR = $(CPU_BUILD_DIR)output/
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
+
+CPU_BUILD_DIR = build/
+CPU_OUTPUT_DIR = $(CPU_BUILD_DIR)output/
+
+# GPU files
+GPU_LIB_SRCS = kernels/graphics_lib.c
+GPU_KERNEL_SRCS = $(filter-out $(GPU_LIB_SRCS), $(wildcard kernels/*.c))
+GPU_OUTPUT_DIR = compiled/
+GPU_TARGETS = $(patsubst kernels/%.c, $(GPU_OUTPUT_DIR)%.asm, $(GPU_KERNEL_SRCS))
 
 # --- Targets ---
 
@@ -22,6 +29,9 @@ CPU_PPM = frame_000.ppm
 all: output.png
 
 run: $(CPU_PPM)
+
+# Compiles all found kernels
+gpu_all: $(GPU_TARGETS)
 
 $(CPU_TARGET): $(SRCS)
  	# Make build dir if it does not exist
@@ -38,6 +48,12 @@ output.png: $(CPU_PPM)
 # Rule to clean up all generated files
 clean:
 	rm -rf $(CPU_BUILD_DIR)*
+
+
+# Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'
+$(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)
+	mkdir -p $(GPU_OUTPUT_DIR)
+	$(GPU_CC) $(GPU_CFLAGS) $^ -o $@
 
 # Tell 'make' that 'all', 'run', and 'clean' are not files
 .PHONY: all run clean
