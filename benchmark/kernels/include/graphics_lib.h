@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GRAPHICS_LIB_H
+#define GRAPHICS_LIB_H
 
 // --- New Types ---
 typedef struct {
@@ -26,3 +27,5 @@ typedef struct {
 vector_t barycentric_coordinates(vector_t, vector_t[3]);
 vector_t get_texture(texture_t, float, float);
 int matrix_inversion(const float*, float*);
+
+#endif

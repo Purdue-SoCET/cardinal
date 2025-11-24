@@ -1,26 +1,7 @@
-#pragma once
+#ifndef VERTEX_SHADER_H
+#define VERTEX_SHADER_H
+
 #include "graphics_lib.h"
-
-#ifdef CPU_SIM
-#include<math.h>
-#endif
-
-#ifdef GPU_SIM
-extern float cos(float);
-extern int ftoi(float);
-extern float itof(int);
-extern float sin(float);
-extern float isqrt(float);
-
-extern int threadIdx();
-extern int blockDim();
-extern int blockIdx();
-
-#define blockIDx_x blockIdx()
-#define blockDim_x blockDim()
-#define threadIDx_x threadIdx()
-#endif
-
 
 //Note: All Vectors and Matrix are flat and expected to be 0 for all initaial values
 typedef struct {
@@ -47,3 +28,5 @@ typedef struct {
 } vertexShader_arg_t;
 
 void kernel_vertexShader(void*);
+
+#endif

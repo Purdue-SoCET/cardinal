@@ -74,21 +74,11 @@ void kernel_vertexShader(void* arg)
 
     // Y AXIS M33::MakeRotationMatrix
 
-    #ifdef CPU_SIM
-    float rotMat[9] = {
-        cosf(*(args->alpha_r)), 0, sinf(*(args->alpha_r)),
-        0, 1, 0,
-        -sinf(*(args->alpha_r)), 0, cosf(*(args->alpha_r))
-    };
-    #endif
-
-    #ifdef GPU_SIM
     float rotMat[9] = {
         cos(*(args->alpha_r)), 0, sin(*(args->alpha_r)),
         0, 1, 0,
         -sin(*(args->alpha_r)), 0, cos(*(args->alpha_r))
     };
-    #endif
 
 
     /*invert LCS where LCS^-1 = LCS.T*/
@@ -169,15 +159,7 @@ void kernel_vertexShader(void* arg)
 
     args->twoDVert[i].coords.x = q[0] / q[2];
     args->twoDVert[i].coords.y = q[1] / q[2];
-
-    #ifdef CPU_SIM
-    args->twoDVert[i].coords.z = 1.0f / q[2];
-    #endif
-    
-    #ifdef GPU_SIM
     args->twoDVert[i].coords.z = itof(1) / q[2];
-    #endif
-    //args->twoDVert[3*i+2] = itof(1) / q[2];
 
     args->twoDVert[i].s = args->threeDVert[i].s;
     args->twoDVert[i].t = args->threeDVert[i].t;
