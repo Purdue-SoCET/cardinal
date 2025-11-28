@@ -179,13 +179,13 @@ class IssueStage(Stage):
             if fust[inst.intended_FSU]:
                 return None, True
             q.popleft()
+            print(f"[{self.name}] Dispatched inst warp={inst.warp} wg={inst.warpGroup} FU={inst.intended_FSU}, {inst}\n")
             return inst, False
 
         # EVEN gets priority
         instr, FU_stall = try_dispatch_one(self.ready_to_dispatch)
         if instr is not None:
             self.dispatched.append(instr)
-            print(f"[{self.name}] Dispatched inst warp={getattr(instr, 'warp', None)} wg={getattr(instr, 'warpGroup', None)} FU={getattr(instr, 'intended_FSU', None)}")
 
         # Then ODD
         # second = try_dispatch_one(self.ready_odd)
@@ -217,11 +217,13 @@ class IssueStage(Stage):
             if self.even_read_progress == 0:
                 # val = self.evenRF(self.staged_even.rs1, None, 'R')
                 val = self.regfile.read_warp_gran(self.staged_even.warp, self.staged_even.rs1)
+                print(f"[{self.name}] RF read EVEN rs1: warp={self.staged_even.warp} wg={self.staged_even.warpGroup} rs1={self.staged_even.rs1} -> {val}")
                 self.staged_even.rdat1 = val
                 self.even_read_progress = 1
             elif self.even_read_progress == 1:
                 # val = self.evenRF(self.staged_even.rs2, None, 'R')
                 val = self.regfile.read_warp_gran(self.staged_even.warp, self.staged_even.rs2)
+                print(f"[{self.name}] RF read EVEN rs2: warp={self.staged_even.warp} wg={self.staged_even.warpGroup} rs2={self.staged_even.rs2} -> {val}")
                 self.staged_even.rdat2 = val
                 self.even_read_progress = 2
                 # Move to ready queue after 2nd operand
@@ -235,11 +237,13 @@ class IssueStage(Stage):
             if self.odd_read_progress == 0:
                 # val = self.oddRF(self.staged_odd.rs1, None, 'R')
                 val = self.regfile.read_warp_gran(self.staged_odd.warp, self.staged_odd.rs1)
+                print(f"[{self.name}] RF read ODD rs1: warp={self.staged_odd.warp} wg={self.staged_odd.warpGroup} rs1={self.staged_odd.rs1} -> {val}")
                 self.staged_odd.rdat1 = val
                 self.odd_read_progress = 1
             elif self.odd_read_progress == 1:
                 # val = self.oddRF(self.staged_odd.rs2, None, 'R')
                 val = self.regfile.read_warp_gran(self.staged_odd.warp, self.staged_odd.rs2)
+                print(f"[{self.name}] RF read ODD rs2: warp={self.staged_odd.warp} wg={self.staged_odd.warpGroup} rs2={self.staged_odd.rs2} -> {val}")
                 self.staged_odd.rdat2 = val
                 self.odd_read_progress = 2
                 # Move to ready queue after 2nd operand
