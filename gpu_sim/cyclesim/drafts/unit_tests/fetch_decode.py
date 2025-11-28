@@ -9,6 +9,7 @@ from base import LatchIF, ForwardingIF, Instruction, DecodeType
 from units.scheduler import SchedulerStage
 from units.icache import ICacheStage
 from units.decode import DecodeStage
+from units.pred_reg_file import PredicateRegFile
 from units.mem import MemStage
 from Memory import Mem
 from bitstring import Bits
@@ -22,12 +23,12 @@ def cycle(scheduler, icache, memstage, decode_stage,
 
     # 1) scheduler may issue
     issue = scheduler.compute()
-
+    print(f"[Sched] got={issue}\n")
     if issue is not None:
-        group, warp, pc = issue
-        print(f"[Sched] ISSUE: warp {warp} group {group} pc=0x{pc:X}")
+        new_inst = issue
+        print(f"[Sched] ISSUE: warp {new_inst.warp} group {new_inst.warpGroup} pc=0x{new_inst.pc:X}")
         # push fetch request into ICache
-        fetch_ic_if.push({"pc": pc})
+        fetch_ic_if.push(new_inst)
 
     # 2) ICache runs
     icache.compute()
@@ -37,6 +38,9 @@ def cycle(scheduler, icache, memstage, decode_stage,
 
     # 4) ICache might process new memory return on next cycle
     icache.compute()
+
+    # 5) Decode Stage runs
+    decode_stage.compute()
 
 
 # --------------------------------------------
@@ -52,6 +56,7 @@ def test_scheduler_icache_mem():
     branch_if = ForwardingIF("Branch→Sched")
     wb_if     = ForwardingIF("WB→Sched")
     icache_ihit = ForwardingIF("CACHE->Scheduler")
+
 
     # Initialize scheduler inputs to safe values
     decode_if.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
@@ -82,6 +87,7 @@ def test_scheduler_icache_mem():
     ic_de_if    = LatchIF("ICache→Decode")
     memreq_if   = LatchIF("ICache→MemReq")
     memresp_if  = LatchIF("MemResp→ICache")
+    de_ibuff_if = LatchIF("Decode→IBuffer")
 
     # ---- instantiate backend Mem ----
     # fill the memory with DEADBEEF block
@@ -116,11 +122,24 @@ def test_scheduler_icache_mem():
         latency=5     # Mem latency = 5 cycles
     )
 
+    # ---- construct Predicate Reg File ----
+    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=8)
+
+    # ---- construct Decode Stage ----
+    decode_stage = DecodeStage(
+        name="DecodeStage",
+        behind_latch=ic_de_if,
+        ahead_latch=de_ibuff_if,
+        prf=prf,
+        forward_ifs_read={"ICache_Decode_Ihit": icache_ihit},
+        forward_ifs_write={"Decode_Scheduler": decode_if}
+    )
+
     # ------------- RUN TEST -------------
     for cyc in range(15):
         print(f"\n===== CYCLE {cyc} =====")
-        cycle(sched, icache, memstage,
-              fetch_ic_if, memreq_if, memresp_if)
+        cycle(sched, icache, memstage, decode_stage,
+              fetch_ic_if, memreq_if, memresp_if, de_ibuff_if)
 
         if ic_de_if.valid:
             out = ic_de_if.pop()

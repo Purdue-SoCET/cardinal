@@ -5,8 +5,34 @@ from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
 from isa_packets import ISA_PACKETS
-from bitstring import Bits 
+from bitstring import Bits
+from custom_enums_multi import (
+    Op,
+    R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, C_Op, J_Op, P_Op, H_Op,
+)
+
 global_cycle = 0
+
+
+def decode_opcode(bits7: Bits):
+    """
+    Map a 7-bit opcode Bits to an Op enum (preferred) or the
+    underlying R_Op/I_Op/... enum as a fallback.
+    """
+    for enum_cls in (R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, C_Op, J_Op, P_Op, H_Op):
+        for member in enum_cls:
+            if member.value == bits7:
+                # Prefer unified Op enum if it has the same name
+                try:
+                    return Op[member.name]
+                except KeyError:
+                    return member       # fallback: R_Op / I_Op / ...
+    # Default: NOP or None
+    try:
+        return Op.NOP
+    except Exception:
+        return None
+
 
 class DecodeStage(Stage):
     """Decode stage that directly uses the Stage base class."""
@@ -29,10 +55,10 @@ class DecodeStage(Stage):
         )
         self.prf = prf  # predicate register file reference
         self.last_fwd_value = {}
+
     def compute(self, input_data: Optional[Any] = None):
         """Decode the raw instruction word coming from behind_latch."""
 
-        # No new instruction presented → do nothing
         # If no input_data given, read from behind latch
         if input_data is None:
             if not self.behind_latch.valid:
@@ -51,18 +77,12 @@ class DecodeStage(Stage):
 
         # ---------------------------------------------------------
         # 2) EDGE-TRIGGER forwarding consumption
-        #    Only handle NEW forwarded events.
         # ---------------------------------------------------------
         fwd_values = {}
         for name, f in self.forward_ifs_read.items():
-
             payload = f.payload
-
-            # skip if no payload OR same as last seen
             if payload is None or payload == self.last_fwd_value.get(name):
                 continue
-
-            # NEW forwarding event detected
             fwd_values[name] = payload
             self.last_fwd_value[name] = payload
 
@@ -74,9 +94,11 @@ class DecodeStage(Stage):
             return None
 
         # ---------------------------------------------------------
-        # 4) Extract the raw instruction bits (supports Bits/int/bytes/etc)
+        # 4) Extract the raw instruction bits
         # ---------------------------------------------------------
-        raw_field = inst.packet
+        #print(f"[{self.name}] Decoding instruction raw {inst}")
+        raw_field = inst.packet 
+        print(raw_field)
 
         if isinstance(raw_field, Bits):
             raw = raw_field.uint & 0xFFFFFFFF
@@ -88,7 +110,7 @@ class DecodeStage(Stage):
             raw = int(raw_field, 0) & 0xFFFFFFFF
         elif isinstance(raw_field, list):
             raw = sum((byte & 0xFF) << (8 * i)
-                    for i, byte in enumerate(raw_field[:4])) & 0xFFFFFFFF
+                      for i, byte in enumerate(raw_field[:4])) & 0xFFFFFFFF
         else:
             raise TypeError(f"[{self.name}] Unsupported packet type: {type(raw_field)}")
 
@@ -101,38 +123,30 @@ class DecodeStage(Stage):
         mid6    = (raw >> 19) & 0x3F
         pred    = (raw >> 25) & 0x1F
 
-        opcode_map = {
-            0b0000000:"add", 0b0000001:"sub", 0b0000010:"mul",
-            0b0000011:"div", 0b0100000:"lw",  0b0110000:"sw",
-            0b1000000:"beq", 0b1100000:"jal", 0b1111111:"halt",
-        }
+        opcode_bits = Bits(uint=opcode7, length=7)
+        inst.opcode = decode_opcode(opcode_bits)
 
-        inst.opcode = opcode_map.get(opcode7, "nop")
-        inst.rs1 = rs1
-        inst.rs2 = mid6
-        inst.rd  = rd
+        # Match Instruction type: registers as Bits
+        inst.rs1 = Bits(uint=rs1,  length=6)
+        inst.rs2 = Bits(uint=mid6, length=6)
+        inst.rd  = Bits(uint=rd,   length=6)
 
-        # Default = normal ALU instruction
-        inst.type = None #default until overwritten
-        EOP_bit = (raw >> 31) & 0x1
-        MOP_bit = (raw >> 30) & 0x1
+        # ---------------------------------------------------------
+        # 5b) Control-type (halt/EOP/MOP/Barrier)
+        # ---------------------------------------------------------
+        EOP_bit     = (raw >> 31) & 0x1
+        MOP_bit     = (raw >> 30) & 0x1
         Barrier_bit = (raw >> 29) & 0x1
 
-        if opcode7 == 0b1111111:
+        inst.type = None
+        if opcode_bits == H_Op.HALT.value or inst.opcode == getattr(Op, "HALT", None):
             inst.type = DecodeType.halt
-
         elif EOP_bit == 1:
             inst.type = DecodeType.EOP
-
         elif MOP_bit == 1:
             inst.type = DecodeType.MOP
-
         elif Barrier_bit == 1:
             inst.type = DecodeType.Barrier
-
-        else:
-            inst.type = None  # or normal instruction type if you have one
-
 
         # ---------------------------------------------------------
         # 6) Predicate register file lookup
@@ -143,7 +157,11 @@ class DecodeStage(Stage):
             prf_rd_psel=pred,
             prf_neg=0
         )
-        inst.pred = pred_mask or [True] * 32
+
+        if pred_mask is None:
+            pred_mask = [True] * 32
+
+        inst.pred = [Bits(uint=int(b), length=1) for b in pred_mask]
 
         # ---------------------------------------------------------
         # 7) Optional write-forwarding to next stage
@@ -153,7 +171,7 @@ class DecodeStage(Stage):
                 "decoded": True,
                 "type": inst.type,
                 "pc": inst.pc,
-                "warp": inst.warp
+                "warp": inst.warp,
             })
 
         # ---------------------------------------------------------
@@ -166,4 +184,5 @@ class DecodeStage(Stage):
 
         self.behind_latch.pop()
         self.send_output(inst)
+        print(f"[{self.name}] Decoded instruction. Updated inst packed is {inst}")
         return inst

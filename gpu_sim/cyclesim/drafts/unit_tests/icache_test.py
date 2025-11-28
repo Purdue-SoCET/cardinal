@@ -5,7 +5,6 @@ from pathlib import Path
 
 parent = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent))
-
 from base import LatchIF, ForwardingIF, Stage, Instruction, ICacheEntry
 from Memory import Mem
 from units.icache import ICacheStage   # ← your actual ICacheStage file

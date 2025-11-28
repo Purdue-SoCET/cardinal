@@ -73,7 +73,8 @@ def make_inst(op, incoming_pred, op1, op2):
         iid=0, pc=0x0, warp=0, warpGroup=0,
         opcode=mapping[op],
         rs1=0, rs2=0, rd=0,
-        packet=None
+        packet=None,
+        intended_FSU="BRANCH"
     )
     inst.pred = incoming_pred[:]     # incoming execution mask
     inst.rs1_vals = op1[:]           # per-lane operand 1

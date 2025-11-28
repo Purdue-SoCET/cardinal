@@ -1,6 +1,17 @@
+"""Unit test bench: This testbench sends a memory request to every bank in the cache. Initially the cache is empty and
+every memory request misses. It fetches from main memory that has been prepopulated with 0x01010101 at every address.
+Every missed request has a miss penalty of 200 cycles.
+"""
+
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+from collections import deque
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from custom_enums_multi import Op
+from gpu_sim.tests.custom_enums_multi import Op
 from bitstring import Bits
 
 @dataclass
