@@ -14,6 +14,45 @@ from custom_enums_multi import (
 global_cycle = 0
 
 
+# at top of the file, after imports / decode_opcode
+FUST_CLASSES = {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"}
+
+def classify_fust_unit(op) -> Optional[str]:
+    """
+    Map an Op (or R_Op/I_Op/F_Op/...) to a FUST class:
+    one of {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"} or None.
+    Adjust the name checks to match your actual enum names.
+    """
+    if op is None:
+        return None
+
+    name = getattr(op, "name", str(op))
+
+    # Branch unit
+    if isinstance(op, B_Op) or "BRANCH" in name or name.startswith("B"):
+        return "BRANCH"
+
+    # Load / Store
+    if isinstance(op, S_Op) or name.startswith("LD") or name.startswith("ST"):
+        return "LDST"
+
+    # Mul / Div / Sqrt (could be integer or FP)
+    if "MUL" in name:
+        return "MUL"
+    if "DIV" in name:
+        return "DIV"
+    if "SQRT" in name:
+        return "SQRT"
+
+    # Generic ALU: ADD/SUB or “everything else” mapped to ADD lane
+    if "SUB" in name:
+        return "SUB"
+    if "ADD" in name:
+        return "ADD"
+
+    # Fallback: treat as ADD-lane ALU
+    return "ADD"
+
 def decode_opcode(bits7: Bits):
     """
     Map a 7-bit opcode Bits to an Op enum (preferred) or the
@@ -125,7 +164,8 @@ class DecodeStage(Stage):
 
         opcode_bits = Bits(uint=opcode7, length=7)
         inst.opcode = decode_opcode(opcode_bits)
-
+        inst.intended_FSU = classify_fust_unit(inst.opcode)
+        
         # Match Instruction type: registers as Bits
         inst.rs1 = Bits(uint=rs1,  length=6)
         inst.rs2 = Bits(uint=mid6, length=6)

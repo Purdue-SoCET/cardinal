@@ -133,7 +133,7 @@ def test_scheduler_icache_mem():
     )
 
     # ---- construct Predicate Reg File ----
-    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=8)
+    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=32)
 
     # ---- construct Decode Stage ----
     decode_stage = DecodeStage(

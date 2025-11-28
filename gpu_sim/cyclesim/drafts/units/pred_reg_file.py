@@ -25,6 +25,8 @@ class PredicateRegFile():
         " and whether it wants the inverted version or not..."
 
         if (prf_rd_en):
+            print("Reading PRF: ", prf_rd_wsel, prf_rd_psel, prf_neg)
+            print("Max indices: ", len(self.reg_file), len(self.reg_file[0]), len(self.reg_file[0][0]))
             return self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]
         else: 
             return None

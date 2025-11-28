@@ -122,10 +122,13 @@ class IssueStage(Stage):
         if input_data is not None:
             inst_in = input_data
             self.curr_wg = inst_in.warpGroup
+            print(f"[{self.name}] Received input inst warpGroup={inst_in.warpGroup} warp={getattr(inst_in, 'warp', None)} intended_FSU={getattr(inst_in, 'intended_FSU', None)}")
 
         # 1) Check FUST & Dispatch
         # dispatched_inst, FU_stall_issue = self._dispatch_ready_via_fust()
         FU_stall_issue = self._dispatch_ready_via_fust()
+        if FU_stall_issue:
+            print(f"[{self.name}] FUST busy — dispatch stalled this cycle")
         
         # n = 1
         # if len(self.dispatched) < n or cycle > 6:
@@ -141,6 +144,7 @@ class IssueStage(Stage):
         # 4) Fill iBuffer with the just decoded instruction 
         if inst_in is not None:
             self.fill_ibuffer(inst_in)
+            print(f"[{self.name}] Placed inst into iBuffer wg={inst_in.warpGroup} capacity={self.iBufferCapacity[inst_in.warpGroup]}")
 
         # 5) Create the ibuffer capacity flag bit vector for WS 
         for i in range(len(self.iBufferCapacity)):
@@ -181,6 +185,7 @@ class IssueStage(Stage):
         instr, FU_stall = try_dispatch_one(self.ready_to_dispatch)
         if instr is not None:
             self.dispatched.append(instr)
+            print(f"[{self.name}] Dispatched inst warp={getattr(instr, 'warp', None)} wg={getattr(instr, 'warpGroup', None)} FU={getattr(instr, 'intended_FSU', None)}")
 
         # Then ODD
         # second = try_dispatch_one(self.ready_odd)
@@ -221,6 +226,7 @@ class IssueStage(Stage):
                 self.even_read_progress = 2
                 # Move to ready queue after 2nd operand
                 self._push_ready(self.staged_even)
+                print(f"[{self.name}] EVEN staged inst ready warp={self.staged_even.warp} wg={self.staged_even.warpGroup}")
                 self.staged_even = None
                 self.even_read_progress = 0
 
@@ -238,6 +244,7 @@ class IssueStage(Stage):
                 self.odd_read_progress = 2
                 # Move to ready queue after 2nd operand
                 self._push_ready(self.staged_odd)
+                print(f"[{self.name}] ODD staged inst ready warp={self.staged_odd.warp} wg={self.staged_odd.warpGroup}")
                 self.staged_odd = None
                 self.odd_read_progress = 0
 
@@ -291,6 +298,7 @@ class IssueStage(Stage):
             self.iBuffer[wg][head_idx] = None
             self.iBufferHead[wg] = (head_idx + 1) % self.num_entries
             self.iBufferCapacity[wg] -= 1
+            print(f"[{self.name}] Popped inst from iBuffer wg={wg} new_capacity={self.iBufferCapacity[wg]}")
             return inst
         return None
 
