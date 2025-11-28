@@ -3,6 +3,14 @@ from typing import Any, Dict, List, Optional
 from collections import deque
 from bitstring import Bits 
 from enum import Enum
+<<<<<<< HEAD
+=======
+from pathlib import Path
+import sys
+parent = Path(__file__).resolve().parent
+sys.path.append(str(parent))
+from custom_enums_multi import Op
+>>>>>>> a07c0f4ebdb4d649debb0fb0ebd2f2f4754584d4
 
 @dataclass
 class DecodeType:
@@ -58,23 +66,30 @@ class WarpGroup:
 
 @dataclass
 class Instruction:
+    # ----- required (no defaults) -----
     iid: Optional[int]
-    pc: Optional[int]
+    pc: Bits
+    intended_FSU: Optional[str]   # <-- no default here
     warp: Optional[int]
     warpGroup: Optional[int]
-    
-    # instruction
-    opcode: Optional[int]
-    rs1: Optional[int]
-    rs2: Optional[int]
-    rd: Optional[int]
-    pred: Optional[Any] = None
+
+    opcode: Op
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+
+    # ----- optional / with defaults (must come after ALL non-defaults) -----
+    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
+    rdat1: list[Bits] = field(default_factory=list)
+    rdat2: list[Bits] = field(default_factory=list)
+    wdat: list[Bits] = field(default_factory=list)
+
     type: Optional[Any] = None
-    packet: Optional[Any] = None
+    packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None
-    stage_entry: Dict[str, int] = field(default_factory=dict)   # stage -> first cycle seen
-    stage_exit:  Dict[str, int] = field(default_factory=dict)   # stage -> last cycle completed
-    fu_entries:  List[Dict]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
+    stage_entry: Dict[str, int] = field(default_factory=dict)
+    stage_exit:  Dict[str, int] = field(default_factory=dict)
+    fu_entries:  List[Dict]     = field(default_factory=list)
     wb_cycle: Optional[int] = None
 
     def mark_stage_enter(self, stage: str, cycle: int):
@@ -94,6 +109,10 @@ class Instruction:
 
     def mark_writeback(self, cycle: int):
         self.wb_cycle = cycle
+<<<<<<< HEAD
+=======
+
+>>>>>>> a07c0f4ebdb4d649debb0fb0ebd2f2f4754584d4
 @dataclass
 class ForwardingIF:
     payload: Optional[Any] = None

@@ -37,23 +37,24 @@ class SchedulerStage(Stage):
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
 
+        print(f"\n[{self.name}] Collision Detection, Decode forwarded {decode_ctrl}")
         # if im getting my odd warp EOP out of my decode
-        if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
-            self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-            self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
+        if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp"] % 2:
+            self.warp_table[decode_ctrl["warp"] // 2].state = WarpState.STALL
+            self.warp_table[decode_ctrl["warp"] // 2].pc = decode_ctrl["pc"]
+            self.warp_table[decode_ctrl["warp"] // 2].finished_packet = True
             return
         
         # if im getting my odd warp barrier out of my decode
-        elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
-            self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
+        elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp"] % 2:
+            self.warp_table[decode_ctrl["warp"] // 2].state = WarpState.BARRIER
+            self.warp_table[decode_ctrl["warp"] // 2].pc = decode_ctrl["pc"]
             self.at_barrier += 1
             return
 
         # if im getting my odd warp halt out of my decode
-        elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
+        elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp"] % 2:
+            self.warp_table[decode_ctrl["warp"] // 2].state = WarpState.HALT
             return
 
         # clear barrier
@@ -108,7 +109,11 @@ class SchedulerStage(Stage):
                 # if the last issue for the group was odd DONT INCREASE RR_INDEX
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
-                    return warp_group.group_id, warp_group.group_id * 2, warp_group.pc # EVEN WARP INSTRUCTION
+                    send_Inst = Instruction(pc=warp_group.pc, warpGroup=warp_group.group_id, 
+                                            warp=warp_group.group_id * 2,       
+                                            iid=None, intended_FSU=None, packet=None, opcode=None,
+                                            rs1=None, rs2=None, rd=None)
+                    return send_Inst # EVEN WARP INSTRUCTION
                 
                 # if the last issue for the group was even MOVE ON WITH RR_INDEX
                 if warp_group.last_issue_even:
@@ -116,7 +121,11 @@ class SchedulerStage(Stage):
                     current_pc = warp_group.pc
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
-                    return warp_group.group_id, (warp_group.group_id * 2) + 1, current_pc # ODD WARP INSTRUCTION
+                    send_Inst = Instruction(pc=warp_group.pc, warpGroup=warp_group.group_id, 
+                                            warp=(warp_group.group_id * 2) + 1, 
+                                            iid=None, intended_FSU=None, packet=None, opcode=None,
+                                            rs1=None, rs2=None, rd=None)
+                    return send_Inst # ODD WARP INSTRUCTION
             
             # we cant issue this warp group
             else:

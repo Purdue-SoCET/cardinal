@@ -1,0 +1,2 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_age,percentile_90_buffer_occupancy,percentile_99_buffer_occupancy
+AddSub_float_0_Performance_Counter,364,0,0,16,0,9.645604395604396,119.74280831671888,15.0,15.0

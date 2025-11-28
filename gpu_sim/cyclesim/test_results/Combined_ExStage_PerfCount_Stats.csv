@@ -1,0 +1,10 @@
+name,total_cycles,stall_cycles,pipeline_full_cycles,nop_cycles,utilization_cycles,total_instructions,instruction_types,overflow
+Alu_int_0_Performance_Counter,542,60,17,482,43,542,"{<R_Op.ADD: Bits('0b0000000')>: 32, <R_Op.SUB: Bits('0b0000001')>: 5, <R_Op.AND: Bits('0b0000100')>: 2, <R_Op.OR: Bits('0b0000101')>: 2, <R_Op.XOR: Bits('0b0000110')>: 3, <R_Op.SLL: Bits('0b0001101')>: 1, <R_Op.SRL: Bits('0b0001110')>: 1, <R_Op.SRA: Bits('0b0001111')>: 1, <R_Op.SLT: Bits('0b0000111')>: 2, <R_Op.SLTU: Bits('0b0001000')>: 2, <I_Op.ADDI: Bits('0b0010000')>: 1, <I_Op.SUBI: Bits('0b0010001')>: 1, <I_Op.ORI: Bits('0b0010101')>: 1, <I_Op.XORI: Bits('0b0010100')>: 1, <I_Op.SLLI: Bits('0b0011101')>: 1, <I_Op.SRLI: Bits('0b0011110')>: 1, <I_Op.SRAI: Bits('0b0011111')>: 1, <I_Op.SLTI: Bits('0b0010111')>: 1, <I_Op.SLTIU: Bits('0b0011000')>: 1}",{<R_Op.ADD: Bits('0b0000000')>: 1}
+Mul_int_0_Performance_Counter,542,60,49,508,17,542,{<R_Op.MUL: Bits('0b0000010')>: 34},{<R_Op.MUL: Bits('0b0000010')>: 1}
+Div_int_0_Performance_Counter,542,60,15,498,35,542,{<R_Op.DIV: Bits('0b0000011')>: 44},{<R_Op.DIV: Bits('0b0000011')>: 1}
+AddSub_float_0_Performance_Counter,542,60,0,523,19,542,"{<R_Op.ADDF: Bits('0b0001001')>: 14, <R_Op.SUBF: Bits('0b0001010')>: 5}",{<R_Op.ADDF: Bits('0b0001001')>: 3}
+Mul_float_0_Performance_Counter,542,60,0,534,8,542,{<R_Op.MULF: Bits('0b0001011')>: 8},{<R_Op.MULF: Bits('0b0001011')>: 1}
+Div_float_0_Performance_Counter,542,60,0,538,4,542,{<R_Op.DIVF: Bits('0b0001100')>: 4},{<R_Op.DIVF: Bits('0b0001100')>: 1}
+Sqrt_float_0_Performance_Counter,542,60,0,542,0,542,{},{}
+Trig_float_0_Performance_Counter,542,60,0,537,5,542,"{<F_Op.SIN: Bits('0b0101001')>: 3, <F_Op.COS: Bits('0b0101010')>: 2}",{}
+InvSqrt_float_0_Performance_Counter,542,60,0,538,4,542,{<F_Op.ISQRT: Bits('0b0101000')>: 4},{<F_Op.ISQRT: Bits('0b0101000')>: 2}

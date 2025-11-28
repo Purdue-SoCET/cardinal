@@ -1,10 +1,26 @@
-'''Unit Test: Sending 32 read requests to the cache which results in compulsory misses. Waits for the data to be loaded back from main memory.
-              Then a new set of 32 read requests are sent to the same addresses. This time all of them should hit.'''
+"""Unit test bench: This testbench sends a memory request to every bank in the cache. Initially the cache is empty and
+every memory request misses. It fetches from main memory that has been prepopulated with 0x01010101 at every address.
+Every missed request has a miss penalty of 200 cycles.
+"""
 
-import gpu_sim.cyclesim.src.mem.dcache as cache_module # Import the updated cache module
-from collections import deque
 import sys
-import math
+from pathlib import Path
+
+# 1) Add the directory that contains `gpu_sim/` to sys.path
+# File: /home/.../gpu/gpu_sim/cyclesim/tests/dcache/readFromAllBanks.py
+# parents:
+#   0 -> dcache
+#   1 -> tests
+#   2 -> cyclesim
+#   3 -> gpu_sim
+#   4 -> gpu   <-- this directory contains the `gpu_sim` package
+ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+
+# 2) Now do the package import
+import gpu_sim.cyclesim.src.mem.dcache as cache_module  # ✅ now Python can see gpu_sim
+
+from collections import deque
 
 # --- Output File ---
 OUTPUT_FILENAME = "cache_hit_test_log.txt"

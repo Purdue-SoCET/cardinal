@@ -1,0 +1,408 @@
+[1m[96m
+================================================================================[0m[0m
+[1m[96m  WRITEBACK BUFFER COMPREHENSIVE TEST SUITE[0m[0m
+[1m[96m================================================================================
+[0m[0m
+[1m
+[1/3] Testing Default Configuration...[0m
+
+[1m[95m================================================================================[0m[0m
+[1m[95m  TESTING CONFIGURATION: Config_Default[0m[0m
+[1m[95m================================================================================[0m[0m
+
+[96m================================================================================[0m
+[1m[96m  BASIC STORE AND WRITEBACK - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Single instruction store and writeback
+  Instruction successfully written back
+  Instruction stored, buffer occupancy: 1
+  Writeback occurred at cycle 2
+
+[96m================================================================================[0m
+[1m[96m  MULTIPLE FSU SAME CYCLE - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Multiple FSUs writing in same cycle
+  Successfully handled multiple FSU inputs, 3 stored
+  Pushed 3 instructions from different FSUs
+  Total buffer occupancy after tick: 3
+
+[96m================================================================================[0m
+[1m[96m  BUFFER OVERFLOW - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Buffer overflow handling
+  Buffer respected capacity limit: 1/8
+  Testing buffer 'Alu_int_0' with capacity 8
+
+[96m================================================================================[0m
+[1m[96m  EMPTY BUFFER BEHAVIOR - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Empty buffer writeback
+  Correctly handled empty buffer writeback (no data)
+  All buffers initially empty
+
+[96m================================================================================[0m
+[1m[96m  SINGLE SLOT AVAILABLE - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Writing with one slot available
+  Writebacks occurred during fill (expected for some configs): 1/8
+  Buffer filled to 1/8
+
+[96m================================================================================[0m
+[1m[96m  CONCURRENT READ/WRITE - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Concurrent read and write operations
+  Concurrent read/write handled correctly
+  Writeback occurred: True
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  AGE PRIORITY POLICY - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | AGE_PRIORITY writeback order
+  Writeback completed (1 items)
+  Stored 3 instructions with different ages
+
+[96m================================================================================[0m
+[1m[96m  RAPID FILL AND DRAIN - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Rapid fill and drain cycles
+  Buffer handled rapid operations: 20 stores, 19 writebacks
+  Cycles run: 20
+  Successful stores: 20
+  Writebacks: 19
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  PERFORMANCE COUNTER TRACKING - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Performance counter metrics
+  Performance counters are tracking metrics
+  Found 9 performance counters
+  Total cycles: 57
+  Store cycles: 52
+  Writeback cycles: 46
+
+[96m================================================================================[0m
+[1m[96m  ALL BUFFERS FULL - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All buffers full simultaneously
+  Partial fill: 56/72 (some writebacks may have occurred)
+  Total occupancy: 56/72
+
+[96m================================================================================[0m
+[1m[96m  PREDICATE MASKING - Config_Default[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All lanes enabled (predicate all 1s)
+  All 32 lanes correctly enabled in stored instruction
+  Enabled lanes: 32/32
+
+[92m✓ PASS[0m | Half lanes enabled (alternating predicate pattern)
+  Alternating predicate pattern correctly preserved (16 lanes enabled)
+  Enabled lanes: 16/32
+
+[92m✓ PASS[0m | All lanes disabled (predicate all 0s)
+  Instruction with all predicates disabled not stored (acceptable behavior)
+
+[92m✓ PASS[0m | Predicate preservation through store and writeback
+  Predicate pattern correctly preserved through writeback (first 16 lanes enabled)
+  Written back to bank_1, enabled lanes: 16/32
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY - Config_Default[0m[0m
+[96m================================================================================[0m
+
+Total Tests: 14
+[92mPassed: 14[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[92m
+Performance counters exported to: ./test_results/Config_Default[0m
+[1m
+[2/3] Testing Type One Configuration...[0m
+
+[1m[95m================================================================================[0m[0m
+[1m[95m  TESTING CONFIGURATION: Config_Type_One[0m[0m
+[1m[95m================================================================================[0m[0m
+
+[96m================================================================================[0m
+[1m[96m  BASIC STORE AND WRITEBACK - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Single instruction store and writeback
+  Instruction successfully written back
+  Instruction stored, buffer occupancy: 1
+  Writeback occurred at cycle 2
+
+[96m================================================================================[0m
+[1m[96m  MULTIPLE FSU SAME CYCLE - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Multiple FSUs writing in same cycle
+  Successfully handled multiple FSU inputs, 3 stored
+  Pushed 3 instructions from different FSUs
+  Total buffer occupancy after tick: 3
+
+[96m================================================================================[0m
+[1m[96m  BUFFER OVERFLOW - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Buffer overflow handling
+  Buffer respected capacity limit: 1/16
+  Testing buffer 'Alu_int_0' with capacity 16
+
+[96m================================================================================[0m
+[1m[96m  EMPTY BUFFER BEHAVIOR - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Empty buffer writeback
+  Correctly handled empty buffer writeback (no data)
+  All buffers initially empty
+
+[96m================================================================================[0m
+[1m[96m  SINGLE SLOT AVAILABLE - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Writing with one slot available
+  Writebacks occurred during fill (expected for some configs): 1/16
+  Buffer filled to 1/16
+
+[96m================================================================================[0m
+[1m[96m  CONCURRENT READ/WRITE - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Concurrent read and write operations
+  Concurrent read/write handled correctly
+  Writeback occurred: True
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  AGE PRIORITY POLICY - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | AGE_PRIORITY writeback order
+  AGE_PRIORITY not used in this config (skipped)
+
+[96m================================================================================[0m
+[1m[96m  RAPID FILL AND DRAIN - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Rapid fill and drain cycles
+  Buffer handled rapid operations: 20 stores, 19 writebacks
+  Cycles run: 20
+  Successful stores: 20
+  Writebacks: 19
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  PERFORMANCE COUNTER TRACKING - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Performance counter metrics
+  Performance counters are tracking metrics
+  Found 9 performance counters
+  Total cycles: 59
+  Store cycles: 57
+  Writeback cycles: 51
+
+[96m================================================================================[0m
+[1m[96m  ALL BUFFERS FULL - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All buffers full simultaneously
+  Partial fill: 37/68 (some writebacks may have occurred)
+  Total occupancy: 37/68
+
+[96m================================================================================[0m
+[1m[96m  PREDICATE MASKING - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All lanes enabled (predicate all 1s)
+  All 32 lanes correctly enabled in stored instruction
+  Enabled lanes: 32/32
+
+[92m✓ PASS[0m | Half lanes enabled (alternating predicate pattern)
+  Alternating predicate pattern correctly preserved (16 lanes enabled)
+  Enabled lanes: 16/32
+
+[92m✓ PASS[0m | All lanes disabled (predicate all 0s)
+  Instruction with all predicates disabled not stored (acceptable behavior)
+
+[92m✓ PASS[0m | Predicate preservation through store and writeback
+  Predicate pattern correctly preserved through writeback (first 16 lanes enabled)
+  Written back to bank_1, enabled lanes: 16/32
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY - Config_Type_One[0m[0m
+[96m================================================================================[0m
+
+Total Tests: 14
+[92mPassed: 14[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[92m
+Performance counters exported to: ./test_results/Config_Type_One[0m
+[1m
+[3/3] Testing Type Two Configuration...[0m
+
+[1m[95m================================================================================[0m[0m
+[1m[95m  TESTING CONFIGURATION: Config_Type_Two[0m[0m
+[1m[95m================================================================================[0m[0m
+
+[96m================================================================================[0m
+[1m[96m  BASIC STORE AND WRITEBACK - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Single instruction store and writeback
+  Instruction successfully written back
+  Instruction stored, buffer occupancy: 1
+  Writeback occurred at cycle 2
+
+[96m================================================================================[0m
+[1m[96m  MULTIPLE FSU SAME CYCLE - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Multiple FSUs writing in same cycle
+  Successfully handled multiple FSU inputs, 2 stored
+  Pushed 3 instructions from different FSUs
+  Total buffer occupancy after tick: 2
+
+[96m================================================================================[0m
+[1m[96m  BUFFER OVERFLOW - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Buffer overflow handling
+  Buffer respected capacity limit: 1/32
+  Testing buffer 'bank_0' with capacity 32
+
+[96m================================================================================[0m
+[1m[96m  EMPTY BUFFER BEHAVIOR - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Empty buffer writeback
+  Correctly handled empty buffer writeback (no data)
+  All buffers initially empty
+
+[96m================================================================================[0m
+[1m[96m  SINGLE SLOT AVAILABLE - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Writing with one slot available
+  Writebacks occurred during fill (expected for some configs): 1/32
+  Buffer filled to 1/32
+
+[96m================================================================================[0m
+[1m[96m  CONCURRENT READ/WRITE - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Concurrent read and write operations
+  Concurrent read/write handled correctly
+  Writeback occurred: True
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  AGE PRIORITY POLICY - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | AGE_PRIORITY writeback order
+  Writeback completed (1 items)
+  Stored 3 instructions with different ages
+
+[96m================================================================================[0m
+[1m[96m  RAPID FILL AND DRAIN - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Rapid fill and drain cycles
+  Buffer handled rapid operations: 20 stores, 19 writebacks
+  Cycles run: 20
+  Successful stores: 20
+  Writebacks: 19
+  Final buffer occupancy: 1
+
+[96m================================================================================[0m
+[1m[96m  PERFORMANCE COUNTER TRACKING - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | Performance counter metrics
+  Performance counters are tracking metrics
+  Found 2 performance counters
+  Total cycles: 81
+  Store cycles: 76
+  Writeback cycles: 70
+
+[96m================================================================================[0m
+[1m[96m  ALL BUFFERS FULL - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All buffers full simultaneously
+  Partial fill: 1/64 (some writebacks may have occurred)
+  Total occupancy: 1/64
+
+[96m================================================================================[0m
+[1m[96m  PREDICATE MASKING - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+[92m✓ PASS[0m | All lanes enabled (predicate all 1s)
+  All 32 lanes correctly enabled in stored instruction
+  Enabled lanes: 32/32
+
+[92m✓ PASS[0m | Half lanes enabled (alternating predicate pattern)
+  Alternating predicate pattern correctly preserved (16 lanes enabled)
+  Enabled lanes: 16/32
+
+[92m✓ PASS[0m | All lanes disabled (predicate all 0s)
+  Instruction with all predicates disabled not stored (acceptable behavior)
+
+[92m✓ PASS[0m | Predicate preservation through store and writeback
+  Predicate pattern correctly preserved through writeback (first 16 lanes enabled)
+  Written back to bank_1, enabled lanes: 16/32
+
+[96m================================================================================[0m
+[1m[96m  TEST RESULTS SUMMARY - Config_Type_Two[0m[0m
+[96m================================================================================[0m
+
+Total Tests: 14
+[92mPassed: 14[0m
+Failed: 0
+[92mPass Rate: 100.0%[0m
+[92m
+Performance counters exported to: ./test_results/Config_Type_Two[0m
+
+[96m================================================================================[0m
+[1m[96m  FINAL TEST SUMMARY - ALL CONFIGURATIONS[0m[0m
+[96m================================================================================[0m
+
+Config_Default:
+  Passed: 14/14
+[92m  Pass Rate: 100.0%[0m
+
+Config_Type_One:
+  Passed: 14/14
+[92m  Pass Rate: 100.0%[0m
+
+Config_Type_Two:
+  Passed: 14/14
+[92m  Pass Rate: 100.0%[0m
+
+[1mOVERALL RESULTS:[0m
+Total Tests Run: [1m42[0m
+[92mTests Passed: 42[0m
+Tests Failed: 0
+[92m[1mOverall Pass Rate: 100.0%[0m[0m
+[92m[1m
+✓ All tests passed across all configurations![0m[0m
+
+[96m================================================================================[0m
+[1m[96m  TEST SUITE COMPLETE[0m[0m
+[96m================================================================================[0m
+

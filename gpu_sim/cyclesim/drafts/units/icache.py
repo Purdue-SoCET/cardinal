@@ -38,194 +38,132 @@ class ICacheStage(Stage):
         self.assoc = cache_config.get("associativity", 4)
         self.num_sets = self.cache_size // (self.block_size * self.assoc)
 
-        # # Timing / MSHR
-        # self.mshr_limit = cache_config.get("mshr_entries", 8)
-
         # Set → list of cache lines
         self.cache = {i: [] for i in range(self.num_sets)}
 
-        # Track outstanding misses
-        # Each entry: {"block_addr", "set", "tag", "pc", "outstanding": True}
-        # self.mshrs = []
         self.mem_req_if = mem_req_if
         self.mem_resp_if = mem_resp_if
 
-        #----
-        self.pending_fetch = None
-        self.stalled = False 
-
+        self.pending_fetch: Optional[Instruction] = None
+        self.stalled = False
         self.cycle = 0
 
-    # # -------------- MSHR helpers ----------------
-    # def _mshr_for_block(self, block_addr):
-    #     for m in self.mshrs:
-    #         if m["block_addr"] == block_addr:
-    #             return m
-    #     return None
-
-    # def _allocate_mshr(self, pc: int):
-    #     set_idx, tag, block_addr = self._addr_decode(pc)
-
-    #     if len(self.mshrs) >= self.mshr_limit:
-    #         return None  
-
-    #     m = {
-    #         "block_addr": block_addr,
-    #         "set": set_idx,
-    #         "tag": tag,
-    #         "pc": pc,
-    #         "outstanding": True
-    #     }
-    #     self.mshrs.append(m)
-    #     return m
-
-    # def _free_mshr(self, block_addr: int):
-    #     self.mshrs = [m for m in self.mshrs if m["block_addr"] != block_addr]
-
-    # -------------- Cache fill ----------------
+    # ---------------- Cache line helpers ----------------
     def _fill_cache_line(self, set_idx: int, tag: int, data_bits):
         ways = self.cache[set_idx]
-
-        # Add new way if associative slots left
         if len(ways) < self.assoc:
             ways.append(ICacheEntry(tag, data_bits, valid=True))
-            return
+        else:
+            victim = min(ways, key=lambda w: w.last_used)
+            victim.tag = tag
+            victim.data = data_bits
+            victim.valid = True
 
-        # Otherwise, evict LRU
-        victim = min(ways, key=lambda w: w.last_used)
-        victim.tag = tag
-        victim.data = data_bits
-        victim.valid = True
-
-    # -------------- Forward ihit --------------
     def _send_ihit(self, val: bool):
         if "ICache_Decode_Ihit" in self.forward_ifs_write:
             self.forward_ifs_write["ICache_Decode_Ihit"].push(val)
-        
-        ihit_forwarding_if = self.forward_ifs_write["ihit"] 
-        if val == False:     
-            ihit_forwarding_if.set_wait(True)
-        else:
-            ihit_forwarding_if.set_wait(False)
-            
-    def _addr_decode(self, pc):
-        block = pc // self.block_size
+        if "ihit" in self.forward_ifs_write:
+            f_if = self.forward_ifs_write["ihit"]
+            f_if.set_wait(not val)
+
+    def _addr_decode(self, pc_int: int):
+        block = pc_int // self.block_size
         set_idx = block % self.num_sets
         tag = block // self.num_sets
         return set_idx, tag, block
 
-    def _lookup(self, pc):
-        set_idx, tag, _ = self._addr_decode(pc)
-        print("Looking up the tag for:", set_idx, tag)
+    def _lookup(self, pc_int: int):
+        set_idx, tag, _ = self._addr_decode(pc_int)
         for line in self.cache[set_idx]:
             if line.valid and line.tag == tag:
                 line.last_used = self.cycle
                 return line
         return None
 
-    # -------------------------------------------
-    # Fill cache line
-    # -------------------------------------------
-    def _fill(self, pc, data_bits):
-        set_idx, tag, block = self._addr_decode(pc)
-        ways = self.cache[set_idx]
+    def _fill(self, inst: Instruction, data_bits):
+        pc_int = int(inst.pc)
+        set_idx, tag, _ = self._addr_decode(pc_int)
+        self._fill_cache_line(set_idx, tag, data_bits)
+        print(f"[ICache] FILL complete: warp={inst.warp} group={inst.warpGroup} pc=0x{pc_int:X}")
 
-        if len(ways) < self.assoc:
-            ways.append(ICacheEntry(tag, data_bits))
-        else:
-            victim = min(ways, key=lambda w: w.last_used)
-            victim.tag  = tag
-            victim.data = data_bits
-            victim.valid = True
-
-        print(f"[ICache] FILL complete: PC=0x{pc:X}  → unblock + retry")
-
-
-    # -------------------------------------------
-    # Main compute
-    # -------------------------------------------
+    # ---------------- Main compute ----------------
     def compute(self, input_data=None):
-        self.cycle += 1
+        print(f"\n[ICache] cycle={self.cycle} stalled={self.stalled}")
 
-        # =====================================================
-        # STEP 1: Handle memory fill first
-        # =====================================================
+        # STEP 1: Handle incoming memory response
         if self.mem_resp_if.valid:
-            resp = self.mem_resp_if.pop()
-            pc = resp["pc"]
-            data = resp["data"]
+            # MemStage now returns an Instruction, not a dict
+            inst_from_mem: Instruction = self.mem_resp_if.pop()
+            pc_int_resp = int(inst_from_mem.pc)
+            print(f"[ICache] Received MemResp for warp={inst_from_mem.warp} "
+                  f"group={inst_from_mem.warpGroup} pc=0x{pc_int_resp:X}")
 
-            print(f"[ICache] Received FILL for PC=0x{pc:X}")
+            # data bits are in inst_from_mem.packet (set by MemStage)
+            data_bits = inst_from_mem.packet
+            if data_bits is None:
+                print("[ICache] WARNING: MemResp Instruction has no packet data!")
 
-            self._fill(pc, data)
-            print(self.cache)
-            # # freeing MSHR
-            # _,_,block = self._addr_decode(pc)
-            # self.mshrs = [m for m in self.mshrs if m["block_addr"] != block]
+            # Fill cache line for this PC
+            self._fill(inst_from_mem, data_bits)
 
-            # UNBLOCK
+            # Unstall / notify scheduler
             self._send_ihit(True)
             self.stalled = False
-            print("UNSTALLED AFTER A FILL!")
-            # retry the stalled instruction next cycle
-            if self.pending_fetch is not None:
-                print("RETURN HERE!")
-                # retry on next cycle
+
+            if self.pending_fetch:
+                print(f"[ICache] RETRYING pending fetch for pc=0x{int(self.pending_fetch.pc):X}")
+                # Scheduler will re-issue; we just return this cycle
+                self.cycle += 1
                 return
 
-        # =====================================================
-        # STEP 2: If stalled → do NOT pop new request
-        # =====================================================
+        # STEP 2: Stall check
         if self.stalled:
-            print(f"[ICache] STALLED — waiting for fill, skipping pop")
+            print("[ICache] Still stalled, skipping new fetch")
+            self.cycle += 1
             return
 
-        # =====================================================
-        # STEP 3: No request? nothing to do 
-        # =====================================================
+        # STEP 3: No new request
         if not self.behind_latch.valid:
+            self.cycle += 1
             return
 
-        req = self.behind_latch.snoop()
-        pc  = req["pc"]
+        # Instruction comes from scheduler / previous stage
+        inst: Instruction = self.behind_latch.snoop()
+        pc_int = int(inst.pc)
 
-        # =====================================================
-        # STEP 4: Lookup in cache
-        # =====================================================
-        hit_line = self._lookup(pc)
-        print("GOT THIS FROM THE CACHE:", hit_line)
+        # STEP 4: Lookup
+        hit_line = self._lookup(pc_int)
         if hit_line:
-            self.behind_latch.pop()  # consume
-            print(f"[ICache] HIT pc=0x{pc:X}")
+            self.behind_latch.pop()
+            print(f"[ICache] HIT warp={inst.warp} group={inst.warpGroup} pc=0x{pc_int:X}")
             self._send_ihit(True)
+
+            # Update the Instruction's packet with cached data
+            inst.packet = hit_line.data
+
+            # Push the updated Instruction forward (not a dict)
             if self.ahead_latch.ready_for_push():
-                self.ahead_latch.push({
-                    "pc": pc,
-                    "packet": hit_line.data
-                })
+                self.ahead_latch.push(inst)
+
+            self.cycle += 1
             return
 
-        # =====================================================
-        # STEP 5: M I S S
-        # =====================================================
-        print(f"[ICache] MISS pc=0x{pc:X} → stall + memreq")
-
-        # block pipeline here
+        # STEP 5: MISS
+        print(f"[ICache] MISS warp={inst.warp} group={inst.warpGroup} pc=0x{pc_int:X}")
         self._send_ihit(False)
         self.stalled = True
-        self.pending_fetch = req  # save request for retry
+        self.pending_fetch = inst
         self.behind_latch.pop()
 
-        # issue memory request only once
-        set_idx,tag,block = self._addr_decode(pc)
-
-
+        set_idx, tag, block = self._addr_decode(pc_int)
+        # Request includes the Instruction so MemStage can return it updated
         self.mem_req_if.push({
-                "addr": block,
-                "size": self.block_size,
-                "uuid": block,
-                "pc": pc
+            "addr": block,
+            "size": self.block_size,
+            "uuid": block,
+            "pc": pc_int,
+            "inst": inst,
         })
-        print(f"[ICache]   → MemReq sent for block=0x{block:X}")
-        # else:
-        #     print(f"[ICache]   → MSHR merge; no extra memreq")
+        print(f"[ICache] → MemReq issued for block=0x{block:X}, warp={inst.warp}, group={inst.warpGroup}")
+        self.cycle += 1
+        return

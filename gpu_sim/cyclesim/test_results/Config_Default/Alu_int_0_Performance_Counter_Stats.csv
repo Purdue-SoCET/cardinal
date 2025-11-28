@@ -1,0 +1,2 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_age,percentile_90_buffer_occupancy,percentile_99_buffer_occupancy
+Alu_int_0_Performance_Counter,362,0,0,89,81,0.24585635359116023,-0.033707865168539325,1.0,1.0

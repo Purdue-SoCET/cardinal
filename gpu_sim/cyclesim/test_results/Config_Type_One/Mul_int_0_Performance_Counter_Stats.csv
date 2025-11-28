@@ -1,0 +1,2 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_age,percentile_90_buffer_occupancy,percentile_99_buffer_occupancy
+Mul_int_0_Performance_Counter,364,0,0,35,34,0.09615384615384616,0.0,0.0,1.0

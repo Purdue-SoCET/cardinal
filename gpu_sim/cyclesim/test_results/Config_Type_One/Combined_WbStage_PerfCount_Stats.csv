@@ -1,0 +1,10 @@
+name,total_cycles,stall_cycles,buffer_full_cycles,store_cycles,writeback_cycles,average_buffer_occupancy,average_instruction_age,percentile_90_buffer_occupancy,percentile_99_buffer_occupancy
+Alu_int_0_Performance_Counter,364,0,0,94,86,0.25824175824175827,0.0,1.0,1.0
+Mul_int_0_Performance_Counter,364,0,0,35,34,0.09615384615384616,0.0,0.0,1.0
+Div_int_0_Performance_Counter,364,0,0,5,0,2.3873626373626373,144.07364787111624,3.0,3.0
+AddSub_float_0_Performance_Counter,364,0,0,16,0,9.645604395604396,119.74280831671888,15.0,15.0
+Mul_float_0_Performance_Counter,364,0,0,8,0,5.175824175824176,134.6544585987261,7.0,7.0
+Div_float_0_Performance_Counter,364,0,0,4,0,2.35989010989011,142.74039580908033,3.0,3.0
+Sqrt_float_0_Performance_Counter,364,0,0,4,0,2.3516483516483517,142.24065420560748,3.0,3.0
+Trig_float_0_Performance_Counter,364,0,0,4,0,2.3434065934065935,141.7409144196952,3.0,3.0
+InvSqrt_float_0_Performance_Counter,364,0,0,4,0,2.3351648351648353,141.24117647058824,3.0,3.0
