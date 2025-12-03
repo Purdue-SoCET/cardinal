@@ -435,6 +435,10 @@ class LockupFreeCacheStage(Stage):
         )
         self.mem_req_if = mem_req_if    # The interface used by the cache to send to the memory
         self.mem_resp_if = mem_resp_if # The interface used the memory to send data back to cache
+
+        self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp" # Pick a name
+        if self.behind_latch and (self.DCACHE_LSU_IF_NAME in self.forward_ifs_write):
+            self.behind_latch.forward_if = self.forward_ifs_write[self.DCACHE_LSU_IF_NAME]
         
         # Instantiate banks and MSHRs
         # Create NUM_BANKS number of banks each with NUM_SETS_PER_BANK of sets and NUM_WAYS of ways
@@ -669,17 +673,15 @@ class LockupFreeCacheStage(Stage):
         self.hit_pipeline.append(this_cycle_lookup_result)
 
         # Pushing the top of the output buffer to the ahead latch (LSU)
-        DCACHE_LSU_IF_NAME = "DCache_LSU_Resp" # Pick a name
-        
-        if DCACHE_LSU_IF_NAME in self.forward_ifs_write:
-            interface = self.forward_ifs_write[DCACHE_LSU_IF_NAME]
+        if self.DCACHE_LSU_IF_NAME in self.forward_ifs_write:
+            interface = self.forward_ifs_write[self.DCACHE_LSU_IF_NAME]
             if not(interface.wait):
                 if self.output_buffer:
                     event_to_send = self.output_buffer.popleft()
                     # Push to the named interface, not the dict
-                    self.forward_ifs_write[DCACHE_LSU_IF_NAME].push(event_to_send)
+                    self.forward_ifs_write[self.DCACHE_LSU_IF_NAME].push(event_to_send)
                 else:
-                    self.forward_ifs_write[DCACHE_LSU_IF_NAME].push(None)
+                    self.forward_ifs_write[self.DCACHE_LSU_IF_NAME].push(None)
             else:
                 # The LSU is busy, hold the data
                 pass

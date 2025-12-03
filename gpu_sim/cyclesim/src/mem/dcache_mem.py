@@ -48,7 +48,7 @@ def make_test_pipeline():
             "mem_dcache": memReqdCacheIF,
             "LSU_dCache": LSU_dCache_IF,
         },
-        "forward_if": dCache_LSU_RESP_IF
+        "forward_if": LSU_dCache_IF.forward_if
     }
 
 def print_latch_states(latches, cycle, before_after):

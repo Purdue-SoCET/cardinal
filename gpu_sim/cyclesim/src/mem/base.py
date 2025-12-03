@@ -71,9 +71,8 @@ class dCacheRequest:
     """Wraps a pipeline instruction for the cache."""
     addr_val: int       # The actual memory request
     rw_mode: str        # 'read' or 'write'
-    store_value: int    # The values that want to be written to cache
-    halt: bool
-    uuid: int = -1      # The UUID for a missed request
+    store_value: Optional[int] = None    # The values that want to be written to cache
+    halt: bool = False
 
     def __post_init__(self):
         self.addr = Addr(self.addr_val) # Create an Addr object and assign it to self.addr
@@ -150,23 +149,29 @@ class Warp:
 
 @dataclass
 class Instruction:
-    iid: int
-    pc: int
-    warp: int
-    warpGroup: int
-    
-    # instruction
-    opcode: int
-    rs1: int
-    rs2: int
-    rd: int
-    pred: Optional[Any] = None
-    packet: Optional[Any] = None
-    type: Optional[DecodeType] = None
+    # ----- required (no defaults) -----
+    iid: Optional[int]
+    pc: Bits
+    intended_FSU: Optional[str]   # <-- no default here
+    warp: Optional[int]
+    warpGroup: Optional[int]
+
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+
+    # ----- optional / with defaults (must come after ALL non-defaults) -----
+    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
+    rdat1: list[Bits] = field(default_factory=list)
+    rdat2: list[Bits] = field(default_factory=list)
+    wdat: list[Bits] = field(default_factory=list)
+
+    type: Optional[Any] = None
+    packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None
-    stage_entry: Dict[str, int] = field(default_factory=dict)   # stage -> first cycle seen
-    stage_exit:  Dict[str, int] = field(default_factory=dict)   # stage -> last cycle completed
-    fu_entries:  List[Dict]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
+    stage_entry: Dict[str, int] = field(default_factory=dict)
+    stage_exit:  Dict[str, int] = field(default_factory=dict)
+    fu_entries:  List[Dict]     = field(default_factory=list)
     wb_cycle: Optional[int] = None
 
     def mark_stage_enter(self, stage: str, cycle: int):
@@ -186,6 +191,7 @@ class Instruction:
 
     def mark_writeback(self, cycle: int):
         self.wb_cycle = cycle
+
 @dataclass
 class ForwardingIF:
     payload: Optional[Any] = None
