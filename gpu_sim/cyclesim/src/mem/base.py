@@ -2,6 +2,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
+from typing import NamedTuple
+from bitstring import Bits
 
 '''FROM DCACHE'''
 # --- Cache Configuration ---
@@ -75,6 +77,20 @@ class dCacheRequest:
 
     def __post_init__(self):
         self.addr = Addr(self.addr_val) # Create an Addr object and assign it to self.addr
+
+@dataclass
+class dMemResponse: # D$ -> LDST
+    type: str
+    req: Optional['dCacheRequest'] = None
+    address: Optional[int] = None
+    replay: bool = False
+    is_secondary: bool = False
+    data: Optional[Any] = None
+    miss: bool = False
+    hit: bool = False
+    stall: bool = False
+    uuid: Optional[int] = None
+    flushed: bool = False
 
 @dataclass
 class MemRequest:

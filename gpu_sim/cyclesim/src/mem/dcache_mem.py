@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
 from dcache import LockupFreeCacheStage
-from base import ForwardingIF, LatchIF, Stage, Addr, Instruction, MemRequest, dCacheFrame, MSHREntry
+from base import *
 from mem import MemStage, Mem
 
 BLOCK_SIZE_WORDS = 32
@@ -84,15 +84,14 @@ def run_sim (start, cycles):
         mem.compute(input_data = None)
         response = resp_if.pop()
         if response:
-            msg_type = response.get('type', 'UNKNOWN')
+            msg_type = response.type
+            uuid = response.uuid
+            data = response.data
             if (msg_type == 'MISS_ACCEPTED'):
-                uuid = response.get('uuid')
                 print(f"[Cycle {cycle}] LSU Received: MISS ACCEPTED (UUID: {uuid})")
             elif (msg_type == 'HIT_COMPLETE'):
-                data = response.get('data')
                 print(f"[Cycle {cycle}] LSU Received: HIT COMPLETE (Data: {data})")
             elif (msg_type == 'MISS_COMPLETE'):
-                uuid = response.get('uuid')
                 print(f"[Cycle {cycle}] LSU Received: MISS COMPLETE (UUID: {uuid}) - Data is in cache")
             elif (msg_type == 'HIT_STALL'):
                 print(f"[Cycle {cycle}] LSU Received: HIT STALL")

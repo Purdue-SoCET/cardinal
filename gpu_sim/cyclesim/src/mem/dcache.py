@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
-from base import ForwardingIF, LatchIF, Stage, Addr, Instruction, dCacheRequest, dCacheFrame, MSHREntry, MemRequest
+from base import *
 
 
 # --- Cache Configuration ---
@@ -509,18 +509,13 @@ class LockupFreeCacheStage(Stage):
                     logging.info(f"Cache: Miss for UUID {uuid} (addr 0x{req.addr_val:X}) is complete.")
                     self.mshrs[i].pop_head()    # Pop the oldest entry from the MSHR buffer of the ith bank
                     
-                    self.output_buffer.append({
-                        'type': 'MISS_COMPLETE',
-                        'miss': False,
-                        'hit': False,
-                        'stall': False,
-                        'uuid': uuid,
-                        'req' : req,
-                        'address': req.addr_val,
-                        'replay': True,
-                        'is_secondary': False,
-                        'data': None
-                    })
+                    self.output_buffer.append(dMemResponse(
+                        type = 'MISS_COMPLETE',
+                        uuid = uuid,
+                        req = req,
+                        address = req.addr_val,
+                        replay = True
+                        ))
                 
         # 3c. Service new misses if banks are ready
         for i in range(NUM_BANKS):  # Iterating through all banks again
@@ -565,12 +560,11 @@ class LockupFreeCacheStage(Stage):
 
                 if all_halted:
                      logging.info("Cache: Flush Complete.")
-                     self.output_buffer.append({
-                            'type': 'FLUSH_COMPLETE',
-                            'miss': False, 'hit': False, 'stall': False,
-                            'uuid': None, 'req': None, 'address': None,
-                            'replay': False, 'is_secondary': False, 'data': None, 'flushed': True
-                        })
+                     self.output_buffer.append(dMemResponse(
+                         type = 'FLUSH_COMPLETE',
+                         flushed  = True
+                     ))
+                         
                      self.flushing = False
 
         # --- 4. Handle Hit Completion & New Inputs ---
@@ -581,19 +575,14 @@ class LockupFreeCacheStage(Stage):
             self.hit_pipeline_busy = False # The hit is complete, so unlock the pipeline.
             self.hit_stall = False
 
-            self.output_buffer.append({
-                'type': 'HIT_COMPLETE',
-                'miss': False,
-                'hit': True,
-                'stall': False,
-                'uuid': None,
-                'req' : req,
-                'address': req.addr_val,
-                'replay': False,
-                'is_secondary': False,
-                'data' : completed_hit_info['data'],
-                'flushed': False
-            })
+            self.output_buffer.append(dMemResponse(
+                type = 'HIT_COMPLETE',
+                hit = True,
+                req = req,
+                address = req.addr_val,
+                data = completed_hit_info['data']
+            ))
+
             
         else:
             # --- Handle the pipeline interface (Input Stage) ---
@@ -651,19 +640,14 @@ class LockupFreeCacheStage(Stage):
                             if is_new: # Only track new primary misses
                                 self.active_misses[uuid] = req
 
-                            self.output_buffer.append({
-                                'type': 'MISS_ACCEPTED',
-                                'miss': True,
-                                'hit': False,
-                                'stall': False,
-                                'uuid': uuid,
-                                'req' : req,
-                                'address': req.addr_val,
-                                'replay': False,
-                                'is_secondary': not is_new,
-                                'data': None,
-                                'flushed': False
-                            })
+                            self.output_buffer.append(dMemResponse(
+                                type = 'MISS_ACCEPTED',
+                                miss = True,
+                                uuid = uuid,
+                                req = req,
+                                address = req.addr_val,
+                                is_secondary = not is_new
+                            ))
                             
                             self.pending_request = None
             
@@ -674,21 +658,12 @@ class LockupFreeCacheStage(Stage):
                 # hit pipeline resource is occupied.
                 if self.hit_stall:
                     # We have a request, but the hit pipeline is busy
-                    self.output_buffer.append({
-                                'type': 'HIT_STALL',
-                                'miss': False,
-                                'hit': False,
-                                'stall': True,
-                                'uuid': None,
-                                'req' : self.pending_request,
-                                'address': None,
-                                'replay': False,
-                                'is_secondary': None,
-                                'data': None,
-                                'flushed': False
-                            })
+                    self.output_buffer.append(dMemResponse(
+                        type = 'HIT_STALL',
+                        stall = True,
+                        req = self.pending_request
+                    ))
                     
-        
         # --- 5. Push this cycle's lookup result into the hit pipeline ---
         # This pushes either the hit info (Cycle 1) or None (a bubble)
         self.hit_pipeline.append(this_cycle_lookup_result)
