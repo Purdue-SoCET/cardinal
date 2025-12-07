@@ -193,6 +193,8 @@ class R_Instr_1(Instr):
         rdat1 = t_reg.read(self.rs1)
         rdat2 = t_reg.read(self.rs2)
         is_float_op = False
+
+        
         match self.op:
             # Comparison Operations
             case R_Op_1.SLTU:
@@ -200,24 +202,43 @@ class R_Instr_1(Instr):
             
             # Floating Point Arithmetic Operations
             case R_Op_1.ADDF:
+                rdat1 = Bits(bytes=rdat1.bytes[::-1]) #flip to little endian
+                rdat2 = Bits(bytes=rdat2.bytes[::-1])
                 is_float_op = True
-                result = rdat1.float + rdat2.float
+                result = Bits(float=rdat1.float + rdat2.float, length=32)
+                print(f"{rdat1.float} + {rdat2.float} = {result.float}")
+                result = Bits(bytes=result.bytes[::-1])
+                
             
             case R_Op_1.SUBF:
+                rdat1 = Bits(bytes=rdat1.bytes[::-1]) #flip to little endian
+                rdat2 = Bits(bytes=rdat2.bytes[::-1])
                 is_float_op = True
-                result = rdat1.float - rdat2.float
+                result = Bits(float=rdat1.float - rdat2.float, length=32)
+                result = Bits(bytes=result.bytes[::-1])
+                
             
             case R_Op_1.MULF:
+                print(f"{rdat1.int}, {rdat2.int}")
+                # Reverse BYTES to convert from big-endian to little-endian
+                little_1 = Bits(bytes=rdat1.bytes[::-1])  # .bytes gives you the byte representation
+                little_2 = Bits(bytes=rdat2.bytes[::-1])
                 is_float_op = True
-                result = rdat1.float * rdat2.float
+                result = Bits(float=little_1.float * little_2.float, length=32)
+                print(f"{little_1.float} * {little_2.float} = {result.float}")
+                result = Bits(bytes=result.bytes[::-1])
+                
             
             case R_Op_1.DIVF:
+                rdat1 = Bits(bytes=rdat1.bytes[::-1]) #flip to little endian
+                rdat2 = Bits(bytes=rdat2.bytes[::-1])
                 is_float_op = True
                 if rdat2.float == 0.0:
                     logger.warning(f"Division by zero in DIVF from thread ID {global_thread_id}: R{self.rd} = R{self.rs1.int} / R{self.rs2.int}")
                     result = float('inf')
                 else:
-                    result = rdat1.float / rdat2.float
+                    result = Bits(float=rdat1.float / rdat2.float, length=32)
+                    result = Bits(bytes=result.bytes[::-1])
             
             # Bit Shifting Operations
             case R_Op_1.SLL:
@@ -238,9 +259,8 @@ class R_Instr_1(Instr):
 
         self.check_overflow(result, global_thread_id)
 
-        # out = result & 0xFFFFFFFF #shouldn't need this, since Bits already protects against this
         if is_float_op:
-            t_reg.write(self.rd, Bits(float=result, length=32))
+            t_reg.write(self.rd, result)
         else:
             out = result 
             t_reg.write(self.rd, Bits(int=out, length=32)) #result should already be Bits class
@@ -262,6 +282,7 @@ class I_Instr_0(Instr):
             # Immediate INT Arithmetic
             case I_Op_0.ADDI:
                 result = rdat1.int + imm_val
+                print(f"{rdat1.int} + {imm_val} = {result}")
             
             case I_Op_0.SUBI:
                 result = rdat1.int - imm_val
@@ -455,6 +476,8 @@ class S_Instr_0(Instr):
             case S_Op_0.SW:
                 # Store Word (32 bits / 4 bytes)
                 mem.write(addr, rdat2.uint, 4)
+                little_endian_float = Bits(bytes=rdat2.bytes[::-1]).float
+                print(little_endian_float)
             
             case S_Op_0.SH:
                 # Store Half-Word (16 bits / 2 bytes)

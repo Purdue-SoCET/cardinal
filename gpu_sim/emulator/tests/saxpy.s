@@ -1,22 +1,18 @@
 #code for I
-csrr x3, x1000 #fictional block id
-csrr x4, x1001 #fictional blockDim
-csrr x5, x1002 #fictional thread ID
-mul x3, x3, x4, pred, 1, 1
-add x3, x3, x5, pred, 1, 1
+csrr x3, x1000 #fictional thread ID
 ## load arguments, default values ok
-lli x15, 108
+lli x15, 92
 lw x4, x15, 0  #n
-lli x15, 112
+lli x15, 96
 lw x5, x15, 0 #a
-lli x15, 116
-lw x6, x15, 0 #x array start
-lli x15, 116
+lli x15, 100
+addi x6, x15, 0 #x array start
+lli x15, 100
 lmi x15, 1
-lw x7, x15, 0 #y array start
+addi x7, x15, 0 #y array start
 ## if (i < n)
 blt p2, x3, x4, pred, 1, 1 #compute predicate 
-jal x16, x17, COMPUTE_LABEL, pred, 1, 1 #jump based on predicate
+jal x16, COMPUTE_LABEL, pred, 1, 1 #jump based on predicate
 DONE_LABEL:
     halt
 ## complete multiply
@@ -36,4 +32,4 @@ COMPUTE_LABEL:
     #y[i] = 
     sw x13, x9,0, 2, 1, 1
     #end program
-    jal x16, x17, DONE_LABEL, pred, 1, 1
+    jal x16, DONE_LABEL, pred, 1, 1
