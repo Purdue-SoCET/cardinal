@@ -468,6 +468,21 @@ class LockupFreeCacheStage(Stage):
         self.flushing = False
         # ---------------------------
 
+    def calc_data_size (self, data: int, addr: int, size: str) -> int:
+        """
+        This helper function is used to calculate the data returned depending on the data size that was specificed in the dCacheRequest.
+        It uses the byte offset (the last two bits of the instruction address) to know which byte to start counting from.
+        """
+        offset = addr & 0x3     # Extract the byte offset
+        shift_amount = offset * 8   # The number of bits to be shifted to the right
+
+        if (size == 'word'):
+            return (data & 0xFFFF_FFFF)
+        elif (size == 'half'):
+            return ((data >> shift_amount) & 0xFFFF)
+        elif (size == 'byte'):
+            return ((data >> shift_amount) & 0xFF)
+
     def compute(self, input_data: Optional[Dict]) -> None:
         self.cycle_count += 1   # Increment the cycle count by 1
         logging.info(f"--- Cache Cycle {self.cycle_count} ---")
@@ -597,6 +612,7 @@ class LockupFreeCacheStage(Stage):
                     self.pending_request = dCacheRequest(
                         addr_val=input_data.get('addr_val', 0),
                         rw_mode=input_data.get('rw_mode', 'read'),
+                        size = input_data.get('size', 'word'),  # Data size (word, half, byte)
                         store_value=input_data.get('store_value', 0),
                         halt = input_data.get('halt', False)
                     )
@@ -618,9 +634,10 @@ class LockupFreeCacheStage(Stage):
                     if hit:
                         # This is Cycle 1 of the hit
                         logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}. Pipelining.")
-                        
+                        formatted_data = self.calc_data_size(data, req.addr, req.size)
+
                         # Prepare to push the hit result into the pipeline
-                        this_cycle_lookup_result = {'data': data, 'req': req}
+                        this_cycle_lookup_result = {'data': formatted_data, 'req': req}
                         
                         self.hit_pipeline_busy = True # Lock the pipeline, it's now busy.
                         

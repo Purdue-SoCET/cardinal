@@ -71,7 +71,7 @@ class dCacheRequest:
     """Wraps a pipeline instruction for the cache."""
     addr_val: int       # The actual memory request
     rw_mode: str        # 'read' or 'write'
-    size: str # 'word' 'half' 'btye'
+    size: str # 'word' 'half' 'byte'
     store_value: Optional[int] = None    # The values that want to be written to cache
     halt: bool = False
     
