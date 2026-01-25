@@ -3,7 +3,7 @@
 > **Note:** This is a work in progress. Any feedback is greatly appreciated. Message Seth McConkey (@s3f2607) on Discord
 
 ## Directory Structure (Work In Progress)
-
+> **Note:** Do not edit this structure directly. Edit the [directory structure source file](./dir_structure_source.md) and use [this website](https://tree.nathanfriend.com) to render it into the format below
 ```
 gpu/
 ├── common/
