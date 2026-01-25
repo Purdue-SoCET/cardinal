@@ -5,64 +5,73 @@
 ## Directory Structure (Work In Progress)
 > **Note:** Do not edit this structure directly. Edit the [directory structure source file](./dir_structure_source.md) and use [this website](https://tree.nathanfriend.com) to render it into the format below
 ```
-gpu/
-├── common/
-│   ├── custom_enums_multi.py
-│   └── custom_enums.py
-├── emulator/
-│   └── <emulator_files>
-└── simulator/
-    ├── src/
-    │   ├── frontend/
-    │   │   ├── schedule/
-    │   │   │   ├── stage.py
-    │   │   │   └── <file_name>.py
-    │   │   ├── fetch/
-    │   │   │   ├── stage.py
-    │   │   │   └── <file_name>.py
-    │   │   ├── decode/
-    │   │   │   ├── stage.py
-    │   │   │   └── <file_name>.py
-    │   │   └── issue/
-    │   │       ├── stage.py
-    │   │       └── <file_name>.py
-    │   ├── backend/
-    │   │   ├── execute/
-    │   │   │   ├── stage.py
-    │   │   │   ├── arithmetic_functional_unit.py
-    │   │   │   └── functional_sub_unit.py
-    │   │   └── writeback/
-    │   │       ├── stage.py
-    │   │       └── writeback_buffer.py
-    │   └── memory/
-    │       ├── memory.py
-    │       ├── dcache.py
-    │       ├── icache.py
-    │       └── <file_name>.py
+cardinal/
+└── gpu/
+    ├── common/
+    │   ├── custom_enums_multi.py
+    │   └── custom_enums.py
+    ├── emulator/
+    │   └── <emulator_files>
+    ├── simulator/
+    │   └── src/
+    │       ├── schedule/
+    │       │   ├── stage.py
+    │       │   └── <file_name>.py
+    │       ├── fetch/
+    │       │   ├── stage.py
+    │       │   └── <file_name>.py
+    │       ├── decode/
+    │       │   ├── stage.py
+    │       │   └── <file_name>.py
+    │       ├── issue/
+    │       │   ├── stage.py
+    │       │   └── <file_name>.py
+    │       ├── execute/
+    │       │   ├── stage.py
+    │       │   ├── arithmetic_functional_unit.py
+    │       │   └── functional_sub_unit.py
+    │       ├── writeback/
+    │       │   ├── stage.py
+    │       │   └── writeback_buffer.py
+    │       ├── memory/
+    │       │   ├── memory.py
+    │       │   ├── dcache.py
+    │       │   ├── icache.py
+    │       │   └── <file_name>.py
+    │       ├── utils/
+    │       │   ├── performance_counter.py
+    │       │   └── <file_name>.py
+    │       └── <name_of_file_used_in_multiple_stages>.py
     ├── tests/
-    │   ├── frontend/
-    │   │   ├── schedule/
-    │   │   │   └── <name_of_scheduling_unit_test>.py
-    │   │   ├── fetch/
-    │   │   │   └── <name_of_fetch_unit_test>.py
-    │   │   ├── decode/
-    │   │   │   └── <name_of_decode_unit_test>.py
-    │   │   ├── issue/
-    │   │   │   └── <name_of_issue_unit_test>.py
-    │   │   └── <name_of_frontend_unit_test>.py
-    │   ├── backend/
-    │   │   ├── execute/
-    │   │   │   └── <name_of_execute_unit_test>.py
-    │   │   └── writeback/
-    │   │       └── <name_of_writeback_unit_test>.py
-    │   ├── memory/
-    │   │   └── <name_of_memory_unit_test>.py
-    │   └── <name_of_top_level_test>.py
-    ├── test_results/
-    │   └── <MM/DD/YYYY>/
-    │       └── results.txt
-    └── utils/
-        └── performance_counter.py
+    │   ├── common/
+    │   │   ├── assembly/
+    │   │   │   └── <assembly_test_for_both_sim_and_em>.asm
+    │   │   └── benchmark/
+    │   │       └── <benchmark_tests>
+    │   ├── emulator/
+    │   │   └── <emulator_tests>
+    │   └── simulator/
+    │       ├── frontend/
+    │       │   ├── schedule/
+    │       │   │   └── <name_of_scheduling_unit_test>.py
+    │       │   ├── fetch/
+    │       │   │   └── <name_of_fetch_unit_test>.py
+    │       │   ├── decode/
+    │       │   │   └── <name_of_decode_unit_test>.py
+    │       │   ├── issue/
+    │       │   │   └── <name_of_issue_unit_test>.py
+    │       │   └── <name_of_frontend_unit_test>.py
+    │       ├── backend/
+    │       │   ├── execute/
+    │       │   │   └── <name_of_execute_unit_test>.py
+    │       │   └── writeback/
+    │       │       └── <name_of_writeback_unit_test>.py
+    │       ├── memory/
+    │       │   └── <name_of_memory_unit_test>.py
+    │       └── <name_of_top_level_test>.py
+    └── test_results/
+        └── <MM/DD/YYYY>/
+            └── results.txt
 ```
 
 
