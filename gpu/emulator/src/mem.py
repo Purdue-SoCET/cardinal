@@ -59,21 +59,19 @@ class Mem:
                 addr += 4  # next word starts 4 bytes later
         atexit.register(self.dump_on_exit)
 
-    def read(self, addr: int, bytes: int) -> int:
+    def read(self, addr: int, bytes: int) -> Bits:
         val = 0
 
         for i in range(bytes): #reads LSB first
             b = self.memory[addr + i] & 0xFF #endianness
             val |= b << (8 * i)
-            # print(f"byte_{i}={bin(b)} at mem_addr={addr + i}")
-            
-        # print(f"word={hex(val)} at mem_addr={addr}")
-        return val
+
+        return Bits(int=val, length=8 * bytes)
 
     def write(self, addr: Bits, data: Bits, bytes_t: int) -> None:
         # print(f"{addr},{data}")
         for i in range(bytes_t):
-            self.memory[addr + i] =  data >> (8 * i)#
+            self.memory[addr + i] =  data >> (8 * i)
             # print(f"{i}, {data << (8*i)}, {addr}")
     def dump_on_exit(self) -> None:
         try:
