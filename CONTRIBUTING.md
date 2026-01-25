@@ -2,7 +2,69 @@
 
 > **Note:** This is a work in progress. Any feedback is greatly appreciated. Message Seth McConkey (@s3f2607) on Discord
 
-## Directory Structure
+## Directory Structure (Work In Progress)
+
+```
+gpu/
+├── common/
+│   ├── custom_enums_multi.py
+│   └── custom_enums.py
+├── emulator/
+│   └── <emulator_files>
+└── simulator/
+    ├── src/
+    │   ├── frontend/
+    │   │   ├── schedule/
+    │   │   │   ├── stage.py
+    │   │   │   └── <file_name>.py
+    │   │   ├── fetch/
+    │   │   │   ├── stage.py
+    │   │   │   └── <file_name>.py
+    │   │   ├── decode/
+    │   │   │   ├── stage.py
+    │   │   │   └── <file_name>.py
+    │   │   └── issue/
+    │   │       ├── stage.py
+    │   │       └── <file_name>.py
+    │   ├── backend/
+    │   │   ├── execute/
+    │   │   │   ├── stage.py
+    │   │   │   ├── arithmetic_functional_unit.py
+    │   │   │   └── functional_sub_unit.py
+    │   │   └── writeback/
+    │   │       ├── stage.py
+    │   │       └── writeback_buffer.py
+    │   └── memory/
+    │       ├── memory.py
+    │       ├── dcache.py
+    │       ├── icache.py
+    │       └── <file_name>.py
+    ├── tests/
+    │   ├── frontend/
+    │   │   ├── schedule/
+    │   │   │   └── <name_of_scheduling_unit_test>.py
+    │   │   ├── fetch/
+    │   │   │   └── <name_of_fetch_unit_test>.py
+    │   │   ├── decode/
+    │   │   │   └── <name_of_decode_unit_test>.py
+    │   │   ├── issue/
+    │   │   │   └── <name_of_issue_unit_test>.py
+    │   │   └── <name_of_frontend_unit_test>.py
+    │   ├── backend/
+    │   │   ├── execute/
+    │   │   │   └── <name_of_execute_unit_test>.py
+    │   │   └── writeback/
+    │   │       └── <name_of_writeback_unit_test>.py
+    │   ├── memory/
+    │   │   └── <name_of_memory_unit_test>.py
+    │   └── <name_of_top_level_test>.py
+    ├── test_results/
+    │   └── <MM/DD/YYYY>/
+    │       └── results.txt
+    └── utils/
+        └── performance_counter.py
+```
+
 
 ## Branching Strategy
 
