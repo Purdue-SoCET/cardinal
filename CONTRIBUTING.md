@@ -251,3 +251,56 @@ There are five branches/types of branches that this repository supports:
   git push origin --delete integration/a-b
   ```
 
+### Example Scenarios
+
+#### Collaborating on an `integration/` or `feature/` Branch
+
+Some common scenarios when working with someone else on the same branch:
+  
+- **Your teammate has pushed their commits, and you have some commits you haven't pushed yet. You try to pull their changes, but you get a warning that you might lose the changes in your commits**
+
+  - Rebase your commits on top of theirs
+    ```
+    git pull origin --rebase
+    ```
+  - Fix any conflicts that come up
+  - Push your changes
+   ```
+   git push origin
+   ```
+
+- **Your teammate has pushed their commits, and you have some changes you haven't committed yet. You try to pull their changes, but you get a warning that you might lose the changes you haven't committed yet**
+
+  - Stash your changes
+    ```
+    git stash push path/to/your/file
+    ```
+
+    OR stash all of your unstaged changes
+
+    ```
+    git stash
+    ```
+
+  - Pull the changes from the GitHub repository
+    ```
+    git pull origin
+    ```
+
+  - List all the stashes you have made
+    ```
+    git stash list 
+    ```
+    - This will list them out, with the most recent stash made being at index 0, and so on
+  
+  - Apply the desired stash
+    ```
+    git stash apply 0
+    ```
+    - This applies the changes from the most recent stash you made. You can substitute a different number for 0 if you want the changes from a different stash. You may have to apply multiple stashes if you used `git stash push` for multiple files.
+  
+  - Fix any conflicts
+  - Now you should have the latest changes from the GitHub repository and your changes
+  
+
+
