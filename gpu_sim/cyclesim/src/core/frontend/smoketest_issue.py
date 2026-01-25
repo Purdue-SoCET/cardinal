@@ -169,7 +169,6 @@ def main():
     test_IBUF_2()
     test_IBUF_3()
     test_IBUF_4()
-    # ...call all other test functions here...
     print("\nAll smoke tests completed.")
 
 if __name__ == "__main__":
