@@ -265,9 +265,9 @@ Some common scenarios when working with someone else on the same branch:
     ```
   - Fix any conflicts that come up
   - Push your changes
-   ```
-   git push origin
-   ```
+    ```
+    git push origin
+    ```
 
 - **Your teammate has pushed their commits, and you have some changes you haven't committed yet. You try to pull their changes, but you get a warning that you might lose the changes you haven't committed yet**
 
