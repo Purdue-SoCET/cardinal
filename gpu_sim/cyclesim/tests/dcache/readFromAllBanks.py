@@ -1,6 +1,12 @@
 '''Unit test bench: This testbench sends a memory request to every bank in the cache. Initially the cache is empty and every memory request misses.
                     It fetches from main memory that has been prepopulated with 0x01010101 at every address. Every missed request has a miss penalty of 
                     200 cycles.'''
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[4]  # adjust depth
+sys.path.insert(0, str(ROOT))
+
 
 import gpu_sim.cyclesim.src.mem.dcache as cache_module # Import the updated cache module
 from collections import deque

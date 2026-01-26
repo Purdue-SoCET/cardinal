@@ -1,32 +1,23 @@
-# Memory.py — Fully Patched for ICache + MemStage correctness
-import sys
+# Memory.py — Byte-addressed Mem (PC byte addresses), r/w
 from pathlib import Path
 import atexit
 from bitstring import Bits
 
-
 class Mem:
-    def __init__(self, start_pc: int, input_file: str, fmt: str = "bin", block_size=32):
-        """
-        Simple byte-addressable memory model.
-        ICache will request memory using block addresses (block index),
-        so this class converts block → byte address automatically.
-        """
+    def __init__(self, start_pc: int, input_file: str, fmt: str = "bin"):
         self.memory: dict[int, int] = {}
         self.format = fmt
-        self.block_size = block_size       # *** REQUIRED FIX ***
-        self.start_pc = start_pc
+        self.start_pc = int(start_pc)
 
         p = Path(input_file)
         if not p.exists():
             raise FileNotFoundError(f"Program file not found: {p}")
 
-        addr = start_pc
+        addr = self.start_pc
         endianness = "little"
 
         with p.open("r", encoding="utf-8") as f:
             for line_no, raw in enumerate(f, start=1):
-                # Remove comments
                 for marker in ("//", "#"):
                     i = raw.find(marker)
                     if i != -1:
@@ -47,7 +38,6 @@ class Mem:
                 else:
                     raise ValueError("Unknown format type (use 'hex' or 'bin')")
 
-                # Split into bytes
                 if endianness == "little":
                     b0 = (word >> 0) & 0xFF
                     b1 = (word >> 8) & 0xFF
@@ -67,49 +57,17 @@ class Mem:
 
         atexit.register(self.dump_on_exit)
 
-    # ------------------------------------------------------------
-    # Corrected READ — supports block addresses from ICache
-    # ------------------------------------------------------------
     def read(self, addr: int, size: int = 4) -> Bits:
-        """
-        Reads `size` bytes starting at `addr`.
+        byte_addr = int(addr)
+        data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
+        return Bits(bytes=data)
 
-        If addr < start_pc:
-            treat addr as a BLOCK INDEX (ICache requests)
-        else:
-            treat addr as a raw byte address (normal memory reads)
-        """
-
-        # Convert block index → byte address
-        if addr < self.start_pc:
-            byte_addr = addr * self.block_size
-
-            # Debug
-            # print(f"[Mem] Treating addr={addr} as block index → byte_addr={hex(byte_addr)}")
-        else:
-            byte_addr = addr
-
-        data_bytes = []
-        for offs in range(size):
-            val = self.memory.get(byte_addr + offs, 0)
-            if val > 0xFF:
-                shift = (offs % 4) * 8
-                val = (val >> shift) & 0xFF
-            data_bytes.append(val)
-
-        return Bits(bytes=bytes(data_bytes))
-
-    # ------------------------------------------------------------
-    # Byte-level write
-    # ------------------------------------------------------------
     def write(self, addr: int, data: Bits, bytes_t: int):
-        data_bytes = data.tobytes()[:bytes_t]
-        for i, byte in enumerate(data_bytes):
-            self.memory[addr + i] = byte
+        byte_addr = int(addr)
+        b = data.tobytes()[:int(bytes_t)]
+        for i, val in enumerate(b):
+            self.memory[byte_addr + i] = val & 0xFF
 
-    # ------------------------------------------------------------
-    # Dump on exit
-    # ------------------------------------------------------------
     def dump_on_exit(self):
         try:
             self.dump("memsim.hex")
@@ -117,21 +75,17 @@ class Mem:
             print("[Mem] dump failed")
 
     def dump(self, path="memsim.hex"):
+        if not self.memory:
+            return
+        min_addr = min(self.memory.keys()) & ~0x3
+        max_addr = max(self.memory.keys())
         with open(path, "w", encoding="utf-8") as f:
-            if not self.memory:
-                return
-
-            min_addr = min(self.memory.keys()) & ~0x3
-            max_addr = max(self.memory.keys())
-
             for base in range(min_addr, max_addr + 1, 4):
                 b0 = self.memory.get(base + 0, 0)
                 b1 = self.memory.get(base + 1, 0)
                 b2 = self.memory.get(base + 2, 0)
                 b3 = self.memory.get(base + 3, 0)
-
                 if (b0 | b1 | b2 | b3) == 0:
                     continue
-
-                word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+                word = (b0 & 0xFF) | ((b1 & 0xFF) << 8) | ((b2 & 0xFF) << 16) | ((b3 & 0xFF) << 24)
                 f.write(f"{base:#010x} {word:#010x}\n")
