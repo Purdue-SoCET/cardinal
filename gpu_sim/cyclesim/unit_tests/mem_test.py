@@ -10,7 +10,7 @@ sys.path.append(str(parent_dir))
 from typing import Any, Dict, List, Optional
 from base import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
 from Memory import Mem
-from units.mem import MemStage
+from units.mem import MemController
 from bitstring import Bits
 
 
@@ -49,7 +49,7 @@ def run_cycles(stage, behind, ahead, cycles, collect_list=None):
 # ------------------------------------------------------------
 # TEST SUITE A — Binary file tests
 # ------------------------------------------------------------
-def test_memstage_with_binary():
+def test_MemController_with_binary():
     print("\n=== TEST SUITE A: Binary-based tests ===")
 
     mem_backend = Mem(
@@ -61,7 +61,7 @@ def test_memstage_with_binary():
     behind = LatchIF("ICacheMemReqIF_A")
     ahead  = LatchIF("MemICacheRespIF_A")
 
-    mem_stage = MemStage(
+    mem_stage = MemController(
         name="MemoryA",
         behind_latch=behind,
         ahead_latch=ahead,
@@ -133,7 +133,7 @@ def test_memstage_with_binary():
 # # ------------------------------------------------------------
 # # TEST SUITE B — Manual Memory Tests
 # # ------------------------------------------------------------
-# def test_memstage_manual_memory():
+# def test_MemController_manual_memory():
 #     print("\n=== TEST SUITE B: Manual memory tests ===")
 
 #     mem_backend = Mem(start_pc=0x1000, input_file="/dev/null", fmt="bin")
@@ -152,7 +152,7 @@ def test_memstage_with_binary():
 #     behind = LatchIF("ICacheMemReqIF_B")
 #     ahead  = LatchIF("MemICacheRespIF_B")
 
-#     mem_stage = MemStage(
+#     mem_stage = MemController(
 #         name="MemoryB",
 #         behind_latch=behind,
 #         ahead_latch=ahead,

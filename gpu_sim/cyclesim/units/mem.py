@@ -14,7 +14,7 @@ from isa_packets import ISA_PACKETS
 from bitstring import Bits 
 
 
-class MemStage(Stage):
+class MemController(Stage):
     """Memory controller functional unit using Mem() backend. ONE completion per cycle."""
 
     def __init__(self, name, behind_latch, ahead_latch, mem_backend: Mem, latency: int = 5):
@@ -89,7 +89,8 @@ class MemStage(Stage):
 
             inst = getattr(req, "inst", None)  # dynamically attached
 
-            if req.rw_mode == "write":
+            if req.rw_mode == "write": # by defaults services writes before reads
+            # which is correct..
                 data_bits, nbytes = self._payload_to_bits(req.data, req.size)
                 self.mem_backend.write(req.addr, data_bits, nbytes)
 
@@ -130,6 +131,8 @@ class MemStage(Stage):
             pc_int = int(inst.pc) if isinstance(inst.pc, Bits) else int(inst.pc)
             warp_id = inst.warp if inst.warp is not None else int(req_info.get("warp", req_info.get("warp_id", 0)))
 
+            print(MemRequest.__module__)
+            print(MemRequest.__annotations__)
             mem_req = MemRequest(
                 addr=int(req_info["addr"]),                  # BYTE address
                 size=int(req_info.get("size", 4)),

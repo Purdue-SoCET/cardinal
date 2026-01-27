@@ -9,7 +9,7 @@ sys.path.append(str(parent))
 from base import LatchIF, ForwardingIF, Stage, Instruction, ICacheEntry, dump_bytes
 from Memory import Mem
 from units.icache import ICacheStage   # ← your actual ICacheStage file
-from units.mem import MemStage
+from units.mem import MemController
 from bitstring import Bits
 
 
@@ -35,8 +35,7 @@ def test_icache_basic_behavior():
     icache_ihit = ForwardingIF(name = "Ihit_Resp")
     mem = Mem(start_pc=0x1000,
               input_file="/dev/null",
-              fmt="bin",
-              block_size=32)
+              fmt="bin",)
 
     mem.memory.clear()
     mem.memory[0x1000] = 0xEF
@@ -69,7 +68,7 @@ def test_icache_basic_behavior():
     )
 
     #  build Mem Controller
-    mem_controller = MemStage (
+    mem_controller = MemController (
         name="Memory Controller",
         behind_latch=memreq_if,
         ahead_latch=memresp_if,
@@ -92,30 +91,18 @@ def test_icache_basic_behavior():
     fetch_ic_if.push(miss_instruction)
 
     icache.compute()
-    assert memreq_if.valid, "ICache should send MemReq on miss"
-
-
-    req = memreq_if.snoop()
-    # Because ICache sends block index, not address
-    assert req["addr"] == (0x1000 // 32), "MemReq addr must be block index"
-
-    mem_controller.compute()
-
-
+    assert memreq_if.valid
     # ----------------------------
     # 2) Simulate memory response
     # ----------------------------
 
     # should I in build the memory with the cache ?
-
-    block_index = 0x1000 // 32
-    data = mem.read(block_index, 32)   # ← correct block read
-
-    memresp_if.push({
-        "uuid": block_index,
-        "data": data,
-        "pc": 0x1000
-    })
+    # run mem controller until it responds
+    for _ in range(200):          # must be >= latency
+        mem_controller.compute()
+        if memresp_if.valid:
+            break
+    assert memresp_if.valid, "MemController never responded"
 
     icache.compute()   # handle fill
 
@@ -149,15 +136,16 @@ def test_icache_basic_behavior():
     print("CLEARED MEMORY, OVERWRITE FOR NEXT TEST\n")
     fetch_ic_if.push(miss_instruction)
     icache.compute()
-    req = memreq_if.pop()
-    block_index = req["addr"]
+    assert memreq_if.valid 
 
-    # simulating memory response here 
-    memresp_if.push({
-        "uuid": block_index,
-        "data": mem.read(block_index, 32),
-        "pc": 0x1000
-    })
+    # run mem controller until it responds
+    for _ in range(101):          # must be >= latency
+        mem_controller.compute()
+        if memresp_if.valid:
+            break
+    assert memresp_if.valid, "MemController never responded"
+
+    # now icache consumes response
     icache.compute()
 
     # Two HITS in a row
@@ -196,23 +184,28 @@ def test_icache_basic_behavior():
     # Miss for warp 0
     fetch_ic_if.push(Instruction(pc=0x1000, warp=0))
     icache.compute()
-    req0 = memreq_if.pop()
-    memresp_if.push({
-        "uuid":req0["addr"],
-        "data":mem.read(req0["addr"],32),
-        "pc":0x1000
-    })
+    
+    # run mem controller until it responds
+    for _ in range(200):          # must be >= latency
+        mem_controller.compute()
+        if memresp_if.valid:
+            break
+    assert memresp_if.valid, "MemController never responded"
+
+    # now icache consumes response
     icache.compute()
 
     # Miss for warp 1
     fetch_ic_if.push(Instruction(pc=0x2000,warp=1))
     icache.compute()
-    req1 = memreq_if.pop()
-    memresp_if.push({
-        "uuid":req1["addr"],
-        "data":mem.read(req1["addr"],32),
-        "pc":0x2000
-    })
+    # run mem controller until it responds
+    for _ in range(200):          # must be >= latency
+        mem_controller.compute()
+        if memresp_if.valid:
+            break
+    assert memresp_if.valid, "MemController never responded"
+
+    # now icache consumes response
     icache.compute()
 
     fetch_ic_if.push(Instruction(pc=0x2000,warp=1))
@@ -248,14 +241,15 @@ def test_icache_basic_behavior():
 
     assert memreq_if.valid is False, "MSHR merge failed (duplicate MemReq)"
 
-    # Now complete the fill
-    memresp_if.push({
-        "uuid":first_req["addr"],
-        "data":mem.read(first_req["addr"],32),
-        "pc":0x1000
-    })
-    icache.compute()
+    # run mem controller until it responds
+    for _ in range(400):          # must be >= latency
+        mem_controller.compute()
+        if memresp_if.valid:
+            break
+    assert memresp_if.valid, "MemController never responded"
 
+    # now icache consumes response
+    icache.compute()
     # After fill, hit
     fetch_ic_if.push(miss_instruction)
     resp = run_stage(icache, fetch_ic_if, ic_de_if)

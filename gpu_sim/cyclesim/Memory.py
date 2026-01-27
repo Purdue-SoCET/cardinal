@@ -1,137 +1,92 @@
-# Memory.py — Fully Patched for ICache + MemStage correctness
+# Memory.py — Fully Patched for ICache + MemController correctness
 import sys
 from pathlib import Path
 import atexit
 from bitstring import Bits
 
-class MemStage(Stage):
-    """Memory controller functional unit using Mem() backend. ONE completion per cycle."""
+class Mem:
+    def __init__(self, start_pc: int, input_file: str, fmt: str = "bin"):
+        self.memory: dict[int, int] = {}
+        self.format = fmt
+        self.start_pc = int(start_pc)
 
-    def __init__(self, name, behind_latch, ahead_latch, mem_backend: Mem, latency: int = 5):
-        super().__init__(name=name, behind_latch=behind_latch, ahead_latch=ahead_latch)
-        self.mem_backend = mem_backend
-        self.latency = int(latency)
-        self.inflight: list[MemRequest] = []
+        p = Path(input_file)
+        if not p.exists():
+            raise FileNotFoundError(f"Program file not found: {p}")
 
-    def _payload_to_bits(self, payload, size_hint: int) -> tuple[Bits, int]:
-        """
-        Convert store payload into (Bits, nbytes).
-        Supports:
-          - Bits
-          - bytes/bytearray
-          - int (encoded little-endian, size_hint bytes)
-          - list[int] of 32-bit words (little-endian)
-        """
-        if payload is None:
-            raise ValueError("Write request missing data")
+        addr = self.start_pc
+        endianness = "little"
 
-        if isinstance(payload, Bits):
-            b = payload.tobytes()
-            return payload, len(b)
+        with p.open("r", encoding="utf-8") as f:
+            for line_no, raw in enumerate(f, start=1):
+                for marker in ("//", "#"):
+                    i = raw.find(marker)
+                    if i != -1:
+                        raw = raw[:i]
 
-        if isinstance(payload, (bytes, bytearray)):
-            b = bytes(payload)
-            return Bits(bytes=b), len(b)
+                bits = raw.strip().replace("_", "")
+                if not bits:
+                    continue
 
-        if isinstance(payload, int):
-            n = int(size_hint) if int(size_hint) > 0 else 4
-            b = int(payload).to_bytes(n, "little", signed=False)
-            return Bits(bytes=b), len(b)
+                if self.format == "hex":
+                    if len(bits) != 8:
+                        raise ValueError(f"Line {line_no}: expected 8 hex chars, got {bits!r}")
+                    word = int(bits, 16)
+                elif self.format == "bin":
+                    if len(bits) != 32:
+                        raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
+                    word = int(bits, 2)
+                else:
+                    raise ValueError("Unknown format type (use 'hex' or 'bin')")
 
-        if isinstance(payload, list):
-            bb = bytearray()
-            for w in payload:
-                bb.extend(int(w).to_bytes(4, "little", signed=False))
-            return Bits(bytes=bytes(bb)), len(bb)
+                if endianness == "little":
+                    b0 = (word >> 0) & 0xFF
+                    b1 = (word >> 8) & 0xFF
+                    b2 = (word >> 16) & 0xFF
+                    b3 = (word >> 24) & 0xFF
+                else:
+                    b3 = (word >> 0) & 0xFF
+                    b2 = (word >> 8) & 0xFF
+                    b1 = (word >> 16) & 0xFF
+                    b0 = (word >> 24) & 0xFF
 
-        raise TypeError(f"Unsupported write payload type: {type(payload)}")
+                self.memory[addr + 0] = b0
+                self.memory[addr + 1] = b1
+                self.memory[addr + 2] = b2
+                self.memory[addr + 3] = b3
+                addr += 4
 
-    def _build_min_inst(self, req_info: dict) -> "Instruction":
-        """Fallback builder if caller didn't pass an Instruction."""
-        pc_raw = req_info.get("pc", 0)
-        pc_bits = pc_raw if isinstance(pc_raw, Bits) else Bits(uint=int(pc_raw), length=32)
+        atexit.register(self.dump_on_exit)
 
-        return Instruction(
-            iid=req_info.get("uuid", req_info.get("iid", 0)),
-            pc=pc_bits,
-            intended_FSU=req_info.get("intended_FSU", None),
-            warp=req_info.get("warp", req_info.get("warp_id", 0)),
-            warpGroup=req_info.get("warpGroup", None),
-            opcode=req_info.get("opcode", None),
-            rs1=req_info.get("rs1", Bits(uint=0, length=5)),
-            rs2=req_info.get("rs2", Bits(uint=0, length=5)),
-            rd=req_info.get("rd", Bits(uint=0, length=5)),
-        )
+    def read(self, addr: int, size: int = 4) -> Bits:
+        byte_addr = int(addr)
+        data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
+        return Bits(bytes=data)
 
-    def compute(self, input_data=None):
-        # 1) decrement remaining for all inflight
-        for req in self.inflight:
-            req.remaining -= 1
+    def write(self, addr: int, data: Bits, bytes_t: int):
+        byte_addr = int(addr)
+        b = data.tobytes()[:int(bytes_t)]
+        for i, val in enumerate(b):
+            self.memory[byte_addr + i] = val & 0xFF
 
-        # 2) complete at most ONE ready request
-        for req in list(self.inflight):
-            if req.remaining > 0:
-                continue
+    def dump_on_exit(self):
+        try:
+            self.dump("memsim.hex")
+        except Exception:
+            print("[Mem] dump failed")
 
-            # can't push? stall (keep inflight)
-            if not self.ahead_latch.ready_for_push():
-                return
-
-            inst = getattr(req, "inst", None)  # dynamically attached
-
-            if req.rw_mode == "write":
-                data_bits, nbytes = self._payload_to_bits(req.data, req.size)
-                self.mem_backend.write(req.addr, data_bits, nbytes)
-
-                # If you want to mark completion on the Instruction:
-                if inst is not None:
-                    inst.mem_status = "WRITE_DONE"   # optional dynamic field
-
-                # For pipeline consistency, push Instruction forward if available.
-                # Otherwise push a minimal Instruction so downstream doesn't crash.
-                self.ahead_latch.push(inst if inst is not None else self._build_min_inst({
-                    "pc": req.pc, "uuid": req.uuid, "warp": req.warp_id
-                }))
-
-            else:
-                # READ
-                data_bits = self.mem_backend.read(req.addr, req.size)
-
-                # attach fetched packet to instruction
-                if inst is None:
-                    # build Instruction if caller didn't provide one
-                    inst = self._build_min_inst({"pc": req.pc, "uuid": req.uuid, "warp": req.warp_id})
-
-                inst.packet = data_bits
-                self.ahead_latch.push(inst)
-
-            self.inflight.remove(req)
-            return  # enforce ONE completion per cycle
-
-        # 3) accept a new request (only if no completion happened this cycle)
-        if self.behind_latch and self.behind_latch.valid:
-            req_info = self.behind_latch.pop()
-
-            # Prefer passing Instruction object end-to-end
-            inst = req_info.get("inst", None)
-            if inst is None:
-                inst = self._build_min_inst(req_info)
-
-            pc_int = int(inst.pc) if isinstance(inst.pc, Bits) else int(inst.pc)
-            warp_id = inst.warp if inst.warp is not None else int(req_info.get("warp", req_info.get("warp_id", 0)))
-
-            mem_req = MemRequest(
-                addr=int(req_info["addr"]),                  # BYTE address
-                size=int(req_info.get("size", 4)),
-                uuid=int(req_info.get("uuid", inst.iid if inst.iid is not None else 0)),
-                warp_id=int(req_info.get("warp_id", warp_id)),
-                pc=int(req_info.get("pc", pc_int)),
-                data=req_info.get("data", None),
-                rw_mode=req_info.get("rw_mode", "read"),
-                remaining=self.latency,
-            )
-
-            # Attach Instruction dynamically (keeps dataclass unchanged)
-            mem_req.inst = inst
-
-            self.inflight.append(mem_req)
+    def dump(self, path="memsim.hex"):
+        if not self.memory:
+            return
+        min_addr = min(self.memory.keys()) & ~0x3
+        max_addr = max(self.memory.keys())
+        with open(path, "w", encoding="utf-8") as f:
+            for base in range(min_addr, max_addr + 1, 4):
+                b0 = self.memory.get(base + 0, 0)
+                b1 = self.memory.get(base + 1, 0)
+                b2 = self.memory.get(base + 2, 0)
+                b3 = self.memory.get(base + 3, 0)
+                if (b0 | b1 | b2 | b3) == 0:
+                    continue
+                word = (b0 & 0xFF) | ((b1 & 0xFF) << 8) | ((b2 & 0xFF) << 16) | ((b3 & 0xFF) << 24)
+                f.write(f"{base:#010x} {word:#010x}\n")

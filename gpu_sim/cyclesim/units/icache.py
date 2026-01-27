@@ -151,10 +151,10 @@ class ICacheStage(Stage):
         self.behind_latch.pop()
 
         set_idx, tag, block = self._addr_decode(pc_int)
-
+        block_base = block * self.block_size
         # Send MemReq as dict (addr is BLOCK INDEX here)
         self.mem_req_if.push({
-            "addr": block,
+            "addr": block_base,
             "size": self.block_size,
             "uuid": block,
             "pc": pc_int,
