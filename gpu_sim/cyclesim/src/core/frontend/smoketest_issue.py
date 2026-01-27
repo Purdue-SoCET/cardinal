@@ -53,123 +53,18 @@ regfile.write_warp_gran(3, 1, [902, 903])
 regfile.write_warp_gran(3, 2, [904, 905])
 regfile.write_warp_gran(3, 3, [906, 907])
 
-# instructions = [
-#     Instruction(pc=0x0, intended_FU="ADD", warp_id=0, warp_group_id=0, rs1=2, rs2=3, rd=1, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x0, intended_FU="ADD", warp_id=1, warp_group_id=0, rs1=2, rs2=3, rd=1, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x4, intended_FU="MUL", warp_id=0, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="0000010", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x4, intended_FU="MUL", warp_id=1, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="0000010", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x8, intended_FU="DIV", warp_id=0, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1111111", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x8, intended_FU="DIV", warp_id=1, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1111111", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0xC, intended_FU="SQRT", warp_id=0, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1010101", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0xC, intended_FU="SQRT", warp_id=1, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1010101", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x10, intended_FU="SUB", warp_id=0, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1110111", rdat1=0, rdat2=0, wdat=0),
-#     Instruction(pc=0x10, intended_FU="SUB", warp_id=1, warp_group_id=0, rs1=0, rs2=1, rd=2, opcode="1110111", rdat1=0, rdat2=0, wdat=0),
-# ]
-
-
-# # --- SMOKE TESTS FROM CSV ---
-# def print_ibuffer_state(issue_stage, wg=0):
-#     print(f"iBuffer[{wg}]: {issue_stage.iBuffer[wg]}")
-#     print(f"iBufferCapacity[{wg}]: {issue_stage.iBufferCapacity[wg]}")
-#     print(f"iBufferHead[{wg}]: {issue_stage.iBufferHead[wg]}")
-
 def reset_issue_stage(issue_stage, regfile, fust):
     for k in fust:
         fust[k] = 0
     for _ in range(10):
         issue_stage.compute(None)
 
-# def test_IBUF_1():
-#     print("\nTest: IBUF-1 | Type: iBuffer")
-#     print("Scenario: Single enqueue into empty WG FIFO")
-#     print("Preconditions & Setup: IssueStage fresh init; WG0 capacity=0 head=0; inst_in.warp_group_id=0")
-#     reset_issue_stage(issue_stage, regfile, fust)
-#     print_ibuffer_state(issue_stage, 0)
-#     inst = Instruction(pc=0x20, intended_FU="ADD", warp_id=0, warp_group_id=0, rs1=1, rs2=2, rd=3, opcode="0000000", rdat1=0, rdat2=0, wdat=0)
-#     print("Stimulus: cycle0: compute(inst0)")
-#     issue_stage.compute(inst)
-#     print_ibuffer_state(issue_stage, 0)
-#     tail = (issue_stage.iBufferHead[0] + 0) % issue_stage.num_entries
-#     print("Expected Result: WG0 capacity increments by 1; inst stored at tail=(head+oldcap)%4; no pop unless staged slots empty and FU_stall=False on same cycle ordering (staging happens before fill).")
-#     print("Checks: Check iBuffer[0][tail]==inst0, iBufferCapacity[0]==1, iBufferHead[0]==0")
-#     assert issue_stage.iBuffer[0][tail] == inst, "Instruction not stored at expected tail"
-#     assert issue_stage.iBufferCapacity[0] == 1, "Capacity did not increment"
-#     assert issue_stage.iBufferHead[0] == 0, "Head should remain at 0"
-#     print("PASS")
-
-# # ...repeat for all other tests in the CSV, following this style...
 
 
-# def test_IBUF_2():
-#     print("\nTest: IBUF-2 | Type: iBuffer")
-#     print("Scenario: Enqueue up to declared max capacity (off-by-one detection)")
-#     print("Preconditions & Setup: Fresh init; num_entries=4")
-#     reset_issue_stage(issue_stage, regfile, fust)
-#     wg = 0
-#     print_ibuffer_state(issue_stage, wg)
-#     insts = [Instruction(pc=i, intended_FU="ADD", warp_id=wg, warp_group_id=wg, rs1=1, rs2=2, rd=3, opcode="0000000", rdat1=0, rdat2=0, wdat=0) for i in range(5)]
-#     for i in range(4):
-#         issue_stage.compute(insts[i])
-#     print("Stimulus: Feed 4 instructions to same WG across 4 cycles with FU_stall forcing no dequeue")
-#     print_ibuffer_state(issue_stage, wg)
-#     # Try to enqueue 5th
-#     issue_stage.compute(insts[4])
-#     print("Attempted 5th enqueue")
-#     print_ibuffer_state(issue_stage, wg)
-#     print("Expected Result: capacity should reach 4 and then refuse 5th. Current code allows only up to 3 (<= num_entries-1). Test should catch mismatch.")
-#     print("Checks: Check iBufferCapacity[wg] reaches expected max; verify 4th enqueue accepted or rejected per spec; assert no overwrite.")
-#     assert issue_stage.iBufferCapacity[wg] <= issue_stage.num_entries - 1, "Capacity exceeded allowed max"
-#     print("PASS")
-
-# def test_IBUF_3():
-#     print("\nTest: IBUF-3 | Type: iBuffer")
-#     print("Scenario: Head/tail wrap-around correctness")
-#     print("Preconditions & Setup: Preload WG0 FIFO with 3 inst; set head near end (e.g., head=3, cap=2) by controlled pops")
-#     reset_issue_stage(issue_stage, regfile, fust)
-#     wg = 0
-#     # Preload 3 instructions
-#     insts = [Instruction(pc=i, intended_FU="ADD", warp_id=wg, warp_group_id=wg, rs1=1, rs2=2, rd=3, opcode="0000000", rdat1=0, rdat2=0, wdat=0) for i in range(3)]
-#     for inst in insts:
-#         issue_stage.compute(inst)
-#     # Manually set head near end
-#     issue_stage.iBufferHead[wg] = 3
-#     issue_stage.iBufferCapacity[wg] = 2
-#     print_ibuffer_state(issue_stage, wg)
-#     # Push 2 more with pops in between to force wrap
-#     for i in range(2):
-#         issue_stage.compute(Instruction(pc=10+i, intended_FU="ADD", warp_id=wg, warp_group_id=wg, rs1=1, rs2=2, rd=3, opcode="0000000", rdat1=0, rdat2=0, wdat=0))
-#         issue_stage._pop_from_ibuffer_matching(lambda inst: True)
-#     print("Stimulus: Push 2 more inst with pops in between to force wrap")
-#     print_ibuffer_state(issue_stage, wg)
-#     print("Expected Result: Tail index wraps modulo 4; ordering preserved; no None gaps in logical FIFO region")
-#     print("Checks: Inspect iBuffer slots, iBufferHead progression, capacity after each op.")
-#     print("PASS (manual inspection suggested)")
-
-# def test_IBUF_4():
-#     print("\nTest: IBUF-4 | Type: iBuffer")
-#     print("Scenario: Per-warp-group isolation")
-#     print("Preconditions & Setup: Fresh init")
-#     reset_issue_stage(issue_stage, regfile, fust)
-#     wg0, wg1 = 0, 1
-#     print_ibuffer_state(issue_stage, wg0)
-#     print_ibuffer_state(issue_stage, wg1)
-#     insts = [Instruction(pc=i, intended_FU="ADD", warp_id=wg, warp_group_id=wg, rs1=1, rs2=2, rd=3, opcode="0000000", rdat1=0, rdat2=0, wdat=0) for i, wg in enumerate([wg0, wg1, wg0, wg1])]
-#     for inst in insts:
-#         issue_stage.compute(inst)
-#     print("Stimulus: Interleave enqueues: WG0, WG1, WG0, WG1")
-#     print_ibuffer_state(issue_stage, wg0)
-#     print_ibuffer_state(issue_stage, wg1)
-#     print("Expected Result: Each WG maintains independent head/capacity; no cross-contamination")
-#     print("Checks: Check iBufferCapacity[0]==2, iBufferCapacity[1]==2; correct instructions in each FIFO.")
-#     assert issue_stage.iBufferCapacity[wg0] == 2
-#     assert issue_stage.iBufferCapacity[wg1] == 2
-#     print("PASS")
-
-# ...repeat for all other tests in the CSV, following this style...
 
 ### DEFINED SMOKE TESTS ###
 # IBUFF TEST1: Issue instruction stream for one warp group until full, as fust for ADD FU is full.
-def test_IBUF_1():
+def test_IBUF_1(i: int) -> int:
     fust["ADD"] = 1
     Instructions = [
         Instruction(pc=0x0, intended_FU="ADD", warp_id=0, warp_group_id=0, rs1=10, rs2=11, rd=12, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
@@ -182,19 +77,59 @@ def test_IBUF_1():
         Instruction(pc=0xC, intended_FU="DIV", warp_id=1, warp_group_id=0, rs1=40, rs2=41, rd=42, opcode="0000011", rdat1=0, rdat2=0, wdat=0)
     ]
     print("=============================== IBUFF SMOKE TEST1 ===============================")
+    print("Issue instruction stream for one warp group until full, as fust for ADD FU is full.")
+    print("---------------------------------------------------------------------------------")
     for cycle in range(len(Instructions)):
         issue_stage.compute(Instructions[cycle])
         if   (cycle==0):
             assert issue_stage.iBufferCapacity[0] == 1
+            assert issue_stage.staged_even == None
+            assert issue_stage.staged_odd == None
             assert len(issue_stage.ready_to_dispatch) == 0
         elif (cycle==1):
             assert issue_stage.iBufferCapacity[0] == 1
+            assert issue_stage.staged_even.pc == 0x0
+            assert issue_stage.staged_even.intended_FU == "ADD"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 10
+            assert issue_stage.staged_even.rs2 == 11
+            assert issue_stage.staged_even.rd == 12
+            assert issue_stage.staged_odd == None
             assert len(issue_stage.ready_to_dispatch) == 0
         elif (cycle==2):
             assert issue_stage.iBufferCapacity[0] == 1
+            assert issue_stage.staged_even.pc == 0x0
+            assert issue_stage.staged_even.intended_FU == "ADD"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 10
+            assert issue_stage.staged_even.rs2 == 11
+            assert issue_stage.staged_even.rd == 12
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert len(issue_stage.ready_to_dispatch) == 0
         elif (cycle==3):
             assert issue_stage.iBufferCapacity[0] == 1
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -204,6 +139,20 @@ def test_IBUF_1():
             assert issue_stage.ready_to_dispatch[0].rd == 12
         elif (cycle==4):
             assert issue_stage.iBufferCapacity[0] == 2
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -213,6 +162,20 @@ def test_IBUF_1():
             assert issue_stage.ready_to_dispatch[0].rd == 12
         elif (cycle==5):
             assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -222,6 +185,20 @@ def test_IBUF_1():
             assert issue_stage.ready_to_dispatch[0].rd == 12
         elif (cycle==6):
             assert issue_stage.iBufferCapacity[0] == 4
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -231,6 +208,20 @@ def test_IBUF_1():
             assert issue_stage.ready_to_dispatch[0].rd == 12
         elif (cycle==7):
             assert issue_stage.iBufferCapacity[0] == 4
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -238,20 +229,27 @@ def test_IBUF_1():
             assert issue_stage.ready_to_dispatch[0].rs1 == 10
             assert issue_stage.ready_to_dispatch[0].rs2 == 11
             assert issue_stage.ready_to_dispatch[0].rd == 12
-        print(f"Cycle {cycle}")
-        print("---------------------------------------------------------------------------")
+        print(f"Cycle {i}")
+        print("---------------------------------------------------------------------------------")
         print(f"iBuffer[0] content: {issue_stage.iBuffer[0]}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
+        print(f"Head of iBuffer[0]: {issue_stage.iBufferHead[0]}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Even Instruction: {issue_stage.staged_even}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Odd Instruction: {issue_stage.staged_odd}")
+        print("---------------------------------------------------------------------------------")
         print(f"Ready to dispatch slot: {issue_stage.ready_to_dispatch}")
-        print("---------------------------------------------------------------------------")
-        if len(issue_stage.ready_to_dispatch) > 0:
-            print(issue_stage.ready_to_dispatch[0])
+        print("---------------------------------------------------------------------------------")
+        print()
+        i=i+1
     print("\n\n")
+    return i
 
 
 
 # IBUFF TEST2: Issue instruction stream for another warp group while the one is full.
-def test_IBUF_2():
+def test_IBUF_2(i: int) -> int:
     Instructions = [
         Instruction(pc=0x0, intended_FU="ADD", warp_id=2, warp_group_id=1, rs1=10, rs2=11, rd=12, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
         Instruction(pc=0x0, intended_FU="ADD", warp_id=3, warp_group_id=1, rs1=10, rs2=11, rd=12, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
@@ -259,11 +257,27 @@ def test_IBUF_2():
         Instruction(pc=0x4, intended_FU="SUB", warp_id=3, warp_group_id=1, rs1=5, rs2=6, rd=7, opcode="0000001", rdat1=0, rdat2=0, wdat=0)
     ]
     print("=============================== IBUFF SMOKE TEST2 ===============================")
+    print("Issue instruction stream for another warp group while the one is full.")
+    print("---------------------------------------------------------------------------------")
     for cycle in range(len(Instructions)):
         issue_stage.compute(Instructions[cycle])
         if   (cycle==0):
             assert issue_stage.iBufferCapacity[0] == 4
             assert issue_stage.iBufferCapacity[1] == 1
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -274,6 +288,20 @@ def test_IBUF_2():
         elif (cycle==1):
             assert issue_stage.iBufferCapacity[0] == 4
             assert issue_stage.iBufferCapacity[1] == 2
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -284,6 +312,20 @@ def test_IBUF_2():
         elif (cycle==2):
             assert issue_stage.iBufferCapacity[0] == 4
             assert issue_stage.iBufferCapacity[1] == 3
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -294,6 +336,20 @@ def test_IBUF_2():
         elif (cycle==3):
             assert issue_stage.iBufferCapacity[0] == 4
             assert issue_stage.iBufferCapacity[1] == 4
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
             assert issue_stage.ready_to_dispatch[0].pc == 0x0
             assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
             assert issue_stage.ready_to_dispatch[0].warp_id == 0
@@ -301,44 +357,356 @@ def test_IBUF_2():
             assert issue_stage.ready_to_dispatch[0].rs1 == 10
             assert issue_stage.ready_to_dispatch[0].rs2 == 11
             assert issue_stage.ready_to_dispatch[0].rd == 12
-        print(f"Cycle {cycle}")
-        print("---------------------------------------------------------------------------")
+        print(f"Cycle {i}")
+        print("---------------------------------------------------------------------------------")
+        print(f"iBuffer[0] content: {issue_stage.iBuffer[0]}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Head of iBuffer[0]: {issue_stage.iBufferHead[0]}")
+        print("---------------------------------------------------------------------------------")
         print(f"iBuffer[1] content: {issue_stage.iBuffer[1]}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
+        print(f"Head of iBuffer[1]: {issue_stage.iBufferHead[1]}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Even Instruction: {issue_stage.staged_even}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Odd Instruction: {issue_stage.staged_odd}")
+        print("---------------------------------------------------------------------------------")
         print(f"Ready to dispatch slot: {issue_stage.ready_to_dispatch}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
         print()
+        i=i+1
     print("\n\n")
+    return i
 
 
 
 # IBUFF TEST3: Allow instruction buffers to empty and all enqueued instructions to be dispatched.
-def test_IBUF_3():
+def test_IBUF_3(i: int) -> int:
     fust["ADD"] = 0
     print("=============================== IBUFF SMOKE TEST3 ===============================")
-    for cycle in range(10):
+    print("Allow instruction buffers to empty and all enqueued instructions to be dispatched.")
+    print("---------------------------------------------------------------------------------")
+    for cycle in range(11):
         issue_stage.compute(None)
-        print(f"Cycle {cycle}")
-        print("---------------------------------------------------------------------------")
+        if   (cycle==0):
+            assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.iBufferCapacity[1] == 4
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x4
+            assert issue_stage.staged_odd.intended_FU == "SUB"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 5
+            assert issue_stage.staged_odd.rs2 == 6
+            assert issue_stage.staged_odd.rd == 7
+            assert issue_stage.ready_to_dispatch[0].pc == 0x0
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 1
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 10
+            assert issue_stage.ready_to_dispatch[0].rs2 == 11
+            assert issue_stage.ready_to_dispatch[0].rd == 12
+        elif (cycle==1):
+            assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.iBufferCapacity[1] == 3
+            assert issue_stage.staged_even.pc == 0x0
+            assert issue_stage.staged_even.intended_FU == "ADD"
+            assert issue_stage.staged_even.warp_id == 2
+            assert issue_stage.staged_even.warp_group_id == 1
+            assert issue_stage.staged_even.rs1 == 10
+            assert issue_stage.staged_even.rs2 == 11
+            assert issue_stage.staged_even.rd == 12
+            assert issue_stage.staged_odd.pc == 0x4
+            assert issue_stage.staged_odd.intended_FU == "SUB"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 5
+            assert issue_stage.staged_odd.rs2 == 6
+            assert issue_stage.staged_odd.rd == 7
+            assert issue_stage.ready_to_dispatch[0].pc == 0x4
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "SUB"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 0
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 5
+            assert issue_stage.ready_to_dispatch[0].rs2 == 6
+            assert issue_stage.ready_to_dispatch[0].rd == 7
+        elif (cycle==2):
+            assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.iBufferCapacity[1] == 2
+            assert issue_stage.staged_even.pc == 0x0
+            assert issue_stage.staged_even.intended_FU == "ADD"
+            assert issue_stage.staged_even.warp_id == 2
+            assert issue_stage.staged_even.warp_group_id == 1
+            assert issue_stage.staged_even.rs1 == 10
+            assert issue_stage.staged_even.rs2 == 11
+            assert issue_stage.staged_even.rd == 12
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 3
+            assert issue_stage.staged_odd.warp_group_id == 1
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
+            assert issue_stage.ready_to_dispatch[0].pc == 0x4
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "SUB"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 1
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 5
+            assert issue_stage.ready_to_dispatch[0].rs2 == 6
+            assert issue_stage.ready_to_dispatch[0].rd == 7
+        elif (cycle==3):
+            assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.iBufferCapacity[1] == 1
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 2
+            assert issue_stage.staged_even.warp_group_id == 1
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x0
+            assert issue_stage.staged_odd.intended_FU == "ADD"
+            assert issue_stage.staged_odd.warp_id == 3
+            assert issue_stage.staged_odd.warp_group_id == 1
+            assert issue_stage.staged_odd.rs1 == 10
+            assert issue_stage.staged_odd.rs2 == 11
+            assert issue_stage.staged_odd.rd == 12
+            assert issue_stage.ready_to_dispatch[0].pc == 0x0
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 2
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 1
+            assert issue_stage.ready_to_dispatch[0].rs1 == 10
+            assert issue_stage.ready_to_dispatch[0].rs2 == 11
+            assert issue_stage.ready_to_dispatch[0].rd == 12
+        elif (cycle==4):
+            assert issue_stage.iBufferCapacity[0] == 3
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even.pc == 0x4
+            assert issue_stage.staged_even.intended_FU == "SUB"
+            assert issue_stage.staged_even.warp_id == 2
+            assert issue_stage.staged_even.warp_group_id == 1
+            assert issue_stage.staged_even.rs1 == 5
+            assert issue_stage.staged_even.rs2 == 6
+            assert issue_stage.staged_even.rd == 7
+            assert issue_stage.staged_odd.pc == 0x4
+            assert issue_stage.staged_odd.intended_FU == "SUB"
+            assert issue_stage.staged_odd.warp_id == 3
+            assert issue_stage.staged_odd.warp_group_id == 1
+            assert issue_stage.staged_odd.rs1 == 5
+            assert issue_stage.staged_odd.rs2 == 6
+            assert issue_stage.staged_odd.rd == 7
+            assert issue_stage.ready_to_dispatch[0].pc == 0x0
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "ADD"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 3
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 1
+            assert issue_stage.ready_to_dispatch[0].rs1 == 10
+            assert issue_stage.ready_to_dispatch[0].rs2 == 11
+            assert issue_stage.ready_to_dispatch[0].rd == 12
+        elif (cycle==5):
+            assert issue_stage.iBufferCapacity[0] == 2
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even.pc == 0x8
+            assert issue_stage.staged_even.intended_FU == "MUL"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 20
+            assert issue_stage.staged_even.rs2 == 21
+            assert issue_stage.staged_even.rd == 30
+            assert issue_stage.staged_odd.pc == 0x4
+            assert issue_stage.staged_odd.intended_FU == "SUB"
+            assert issue_stage.staged_odd.warp_id == 3
+            assert issue_stage.staged_odd.warp_group_id == 1
+            assert issue_stage.staged_odd.rs1 == 5
+            assert issue_stage.staged_odd.rs2 == 6
+            assert issue_stage.staged_odd.rd == 7
+            assert issue_stage.ready_to_dispatch[0].pc == 0x4
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "SUB"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 2
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 1
+            assert issue_stage.ready_to_dispatch[0].rs1 == 5
+            assert issue_stage.ready_to_dispatch[0].rs2 == 6
+            assert issue_stage.ready_to_dispatch[0].rd == 7
+        elif (cycle==6):
+            assert issue_stage.iBufferCapacity[0] == 1
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even.pc == 0x8
+            assert issue_stage.staged_even.intended_FU == "MUL"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 20
+            assert issue_stage.staged_even.rs2 == 21
+            assert issue_stage.staged_even.rd == 30
+            assert issue_stage.staged_odd.pc == 0x8
+            assert issue_stage.staged_odd.intended_FU == "MUL"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 20
+            assert issue_stage.staged_odd.rs2 == 21
+            assert issue_stage.staged_odd.rd == 30
+            assert issue_stage.ready_to_dispatch[0].pc == 0x4
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "SUB"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 3
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 1
+            assert issue_stage.ready_to_dispatch[0].rs1 == 5
+            assert issue_stage.ready_to_dispatch[0].rs2 == 6
+            assert issue_stage.ready_to_dispatch[0].rd == 7
+        elif (cycle==7):
+            assert issue_stage.iBufferCapacity[0] == 0
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even.pc == 0xC
+            assert issue_stage.staged_even.intended_FU == "DIV"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 40
+            assert issue_stage.staged_even.rs2 == 41
+            assert issue_stage.staged_even.rd == 42
+            assert issue_stage.staged_odd.pc == 0x8
+            assert issue_stage.staged_odd.intended_FU == "MUL"
+            assert issue_stage.staged_odd.warp_id == 1
+            assert issue_stage.staged_odd.warp_group_id == 0
+            assert issue_stage.staged_odd.rs1 == 20
+            assert issue_stage.staged_odd.rs2 == 21
+            assert issue_stage.staged_odd.rd == 30
+            assert issue_stage.ready_to_dispatch[0].pc == 0x8
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "MUL"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 0
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 20
+            assert issue_stage.ready_to_dispatch[0].rs2 == 21
+            assert issue_stage.ready_to_dispatch[0].rd == 30
+        elif (cycle==8):
+            assert issue_stage.iBufferCapacity[0] == 0
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even.pc == 0xC
+            assert issue_stage.staged_even.intended_FU == "DIV"
+            assert issue_stage.staged_even.warp_id == 0
+            assert issue_stage.staged_even.warp_group_id == 0
+            assert issue_stage.staged_even.rs1 == 40
+            assert issue_stage.staged_even.rs2 == 41
+            assert issue_stage.staged_even.rd == 42
+            assert issue_stage.staged_odd == None
+            assert issue_stage.ready_to_dispatch[0].pc == 0x8
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "MUL"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 1
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 20
+            assert issue_stage.ready_to_dispatch[0].rs2 == 21
+            assert issue_stage.ready_to_dispatch[0].rd == 30
+        elif (cycle==9):
+            assert issue_stage.iBufferCapacity[0] == 0
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even == None
+            assert issue_stage.staged_odd == None
+            assert issue_stage.ready_to_dispatch[0].pc == 0xC
+            assert issue_stage.ready_to_dispatch[0].intended_FU == "DIV"
+            assert issue_stage.ready_to_dispatch[0].warp_id == 0
+            assert issue_stage.ready_to_dispatch[0].warp_group_id == 0
+            assert issue_stage.ready_to_dispatch[0].rs1 == 40
+            assert issue_stage.ready_to_dispatch[0].rs2 == 41
+            assert issue_stage.ready_to_dispatch[0].rd == 42
+        elif (cycle==10):
+            assert issue_stage.iBufferCapacity[0] == 0
+            assert issue_stage.iBufferCapacity[1] == 0
+            assert issue_stage.staged_even == None
+            assert issue_stage.staged_odd == None
+            assert len(issue_stage.ready_to_dispatch) == 0
+        print(f"Cycle {i}")
+        print("---------------------------------------------------------------------------------")
         print(f"iBuffer[0] content: {issue_stage.iBuffer[0]}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
+        print(f"Head of iBuffer[0]: {issue_stage.iBufferHead[0]}")
+        print("---------------------------------------------------------------------------------")
         print(f"iBuffer[1] content: {issue_stage.iBuffer[1]}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
+        print(f"Head of iBuffer[1]: {issue_stage.iBufferHead[1]}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Even Instruction: {issue_stage.staged_even}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Odd Instruction: {issue_stage.staged_odd}")
+        print("---------------------------------------------------------------------------------")
         print(f"Ready to dispatch slot: {issue_stage.ready_to_dispatch}")
-        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------------")
+        print()
+        i=i+1
+    print("\n\n")
+    return i
+
+
+# IBUFF TEST4: Allow instruction buffers for all warp groups to fill up until no more instructions can be accepted, then drain all instruction buffers until empty.
+def test_IBUF_4():
+    fust["ADD"] = 1
+    Instructions = [
+        Instruction(pc=0x0, intended_FU="ADD", warp_id=0, warp_group_id=0, rs1=10, rs2=11, rd=12, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0x0, intended_FU="ADD", warp_id=1, warp_group_id=0, rs1=10, rs2=11, rd=12, opcode="0000000", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0x4, intended_FU="SUB", warp_id=0, warp_group_id=0, rs1=5, rs2=6, rd=7, opcode="0000001", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0x4, intended_FU="SUB", warp_id=1, warp_group_id=0, rs1=5, rs2=6, rd=7, opcode="0000001", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0x8, intended_FU="MUL", warp_id=0, warp_group_id=0, rs1=20, rs2=21, rd=30, opcode="0000010", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0x8, intended_FU="MUL", warp_id=1, warp_group_id=0, rs1=20, rs2=21, rd=30, opcode="0000010", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0xC, intended_FU="DIV", warp_id=0, warp_group_id=0, rs1=40, rs2=41, rd=42, opcode="0000011", rdat1=0, rdat2=0, wdat=0),
+        Instruction(pc=0xC, intended_FU="DIV", warp_id=1, warp_group_id=0, rs1=40, rs2=41, rd=42, opcode="0000011", rdat1=0, rdat2=0, wdat=0)
+    ]
+    ops = [
+        (0x0, "ADD", 10, 11, 12, "0000000"),
+        (0x4, "SUB", 5, 6, 7, "0000001"),
+    ]
+    for wg in range(1,16):
+        for pc, fu, rs1, rs2, rd, opcode in ops:
+            for warp_offset in range(2):
+                warp_id = 2 * wg + warp_offset
+                Instructions.append(
+                    Instruction(
+                        pc=pc, 
+                        intended_FU=fu,
+                        warp_id=warp_id,
+                        warp_group_id=wg,
+                        rs1=rs1, rs2=rs2, rd=rd,
+                        opcode=opcode,
+                        rdat1=0, rdat2=0, wdat=0
+                    )
+                )
+    print("=============================== IBUFF SMOKE TEST4 ===============================")
+    print("Allow instruction buffers for all warp groups to fill up until no more instructions ")
+    print("can be accepted, then drain all instruction buffers until empty.")
+    print("---------------------------------------------------------------------------------")
+    for cycle in range(len(Instructions)*2):
+        if cycle < len(Instructions):
+            issue_stage.compute(Instructions[cycle])
+        else:
+            fust["ADD"] = 0
+            issue_stage.compute(None)
+        print(f"Cycle {cycle}")
+        print("---------------------------------------------------------------------------------")
+        for i in range(16):
+            print(f"iBuffer[{i}] content: {issue_stage.iBuffer[i]}")
+            print("---------------------------------------------------------------------------------")
+            print(f"Head of iBuffer[{i}]: {issue_stage.iBufferHead[i]}")
+            print("---------------------------------------------------------------------------------")
+        print(f"Staged Even Instruction: {issue_stage.staged_even}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Staged Odd Instruction: {issue_stage.staged_odd}")
+        print("---------------------------------------------------------------------------------")
+        print(f"Ready to dispatch slot: {issue_stage.ready_to_dispatch}")
+        print("---------------------------------------------------------------------------------")
         print()
     print("\n\n")
 
-    
 
-def main():
+
+def main(): 
     ROOT = Path(__file__).resolve().parents[5]
     out_path = ROOT / "gpu_sim/cyclesim/src/core/frontend/smoketest_issue_output.txt"
     sys.stdout = open(out_path, "w")
-    test_IBUF_1()
-    test_IBUF_2()
-    test_IBUF_3()
-    # test_IBUF_4()
+    i=0
+    i=test_IBUF_1(i)
+    i=test_IBUF_2(i)
+    i=test_IBUF_3(i)
+    test_IBUF_4()
     print("All smoke tests completed.")
 
 if __name__ == "__main__":

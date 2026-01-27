@@ -265,21 +265,35 @@ class IssueStage(Stage):
         """
         Issue logic follows the warp group being serviced by the warp scheduler.
         """
-        # for step in range(self.num_iBuffer):
-            # wg = (self.curr_wg + step) % self.num_iBuffer
-        wg = self.curr_wg
-        if self.iBufferCapacity[wg] == 0:
-            return None
-        head_idx = self.iBufferHead[wg]
-        inst = self.iBuffer[wg][head_idx]
-        if inst is None:
-            return None
-        if pred(inst):
-            # Pop from FIFO
-            self.iBuffer[wg][head_idx] = None
-            self.iBufferHead[wg] = (head_idx + 1) % self.num_entries
-            self.iBufferCapacity[wg] -= 1
-            return inst
+        ### PREVIOUS WORKING IBUFFER POPPING ###
+        # wg = self.curr_wg
+        # if self.iBufferCapacity[wg] == 0:
+        #     return None
+        # head_idx = self.iBufferHead[wg]
+        # inst = self.iBuffer[wg][head_idx]
+        # if inst is None:
+        #     return None
+        # if pred(inst):
+        #     # Pop from FIFO
+        #     self.iBuffer[wg][head_idx] = None
+        #     self.iBufferHead[wg] = (head_idx + 1) % self.num_entries
+        #     self.iBufferCapacity[wg] -= 1
+        #     return inst
+        # return None
+        start_wg = self.curr_wg
+        for offset in range(self.num_iBuffer):
+            wg = (start_wg + offset) % self.num_iBuffer
+            if self.iBufferCapacity[wg] == 0:
+                continue
+            head_idx = self.iBufferHead[wg]
+            inst = self.iBuffer[wg][head_idx]
+            if inst is None:
+                continue
+            if pred(inst):
+                self.iBuffer[wg][head_idx] = None
+                self.iBufferHead[wg] = (head_idx + 1) % self.num_entries
+                self.iBufferCapacity[wg] -= 1
+                return inst        
         return None
 
     # ------------------------
