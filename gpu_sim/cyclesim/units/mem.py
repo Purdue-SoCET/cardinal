@@ -6,14 +6,24 @@ sys.path.append(str(parent_dir))
 
 from base import LatchIF, Stage, Instruction, MemRequest
 from Memory import Mem
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Deque, Tuple
 from bitstring import Bits
 
 
-class MemArbiterStage(Stage):
+class MemController(Stage):
     """
-    Arbitrate I$ + D$ request latches into a single request latch feeding MemController.
-    Adds req["src"] = "icache" | "dcache" for response routing.
+    MemController (NO request queues; pure latch-based backpressure)
+
+    Key semantics:
+    - No pending_ic/pending_dc buffering inside the controller.
+    - Controller only POPs an input latch when it can immediately start servicing
+      the request (capacity gate via max_inflight).
+    - If controller is busy, it does NOT pop, so the input latch stays valid and
+      upstream naturally stalls via LatchIF.ready_for_push() == False.
+    - Fixed latency model using inflight requests with countdown.
+    - Completes at most ONE request per cycle (pushes one response) to the correct
+      response latch (ic_serve_latch or dc_serve_latch).
+    - policy: "rr" or "icache_prio" controls arbitration when both latches valid.
     """
 
     def __init__(
@@ -21,81 +31,33 @@ class MemArbiterStage(Stage):
         name: str,
         ic_req_latch: LatchIF,
         dc_req_latch: LatchIF,
-        mem_req_out_latch: LatchIF,     # -> MemController.behind_latch
-        policy: str = "rr",             # "rr" or "icache_prio"
+        ic_serve_latch: LatchIF,
+        dc_serve_latch: LatchIF,
+        mem_backend: Mem,
+        latency: int = 5,
+        policy: str = "rr",
+        max_inflight: int = 1,  # <= set to 1 for "no queueing" semantics
     ):
-        super().__init__(name=name, behind_latch=None, ahead_latch=None)
+        self.name = name
         self.ic_req_latch = ic_req_latch
         self.dc_req_latch = dc_req_latch
-        self.mem_req_out_latch = mem_req_out_latch
-        self.policy = policy
-        self.rr = 0  # 0 prefer I$ first, 1 prefer D$ first
-
-    def _pick(self):
-        ic_valid = bool(self.ic_req_latch and self.ic_req_latch.valid)
-        dc_valid = bool(self.dc_req_latch and self.dc_req_latch.valid)
-
-        if self.policy == "icache_prio":
-            if ic_valid:
-                return self.ic_req_latch, "icache"
-            if dc_valid:
-                return self.dc_req_latch, "dcache"
-            return None, None
-
-        # round-robin
-        if self.rr == 0:
-            if ic_valid:
-                return self.ic_req_latch, "icache"
-            if dc_valid:
-                return self.dc_req_latch, "dcache"
-        else:
-            if dc_valid:
-                return self.dc_req_latch, "dcache"
-            if ic_valid:
-                return self.ic_req_latch, "icache"
-
-        print(f"[{self.name}] GOT REQUEST FROM ICACHE: {ic_valid}, and DCACHE: {dc_valid}\n")
-        return None, None
-
-    def compute(self, input_data=None):
-        if not self.mem_req_out_latch.ready_for_push():
-            return
-
-        src_latch, src = self._pick()
-        if src_latch is None:
-            return
-
-        req = src_latch.pop()
-        if not isinstance(req, dict):
-            raise TypeError(f"[MemArbiterStage] expected dict req, got {type(req)}")
-
-        # tag for response routing
-        req["src"] = src
-
-        # normalize key names a bit (optional, but helps avoid warp vs warp_id bugs)
-        if "warp_id" not in req and "warp" in req:
-            req["warp_id"] = req["warp"]
-
-        self.mem_req_out_latch.push(req)
-
-        # Advance RR after a grant
-        self.rr ^= 1
-
-
-class MemController(Stage):
-    """
-    Memory controller using Mem() backend.
-    - Models fixed latency with inflight queue.
-    - Completes at most ONE per cycle.
-    - Outputs dict responses including src for demux routing.
-    """
-
-    def __init__(self, name: str, behind_latch: LatchIF, ahead_latch: LatchIF, mem_backend: Mem, latency: int = 5):
-        super().__init__(name=name, behind_latch=behind_latch, ahead_latch=ahead_latch)
+        self.ic_serve_latch = ic_serve_latch
+        self.dc_serve_latch = dc_serve_latch
         self.mem_backend = mem_backend
+
         self.latency = int(latency)
+        self.policy = str(policy)
+        self.max_inflight = int(max_inflight)
+
+        # inflight requests being serviced by memory backend
         self.inflight: list[MemRequest] = []
 
+        # RR toggle: 0 prefer I$, 1 prefer D$
+        self.rr = 0
+
+    # -----------------------------
+    # Helpers
+    # -----------------------------
     def _payload_to_bits(self, payload, size_hint: int) -> tuple[Bits, int]:
         if payload is None:
             raise ValueError("Write request missing data")
@@ -129,35 +91,131 @@ class MemController(Stage):
             pc=pc_bits,
             intended_FSU=req_info.get("intended_FSU", None),
             warp=req_info.get("warp", req_info.get("warp_id", 0)),
-            warpGroup=req_info.get("warpGroup", None),
+            warpGroup=req_info.get("warpGroup", req_info.get("warp_group_id", None)),
             opcode=req_info.get("opcode", None),
             rs1=req_info.get("rs1", Bits(uint=0, length=5)),
             rs2=req_info.get("rs2", Bits(uint=0, length=5)),
             rd=req_info.get("rd", Bits(uint=0, length=5)),
         )
 
-    def compute(self, input_data=None):
-        # 1) age inflight
+    # compatibility fix for naming conventions used across tests
+    def _normalize_req(self, req: dict, src: str) -> dict:
+        if not isinstance(req, dict):
+            raise TypeError(f"[{self.name}] expected dict req, got {type(req)}")
+
+        req = dict(req)  # copy
+        req["src"] = src
+
+        if "warp_id" not in req and "warp" in req:
+            req["warp_id"] = req["warp"]
+        if "warp_group_id" not in req and "warpGroup" in req:
+            req["warp_group_id"] = req["warpGroup"]
+
+        return req
+
+    def _pick_from_inputs(self) -> Optional[dict]:
+        """
+        Choose one request directly from input latches (no internal request queues).
+        IMPORTANT: Only call this when you are ready to accept and start service
+        this cycle, because it POPs the chosen latch.
+        """
+        ic_valid = bool(self.ic_req_latch and self.ic_req_latch.valid)
+        dc_valid = bool(self.dc_req_latch and self.dc_req_latch.valid)
+
+        if not ic_valid and not dc_valid:
+            return None
+
+        if self.policy == "icache_prio":
+            if ic_valid:
+                raw = self.ic_req_latch.pop()
+                return self._normalize_req(raw, "icache")
+            raw = self.dc_req_latch.pop()
+            return self._normalize_req(raw, "dcache")
+
+        # Default: RR when both valid
+        if ic_valid and dc_valid:
+            if self.rr == 0:
+                raw = self.ic_req_latch.pop()
+                chosen = self._normalize_req(raw, "icache")
+            else:
+                raw = self.dc_req_latch.pop()
+                chosen = self._normalize_req(raw, "dcache")
+            self.rr ^= 1
+            return chosen
+
+        # Only one side valid
+        if ic_valid:
+            raw = self.ic_req_latch.pop()
+            return self._normalize_req(raw, "icache")
+        raw = self.dc_req_latch.pop()
+        return self._normalize_req(raw, "dcache")
+
+    def _try_start_one_request(self) -> None:
+        """
+        Start at most one new request per cycle.
+        Backpressure is implemented by refusing to POP input latches when
+        inflight capacity is full.
+        """
+        if len(self.inflight) >= self.max_inflight:
+            return  # busy => do not pop => latch stays valid => upstream stalls
+
+        req_info = self._pick_from_inputs()
+        if req_info is None:
+            return
+
+        inst = req_info.get("inst", None) or self._build_min_inst(req_info)
+
+        pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
+        warp_id = req_info.get("warp_id", getattr(inst, "warp", 0))
+
+        mem_req = MemRequest(
+            addr=int(req_info["addr"]),
+            size=int(req_info.get("size", 4)),
+            uuid=int(req_info.get("uuid", getattr(inst, "iid", 0) or 0)),
+            warp_id=int(warp_id),
+            pc=int(req_info.get("pc", pc_int)),
+            data=req_info.get("data", None),
+            rw_mode=req_info.get("rw_mode", "read"),
+            remaining=self.latency,
+        )
+
+        mem_req.inst = inst
+        mem_req.src = req_info.get("src", None)
+
+        self.inflight.append(mem_req)
+
+    def _age_inflight(self) -> None:
         for req in self.inflight:
             req.remaining -= 1
 
-        # 2) complete at most one
+    def _complete_one_if_ready(self) -> None:
+        """
+        Complete at most one ready request (remaining <= 0) and push its response.
+        If the corresponding response latch is not ready, we do NOT complete this cycle
+        (keeps request inflight), which naturally backpressures completion.
+        """
         for req in list(self.inflight):
             if req.remaining > 0:
                 continue
 
-            if not self.ahead_latch.ready_for_push():
-                return  # stall with req still inflight
-
             inst = getattr(req, "inst", None)
-            src = getattr(req, "src", None)  # "icache" / "dcache"
+            src = getattr(req, "src", None)
+
+            if src == "icache":
+                if not self.ic_serve_latch.ready_for_push():
+                    break
+            elif src == "dcache":
+                if not self.dc_serve_latch.ready_for_push():
+                    break
+            else:
+                raise KeyError(f"[MemController] Missing/invalid src: {src}")
+
             if inst is None:
                 inst = self._build_min_inst({"pc": req.pc, "uuid": req.uuid, "warp_id": req.warp_id})
 
             if req.rw_mode == "write":
                 data_bits, nbytes = self._payload_to_bits(req.data, req.size)
                 self.mem_backend.write(req.addr, data_bits, nbytes)
-
                 resp = {
                     "src": src,
                     "rw_mode": "write",
@@ -169,15 +227,12 @@ class MemController(Stage):
                     "pc": req.pc,
                     "inst": inst,
                 }
-                self.ahead_latch.push(resp)
-
             else:
                 data_bits = self.mem_backend.read(req.addr, req.size)
-
                 resp = {
                     "src": src,
                     "rw_mode": "read",
-                    "data": data_bits,   # Bits
+                    "data": data_bits,
                     "addr": req.addr,
                     "size": req.size,
                     "uuid": req.uuid,
@@ -185,72 +240,24 @@ class MemController(Stage):
                     "pc": req.pc,
                     "inst": inst,
                 }
-                self.ahead_latch.push(resp)
+
+            if src == "icache":
+                self.ic_serve_latch.push(resp)
+            elif src == "dcache":
+                self.dc_serve_latch.push(resp)
 
             self.inflight.remove(req)
-            return  # enforce ONE completion per cycle
+            break  # ONE completion per cycle
 
-        # 3) accept one new request (if available)
-        if self.behind_latch and self.behind_latch.valid:
-            req_info = self.behind_latch.pop()
-            if not isinstance(req_info, dict):
-                raise TypeError(f"[MemController] expected dict req_info, got {type(req_info)}")
-
-            # Prefer passing Instruction end-to-end
-            inst = req_info.get("inst", None)
-            if inst is None:
-                inst = self._build_min_inst(req_info)
-
-            pc_int = int(inst.pc) if isinstance(inst.pc, Bits) else int(inst.pc)
-            warp_id = req_info.get("warp_id", getattr(inst, "warp", 0))
-
-            mem_req = MemRequest(
-                addr=int(req_info["addr"]),
-                size=int(req_info.get("size", 4)),
-                uuid=int(req_info.get("uuid", getattr(inst, "iid", 0) or 0)),
-                warp_id=int(warp_id),
-                pc=int(req_info.get("pc", pc_int)),
-                data=req_info.get("data", None),
-                rw_mode=req_info.get("rw_mode", "read"),
-                remaining=self.latency,
-            )
-
-            # Attach routing + inst dynamically
-            mem_req.inst = inst
-            mem_req.src = req_info.get("src", None)
-
-            self.inflight.append(mem_req)
-
-
-class MemRespDemuxStage(Stage):
-    """
-    Demux unified memory responses into icache_resp_latch or dcache_resp_latch using resp["src"].
-    Expects dict responses produced by MemController above.
-    """
-
-    def __init__(self, name: str, behind_latch: LatchIF, ic_resp_latch: LatchIF, dc_resp_latch: LatchIF):
-        super().__init__(name=name, behind_latch=behind_latch, ahead_latch=None)
-        self.ic_resp_latch = ic_resp_latch
-        self.dc_resp_latch = dc_resp_latch
-
+    # -----------------------------
+    # Main compute
+    # -----------------------------
     def compute(self, input_data=None):
-        if not self.behind_latch.valid:
-            return
+        # 1) progress outstanding work
+        self._age_inflight()
 
-        resp = self.behind_latch.snoop()
-        if not isinstance(resp, dict):
-            raise TypeError(f"[MemRespDemuxStage] expected dict resp, got {type(resp)}")
+        # 2) complete at most one (if response latch allows)
+        self._complete_one_if_ready()
 
-        src = resp.get("src", None)
-        if src == "icache":
-            if not self.ic_resp_latch.ready_for_push():
-                return
-            self.behind_latch.pop()
-            self.ic_resp_latch.push(resp)
-        elif src == "dcache":
-            if not self.dc_resp_latch.ready_for_push():
-                return
-            self.behind_latch.pop()
-            self.dc_resp_latch.push(resp)
-        else:
-            raise KeyError(f"[MemRespDemuxStage] Missing/invalid resp['src']: {src}")
+        # 3) accept/start at most one new request, ONLY if capacity allows
+        self._try_start_one_request()
