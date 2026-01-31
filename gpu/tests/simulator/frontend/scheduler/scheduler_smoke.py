@@ -1,6 +1,13 @@
-import sys
-from base import DecodeType, WarpState, WarpGroup, ForwardingIF, LatchIF
-from scheduler import SchedulerStage
+import sys, os
+
+here = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(here, "..", "..", "..", ".."))
+
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from simulator.base_class import DecodeType, WarpState, WarpGroup, ForwardingIF, LatchIF
+from simulator.src.scheduler.scheduler import SchedulerStage
 
 # initializing parameters/latches/forwarding stages
 START_PC = 0
