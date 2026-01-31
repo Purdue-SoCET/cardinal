@@ -1,0 +1,226 @@
+##################### INITIALIZATION CHECK #####################
+
+-----------
+
+warp group: 0 || pc: 0 || state: WarpState.READY || in-flight: 0
+
+warp group: 1 || pc: 0 || state: WarpState.READY || in-flight: 0
+
+warp group: 2 || pc: 0 || state: WarpState.READY || in-flight: 0
+
+
+-----------
+
+##################### NORMAL CYCLING CHECK #####################
+After first iteration
+
+-----------
+
+warp group: 0 || pc: 4 || state: WarpState.READY || in-flight: 2
+
+warp group: 1 || pc: 4 || state: WarpState.READY || in-flight: 2
+
+warp group: 2 || pc: 4 || state: WarpState.READY || in-flight: 2
+
+
+-----------
+
+After second iteration
+
+-----------
+
+warp group: 0 || pc: 8 || state: WarpState.READY || in-flight: 4
+
+warp group: 1 || pc: 8 || state: WarpState.READY || in-flight: 4
+
+warp group: 2 || pc: 8 || state: WarpState.READY || in-flight: 4
+
+
+-----------
+
+##################### END OF PACKET TESTS #####################
+After group 0 stalls at PC = 8 -- first iteration
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 6
+
+warp group: 1 || pc: 12 || state: WarpState.READY || in-flight: 6
+
+warp group: 2 || pc: 12 || state: WarpState.READY || in-flight: 6
+
+
+-----------
+
+After group 0 stalls at PC = 8 -- second iteration
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 6
+
+warp group: 1 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+warp group: 2 || pc: 16 || state: WarpState.READY || in-flight: 8
+
+
+-----------
+
+##################### WRITEBACK TESTS #####################
+After 1 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 5
+
+warp group: 1 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+warp group: 2 || pc: 16 || state: WarpState.READY || in-flight: 9
+
+
+-----------
+
+After 2 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 4
+
+warp group: 1 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+warp group: 2 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+
+-----------
+
+After 3 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 3
+
+warp group: 1 || pc: 20 || state: WarpState.READY || in-flight: 11
+
+warp group: 2 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+
+-----------
+
+After 4 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 2
+
+warp group: 1 || pc: 24 || state: WarpState.READY || in-flight: 12
+
+warp group: 2 || pc: 20 || state: WarpState.READY || in-flight: 10
+
+
+-----------
+
+After 5 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.STALL || in-flight: 1
+
+warp group: 1 || pc: 24 || state: WarpState.READY || in-flight: 12
+
+warp group: 2 || pc: 20 || state: WarpState.READY || in-flight: 11
+
+
+-----------
+
+After 6 instructions written back
+
+-----------
+
+warp group: 0 || pc: 16 || state: WarpState.READY || in-flight: 0
+
+warp group: 1 || pc: 24 || state: WarpState.READY || in-flight: 12
+
+warp group: 2 || pc: 24 || state: WarpState.READY || in-flight: 12
+
+
+-----------
+
+After one additional iteration
+
+-----------
+
+warp group: 0 || pc: 20 || state: WarpState.READY || in-flight: 2
+
+warp group: 1 || pc: 28 || state: WarpState.READY || in-flight: 14
+
+warp group: 2 || pc: 28 || state: WarpState.READY || in-flight: 14
+
+
+-----------
+
+##################### I BUFFER TESTS #####################
+All groups except 0 stalling due to Ibuffer full
+
+-----------
+
+warp group: 0 || pc: 28 || state: WarpState.READY || in-flight: 6
+
+warp group: 1 || pc: 28 || state: WarpState.STALL || in-flight: 14
+
+warp group: 2 || pc: 28 || state: WarpState.STALL || in-flight: 14
+
+
+-----------
+
+Stalls cleared -> one iteration
+
+-----------
+
+warp group: 0 || pc: 32 || state: WarpState.READY || in-flight: 8
+
+warp group: 1 || pc: 32 || state: WarpState.READY || in-flight: 16
+
+warp group: 2 || pc: 32 || state: WarpState.READY || in-flight: 16
+
+
+-----------
+
+##################### BRANCH TEST #####################
+After first iteration
+
+-----------
+
+warp group: 0 || pc: 36 || state: WarpState.READY || in-flight: 10
+
+warp group: 1 || pc: 36 || state: WarpState.READY || in-flight: 18
+
+warp group: 2 || pc: 304 || state: WarpState.READY || in-flight: 18
+
+
+-----------
+
+After second iteration
+
+-----------
+
+warp group: 0 || pc: 40 || state: WarpState.READY || in-flight: 12
+
+warp group: 1 || pc: 40 || state: WarpState.READY || in-flight: 20
+
+warp group: 2 || pc: 308 || state: WarpState.READY || in-flight: 20
+
+
+-----------
+
+##################### HALT TEST #####################
+
+-----------
+
+warp group: 0 || pc: 44 || state: WarpState.HALT || in-flight: 14
+
+warp group: 1 || pc: 44 || state: WarpState.HALT || in-flight: 22
+
+warp group: 2 || pc: 312 || state: WarpState.HALT || in-flight: 22
+
+
+-----------
+
