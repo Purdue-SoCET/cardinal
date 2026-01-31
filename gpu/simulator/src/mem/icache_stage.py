@@ -2,16 +2,15 @@
 import sys
 from pathlib import Path
 
-parent_dir = Path(__file__).resolve().parent.parent
+parent_dir = Path(__file__).resolve().parents[3]
 sys.path.append(str(parent_dir))
 
-from base import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
-from Memory import Mem
+from simulator.base_class import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
+from simulator.src.mem.Memory import Mem
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
-from isa_packets import ISA_PACKETS
 from bitstring import Bits 
 
 

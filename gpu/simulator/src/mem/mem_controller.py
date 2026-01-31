@@ -1,11 +1,11 @@
 import sys
 from pathlib import Path
 
-parent_dir = Path(__file__).resolve().parent.parent
+parent_dir = Path(__file__).resolve().parents[3]
 sys.path.append(str(parent_dir))
 
-from base import LatchIF, Stage, Instruction, MemRequest
-from Memory import Mem
+from simulator.base_class import LatchIF, Stage, Instruction, MemRequest
+from simulator.src.mem.Memory import Mem
 from typing import Any, Dict, Optional, Deque, Tuple
 from bitstring import Bits
 

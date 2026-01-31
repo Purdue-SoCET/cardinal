@@ -17,6 +17,9 @@ class Instr_Type(MultiValueEnum):
     P_TYPE = Bits(bin='1101', length=4)    # 1101
     H_TYPE = Bits(bin='1111', length=4)    # 1111 (Halt)
 
+class Op(Enum):
+    pass 
+
 # R-Type Operations (opcode: 0000xxx and 0001xxx)
 class R_Op(Enum):
     # From R_Op_0 (0000xxx)

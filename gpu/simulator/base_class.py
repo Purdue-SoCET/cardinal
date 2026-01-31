@@ -12,9 +12,10 @@ from bitstring import Bits
 from enum import Enum
 from pathlib import Path
 import sys
-parent = Path(__file__).resolve().parent
+parent = Path(__file__).resolve().parents[2]
 sys.path.append(str(parent))
-from custom_enums_multi import Op
+print(parent)
+from common.custom_enums_multi import Op
 
 '''FROM DCACHE'''
 # --- Cache Configuration ---
