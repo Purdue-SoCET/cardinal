@@ -1,6 +1,6 @@
-# Architecture
+#Architecture
 
-## Background readings
+##Background readings
 ### Top level architecture
 1. [Analyzing Modern NVIDIA GPU Cores](https://arxiv.org/pdf/2503.20481)
 
@@ -14,4 +14,3 @@
 
 ### Control Flow
 1. [Control Flow Management in Modern GPUs](https://arxiv.org/pdf/2407.02944v1)
-
