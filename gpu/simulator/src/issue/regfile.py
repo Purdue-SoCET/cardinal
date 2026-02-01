@@ -14,11 +14,11 @@ class RegisterFile:
     def __post_init__(self):
         self.regs = [[[[Bits(uint=0, length=32) for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
 
-    def write_warp_gran(self, warp_id: int, dest_operand: int, data: int) -> None:
-        self.regs[warp_id % self.banks][warp_id // 2][dest_operand] = data
+    def write_warp_gran(self, warp_id: int, dest_operand: Bits, data: Bits) -> None:
+        self.regs[warp_id % self.banks][warp_id // 2][dest_operand.int] = data
 
-    def write_thread_gran(self, warp_id: int, dest_operand: int, thread_id: int, data: int) -> None:
-        self.regs[warp_id % self.banks][warp_id // 2][dest_operand][thread_id] = data
+    def write_thread_gran(self, warp_id: int, dest_operand: Bits, thread_id: int, data: Bits) -> None:
+        self.regs[warp_id % self.banks][warp_id // 2][dest_operand.int][thread_id] = data
 
     def read_warp_gran(self, warp_id: int, src_operand: Bits) -> Any:
         return self.regs[warp_id % self.banks][warp_id // 2][src_operand.int]
@@ -41,6 +41,6 @@ if __name__ == "__main__":
     # order of args for read (warp granularity):    (warp_id, src_operand, data)
     # order of args for read (thread granularity):  (warp_id, src_operand, thread_id, data)
 
-    regfile.write_thread_gran(3, 2, 0, 120394234)
-    regfile.write_warp_gran(2, 3, [67, 41])
-    print(regfile.regs)
+    # regfile.write_thread_gran(3, 2, 0, 120394234)
+    regfile.write_warp_gran(2, Bits(uint=3, length=32), [Bits(uint=67, length=32), Bits(uint=41, length=32)])
+    print(regfile.regs[0][1][3])
