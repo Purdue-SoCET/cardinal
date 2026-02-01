@@ -1,12 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-<<<<<<<< HEAD:gpu/simulator/src/latch_forward_stage.py
 from gpu.common.custom_enums_multi import Op
 from bitstring import Bits
-
-========
  
->>>>>>>> feature/issue_stage:gpu_sim/cyclesim/src/core/frontend/latch_forward_stage.py
 @dataclass
 class Instruction:
     pc: int
