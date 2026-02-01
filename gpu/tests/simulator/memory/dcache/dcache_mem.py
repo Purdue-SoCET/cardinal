@@ -13,7 +13,7 @@ project_root = os.path.abspath(os.path.join(current_dir, "../../../../"))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from gpu_sim.cyclesim.src.mem.dcache import LockupFreeCacheStage
+from gpu.simulator.src.mem.dcache import LockupFreeCacheStage
 from gpu_sim.cyclesim.src.mem.base import *
 from gpu_sim.cyclesim.src.mem.mem import MemStage, Mem
 
