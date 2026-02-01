@@ -182,15 +182,6 @@ class FetchRequest:
     pc: int
     warp_id: int
     uuid: Optional[int] = None
-    
-@dataclass
-class MemRequest:
-    addr: int
-    size: int
-    uuid: int
-    warp_id: int
-    pc: int 
-    remaining: int = 0
 
 @dataclass
 class Warp:

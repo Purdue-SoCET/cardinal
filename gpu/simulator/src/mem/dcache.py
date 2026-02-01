@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
-from gpu_sim.cyclesim.src.mem.base import *
+from gpu.simulator.base_class import *
 
 
 # --- Cache Configuration ---
