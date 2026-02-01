@@ -31,4 +31,4 @@ START:
         sw    x7, x9, 0, 2
 
         ; finish
-        jal x16, STOP, pred
+        jal   x16, STOP, pred
