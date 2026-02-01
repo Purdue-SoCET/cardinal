@@ -9,6 +9,8 @@ from simulator.issue.regfile import RegisterFile
 from simulator.issue.stage import IssueStage
 import sys
 from pathlib import Path
+from bitstring import Bits
+from gpu.common.custom_enums_multi import *
 
 # Simulate FUST (Functional Unit Status Table)
 fust = {"ADD": 0, "SUB": 0, "MUL": 0, "DIV": 0, "SQRT": 0, "LDST": 0}

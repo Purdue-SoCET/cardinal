@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, List
+from bitstring import Bits
 
 @dataclass
 class RegisterFile:
@@ -8,10 +9,10 @@ class RegisterFile:
     warps: int = 32
     regs_per_warp: int = 64
     threads_per_warp: int = 32
-    regs: List[List[List[List[int]]]] = field(init=False)
+    regs: List[List[List[List[Bits]]]] = field(init=False)
 
     def __post_init__(self):
-        self.regs = [[[[0 for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
+        self.regs = [[[[Bits(uint=0, length=32) for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
 
     def write_warp_gran(self, warp_id: int, dest_operand: int, data: int) -> None:
         self.regs[warp_id % self.banks][warp_id // 2][dest_operand] = data
@@ -19,11 +20,11 @@ class RegisterFile:
     def write_thread_gran(self, warp_id: int, dest_operand: int, thread_id: int, data: int) -> None:
         self.regs[warp_id % self.banks][warp_id // 2][dest_operand][thread_id] = data
 
-    def read_warp_gran(self, warp_id: int, src_operand: int) -> Any:
-        return self.regs[warp_id % self.banks][warp_id // 2][src_operand]
+    def read_warp_gran(self, warp_id: int, src_operand: Bits) -> Any:
+        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.int]
     
-    def read_thread_gran(self, warp_id: int, src_operand: int, thread_id: int) -> Any:
-        return self.regs[warp_id % self.banks][warp_id // 2][src_operand][thread_id]
+    def read_thread_gran(self, warp_id: int, src_operand: Bits, thread_id: int) -> Any:
+        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.int][thread_id]
     
 ### TESTING ###
 

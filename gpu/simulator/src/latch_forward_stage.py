@@ -6,7 +6,7 @@ from bitstring import Bits
 @dataclass
 class Instruction:
     pc: Bits
-    intended_FSU: str 
+    intended_FU: str 
     warp_id: int
     warp_group_id: int
     rs1: Bits

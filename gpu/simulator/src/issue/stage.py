@@ -4,8 +4,6 @@ from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple
 from collections import deque
 
-fust: dict = {"ADD": 0, "SUB": 0, "MUL": 0, "DIV": 0, "SQRT": 0, "LDST": 0}
-
 class IssueStage(Stage):
     # configuration
     # num_iBuffer = 16
@@ -94,7 +92,7 @@ class IssueStage(Stage):
     # ---------------------------
     # Public entry point (1→4)
     # ---------------------------
-    def compute(self, input_data: Any) -> List[Instruction]:
+    def compute(self, input_data: Instruction) -> List[Instruction]:
         """
         Executes the Issue stage in this exact order every cycle:
           1) Try to dispatch ready instructions via FUST (start from EVEN).

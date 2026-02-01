@@ -39,7 +39,7 @@ class FunctionalUnitConfig:
         )
 
 class ExecuteStage(Stage):
-    def __init__(self, config: FunctionalUnitConfig):
+    def __init__(self, config: FunctionalUnitConfig, fust: dict = None):
         super().__init__(name="Execute_Stage")
       
         self.behind_latch = LatchIF(name="IS_EX_Latch")
@@ -48,6 +48,8 @@ class ExecuteStage(Stage):
         self.forward_ifs_read = None
         self.forward_ifs_write = None
         self.cycle = 0
+
+        self.fust = fust
 
         functional_units_list = []
 
@@ -72,6 +74,7 @@ class ExecuteStage(Stage):
         # Dispatch to functional units
         for fu in self.functional_units.values():
             fu.compute()
+        
 
     def tick(self) -> None:
         # Tick all functional units
