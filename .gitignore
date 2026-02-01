@@ -1,6 +1,29 @@
-gpu_sim/emulator/src/__pycache__
-gpu_sim/emulator/venv
-gpu_sim/common/__pycache__
-
+# Python cache directories
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
 venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.so
+*.o
+*.out
+
+# Logs
+*.log
+
+*.egg-info/
+test_results/

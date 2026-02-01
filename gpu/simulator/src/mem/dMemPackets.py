@@ -1,6 +1,6 @@
 from typing import NamedTuple
 from bitstring import Bits
-from latch_forward_stage import LatchIF, ForwardingIF
+from simulator.latch_forward_stage import LatchIF, ForwardingIF
 from typing import Optional
 
 class dMemRequest(NamedTuple): # LDST -> D$
