@@ -1,6 +1,6 @@
 ## Every unit test uses AT LEAST the following instructions:
 * csrr
-* lli
+* lli/lmi/lui
 * blt
 * jal
 * sw
