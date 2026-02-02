@@ -3,7 +3,7 @@ START:
     csrr  x3, x1000                     ; x3 = TID
 
     ; load initial values
-    lli   x4, 1                         ; change this to alter b in (y = b + TID)
+    lli   x4, 2                         ; change this to alter b in (y = b * TID)
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
@@ -20,8 +20,8 @@ START:
         halt
 
     COMPUTE:
-        ; compute op (y = a + b): x7 = x4 + TID
-        add   x7, x4, x3, 2
+        ; compute op (y = a * b): x7 = x4 * TID
+        mul   x7, x4, x3, 2
 
         ; address = base + tid*stride
         mul   x8, x3, x6, 2             ; TID * stride
