@@ -253,6 +253,7 @@ class MemController(Stage):
     # Main compute
     # -----------------------------
     def compute(self, input_data=None):
+        print("\n[MemController] compute: inflight =", len(self.inflight))
         # 1) progress outstanding work
         self._age_inflight()
 

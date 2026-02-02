@@ -247,7 +247,9 @@ class ForwardingIF:
         self.wait = False
     
     def pop(self) -> Optional[Any]:
-        return self.payload
+        data = self.payload
+        self.payload = None
+        return data
     
     def set_wait(self, flag: bool) -> None:
         self.wait = bool(flag)

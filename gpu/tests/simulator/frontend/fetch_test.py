@@ -15,7 +15,7 @@ from simulator.src.mem.Memory import Mem
 from simulator.base_class import *
 
 START_PC = 0
-LAT = 10
+LAT = 5
 WARP_COUNT = 6
 
 tbs_ws_if = LatchIF("Thread Block Scheduler - Warp Scheduler Latch")
@@ -72,10 +72,15 @@ icache_stage = ICacheStage(
 def dump_latches():
     def s(l): 
         return f"{l.name}: valid={l.valid} payload={type(l.payload).__name__ if l.payload else None}"
+    print("TBS:")
     print("  ", s(tbs_ws_if))
+    print("Scheduler:")
     print("  ", s(sched_icache_if))
+    print("ICache:")
     print("  ", s(icache_mem_req_if))
+    print("MEM->ICache:")
     print("  ", s(mem_icache_resp_if))
+    print("ICache->Decode:")
     print("  ", s(icache_decode_if))
 
 def step(cycle_num: int):
@@ -96,21 +101,22 @@ def cycle(cycles = scheduler_stage.warp_count):
 def test_fetch(LAT=10, START_PC=0, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test")
 
-     # Fill scheduler input latch
-    for warp_id in range(WARP_COUNT):
-        # what is MOP? wtf is this instr type
-        req = {"type": Instr_Type.MOP, "warp_id": warp_id, "pc": START_PC + warp_id * 4}
-        ok = tbs_ws_if.push(req)
-        assert ok, "tbs_ws_if full unexpectedly"
+    warp_id = 0
+    total_cycles = 15
 
-    total_cycles = 50
     for c in range(1, total_cycles + 1):
+
+        # Try to inject ONE warp request when the latch is free
+        if warp_id < WARP_COUNT and tbs_ws_if.ready_for_push():
+            dump_latches()
+            req = {"type": DecodeType.MOP, "warp_id": warp_id, "pc": START_PC + warp_id * 4}
+            ok = tbs_ws_if.push(req)
+            assert ok
+            warp_id += 1
+
         step(c)
-        
-def main():
-    print("Scheduler to ICacheStage Requests Test")
-    
+ 
+  
 if __name__ == "__main__":
-    main()
     test_fetch()
 
