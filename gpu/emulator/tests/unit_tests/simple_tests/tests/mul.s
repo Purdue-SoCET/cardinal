@@ -16,19 +16,19 @@ START:
     blt   p2, x3, x5, pred              ; p2 = (x3 < x5) == (TID < MAX_THREADS)
     jal   x16, COMPUTE, pred
 
-    STOP:
-        halt
+STOP:
+    halt
 
-    COMPUTE:
-        ; compute op (y = a * b): x7 = x4 * TID
-        mul   x7, x4, x3, 2
+COMPUTE:
+    ; compute op (y = a * b): x7 = x4 * TID
+    mul   x7, x4, x3, 2
 
-        ; address = base + tid*stride
-        mul   x8, x3, x6, 2             ; TID * stride
-        add   x9, x7, x8, 2             ; base + (tid*stride)
+    ; address = base + tid*stride
+    mul   x8, x3, x6, 2             ; TID * stride
+    add   x9, x7, x8, 2             ; base + (tid*stride)
 
-        ; store result
-        sw    x7, x9, 0, 2
+    ; store result
+    sw    x7, x9, 0, 2
 
-        ; finish
-        jal   x16, STOP, pred
+    ; finish
+    jal   x16, STOP, pred

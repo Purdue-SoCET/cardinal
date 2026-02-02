@@ -1,4 +1,4 @@
-## Every unit test uses AT LEAST the following instructions:
+## The following instructions are not explicitly tested because they are used in virtually every test:
 * csrr
 * lli/lmi/lui
 * blt
