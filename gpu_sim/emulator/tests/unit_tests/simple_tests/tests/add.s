@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; load initial values
     lli   x4, 1                         ; change this to alter b in (y = b + TID)
