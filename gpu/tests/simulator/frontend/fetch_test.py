@@ -133,7 +133,7 @@ def cycle(cycles = scheduler_stage.warp_count):
         group, warp, pc = scheduler_stage.compute()
     return group, warp, pc
 
-def test_fetch(LAT=2, START_PC=0, WARP_COUNT=6):
+def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test")
 
     warp_id = 0
@@ -149,6 +149,10 @@ def test_fetch(LAT=2, START_PC=0, WARP_COUNT=6):
     dummy_dcache_mem_resp_if.clear_all()
     icache_decode_if.clear_all()
 
+    # initialize the payload initially to what we expect,
+    # or set some framework value for it in the pipeline
+    # so it doesnt tweak out
+    
     icache_scheduler_fwif.payload = None
     issue_scheduler_fwif.payload = None
     branch_scheduler_fwif.payload = None
@@ -216,31 +220,10 @@ def test_fetch(LAT=2, START_PC=0, WARP_COUNT=6):
     # setup some bullshit at the beginning for the latches 
     # this is initializing the latches for ONE cycle.
 
-    # tbs_ws_if.push({"warp_id": warp_id, 
-    #                 "pc": START_PC + warp_id * 4})
-    # sched_icache_if.push(sched_icache_dummy_Instruction)
-    # icache_mem_req_if.push(icache_mem_req_dummy_Instruction)
-    # dummy_dcache_mem_req_if.push(dummy_dcache_mem_req_Instruction)
-    # mem_icache_resp_if.push(mem_icache_resp_dummy_Instruction)
-    # dummy_dcache_mem_resp_if.push(mem_icache_resp_dummy_Instruction)
-    # icache_decode_if.push(icache_decode_dummy_Instruction)
-    
     tbs_ws_if.push({"warp_id": warp_id, 
                     "pc": START_PC + warp_id * 4})
-    sched_icache_if.push(None)
-    icache_mem_req_if.push(None)
-    dummy_dcache_mem_req_if.push(None)
-    mem_icache_resp_if.push(None)
-    dummy_dcache_mem_resp_if.push(None)
-    icache_decode_if.push(None)
-    
-    # setup some bullshit for the forwarding IFS, i.e. NOTHING!!
-    icache_scheduler_fwif.push(None)
-    decode_scheduler_fwif.push(None)
-    issue_scheduler_fwif.push(None)
-    branch_scheduler_fwif.push(None)
-    writeback_scheduler_fwif.push(None)
 
+    
     call_stages(debug=False)  # cycle -2
 
     input("---- Press Enter to continue to cycle #2 ----")
