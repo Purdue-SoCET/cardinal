@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
@@ -11,17 +11,12 @@ START:
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; convert TID to float
     itof  x8, x3, 2                     ; x8 = float(TID)
 
     ; load 0.5 as IEEE-754 float
-    lli   x9, 0x3F000000, 2             ; x9 = 0.5f
+    lui   x9, 0x3F, 2                   ; x9 = 0.5f
 
     ; float subtract: y = float(TID) - 0.5
     subf  x10, x8, x9, 2                ; x10 = y
@@ -33,5 +28,4 @@ COMPUTE:
     ; store result
     sw    x10, x12, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt

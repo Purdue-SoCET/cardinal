@@ -13,10 +13,10 @@ START:
     blt   p2, x3, x5, pred
 
     ; -----------------------------
-    ; Test 1: addi with +5
-    ; y_pos = TID + 5
+    ; Test 1: xori with +0x0F
+    ; y_pos = TID ^ 0x0000000F
     ; -----------------------------
-    addi  x8, x3, 5, 2                  ; x8 = TID + 5
+    xori  x8, x3, 0x0F, 2               ; x8 = TID ^ 0x0F
 
     ; addr_pos = base + tid*stride
     mul   x9,  x3, x6, 2                ; x9  = TID * 4
@@ -26,13 +26,13 @@ START:
     sw    x8, x10, 0, 2
 
     ; -----------------------------
-    ; Test 2: addi with -7
-    ; y_neg = TID - 7
+    ; Test 2: xori with -16 (0xFFFFFFF0)
+    ; y_neg = TID ^ 0xFFFFFFF0
     ; -----------------------------
-    addi  x11, x3, -7, 2                ; x11 = TID - 7  (negative immediate)
+    xori  x11, x3, -16, 2               ; x11 = TID ^ (-16)
 
     ; addr_neg = (base + 0x100) + tid*stride
-    lli   x12, 0x100                    ; region offset
+    lli   x12, 0x100, 2
     add   x13, x7, x12, 2               ; x13 = base + 0x100
     add   x14, x13, x9, 2               ; x14 = (base+0x100) + offset
 

@@ -2,6 +2,5 @@
 * csrr
 * lli/lmi/lui
 * blt
-* jal
 * sw
 * halt
