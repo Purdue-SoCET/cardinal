@@ -1,9 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict
+from simulator.issue.regfile import RegisterFile
 from simulator.latch_forward_stage import Instruction, Stage, LatchIF
 from simulator.writeback.writeback_buffer import WritebackBuffer, WritebackBufferCount, WritebackBufferSize, WritebackBufferStructure, WritebackBufferPolicy
-from typing import Union, Optional
+from typing import Union, Optional, Tuple, List
 
 @dataclass
 class WritebackBufferConfig:
@@ -16,7 +17,7 @@ class WritebackBufferConfig:
     fsu_priority: Optional[Dict[str, int]]  # Priority mapping for FSUs
 
     @staticmethod
-    def create_fsu_mappings(fsu_names: list[str]) -> (Dict[str, int], Dict[str, int]):
+    def create_fsu_mappings(fsu_names: list[str]) -> Tuple[Dict[str, int], Dict[str, int]]:
         buffer_sizes = {}
         fsu_priorities = {}
 
@@ -109,14 +110,15 @@ class RegisterFileConfig:
     num_banks: int
 
     @classmethod
-    def get_default_config(cls) -> RegisterFileConfig:
-        return cls(num_banks=2)
+    def get_config_from_reg_File(cls, reg_file: RegisterFile) -> RegisterFileConfig:
+        return cls(num_banks=reg_file.banks)
 
 class WritebackStage(Stage):
     def __init__(self, 
         wb_config: WritebackBufferConfig, 
         rf_config: RegisterFileConfig, 
         behind_latches: Dict[str, LatchIF], 
+        reg_file: RegisterFile,
         fsu_names: list[str] = None
     ):
         super().__init__(name="Writeback_Stage")
@@ -124,6 +126,13 @@ class WritebackStage(Stage):
         self.ahead_latch = None
         self.forward_ifs_read = None
         self.forward_ifs_write = None
+        self.values_to_writeback = {}
+        self.num_banks = rf_config.num_banks
+        self.reg_file = reg_file
+
+        for i in range(self.num_banks):
+            self.values_to_writeback[f"bank_{i}"] = None
+
 
         functional_units_list = []
 
@@ -140,7 +149,12 @@ class WritebackStage(Stage):
     
     def tick(self) -> None:
         # Writeback stage tick logic to be implemented
-        return self.wb_buffer.tick()
+        self.reg_file.write(self.values_to_writeback)
+        self.values_to_writeback = self.wb_buffer.tick()
+        if len(self.values_to_writeback) != self.num_banks:
+            raise ValueError("Number of banks in values_to_writeback does not match num_banks.")
+
+
     
     def get_data(self):
         raise NotImplementedError()

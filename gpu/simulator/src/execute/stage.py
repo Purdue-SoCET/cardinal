@@ -53,6 +53,7 @@ class FunctionalUnitConfig:
             special_unit = SpecialUnit(config=self.special_config, num=i)
             for fsu_name in special_unit.subunits.keys():
                 fust[fsu_name] = True
+                
         return fust
 
 class ExecuteStage(Stage):

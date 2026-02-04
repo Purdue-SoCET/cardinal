@@ -466,3 +466,11 @@ class WritebackBuffer:
                         raise NotImplementedError(f"Secondary WritebackBufferPolicy {self.secondary_policy} not implemented")
         
         return buffer_with_highest_priority
+    
+    def _write_to_reg_file(self):
+      for bank_name, instr in self.values_to_writeback.items():
+          if instr is not None:
+              for i in range(32):
+                  if instr.predicate[i].bin == 0b0:
+                    continue
+                self.reg_file.write(bank_name, value)
