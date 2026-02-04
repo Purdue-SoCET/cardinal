@@ -11,6 +11,8 @@ from simulator.src.scheduler.scheduler import SchedulerStage
 from simulator.src.mem.icache_stage import ICacheStage
 from simulator.src.mem.mem_controller import MemController
 from simulator.src.mem.Memory import Mem
+from simulator.src.decode.decode_class import DecodeStage
+from simulator.src.decode.predicate_reg_file import PredicateRegFile
 from simulator.base_class import *
 
 START_PC = 4
@@ -24,6 +26,7 @@ dummy_dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
 mem_icache_resp_if = LatchIF("Mem-ICache Latch")
 dummy_dcache_mem_resp_if = LatchIF("Mem-Dummy DCache Latch")
 icache_decode_if = LatchIF("ICache-Decode Latch")
+decode_issue_if = LatchIF("Decode-Issue Latch")
 icache_scheduler_fwif = ForwardingIF(name = "icache_forward_if")
 decode_scheduler_fwif = ForwardingIF(name = "decode_forward_if")
 issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
@@ -69,6 +72,19 @@ icache_stage = ICacheStage(
     forward_ifs_write= {"ICache_scheduler_Ihit": icache_scheduler_fwif},
 )
 
+prf = PredicateRegFile(
+    num_preds_per_warp=16,
+    num_warps=16
+)
+
+decode_stage = DecodeStage(
+    name="Decode Stage",
+    behind_latch=icache_decode_if,
+    ahead_latch=decode_issue_if,
+    prf=prf,
+    forward_ifs_read=None,
+    forward_ifs_write={"D"}
+)
 def dump_sched_fwifs():
     print(" ")
     print("Icache: ", icache_scheduler_fwif)
