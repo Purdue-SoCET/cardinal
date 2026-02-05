@@ -155,7 +155,7 @@ class IssueStage(Stage):
     # --------------------------------
     # (1) FUST dispatch (EVEN first)
     # --------------------------------
-    def _dispatch_ready_via_fust(self) -> List[Instruction]:
+    def _dispatch_ready_via_fust(self) -> bool:
         """
         Try to dispatch up to two instructions (EVEN then ODD) if their warpGroup's
         FUST slot is free. An instruction is ready if both operands were read.
