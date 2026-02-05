@@ -1,33 +1,23 @@
-"""Unit test bench: This testbench sends a memory request to every bank in the cache. Initially the cache is empty and
-every memory request misses. It fetches from main memory that has been prepopulated with 0x01010101 at every address.
-Every missed request has a miss penalty of 200 cycles.
-"""
-
-import sys
-from pathlib import Path
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT))
-from collections import deque
-
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from gpu_sim.cyclesim.custom_enums_multi import Op
 from bitstring import Bits
-
+ 
 @dataclass
 class Instruction:
     pc: Bits
-    intended_FSU: str 
+    intended_FU: str 
     warp_id: int
     warp_group_id: int
     rs1: Bits
     rs2: Bits
+    imm: Bits
     rd: Bits
     opcode: Op
     rdat1: list[Bits]
     rdat2: list[Bits]
     wdat: list[Bits]
-    predicate: list[Bits] # list of Bits instances, each of length 1
+    predicate: list[Bits] # list of Bits instances, each of length 1 (Active high)
     issued_cycle: Optional[int] = None
     stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
     stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed
@@ -205,7 +195,7 @@ class LatchIF:
         self.valid = False
     
     def __repr__(self) -> str: # idk if we need this or not
-        return (f"<{self.name} valid={self.valid}"
+        return (f"<{self.name} valid={self.valid} wait={self.wait} "
                 f"payload={self.payload!r}>")
     
 @dataclass
