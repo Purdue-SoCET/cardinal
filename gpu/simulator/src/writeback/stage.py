@@ -130,8 +130,7 @@ class WritebackStage(Stage):
         self.num_banks = rf_config.num_banks
         self.reg_file = reg_file
 
-        for i in range(self.num_banks):
-            self.values_to_writeback[f"bank_{i}"] = None
+        self.values_to_writeback = [None for _ in range(self.num_banks)]
 
 
         functional_units_list = []
@@ -149,7 +148,7 @@ class WritebackStage(Stage):
     
     def tick(self) -> None:
         # Writeback stage tick logic to be implemented
-        self.reg_file.write(self.values_to_writeback)
+        self._write_to_reg_file()
         self.values_to_writeback = self.wb_buffer.tick()
         if len(self.values_to_writeback) != self.num_banks:
             raise ValueError("Number of banks in values_to_writeback does not match num_banks.")
@@ -162,6 +161,19 @@ class WritebackStage(Stage):
     def send_output(self) -> None:
         raise NotImplementedError()
 
+    def _write_to_reg_file(self):
+        for instr in self.values_to_writeback:
+            if instr is not None:
+                for i in range(32):
+                    if instr.predicate[i].bin == 0b0:
+                        continue
+                    self.reg_file.write_thread_gran(
+                        addr=instr.rd,
+                        data=instr.wdat[i],
+                        thread_id=i,
+                        warp_id=instr.warp_id
+                    )
+
     @classmethod
-    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF]) -> WritebackStage:
-        return cls(wb_config=wb_config, rf_config=rf_config, behind_latches=ex_stage_ahead_latches)
+    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, fsu_names: list[str]) -> WritebackStage:
+        return cls(wb_config=wb_config, rf_config=rf_config, behind_latches=ex_stage_ahead_latches, reg_file=reg_file, fsu_names=fsu_names)

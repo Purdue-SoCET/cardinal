@@ -41,7 +41,7 @@ class WritebackBuffer:
         elif buffer_config.count_scheme == WritebackBufferCount.BUFFER_PER_BANK:
             self.count_scheme = WritebackBufferCount.BUFFER_PER_BANK
             self.num_buffers = regfile_config.num_banks
-            self.buffer_names = [f"bank_{i}" for i in range(self.num_buffers)]
+            self.buffer_names = [f"bank_{i}_buffer" for i in range(self.num_buffers)]
         else:
             raise ValueError("Invalid WritebackBufferCount configuration")
         
@@ -147,7 +147,7 @@ class WritebackBuffer:
         num_banks = 2  # Default, should match regfile_config.num_banks
         
         buffers_to_writeback = {}
-        values_to_writeback = {f"bank_{i}": None for i in range(num_banks)}
+        values_to_writeback = [None for _ in range(num_banks)]
         
         # Track metrics for each buffer
         stores_this_cycle = {name: False for name in self.buffer_names}
@@ -156,27 +156,27 @@ class WritebackBuffer:
         # Select buffers to writeback - for PER_BANK we iterate banks, for PER_FSU we iterate FSUs
         if self.count_scheme == WritebackBufferCount.BUFFER_PER_BANK:
             # Directly select one buffer per bank
-            for bank_name in self.buffer_names:
+            for bank_index in self.buffer_names:
                 match self.primary_policy:
                     case WritebackBufferPolicy.AGE_PRIORITY:
-                        buffers_to_writeback[bank_name] = self._find_age_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] = self._find_age_priority_for_writeback(target_bank=bank_index)
                     case WritebackBufferPolicy.CAPACITY_PRIORITY:
-                        buffers_to_writeback[bank_name] =  self._find_capacity_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] =  self._find_capacity_priority_for_writeback(target_bank=bank_index)
                     case WritebackBufferPolicy.FSU_PRIORITY:
-                        buffers_to_writeback[bank_name] = self._find_fsu_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] = self._find_fsu_priority_for_writeback(target_bank=bank_index)
                     case _:
                         raise NotImplementedError(f"WritebackBufferPolicy {self.primary_policy} needs tick() implementation")
         else:  # BUFFER_PER_FSU
             # Select best buffer for each target bank
             for i in range(num_banks):
-                bank_name = f"bank_{i}"
+                bank_index = i
                 match self.primary_policy:
                     case WritebackBufferPolicy.AGE_PRIORITY:
-                        buffers_to_writeback[bank_name] = self._find_age_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] = self._find_age_priority_for_writeback(target_bank=bank_index)
                     case WritebackBufferPolicy.CAPACITY_PRIORITY:
-                        buffers_to_writeback[bank_name] =  self._find_capacity_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] =  self._find_capacity_priority_for_writeback(target_bank=bank_index)
                     case WritebackBufferPolicy.FSU_PRIORITY:
-                        buffers_to_writeback[bank_name] = self._find_fsu_priority_for_writeback(target_bank=bank_name)
+                        buffers_to_writeback[bank_index] = self._find_fsu_priority_for_writeback(target_bank=bank_index)
                     case _:
                         raise NotImplementedError(f"WritebackBufferPolicy {self.primary_policy} needs tick() implementation")
 
@@ -467,10 +467,3 @@ class WritebackBuffer:
         
         return buffer_with_highest_priority
     
-    def _write_to_reg_file(self):
-        for bank_name, instr in self.values_to_writeback.items():
-            if instr is not None:
-                for i in range(32):
-                    if instr.predicate[i].bin == 0b0:
-                        continue
-                    self.reg_file.write(bank_name, value)

@@ -57,7 +57,7 @@ class FunctionalUnitConfig:
         return fust
 
 class ExecuteStage(Stage):
-    def __init__(self, config: FunctionalUnitConfig, fust: Dict[str, bool] = None):
+    def __init__(self, config: FunctionalUnitConfig, fust: Dict[str, bool]):
         super().__init__(name="Execute_Stage")
       
         self.behind_latch = LatchIF(name="IS_EX_Latch")
@@ -129,8 +129,8 @@ class ExecuteStage(Stage):
  
 
     @classmethod
-    def create_pipeline_stage(cls, functional_unit_config: FunctionalUnitConfig) -> ExecuteStage:
+    def create_pipeline_stage(cls, functional_unit_config: FunctionalUnitConfig, fust: Dict[str, bool]) -> ExecuteStage:
         # execute stage
-        ex_stage = ExecuteStage(config=functional_unit_config)
+        ex_stage = ExecuteStage(config=functional_unit_config, fust=fust)
 
         return ex_stage

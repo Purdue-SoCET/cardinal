@@ -45,9 +45,7 @@ functional_unit_config = FunctionalUnitConfig.get_config(
 fust = functional_unit_config.generate_fust_dict()
 
 # Step 2: Create Execute Stage
-# ex_stage = ExecuteStage.create_pipeline_stage(functional_unit_config=functional_unit_config, fust=fust)
-ex_stage = ExecuteStage.create_pipeline_stage(functional_unit_config=functional_unit_config)
-ex_stage.fust = fust
+ex_stage = ExecuteStage.create_pipeline_stage(functional_unit_config=functional_unit_config, fust=fust)
 
 # Step 3: Create buffer sizes and priorities for Writeback Buffer Config
 wb_buffer_config = WritebackBufferConfig.get_default_config()
@@ -56,7 +54,7 @@ reg_file_config = RegisterFileConfig.get_config_from_reg_File(reg_file=reg_file)
 
 # Make sure ExecuteStage is created first before WritebackStage since it needs the ahead_latches from ExecuteStage
 # wb_stage = WritebackStage.create_pipeline_stage(wb_buffer_config=wb_buffer_config, rf_config=reg_file_config, ex_stage_ahead_latches=ex_stage.ahead_latches)
-wb_stage = WritebackStage.create_pipeline_stage(wb_config=wb_buffer_config, rf_config=reg_file_config, ex_stage_ahead_latches=ex_stage.ahead_latches)
+wb_stage = WritebackStage.create_pipeline_stage(wb_config=wb_buffer_config, rf_config=reg_file_config, ex_stage_ahead_latches=ex_stage.ahead_latches, reg_file=reg_file, fsu_names=list(fust.keys()))
 
 """
 Create Issue Stage and Register File
@@ -84,43 +82,41 @@ if __name__ == "__main__":
         dest_operand=Bits(uint=1, length=32),
         data=[Bits(uint=10, length=32) for _ in range(reg_file.threads_per_warp)]
     )
+    reg_file.write_warp_gran(
+        warp_id=0,
+        dest_operand=Bits(uint=2, length=32),
+        data=[Bits(uint=0, length=32) for _ in range(reg_file.threads_per_warp)]
+    )
     # Confirm initial value
-    print("Initial reg[0][0][1]:", reg_file.regs[0][0][1])
+    print("Initial reg[0][0][1]:", [x.int for x in reg_file.regs[0][0][1]])
 
     # 2) Create an ADD instruction: reg2 = reg1 + reg1 (should be 20)
     instr = Instruction(
         pc=Bits(uint=0x0, length=32),
-        intended_FU="ALU_int_0",  # Use a valid FSU name from fust.keys()
+        intended_FU=list(fust.keys())[0],  # Use a valid FSU name from fust.keys() (should be Alu_int_0)
         warp_id=0,
         warp_group_id=0,
         rs1=Bits(uint=1, length=32),
         rs2=Bits(uint=1, length=32),
         rd=Bits(uint=2, length=32),
-        opcode=R_Op.ADD,  # Use enum for opcode
-        rdat1=0,
-        rdat2=0,
-        wdat=0,
+        opcode=R_Op.ADD,  # Use enum for opcode, make sure it is supported by the intended_FU
         predicate=[Bits(uint=1, length=1) for _ in range(reg_file.threads_per_warp)],
-        issued_cycle=None,
-        stage_entry={},
-        stage_exit={},
-        fu_entries=[],
-        wb_cycle=None,
-        target_bank=None
     )
 
     # 3) Send into pipe
-    WritebackStage.compute()
-    ExecuteStage.compute()
-    issue_stage.compute(Instruction[0])
+    wb_stage.compute() # can be commented out, no compute logic in WB stage
+    ex_stage.compute()
+    issue_stage.compute(instr)
 
     # 4) Run for enough cycles to propagate through pipeline
     for _ in range(10):
-        wb_stage.compute()
+        wb_stage.compute() # can be commented out, no compute logic in WB stage
         wb_stage.tick()
         ex_stage.compute()
         ex_stage.tick()
         issue_stage.compute(None)
+    
+    print(instr)
 
     # 5) Check result in reg2 (should be 20 for all threads)
-    print("Result reg[0][0][2]:", [x.uint for x in reg_file.regs[0][0][2]])
+    print("Result reg[0][0][2]:", [x.int for x in reg_file.regs[0][0][2]])
