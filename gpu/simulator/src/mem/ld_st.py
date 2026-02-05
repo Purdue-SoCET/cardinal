@@ -120,10 +120,10 @@ class pending_mem():
                 self.size = "byte"
         
         for i in range(32):
-            self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc predicate=1'b1
-            if self.write and self.instr.predicate[i].uint == 1:
+            self.finished_idx[i] = 1-self.instr.pred[i].uint #iirc pred=1'b1
+            if self.write and self.instr.pred[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + self.instr.imm.int
-            elif not self.write and self.instr.predicate[i].uint == 1:
+            elif not self.write and self.instr.pred[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + self.instr.rdat2[i].int
 
     def readyWB(self):

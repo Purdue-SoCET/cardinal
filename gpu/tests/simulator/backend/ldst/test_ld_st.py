@@ -29,8 +29,6 @@ class TestLoadStoreUnit(unittest.TestCase):
             ) -> Instruction:
         instr = Instruction(pc=pc,
                             intended_FU="ldst",
-                            warp_id=0,
-                            warp_group_id=0,
                             rs1=Bits(int=0,length=32),
                             rs2=Bits(int=0,length=32),
                             imm=Bits(int=0,length=32),
@@ -39,7 +37,7 @@ class TestLoadStoreUnit(unittest.TestCase):
                             opcode=Bits(bin='0b0100000'),
                             rdat1 = rdat1,
                             rdat2 = rdat2,
-                            predicate=pred
+                            pred=pred
                             )
         return instr
     
@@ -49,12 +47,10 @@ class TestLoadStoreUnit(unittest.TestCase):
                 rdat1 = [Bits(int=0, length=32) for i in range(32)],
                 rdat2 =  [Bits(int=0, length=32) for i in range(32)],
                 wdat = [Bits(int=0, length=32) for i in range(32)],
-                pred = [Bits(uint=1, length=1) for i in range(32)]
+                pred = [Bits(uint=1, length=1) for i in range(32)],
             ) -> Instruction:
         instr = Instruction(pc=pc,
                             intended_FU="ldst",
-                            warp_id=0,
-                            warp_group_id=0,
                             rs1=Bits(int=0,length=32),
                             rs2=Bits(int=0,length=32),
                             imm=Bits(int=0,length=32),
@@ -63,7 +59,7 @@ class TestLoadStoreUnit(unittest.TestCase):
                             opcode=Bits(bin='0b0110000'),
                             rdat1 = rdat1,
                             rdat2 = rdat2,
-                            predicate=pred
+                            pred=pred
                             )
         return instr
     
