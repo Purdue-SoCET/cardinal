@@ -84,7 +84,7 @@ def test_decode_stage_full():
         iid=0, pc=0x1000, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0, 2, 3, 4),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     print(f"Pushing instruction PC=0x{inst.pc:X} (ihit=False)")
@@ -130,7 +130,7 @@ def test_decode_stage_full():
             warp=1, warpGroup=0,
             opcode=None, rs1=0, rs2=0, rd=0,
             packet=encode_inst(opc, 1, 2, 3),
-            intended_FSU="ALU"
+            intended_FU="ALU"
         )
 
         print(f" Decoding opcode {opc:07b} expecting mnemonic '{mnemonic}'")
@@ -158,7 +158,7 @@ def test_decode_stage_full():
         iid=0, pc=0x300, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0, 63, 62, 61),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst)
@@ -190,7 +190,7 @@ def test_decode_stage_full():
         iid=0, pc=0x400, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0,1,1,1,mop=0,eop=0,barrier=1),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst)
@@ -208,7 +208,7 @@ def test_decode_stage_full():
         iid=0, pc=0x400, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0,1,1,1,mop=1,eop=0,barrier=0),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst)
@@ -226,7 +226,7 @@ def test_decode_stage_full():
         iid=0, pc=0x400, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0,1,1,1,mop=0,eop=1,barrier=0),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst)
@@ -246,7 +246,7 @@ def test_decode_stage_full():
         iid=0, pc=0x400, warp=0, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=halt_raw,
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst)
@@ -271,7 +271,7 @@ def test_decode_stage_full():
         iid=0, pc=0x500, warp=2, warpGroup=0,
         opcode=None, rs1=0, rs2=0, rd=0,
         packet=encode_inst(0,1,1,1,pred=7),
-        intended_FSU="ALU"
+        intended_FU="ALU"
     )
 
     fetch_dec.push(inst); ihit_if.push(True)
@@ -297,7 +297,7 @@ def test_decode_stage_full():
     inst = Instruction(iid=0,pc=0x600,warp=0,warpGroup=0,
                        opcode=None,rs1=0,rs2=0,rd=0,
                        packet=encode_inst(0,0,0,0,pred=5),
-                       intended_FSU="ALU"
+                       intended_FU="ALU"
                        )
     fetch_dec.push(inst); ihit_if.push(True)
     out0 = run_stage(decode, fetch_dec, dec_exec)
@@ -308,7 +308,7 @@ def test_decode_stage_full():
     inst = Instruction(iid=0,pc=0x604,warp=3,warpGroup=0,
                        opcode=None,rs1=0,rs2=0,rd=0,
                        packet=encode_inst(0,0,0,0,pred=5),
-                       intended_FSU="ALU"
+                       intended_FU="ALU"
                        )
     fetch_dec.push(inst); ihit_if.push(True)
     out3 = run_stage(decode, fetch_dec, dec_exec)
@@ -335,7 +335,7 @@ def test_decode_stage_full():
             warp=0, warpGroup=0,
             opcode=None, rs1=0, rs2=0, rd=0,
             packet=rawbits,
-            intended_FSU=None
+            intended_FU=None
         )
 
         print(f"Streaming PC=0x{inst.pc:X}")

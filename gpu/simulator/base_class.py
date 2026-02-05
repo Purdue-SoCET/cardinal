@@ -210,7 +210,7 @@ class Instruction:
     # ----- required (no defaults) -----
     iid: Optional[int] = None
     pc: Bits = None
-    intended_FSU: Optional[str] =None  # <-- no default here
+    intended_FU: Optional[str] =None  # <-- no default here
     warp: Optional[int] = None
     warpGroup: Optional[int] = None
 
@@ -218,9 +218,10 @@ class Instruction:
     rs1: Bits = None
     rs2: Bits = None
     rd: Bits = None
+    imm: Bits = None
 
     # ----- optional / with defaults (must come after ALL non-defaults) -----
-    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
+    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits (active high)
     rdat1: list[Bits] = field(default_factory=list)
     rdat2: list[Bits] = field(default_factory=list)
     wdat: list[Bits] = field(default_factory=list)
@@ -318,7 +319,7 @@ class LatchIF:
 @dataclass
 class Stage:
     name: str
-    behind_latch: Optional[LatchIF] = None
+    behind_latch: Optional[LatchIF] = None 
     ahead_latch: Optional[LatchIF] = None
     # forward_if_read: Optional[ForwardingIF] = None
     forward_ifs_read: Dict[str, ForwardingIF] = field(default_factory=dict)

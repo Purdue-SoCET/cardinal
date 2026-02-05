@@ -63,7 +63,7 @@ def make_inst(iid: int, pc: int, warp: int = 0, warpGroup: int = 0) -> Instructi
         rs1=Bits(uint=0, length=6),
         rs2=Bits(uint=0, length=6),
         rd=Bits(uint=0, length=6),
-        intended_FSU=None,
+        intended_FU=None,
     )
 
 

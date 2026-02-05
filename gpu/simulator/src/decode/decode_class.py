@@ -164,7 +164,7 @@ class DecodeStage(Stage):
 
         opcode_bits = Bits(uint=opcode7, length=7)
         inst.opcode = decode_opcode(opcode_bits)
-        inst.intended_FSU = classify_fust_unit(inst.opcode)
+        inst.intended_FU = classify_fust_unit(inst.opcode)
         
         # Match Instruction type: registers as Bits
         inst.rs1 = Bits(uint=rs1,  length=6)

@@ -89,7 +89,7 @@ class MemController(Stage):
         return Instruction(
             iid=req_info.get("uuid", req_info.get("iid", 0)),
             pc=pc_bits,
-            intended_FSU=req_info.get("intended_FSU", None),
+            intended_FU=req_info.get("intended_FU", None),
             warp=req_info.get("warp", req_info.get("warp_id", 0)),
             warpGroup=req_info.get("warpGroup", req_info.get("warp_group_id", None)),
             opcode=req_info.get("opcode", None),
