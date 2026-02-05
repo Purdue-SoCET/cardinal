@@ -107,6 +107,7 @@ if __name__ == "__main__":
         rs1=Bits(uint=1, length=32),
         rs2=Bits(uint=1, length=32),
         rd=Bits(uint=2, length=32),
+        wdat=[Bits(uint=0, length=32) for _ in range(reg_file.threads_per_warp)],
         opcode=R_Op.ADD,  # Use enum for opcode, make sure it is supported by the intended_FU
         predicate=[Bits(uint=1, length=1) for _ in range(reg_file.threads_per_warp)],
     )
