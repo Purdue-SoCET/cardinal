@@ -2,5 +2,7 @@
 * csrr
 * lli/lmi/lui
 * blt
+* mul
+* add
 * sw
 * halt
