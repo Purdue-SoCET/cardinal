@@ -84,7 +84,7 @@ class ArithmeticFunctionalUnit(ABC):
         out_data = {}
         for subunit_name, subunit in self.subunits.items():
             in_data = behind_latch.snoop()
-            if isinstance(in_data, Instruction) and in_data.intended_FSU == subunit.name:
+            if isinstance(in_data, Instruction) and in_data.intended_FU == subunit.name:
               out_data[subunit.ex_wb_interface.name] = subunit.tick(behind_latch)
             else:
               out_data[subunit.ex_wb_interface.name] = subunit.tick(None)

@@ -205,7 +205,7 @@ class WritebackBuffer:
             if in_data is not None and in_data.target_bank is not None:
                 match self.count_scheme:
                     case WritebackBufferCount.BUFFER_PER_FSU:
-                        target_buffer = in_data.intended_FSU
+                        target_buffer = in_data.intended_FU
                     case WritebackBufferCount.BUFFER_PER_BANK:
                         target_buffer = f"bank_{in_data.target_bank}"
                     case _:
@@ -407,7 +407,7 @@ class WritebackBuffer:
         highest_priority_value = float('inf')
         
         for data in data_list:
-            fsu_name = data['in_data'].intended_FSU
+            fsu_name = data['in_data'].intended_FU
             priority_value = self.fsu_priority.get(fsu_name, float('inf'))
             
             if priority_value < highest_priority_value:
@@ -447,7 +447,7 @@ class WritebackBuffer:
                 if f"bank_{data.target_bank}" != target_bank:
                     continue
             #  else
-            fsu_name = data.intended_FSU
+            fsu_name = data.intended_FU
             priority_value = self.fsu_priority.get(fsu_name, float('inf'))
             
             if priority_value < highest_priority_value:
