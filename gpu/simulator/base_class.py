@@ -12,9 +12,9 @@ from bitstring import Bits
 from enum import Enum
 from pathlib import Path
 import sys
-parent = Path(__file__).resolve().parent
+parent = Path(__file__).resolve().parents[2]
 sys.path.append(str(parent))
-from custom_enums_multi import Op
+from common.custom_enums_multi import Op
 
 '''FROM DCACHE'''
 # --- Cache Configuration ---
@@ -160,15 +160,6 @@ class FetchRequest:
     uuid: Optional[int] = None
     
 @dataclass
-class MemRequest:
-    addr: int
-    size: int
-    uuid: int
-    warp_id: int
-    pc: int 
-    remaining: int = 0
-
-@dataclass
 class Warp:
     pc: int
     group_id: int
@@ -190,33 +181,28 @@ class WarpGroup:
     in_flight: int = 0
     state: WarpState = WarpState.READY
 
+
+
 @dataclass
 class Instruction:
-    # ----- required (no defaults) -----
-    iid: Optional[int] = None
-    pc: Bits = None
-    intended_FSU: Optional[str] =None  # <-- no default here
-    warp: Optional[int] = None
-    warpGroup: Optional[int] = None
-
-    opcode: Op = None
-    rs1: Bits = None
-    rs2: Bits = None
-    rd: Bits = None
-
-    # ----- optional / with defaults (must come after ALL non-defaults) -----
-    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
-    rdat1: list[Bits] = field(default_factory=list)
-    rdat2: list[Bits] = field(default_factory=list)
-    wdat: list[Bits] = field(default_factory=list)
-
-    type: Optional[Any] = None
-    packet: Optional[Bits] = None
+    pc: Bits
+    intended_FU: str 
+    warp_id: int
+    warp_group_id: int
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+    opcode: Op
+    predicate: list[Bits] # list of Bits instances, each of length 1
     issued_cycle: Optional[int] = None
-    stage_entry: Dict[str, int] = field(default_factory=dict)
-    stage_exit:  Dict[str, int] = field(default_factory=dict)
-    fu_entries:  List[Dict]     = field(default_factory=list)
+    stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
+    stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed
+    fu_entries:  Optional[List[Dict]]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
     wb_cycle: Optional[int] = None
+    target_bank: int = None
+    rdat1: list[Bits] = None
+    rdat2: list[Bits] = None
+    wdat: list[Bits] = None
 
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)
@@ -235,6 +221,55 @@ class Instruction:
 
     def mark_writeback(self, cycle: int):
         self.wb_cycle = cycle
+
+@dataclass
+class Instruction:
+    # ----- required (no defaults) -----
+    pc: Bits
+    intended_FU: str 
+    warp_id: int
+    warp_group_id: int
+
+    # this is for instruction data memory responses, populated by the MemController
+    packet: Optional[Bits] = None
+
+    # ----- fields populated by decode ----
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+    opcode: Op
+    imm: Bits 
+
+    rdat1: list[Bits] = field(default_factory=list)
+    rdat2: list[Bits] = field(default_factory=list)
+    wdat: list[Bits] = field(default_factory=list)
+
+    # ----- optional / with defaults (must come after ALL non-defaults) -----
+    predicate: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
+    stage_entry: Dict[str, int] = field(default_factory=dict)
+    stage_exit:  Dict[str, int] = field(default_factory=dict)
+    fu_entries:  List[Dict]     = field(default_factory=list)
+    wb_cycle: Optional[int] = None
+    target_bank: int = None 
+    
+    def mark_stage_enter(self, stage: str, cycle: int):
+        self.stage_entry.setdefault(stage, cycle)
+
+    def mark_stage_exit(self, stage: str, cycle: int):
+        self.stage_exit[stage] = cycle
+
+    def mark_fu_enter(self, fu: str, cycle: int):
+        self.fu_entries.append({"fu": fu, "enter": cycle, "exit": None})
+
+    def mark_fu_exit(self, fu: str, cycle: int):
+        for e in reversed(self.fu_entries):
+            if e["fu"] == fu and e["exit"] is None:
+                e["exit"] = cycle
+                return
+
+    def mark_writeback(self, cycle: int):
+        self.wb_cycle = cycle
+
 @dataclass
 class ForwardingIF:
     payload: Optional[Any] = None
@@ -246,13 +281,15 @@ class ForwardingIF:
         self.wait = False
     
     def pop(self) -> Optional[Any]:
-        return self.payload
+        data = self.payload
+        self.payload = None
+        return data
     
     def set_wait(self, flag: bool) -> None:
         self.wait = bool(flag)
 
     def __repr__(self) -> str:
-        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+        return (f"<{self.name} wait={self.wait} "
             f"payload={self.payload!r}>")
 
 @dataclass
