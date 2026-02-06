@@ -13,8 +13,8 @@ class Thread:
     def step_instruction(self) -> bool:
         # Get instruction
         instr_bits = self.state.memory.read(self.pc, 4)
-        instr = Instr(I_Op_0.ADDI) # Fake empty instruction parent class, to be set
-        instr.decode(instruction=instr_bits,pc=self.pc)
+        instr = Instr.decode(instruction=instr_bits,pc=Bits(uint=self.pc, length=32))
+        print(f"\tPC: {self.pc}")
 
         if instr.op == H_Op.HALT:
             return True # Thread has halted
@@ -28,6 +28,7 @@ class Thread:
         return False  # Continue execution
 
     def run_until_halt(self):
+        print(f"Running thread {self.cfile.get_thread_id()}")
         while(not self.step_instruction()):
             pass
 
