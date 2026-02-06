@@ -14,6 +14,7 @@ class RegFile:
         return self.arr[rd.uint]
 
     def write(self, rd: Bits, val: Bits) -> None:
+        # TODO: Don't fix this behavior, as not needed for all reg files
         if(rd.int == 0):
             return
         self.arr[rd.uint] = val
@@ -42,10 +43,13 @@ class PredicateRegFile(RegFile):
             thread_id = thread_id % self.thread_per_warp
 
         reg_val = self.arr[rd.uint]
-        if(val.uint):
+        if(val):
             self.arr[rd.uint] = Bits(uint=(reg_val.uint | (1 << thread_id)), length=self.thread_per_warp)
         else:
             self.arr[rd.uint] = Bits(uint=(reg_val.uint & ~(1 << thread_id)), length=self.thread_per_warp)
+
+    def write(self, rd: Bits, val: Bits) -> None:
+        self.arr[rd.uint] = val
 
 
 class CsrRegFile(RegFile):
@@ -60,7 +64,10 @@ class CsrRegFile(RegFile):
     def __init__(self, thread_id: int, block_id: int, arg_ptr: int) -> None:
         super().__init__(num_regs=64, num_bits_per_reg=32, init_value=0)
 
+        print("* Setting thread ID as " + str(thread_id))
+        print("* Writing to CSR reg " + str(Bits(uint=self.csr_map["thread_id"], length=6)))
         self.write(Bits(uint=self.csr_map["thread_id"], length=6), Bits(uint=thread_id, length=32))
+        print("* Thread ID set to " + str(self.get_thread_id()))
         self.write(Bits(uint=self.csr_map["block_id"], length=6), Bits(uint=block_id, length=32))
         self.write(Bits(uint=self.csr_map["arg_ptr"], length=6), Bits(uint=arg_ptr, length=32))
 
@@ -84,3 +91,6 @@ class CsrRegFile(RegFile):
     
     def get_global_thread_id(self) -> int:
         return self.get_block_id() * self.get_block_dim() + self.get_thread_id()
+    
+    def write(self, rd, val):
+        self.arr[rd.uint] = val

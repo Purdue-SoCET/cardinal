@@ -1,12 +1,11 @@
 #write into memsim.hex as hash table
-import sys
 from pathlib import Path
 import atexit
 from pathlib import Path
 from bitstring import Bits
 
 class Mem: 
-    def __init__(self, start_pc: int, input_file: str) -> None:
+    def __init__(self, start_pc: int, input_file: str, mem_format: str) -> None:
         self.memory: dict[int, int] = {}
 
         endianness = "little"
@@ -23,16 +22,15 @@ class Mem:
                     i = raw.find(marker)
                     if i != -1:
                         raw = raw[:i]
-                bits = raw.strip().replace("_", "")
+                bits = raw.strip().replace("_", "").upper()
                 if not bits:
                     continue
-                # print(f"{sys.argv[6]}, {type(sys.argv[6])}")
-                if (sys.argv[5] == "hex"):
+                if (mem_format == "hex"):
                     if len(bits) != 8 or any(c not in "0123456789ABCDEF" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 8 hex, got {bits!r}")
                     word = int(bits, 16) & 0xFFFF_FFFF
                 
-                elif (sys.argv[5] == "bin"):
+                elif (mem_format == "bin"):
                     if len(bits) != 32 or any(c not in "01" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
@@ -66,13 +64,15 @@ class Mem:
             b = self.memory[addr + i] & 0xFF #endianness
             val |= b << (8 * i)
 
-        return Bits(int=val, length=8 * bytes)
+        print(f"* Read from address {addr:#010x} for {bytes} bytes: {val:#010x}")
+        return Bits(uint=val, length=8 * bytes)
 
     def write(self, addr: Bits, data: Bits, bytes_t: int) -> None:
-        # print(f"{addr},{data}")
+        print(f"\tWrite to address {addr:#010x} for {bytes_t} bytes: {data.uint:#010x}")
         for i in range(bytes_t):
-            self.memory[addr + i] =  data >> (8 * i)
-            # print(f"{i}, {data << (8*i)}, {addr}")
+            self.memory[addr + i] =  (data.uint >> (8 * i)) & 0xFF
+
+        
     def dump_on_exit(self) -> None:
         try:
             self.dump("memsim.hex")

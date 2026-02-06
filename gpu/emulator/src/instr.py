@@ -37,6 +37,7 @@ class Instr(ABC):
         if self.op in {H_Op.HALT, I_Op_2.JALR, P_Op.JPNZ, J_Op.JAL}:
             return True  
 
+        print(f"\tThread {local_thread_id} Predicate {self.pred} got: {state.pfile.read_thread(self.pred, local_thread_id)}")
         return state.pfile.read_thread(self.pred, local_thread_id)
 
 
@@ -76,60 +77,64 @@ class Instr(ABC):
     @staticmethod
     def decode(instruction: Bits, pc: Bits) -> 'Instr':
         # TODO: Investigate the indexing and how the hell it works
+        # Flip instructoin 
+        fliped_instruction = Bits(bytes=instruction.bytes[::-1])
         opcode = Bits(bin=instruction.bin[25:29], length=4) # bits 31:27
         funct3 = Bits(bin=instruction.bin[29:32], length=3) # bits 26:24
         rs2  = Bits(bin=instruction.bin[7:13], length=6) #24:19
         rs1  = Bits(bin=instruction.bin[13:19], length=6) #18:13
         rd   = Bits(bin=instruction.bin[19:25], length=6) #12:7
         imm  = Bits(bin=instruction.bin[7:13], length=6)    #default (I-Type). Make sure to shift for B-type
-        pred = Bits(bin=instruction.bin[2:8], length=5) # TODO: Look at better way to do this
+        pred = Bits(bin=instruction.bin[2:7], length=5) # TODO: Look at better way to do this
 
         # TODO: Handle floating point branches - B_TYPE_1
-        match Instr_Type(opcode): #things passed into here: instruction (line) itself and PC
+        type = Instr_Type(opcode)
+        print("- " + type.name + " -")
+        match type: #things passed into here: instruction (line) itself and PC
             case Instr_Type.R_TYPE_0:
                 op = R_Op_0(funct3)
-                print(f"rtype_0, funct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
+                print(f"\tfunct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
                 ret_instr = R_Instr_0(op=op, rs1=rs1, rs2=rs2, rd=rd)
             case Instr_Type.R_TYPE_1:
                 op = R_Op_1(funct3)
-                print(f"rtype_1, funct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
+                print(f"\tfunct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
                 ret_instr = R_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
             case Instr_Type.I_TYPE_0:
                 op = I_Op_0(funct3)
-                print(f"itype_0, funct={op},rd={rd.int},rs1={rs1.int},imm={imm.int}")
+                print(f"\tfunct={op},rd={rd.int},rs1={rs1.int},imm={imm.int}")
                 ret_instr = I_Instr_0(op=op, rs1=rs1, imm=imm, rd=rd)
             case Instr_Type.I_TYPE_1:
                 op = I_Op_1(funct3)
-                print(f"itype_1, funct={op},imm={imm.int}")
+                print(f"\tfunct={op},imm={imm.int}")
                 ret_instr = I_Instr_1(op=op, rs1=rs1, imm=imm, rd=rd)
             case Instr_Type.I_TYPE_2:
                 op = I_Op_2(funct3)
-                print(f"itype_2, funct={op}, rd={rd.int}, rs1={rs1.int}, imm={imm.int}")
+                print(f"\tfunct={op}, rd={rd.int}, rs1={rs1.int}, imm={imm.int}")
                 ret_instr = I_Instr_2(op=op, rs1=rs1, imm=imm, rd=rd, pc=pc)
             case Instr_Type.S_TYPE_0:
                 op = S_Op_0(funct3)
                 # rs2 = imm #reads rs2 in imm spot
-                print(f"stype_0, funct={op},imm={rd.int}, rs1={rs1.int}, rs2={rs2.int}")
+                print(f"\tfunct={op},imm={rd.int}, rs1={rs1.int}, rs2={rs2.int}")
                 ret_instr = S_Instr_0(op=op, rs1=rs1, rs2=rs2, imm=rd) #reads imm in the normal rd spot
             case Instr_Type.B_TYPE_0:
                 op = B_Op_0(funct3)
                 ret_instr = B_Instr_0(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
-                print(f"btype, funct={op}")
+                print(f"\tfunct={op}")
             case Instr_Type.U_TYPE:
                 op = U_Op(funct3)
                 imm = imm + rs1 #concatenate
-                print(f"utype, funct={op},imm={imm.int}, rd={rd.uint}")
+                print(f"\tfunct={op},imm={imm.int}, rd={rd.uint}")
                 ret_instr = U_Instr(op=op, imm=imm, rd=rd, pc=pc)
             case Instr_Type.J_TYPE:
                 op = J_Op(funct3)
                 imm = pred + rs2 + rs1 #rs1 + rs2 + pred #concatenate
-                print("jtype")
                 ret_instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc)
             case Instr_Type.P_TYPE:
                 # TODO: Create P-Type Instruction Class
                 raise NotImplementedError("P-Type instruction not implemented yet.")
             case Instr_Type.C_TYPE:
                 op = C_Op(funct3)
+                rs1 = rs1[0:5]
                 print(f"ctype, funct={op}, rs1={rs1.uint}, rd={rd.uint}")
                 ret_instr = C_Instr(op=op, csr1=rs1, rd=rd) # TODO: Check up on werid csrr in teal card
             case Instr_Type.F_TYPE:
@@ -433,6 +438,7 @@ class S_Instr_0(Instr):
 
     def eval(self, csr: CsrRegFile, state: State) -> Optional[int]:
         if not self.check_predication(csr, state):
+            print("Skipped S-Type instruction due to predication")
             return None
         
         rdat1 = state.rfile.read(self.rs1)
@@ -446,10 +452,10 @@ class S_Instr_0(Instr):
             case S_Op_0.SW: # Store Word (32 bits / 4 bytes)
                 state.memory.write(addr, rdat2, 4)
             case S_Op_0.SH: # Store Half-Word (16 bits / 2 bytes)
-                data = Bits(int=(rdat2.int & 0xFFFF), length=16)
+                data = Bits(uint=(rdat2.uint & 0xFFFF), length=16)
                 state.memory.write(addr, data, 2)
             case S_Op_0.SB: # Store Byte (8 bits / 1 byte)
-                data = Bits(int=(rdat2.int & 0xFF), length=8)
+                data = Bits(uint=(rdat2.uint & 0xFF), length=8)
                 state.memory.write(addr, data, 1)
 
             case _:
@@ -483,7 +489,8 @@ class B_Instr_0(Instr):
             case _:
                 raise NotImplementedError(f"B-Type operation {self.op} not implemented yet or doesn't exist.")
 
-        state.pfile.write_thread(self.preddest, csr.get_thread_id(), result)
+        print(f"Writing to predicate register {self.preddest.int} value {result}")
+        state.pfile.write_thread(self.preddest, csr.get_thread_id(), bool(result))
         return None
 
 class U_Instr(Instr):
