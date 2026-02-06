@@ -507,6 +507,7 @@ class LockupFreeCacheStage(Stage):
         self.cycle_count += 1   # Increment the cycle count by 1
         logging.info(f"--- Cache Cycle {self.cycle_count} ---")
         self.stall = False
+        self.behind_latch.forward_if.set_wait(0)
 
         # --- 1. Check for memory responses
         if (self.mem_resp_if.valid):
@@ -579,6 +580,7 @@ class LockupFreeCacheStage(Stage):
             print(f"Cache: Received HALT signal. Starting flush.")
             self.flushing = True
             self.stall = True # Stop accepting inputs immediately
+            self.behind_latch.forward_if.set_wait(1)    # Set the wait signal high
             
         # --- NEW: Manage Flushing Process ---
         if self.flushing:
@@ -618,6 +620,7 @@ class LockupFreeCacheStage(Stage):
             logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}")
             self.hit_pipeline_busy = False # The hit is complete, so unlock the pipeline.
             self.hit_stall = False
+            self.behind_latch.forward_if.set_wait(0)
 
             self.output_buffer.append(dMemResponse(
                 type = 'HIT_COMPLETE',
@@ -674,6 +677,7 @@ class LockupFreeCacheStage(Stage):
                         
                         self.pending_request = None # Consume the request
                         self.hit_stall = True
+                        self.behind_latch.forward_if.set_wait(1)
                     else:
                         # This is a MISS
                         logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
@@ -684,6 +688,7 @@ class LockupFreeCacheStage(Stage):
                         if mshr.check_stall(bank_empty):
                             logging.warning(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
                             self.stall = True
+                            self.behind_latch.forward_if.set_wait(1)
                         else:
                             # It was an accepted miss
                             uuid, is_new = mshr.add_miss(req) # No longer pass new_uuid
@@ -706,6 +711,7 @@ class LockupFreeCacheStage(Stage):
             else: # else for 'if not self.hit_pipeline_busy'
                 logging.debug(f"Cache: Input stage stalled, hit pipeline is busy.")
                 self.stall = True
+                self.behind_latch.forward_if.set_wait(1)
                 # We can't accept a new request (hit or miss) because the
                 # hit pipeline resource is occupied.
                 if self.hit_stall:
@@ -715,11 +721,13 @@ class LockupFreeCacheStage(Stage):
                         stall = True,
                         req = self.pending_request
                     ))
+                    self.behind_latch.forward_if.set_wait(1)
                     
         # If we are still holding a request at the end of the cycle, 
         # we MUST tell the LSU to stall for the next cycle.
         if self.pending_request is not None:
             self.stall = True
+            self.behind_latch.forward_if.set_wait(1)
 
         # --- 5. Push this cycle's lookup result into the hit pipeline ---
         # This pushes either the hit info (Cycle 1) or None (a bubble)
