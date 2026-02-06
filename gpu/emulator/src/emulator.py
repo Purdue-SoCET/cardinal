@@ -11,7 +11,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 from common.custom_enums import *
 from reg_file import *
 from instr import *
-from warp import *
 from mem import *
 from state import *
 from thread import *
@@ -76,18 +75,22 @@ if __name__ == "__main__":
     print(f"Threads: {args.threads_per_block} | Blocks: {args.num_blocks} | Start PC: {hex(args.start_pc)}")
 
     # Creating the Common State
-    mem = Mem(args.start_pc, str(args.input_file))
+    mem = Mem(args.start_pc, str(args.input_file), args.mem_format)
     pfile = PredicateRegFile(thread_per_warp=(args.threads_per_block * args.num_blocks)) # For now, creating one mega threadblock-warp for predicates
     rfile = RegFile() # Only for one thread, needs to be reset every new thread...
-    state = State(memory=mem, reg_file=rfile, pred_file=pfile)
+    state = State(memory=mem, rfile=rfile, pfile=pfile)
 
     # Go through each block and thread
     for block_id, thread_id in [(b, t) for b in range(args.num_blocks) for t in range(args.threads_per_block)]:
         csr_file = CsrRegFile(thread_id=thread_id, block_id=block_id, arg_ptr=args.arg_pointer)
         thread = Thread(state_data=state, start_pc=args.start_pc, csr_file=csr_file)
+        print(f"\n --- Starting Thread: {thread_id} in Block: {block_id} --- ")
         thread.run_until_halt()
+        print(f" --- Thread: {thread_id} in Block: {block_id} Halted --- ")
 
         # Reset the register file for the next thread
         state.reg_file = RegFile()
+
+    mem.dump()
 
     print("Simulation Complete.")
