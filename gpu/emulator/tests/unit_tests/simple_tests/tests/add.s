@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                     ; x3 = TID
 
     ; load initial values
     lli   x4, 1                         ; change this to alter b in (y = b + TID)
@@ -21,14 +21,14 @@ STOP:
 
 COMPUTE:
     ; compute op (y = a + b): x7 = x4 + TID
-    add   x7, x4, x3, 2
+    add   x10, x4, x3, 2
 
     ; address = base + tid*stride
     mul   x8, x3, x6, 2             ; TID * stride
     add   x9, x7, x8, 2             ; base + (tid*stride)
 
     ; store result
-    sw    x7, x9, 0, 2
+    sw    x10, x9, 0, 2
 
     ; finish
     jal   x16, STOP, pred
