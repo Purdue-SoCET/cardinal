@@ -503,11 +503,12 @@ class LockupFreeCacheStage(Stage):
         elif (size == 'byte'):
             return ((data >> shift_amount) & 0xFF)
 
-    def compute(self, input_data: Optional[Dict]) -> None:
+    def compute(self) -> None:
         self.cycle_count += 1   # Increment the cycle count by 1
         logging.info(f"--- Cache Cycle {self.cycle_count} ---")
         self.stall = False
         self.behind_latch.forward_if.set_wait(0)
+        input_data = None
 
         # --- 1. Check for memory responses
         if (self.mem_resp_if.valid):
@@ -575,8 +576,12 @@ class LockupFreeCacheStage(Stage):
         # 3e. NEW: Generate the busy signals *after* new misses have started
         bank_busy_signals = [bank.busy for bank in self.banks]
 
+        # Get Input if it exists
+        if (self.behind_latch.valid) and (not self.stall):
+            input_data = self.behind_latch.pop()
+
         # --- NEW: Check for Flush/Halt Command from Input ---
-        if input_data and input_data.get('halt'):
+        if input_data and getattr(input_data, 'halt', False):
             print(f"Cache: Received HALT signal. Starting flush.")
             self.flushing = True
             self.stall = True # Stop accepting inputs immediately
@@ -638,11 +643,11 @@ class LockupFreeCacheStage(Stage):
                 if (input_data):  
                     logging.info(f"Cache: Received new request: {input_data}")
                     self.pending_request = dCacheRequest(
-                        addr_val=input_data.get('addr_val', 0),
-                        rw_mode=input_data.get('rw_mode', 'read'),
-                        size = input_data.get('size', 'word'),  # Data size (word, half, byte)
-                        store_value=input_data.get('store_value', 0),
-                        halt = input_data.get('halt', False)
+                        addr_val = getattr(input_data, 'addr_val', 0),
+                        rw_mode = getattr(input_data, 'rw_mode', 'read'),
+                        size = getattr(input_data, 'size', 'word'),  # Data size (word, half, byte)
+                        store_value=getattr(input_data, 'store_value', 0),
+                        halt = getattr(input_data, 'halt', False)
                     )
                 else:   # If the cache doesn't receive a valid request
                     logging.debug("No request sent to dcache")

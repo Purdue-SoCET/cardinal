@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from gpu.simulator.base_class import Instruction, dMemResponse, dCacheRequest, LatchIF, ForwardingIF
+from gpu.simulator.base_class import *
 from gpu.simulator.custom_enums_multi import I_Op, S_Op, H_Op
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Ldst_Fu:
         if issue_if and len(self.ldst_q) < self.ldst_q_size:
             instr = issue_if.pop()
             if instr != None:
-                logger.info(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
+                print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
                 self.ldst_q.append(pending_mem(instr))
 
         #apply backpressure if ldst_q full
@@ -44,9 +44,10 @@ class Ldst_Fu:
 
         #send instr to wb if ready
         if self.wb_if.ready_for_push() and len(self.wb_buffer) > 0:
-            # self.wb_if.push(self.wb_buffer.pop(0).instr)
             return_instr = self.wb_buffer.pop(0)
-            logger.info(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
+            self.wb_if.push(return_instr)
+            if (return_instr):
+                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
 
         #send req to cache if not waiting for response
         if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
@@ -59,13 +60,13 @@ class Ldst_Fu:
 
         #move mem_req to wb_buffer if finished
         if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
-            logger.info(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
+            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
             self.wb_buffer.append(self.ldst_q.pop(0).instr)
 
         #handle dcache packet
         if self.dcache_if.forward_if.pop():
             if len(self.ldst_q) == 0:
-                logger.warning(f"LSQ is length 0 and recieved a dcache response")
+                print(f"LSQ is length 0 and recieved a dcache response")
 
             payload: dMemResponse = self.dcache_if.forward_if.pop()
 
@@ -133,13 +134,13 @@ class pending_mem():
             
             case _:
                 logger.error(f"Err: instr in ldst cannot be decoded")
-                logging.error(f"\t{instr}")
+                print(f"\t{instr}")
         
         for i in range(32):
-            self.finished_idx[i] = 1-self.instr.pred[i].uint #iirc pred=1'b1
-            if self.write and self.instr.pred[i].uint == 1:
+            self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
+            if self.write and self.instr.predicate[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + self.instr.imm.int
-            elif not self.write and self.instr.pred[i].uint == 1:
+            elif not self.write and self.instr.predicate[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + self.instr.rdat2[i].int
 
     def readyWB(self):
@@ -172,15 +173,22 @@ class pending_mem():
 
                 #set wdat if instr is a read
                 if self.write == False:
-                    self.instr.wdat[i] = Bits(int=payload.data, length=32)
+                    self.instr.wdat[i] = Bits(uint=payload.data, length=32)
 
     
     def parseMshrHit(self, payload):
         if self.write:
             self.parseHit(payload)
         else:
+            num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+            block_mask = ~(num_bytes_block - 1)
+            incoming_block_addr = payload.address & block_mask
+
             for i in range(32):
-                if self.addrs[i] == payload.address and self.mshr_idx[i] == 1:
+                thread_addr = self.addrs[i]
+                thread_block_addr = thread_addr & block_mask
+                if (thread_block_addr == incoming_block_addr) and (self.mshr_idx[i] == 1):
+                    print(f"[LSU] Wakeup thread {i} (Addr {hex(thread_addr)}) due to Block Match")
                     self.mshr_idx[i] = 0
     
     def parseMiss(self, payload: dMemResponse):
