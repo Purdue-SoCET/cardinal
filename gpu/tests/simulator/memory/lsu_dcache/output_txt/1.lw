@@ -1,0 +1,3279 @@
+
+=== Cycle 0 ===
+LDST_FU: Accepting instruction from latch pc: 0
+=== Latch State at End of Cycle 0 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 1 ===
+Cache: Received new request: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 1] LSU Received: MISS ACCEPTED (UUID: 1)
+=== Latch State at End of Cycle 1 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 2 ===
+=== Latch State at End of Cycle 2 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x20, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 3 ===
+Cache: Received new request: dCacheRequest(addr_val=0x20, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 3] LSU Received: MISS ACCEPTED (UUID: 1)
+=== Latch State at End of Cycle 3 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 4 ===
+=== Latch State at End of Cycle 4 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x40, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 5 ===
+Cache: Received new request: dCacheRequest(addr_val=0x40, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 5] LSU Received: MISS ACCEPTED (UUID: 1)
+=== Latch State at End of Cycle 5 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 6 ===
+=== Latch State at End of Cycle 6 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x60, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 7 ===
+Cache: Received new request: dCacheRequest(addr_val=0x60, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 7] LSU Received: MISS ACCEPTED (UUID: 1)
+=== Latch State at End of Cycle 7 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 8 ===
+=== Latch State at End of Cycle 8 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x80, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 9 ===
+Cache: Received new request: dCacheRequest(addr_val=0x80, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 9] LSU Received: MISS ACCEPTED (UUID: 129)
+=== Latch State at End of Cycle 9 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 10 ===
+=== Latch State at End of Cycle 10 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xA0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 11 ===
+Cache: Received new request: dCacheRequest(addr_val=0xA0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 11] LSU Received: MISS ACCEPTED (UUID: 129)
+=== Latch State at End of Cycle 11 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 12 ===
+=== Latch State at End of Cycle 12 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xC0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 13 ===
+Cache: Received new request: dCacheRequest(addr_val=0xC0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 13] LSU Received: MISS ACCEPTED (UUID: 129)
+=== Latch State at End of Cycle 13 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 14 ===
+=== Latch State at End of Cycle 14 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xE0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 15 ===
+Cache: Received new request: dCacheRequest(addr_val=0xE0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 15] LSU Received: MISS ACCEPTED (UUID: 129)
+=== Latch State at End of Cycle 15 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 16 ===
+=== Latch State at End of Cycle 16 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x100, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 17 ===
+Cache: Received new request: dCacheRequest(addr_val=0x100, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 17] LSU Received: MISS ACCEPTED (UUID: 2)
+=== Latch State at End of Cycle 17 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 18 ===
+Bank 0: Sent READ req to Memory for 0x0
+=== Latch State at End of Cycle 18 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x120, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] VALID: {'addr': '0x0', 'size': 128, 'uuid': 1, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 19 ===
+Cache: Received new request: dCacheRequest(addr_val=0x120, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 19] LSU Received: MISS ACCEPTED (UUID: 2)
+=== Latch State at End of Cycle 19 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 20 ===
+=== Latch State at End of Cycle 20 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x140, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 21 ===
+Cache: Received new request: dCacheRequest(addr_val=0x140, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 21] LSU Received: MISS ACCEPTED (UUID: 2)
+=== Latch State at End of Cycle 21 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 22 ===
+=== Latch State at End of Cycle 22 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x160, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 23 ===
+Cache: Received new request: dCacheRequest(addr_val=0x160, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 23] LSU Received: MISS ACCEPTED (UUID: 2)
+=== Latch State at End of Cycle 23 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 24 ===
+=== Latch State at End of Cycle 24 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x180, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 25 ===
+Cache: Received new request: dCacheRequest(addr_val=0x180, rw_mode='read', size='word', store_value=0, halt=False)
+[LSU] Wakeup thread 0 (Addr 0x0) due to Block Match
+[LSU] Wakeup thread 1 (Addr 0x20) due to Block Match
+[LSU] Wakeup thread 2 (Addr 0x40) due to Block Match
+[LSU] Wakeup thread 3 (Addr 0x60) due to Block Match
+[Cycle 25] LSU Received: MISS COMPLETE (UUID: 1) - Data is in cache
+=== Latch State at End of Cycle 25 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 26 ===
+Bank 1: Sent READ req to Memory for 0x80
+[Cycle 26] LSU Received: MISS ACCEPTED (UUID: 130)
+=== Latch State at End of Cycle 26 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 129, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 27 ===
+=== Latch State at End of Cycle 27 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 28 ===
+Cache: Received new request: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 28 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 29 ===
+=== Latch State at End of Cycle 29 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 30 ===
+[Cycle 30] LSU Received: HIT STALL
+=== Latch State at End of Cycle 30 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 31 ===
+[Cycle 31] LSU Received: HIT COMPLETE (Data: 0x807D01D8)
+=== Latch State at End of Cycle 31 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 32 ===
+=== Latch State at End of Cycle 32 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x20, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 33 ===
+Cache: Received new request: dCacheRequest(addr_val=0x20, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 33 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 34 ===
+Bank 0: Sent READ req to Memory for 0x100
+=== Latch State at End of Cycle 34 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x100', 'size': 128, 'uuid': 2, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 35 ===
+[LSU] Wakeup thread 4 (Addr 0x80) due to Block Match
+[LSU] Wakeup thread 5 (Addr 0xa0) due to Block Match
+[LSU] Wakeup thread 6 (Addr 0xc0) due to Block Match
+[LSU] Wakeup thread 7 (Addr 0xe0) due to Block Match
+[Cycle 35] LSU Received: MISS COMPLETE (UUID: 129) - Data is in cache
+=== Latch State at End of Cycle 35 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 36 ===
+[Cycle 36] LSU Received: HIT STALL
+=== Latch State at End of Cycle 36 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 37 ===
+[Cycle 37] LSU Received: HIT COMPLETE (Data: 0x8001E2A0)
+=== Latch State at End of Cycle 37 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 38 ===
+=== Latch State at End of Cycle 38 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x40, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 39 ===
+Cache: Received new request: dCacheRequest(addr_val=0x40, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 39 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 40 ===
+=== Latch State at End of Cycle 40 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 41 ===
+[Cycle 41] LSU Received: HIT STALL
+=== Latch State at End of Cycle 41 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 42 ===
+Bank 1: Sent READ req to Memory for 0x180
+[LSU] Wakeup thread 8 (Addr 0x100) due to Block Match
+[LSU] Wakeup thread 9 (Addr 0x120) due to Block Match
+[LSU] Wakeup thread 10 (Addr 0x140) due to Block Match
+[LSU] Wakeup thread 11 (Addr 0x160) due to Block Match
+[Cycle 42] LSU Received: MISS COMPLETE (UUID: 2) - Data is in cache
+=== Latch State at End of Cycle 42 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x180', 'size': 128, 'uuid': 130, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 43 ===
+[Cycle 43] LSU Received: HIT COMPLETE (Data: 0xFFFFFFFF)
+=== Latch State at End of Cycle 43 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 44 ===
+=== Latch State at End of Cycle 44 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x60, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 45 ===
+Cache: Received new request: dCacheRequest(addr_val=0x60, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 45 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 46 ===
+=== Latch State at End of Cycle 46 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 47 ===
+[Cycle 47] LSU Received: HIT STALL
+=== Latch State at End of Cycle 47 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 48 ===
+[Cycle 48] LSU Received: HIT COMPLETE (Data: 0xC4598680)
+=== Latch State at End of Cycle 48 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 49 ===
+[LSU] Wakeup thread 12 (Addr 0x180) due to Block Match
+[Cycle 49] LSU Received: MISS COMPLETE (UUID: 130) - Data is in cache
+=== Latch State at End of Cycle 49 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x80, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 50 ===
+Cache: Received new request: dCacheRequest(addr_val=0x80, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 50] LSU Received: MISS COMPLETE (UUID: 130) - Data is in cache
+=== Latch State at End of Cycle 50 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 51 ===
+[Cycle 51] LSU Received: MISS COMPLETE (UUID: 130) - Data is in cache
+=== Latch State at End of Cycle 51 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 52 ===
+[Cycle 52] LSU Received: HIT STALL
+=== Latch State at End of Cycle 52 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 53 ===
+[Cycle 53] LSU Received: HIT COMPLETE (Data: 0x00004040)
+=== Latch State at End of Cycle 53 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 54 ===
+=== Latch State at End of Cycle 54 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xA0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 55 ===
+Cache: Received new request: dCacheRequest(addr_val=0xA0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 55 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 56 ===
+=== Latch State at End of Cycle 56 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 57 ===
+[Cycle 57] LSU Received: HIT STALL
+=== Latch State at End of Cycle 57 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 58 ===
+[Cycle 58] LSU Received: HIT COMPLETE (Data: 0x00003041)
+=== Latch State at End of Cycle 58 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 59 ===
+=== Latch State at End of Cycle 59 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xC0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 60 ===
+Cache: Received new request: dCacheRequest(addr_val=0xC0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 60 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 61 ===
+=== Latch State at End of Cycle 61 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 62 ===
+[Cycle 62] LSU Received: HIT STALL
+=== Latch State at End of Cycle 62 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 63 ===
+[Cycle 63] LSU Received: HIT COMPLETE (Data: 0x00009841)
+=== Latch State at End of Cycle 63 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 64 ===
+=== Latch State at End of Cycle 64 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0xE0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 65 ===
+Cache: Received new request: dCacheRequest(addr_val=0xE0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 65 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 66 ===
+=== Latch State at End of Cycle 66 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 67 ===
+[Cycle 67] LSU Received: HIT STALL
+=== Latch State at End of Cycle 67 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 68 ===
+[Cycle 68] LSU Received: HIT COMPLETE (Data: 0x0000D841)
+=== Latch State at End of Cycle 68 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 69 ===
+=== Latch State at End of Cycle 69 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x100, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 70 ===
+Cache: Received new request: dCacheRequest(addr_val=0x100, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 70 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 71 ===
+=== Latch State at End of Cycle 71 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 72 ===
+[Cycle 72] LSU Received: HIT STALL
+=== Latch State at End of Cycle 72 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 73 ===
+[Cycle 73] LSU Received: HIT COMPLETE (Data: 0x00000C42)
+=== Latch State at End of Cycle 73 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 74 ===
+=== Latch State at End of Cycle 74 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x120, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 75 ===
+Cache: Received new request: dCacheRequest(addr_val=0x120, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 75 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 76 ===
+=== Latch State at End of Cycle 76 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 77 ===
+[Cycle 77] LSU Received: HIT STALL
+=== Latch State at End of Cycle 77 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 78 ===
+[Cycle 78] LSU Received: HIT COMPLETE (Data: 0x00002C42)
+=== Latch State at End of Cycle 78 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 79 ===
+=== Latch State at End of Cycle 79 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x140, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 80 ===
+Cache: Received new request: dCacheRequest(addr_val=0x140, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 80 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 81 ===
+=== Latch State at End of Cycle 81 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 82 ===
+[Cycle 82] LSU Received: HIT STALL
+=== Latch State at End of Cycle 82 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 83 ===
+[Cycle 83] LSU Received: HIT COMPLETE (Data: 0x00004C42)
+=== Latch State at End of Cycle 83 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 84 ===
+=== Latch State at End of Cycle 84 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x160, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 85 ===
+Cache: Received new request: dCacheRequest(addr_val=0x160, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 85 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 86 ===
+=== Latch State at End of Cycle 86 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 87 ===
+[Cycle 87] LSU Received: HIT STALL
+=== Latch State at End of Cycle 87 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 88 ===
+[Cycle 88] LSU Received: HIT COMPLETE (Data: 0x00006C42)
+=== Latch State at End of Cycle 88 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 89 ===
+=== Latch State at End of Cycle 89 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x180, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 90 ===
+Cache: Received new request: dCacheRequest(addr_val=0x180, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 90 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 91 ===
+=== Latch State at End of Cycle 91 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 92 ===
+[Cycle 92] LSU Received: HIT STALL
+=== Latch State at End of Cycle 92 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 93 ===
+[Cycle 93] LSU Received: HIT COMPLETE (Data: 0x00008642)
+=== Latch State at End of Cycle 93 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 94 ===
+=== Latch State at End of Cycle 94 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x1A0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 95 ===
+Cache: Received new request: dCacheRequest(addr_val=0x1A0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 95 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 96 ===
+=== Latch State at End of Cycle 96 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 97 ===
+[Cycle 97] LSU Received: HIT STALL
+=== Latch State at End of Cycle 97 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 98 ===
+[Cycle 98] LSU Received: HIT COMPLETE (Data: 0x00009642)
+=== Latch State at End of Cycle 98 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 99 ===
+=== Latch State at End of Cycle 99 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x1C0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 100 ===
+Cache: Received new request: dCacheRequest(addr_val=0x1C0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 100 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 101 ===
+=== Latch State at End of Cycle 101 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 102 ===
+[Cycle 102] LSU Received: HIT STALL
+=== Latch State at End of Cycle 102 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 103 ===
+[Cycle 103] LSU Received: HIT COMPLETE (Data: 0x0000A642)
+=== Latch State at End of Cycle 103 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 104 ===
+=== Latch State at End of Cycle 104 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x1E0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 105 ===
+Cache: Received new request: dCacheRequest(addr_val=0x1E0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 105 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 106 ===
+=== Latch State at End of Cycle 106 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 107 ===
+[Cycle 107] LSU Received: HIT STALL
+=== Latch State at End of Cycle 107 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 108 ===
+[Cycle 108] LSU Received: HIT COMPLETE (Data: 0x0000B642)
+=== Latch State at End of Cycle 108 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 109 ===
+=== Latch State at End of Cycle 109 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x200, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 110 ===
+Cache: Received new request: dCacheRequest(addr_val=0x200, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 110] LSU Received: MISS ACCEPTED (UUID: 3)
+=== Latch State at End of Cycle 110 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 111 ===
+=== Latch State at End of Cycle 111 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x220, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 112 ===
+Cache: Received new request: dCacheRequest(addr_val=0x220, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 112] LSU Received: MISS ACCEPTED (UUID: 3)
+=== Latch State at End of Cycle 112 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 113 ===
+=== Latch State at End of Cycle 113 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x240, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 114 ===
+Cache: Received new request: dCacheRequest(addr_val=0x240, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 114] LSU Received: MISS ACCEPTED (UUID: 3)
+=== Latch State at End of Cycle 114 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 115 ===
+=== Latch State at End of Cycle 115 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x260, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 116 ===
+Cache: Received new request: dCacheRequest(addr_val=0x260, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 116] LSU Received: MISS ACCEPTED (UUID: 3)
+=== Latch State at End of Cycle 116 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 117 ===
+=== Latch State at End of Cycle 117 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x280, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 118 ===
+Cache: Received new request: dCacheRequest(addr_val=0x280, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 118] LSU Received: MISS ACCEPTED (UUID: 131)
+=== Latch State at End of Cycle 118 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 119 ===
+=== Latch State at End of Cycle 119 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2A0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 120 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2A0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 120] LSU Received: MISS ACCEPTED (UUID: 131)
+=== Latch State at End of Cycle 120 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 121 ===
+=== Latch State at End of Cycle 121 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2C0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 122 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2C0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 122] LSU Received: MISS ACCEPTED (UUID: 131)
+=== Latch State at End of Cycle 122 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 123 ===
+=== Latch State at End of Cycle 123 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2E0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 124 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2E0, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 124] LSU Received: MISS ACCEPTED (UUID: 131)
+=== Latch State at End of Cycle 124 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 125 ===
+=== Latch State at End of Cycle 125 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x300, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 126 ===
+Cache: Received new request: dCacheRequest(addr_val=0x300, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 126] LSU Received: MISS ACCEPTED (UUID: 4)
+=== Latch State at End of Cycle 126 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 127 ===
+Bank 0: Sent READ req to Memory for 0x200
+=== Latch State at End of Cycle 127 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x320, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] VALID: {'addr': '0x200', 'size': 128, 'uuid': 3, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 128 ===
+Cache: Received new request: dCacheRequest(addr_val=0x320, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 128] LSU Received: MISS ACCEPTED (UUID: 4)
+=== Latch State at End of Cycle 128 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 129 ===
+=== Latch State at End of Cycle 129 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x340, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 130 ===
+Cache: Received new request: dCacheRequest(addr_val=0x340, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 130] LSU Received: MISS ACCEPTED (UUID: 4)
+=== Latch State at End of Cycle 130 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 131 ===
+=== Latch State at End of Cycle 131 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x360, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 132 ===
+Cache: Received new request: dCacheRequest(addr_val=0x360, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 132] LSU Received: MISS ACCEPTED (UUID: 4)
+=== Latch State at End of Cycle 132 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 133 ===
+=== Latch State at End of Cycle 133 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x380, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 134 ===
+Cache: Received new request: dCacheRequest(addr_val=0x380, rw_mode='read', size='word', store_value=0, halt=False)
+[LSU] Wakeup thread 16 (Addr 0x200) due to Block Match
+[LSU] Wakeup thread 17 (Addr 0x220) due to Block Match
+[LSU] Wakeup thread 18 (Addr 0x240) due to Block Match
+[LSU] Wakeup thread 19 (Addr 0x260) due to Block Match
+[Cycle 134] LSU Received: MISS COMPLETE (UUID: 3) - Data is in cache
+=== Latch State at End of Cycle 134 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 135 ===
+Bank 1: Sent READ req to Memory for 0x280
+[Cycle 135] LSU Received: MISS ACCEPTED (UUID: 132)
+=== Latch State at End of Cycle 135 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x280', 'size': 128, 'uuid': 131, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 136 ===
+=== Latch State at End of Cycle 136 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x200, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 137 ===
+Cache: Received new request: dCacheRequest(addr_val=0x200, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 137 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 138 ===
+=== Latch State at End of Cycle 138 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 139 ===
+[Cycle 139] LSU Received: HIT STALL
+=== Latch State at End of Cycle 139 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 140 ===
+[Cycle 140] LSU Received: HIT COMPLETE (Data: 0x0000C642)
+=== Latch State at End of Cycle 140 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 141 ===
+=== Latch State at End of Cycle 141 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x220, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 142 ===
+Cache: Received new request: dCacheRequest(addr_val=0x220, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 142 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 143 ===
+Bank 0: Sent READ req to Memory for 0x300
+=== Latch State at End of Cycle 143 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x300', 'size': 128, 'uuid': 4, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 144 ===
+[LSU] Wakeup thread 20 (Addr 0x280) due to Block Match
+[LSU] Wakeup thread 21 (Addr 0x2a0) due to Block Match
+[LSU] Wakeup thread 22 (Addr 0x2c0) due to Block Match
+[LSU] Wakeup thread 23 (Addr 0x2e0) due to Block Match
+[Cycle 144] LSU Received: MISS COMPLETE (UUID: 131) - Data is in cache
+=== Latch State at End of Cycle 144 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 145 ===
+[Cycle 145] LSU Received: HIT STALL
+=== Latch State at End of Cycle 145 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 146 ===
+[Cycle 146] LSU Received: HIT COMPLETE (Data: 0x0000D642)
+=== Latch State at End of Cycle 146 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 147 ===
+=== Latch State at End of Cycle 147 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x240, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 148 ===
+Cache: Received new request: dCacheRequest(addr_val=0x240, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 148 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 149 ===
+=== Latch State at End of Cycle 149 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 150 ===
+[Cycle 150] LSU Received: HIT STALL
+=== Latch State at End of Cycle 150 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 151 ===
+Bank 1: Sent READ req to Memory for 0x380
+[LSU] Wakeup thread 24 (Addr 0x300) due to Block Match
+[LSU] Wakeup thread 25 (Addr 0x320) due to Block Match
+[LSU] Wakeup thread 26 (Addr 0x340) due to Block Match
+[LSU] Wakeup thread 27 (Addr 0x360) due to Block Match
+[Cycle 151] LSU Received: MISS COMPLETE (UUID: 4) - Data is in cache
+=== Latch State at End of Cycle 151 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x380', 'size': 128, 'uuid': 132, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 152 ===
+[Cycle 152] LSU Received: HIT COMPLETE (Data: 0x0000E642)
+=== Latch State at End of Cycle 152 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 153 ===
+=== Latch State at End of Cycle 153 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x260, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 154 ===
+Cache: Received new request: dCacheRequest(addr_val=0x260, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 154 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 155 ===
+=== Latch State at End of Cycle 155 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 156 ===
+[Cycle 156] LSU Received: HIT STALL
+=== Latch State at End of Cycle 156 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 157 ===
+[Cycle 157] LSU Received: HIT COMPLETE (Data: 0x0000F642)
+=== Latch State at End of Cycle 157 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 158 ===
+[LSU] Wakeup thread 28 (Addr 0x380) due to Block Match
+[Cycle 158] LSU Received: MISS COMPLETE (UUID: 132) - Data is in cache
+=== Latch State at End of Cycle 158 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x280, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 159 ===
+Cache: Received new request: dCacheRequest(addr_val=0x280, rw_mode='read', size='word', store_value=0, halt=False)
+[Cycle 159] LSU Received: MISS COMPLETE (UUID: 132) - Data is in cache
+=== Latch State at End of Cycle 159 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 160 ===
+[Cycle 160] LSU Received: MISS COMPLETE (UUID: 132) - Data is in cache
+=== Latch State at End of Cycle 160 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 161 ===
+[Cycle 161] LSU Received: HIT STALL
+=== Latch State at End of Cycle 161 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 162 ===
+[Cycle 162] LSU Received: HIT COMPLETE (Data: 0x00000343)
+=== Latch State at End of Cycle 162 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 163 ===
+=== Latch State at End of Cycle 163 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2A0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 164 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2A0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 164 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 165 ===
+=== Latch State at End of Cycle 165 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 166 ===
+[Cycle 166] LSU Received: HIT STALL
+=== Latch State at End of Cycle 166 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 167 ===
+[Cycle 167] LSU Received: HIT COMPLETE (Data: 0x00000B43)
+=== Latch State at End of Cycle 167 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 168 ===
+=== Latch State at End of Cycle 168 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2C0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 169 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2C0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 169 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 170 ===
+=== Latch State at End of Cycle 170 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 171 ===
+[Cycle 171] LSU Received: HIT STALL
+=== Latch State at End of Cycle 171 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 172 ===
+[Cycle 172] LSU Received: HIT COMPLETE (Data: 0x00001343)
+=== Latch State at End of Cycle 172 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 173 ===
+=== Latch State at End of Cycle 173 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x2E0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 174 ===
+Cache: Received new request: dCacheRequest(addr_val=0x2E0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 174 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 175 ===
+=== Latch State at End of Cycle 175 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 176 ===
+[Cycle 176] LSU Received: HIT STALL
+=== Latch State at End of Cycle 176 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 177 ===
+[Cycle 177] LSU Received: HIT COMPLETE (Data: 0x00001B43)
+=== Latch State at End of Cycle 177 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 178 ===
+=== Latch State at End of Cycle 178 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x300, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 179 ===
+Cache: Received new request: dCacheRequest(addr_val=0x300, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 179 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 180 ===
+=== Latch State at End of Cycle 180 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 181 ===
+[Cycle 181] LSU Received: HIT STALL
+=== Latch State at End of Cycle 181 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 182 ===
+[Cycle 182] LSU Received: HIT COMPLETE (Data: 0x00002343)
+=== Latch State at End of Cycle 182 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 183 ===
+=== Latch State at End of Cycle 183 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x320, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 184 ===
+Cache: Received new request: dCacheRequest(addr_val=0x320, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 184 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 185 ===
+=== Latch State at End of Cycle 185 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 186 ===
+[Cycle 186] LSU Received: HIT STALL
+=== Latch State at End of Cycle 186 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 187 ===
+[Cycle 187] LSU Received: HIT COMPLETE (Data: 0x00002B43)
+=== Latch State at End of Cycle 187 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 188 ===
+=== Latch State at End of Cycle 188 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x340, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 189 ===
+Cache: Received new request: dCacheRequest(addr_val=0x340, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 189 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 190 ===
+=== Latch State at End of Cycle 190 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 191 ===
+[Cycle 191] LSU Received: HIT STALL
+=== Latch State at End of Cycle 191 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 192 ===
+[Cycle 192] LSU Received: HIT COMPLETE (Data: 0x00003343)
+=== Latch State at End of Cycle 192 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 193 ===
+=== Latch State at End of Cycle 193 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x360, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 194 ===
+Cache: Received new request: dCacheRequest(addr_val=0x360, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 194 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 195 ===
+=== Latch State at End of Cycle 195 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 196 ===
+[Cycle 196] LSU Received: HIT STALL
+=== Latch State at End of Cycle 196 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 197 ===
+[Cycle 197] LSU Received: HIT COMPLETE (Data: 0x00003B43)
+=== Latch State at End of Cycle 197 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 198 ===
+=== Latch State at End of Cycle 198 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x380, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 199 ===
+Cache: Received new request: dCacheRequest(addr_val=0x380, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 199 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 200 ===
+=== Latch State at End of Cycle 200 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 201 ===
+[Cycle 201] LSU Received: HIT STALL
+=== Latch State at End of Cycle 201 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 202 ===
+[Cycle 202] LSU Received: HIT COMPLETE (Data: 0x00004343)
+=== Latch State at End of Cycle 202 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 203 ===
+=== Latch State at End of Cycle 203 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x3A0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 204 ===
+Cache: Received new request: dCacheRequest(addr_val=0x3A0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 204 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 205 ===
+=== Latch State at End of Cycle 205 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 206 ===
+[Cycle 206] LSU Received: HIT STALL
+=== Latch State at End of Cycle 206 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 207 ===
+[Cycle 207] LSU Received: HIT COMPLETE (Data: 0x00004B43)
+=== Latch State at End of Cycle 207 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 208 ===
+=== Latch State at End of Cycle 208 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x3C0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 209 ===
+Cache: Received new request: dCacheRequest(addr_val=0x3C0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 209 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 210 ===
+=== Latch State at End of Cycle 210 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 211 ===
+[Cycle 211] LSU Received: HIT STALL
+=== Latch State at End of Cycle 211 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 212 ===
+[Cycle 212] LSU Received: HIT COMPLETE (Data: 0x00005343)
+=== Latch State at End of Cycle 212 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 213 ===
+=== Latch State at End of Cycle 213 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x3E0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 214 ===
+Cache: Received new request: dCacheRequest(addr_val=0x3E0, rw_mode='read', size='word', store_value=0, halt=False)
+=== Latch State at End of Cycle 214 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 215 ===
+=== Latch State at End of Cycle 215 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 216 ===
+[Cycle 216] LSU Received: HIT STALL
+=== Latch State at End of Cycle 216 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 217 ===
+[Cycle 217] LSU Received: HIT COMPLETE (Data: 0x00005B43)
+=== Latch State at End of Cycle 217 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 218 ===
+LDST_FU: Finished processing Instruction pc: 0
+=== Latch State at End of Cycle 218 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+
+=== Cycle 219 ===
+LDST_FU: Pushing Instruction for WB pc: 0
+=== Latch State at End of Cycle 219 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] VALID: Instruction(pc=0, intended_FU='ldst', warp_id=0, warp_group_id=0, rs1=Bits('0x00000000'), rs2=Bits('0x00000000'), rd=0, opcode=Bits('0b0100000'), predicate=[Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1')], issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None, rdat1=[Bits('0x00000000'), Bits('0x00000020'), Bits('0x00000040'), Bits('0x00000060'), Bits('0x00000080'), Bits('0x000000a0'), Bits('0x000000c0'), Bits('0x000000e0'), Bits('0x00000100'), Bits('0x00000120'), Bits('0x00000140'), Bits('0x00000160'), Bits('0x00000180'), Bits('0x000001a0'), Bits('0x000001c0'), Bits('0x000001e0'), Bits('0x00000200'), Bits('0x00000220'), Bits('0x00000240'), Bits('0x00000260'), Bits('0x00000280'), Bits('0x000002a0'), Bits('0x000002c0'), Bits('0x000002e0'), Bits('0x00000300'), Bits('0x00000320'), Bits('0x00000340'), Bits('0x00000360'), Bits('0x00000380'), Bits('0x000003a0'), Bits('0x000003c0'), Bits('0x000003e0')], rdat2=[Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000')], wdat=[Bits('0x807d01d8'), Bits('0x8001e2a0'), Bits('0xffffffff'), Bits('0xc4598680'), Bits('0x00004040'), Bits('0x00003041'), Bits('0x00009841'), Bits('0x0000d841'), Bits('0x00000c42'), Bits('0x00002c42'), Bits('0x00004c42'), Bits('0x00006c42'), Bits('0x00008642'), Bits('0x00009642'), Bits('0x0000a642'), Bits('0x0000b642'), Bits('0x0000c642'), Bits('0x0000d642'), Bits('0x0000e642'), Bits('0x0000f642'), Bits('0x00000343'), Bits('0x00000b43'), Bits('0x00001343'), Bits('0x00001b43'), Bits('0x00002343'), Bits('0x00002b43'), Bits('0x00003343'), Bits('0x00003b43'), Bits('0x00004343'), Bits('0x00004b43'), Bits('0x00005343'), Bits('0x00005b43')])
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+[Cycle 219] WB Received instruction from LSU
+=== Test ended ===

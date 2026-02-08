@@ -38,6 +38,7 @@ class Ldst_Fu:
 
         #apply backpressure if ldst_q full
         if len(self.ldst_q) == self.ldst_q_size:
+            print(f"[LSU]: The queue is full")
             issue_if.forward_if.set_wait(True)
         else:
             issue_if.forward_if.set_wait(False)

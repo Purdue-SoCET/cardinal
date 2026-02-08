@@ -641,7 +641,7 @@ class LockupFreeCacheStage(Stage):
             # This block ONLY runs if the output stage is NOT busy
             if self.pending_request is None and not self.flushing:    # if not handling any request
                 if (input_data):  
-                    logging.info(f"Cache: Received new request: {input_data}")
+                    print(f"Cache: Received new request: {input_data}")
                     self.pending_request = dCacheRequest(
                         addr_val = getattr(input_data, 'addr_val', 0),
                         rw_mode = getattr(input_data, 'rw_mode', 'read'),
@@ -691,7 +691,7 @@ class LockupFreeCacheStage(Stage):
                         bank_empty = not bank_busy_signals[bank_id] 
                         
                         if mshr.check_stall(bank_empty):
-                            logging.warning(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
+                            print(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
                             self.stall = True
                             self.behind_latch.forward_if.set_wait(1)
                         else:
