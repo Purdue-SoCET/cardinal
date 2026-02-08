@@ -109,6 +109,9 @@ class SchedulerStage(Stage):
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
+        # initialize instruction class
+        instr = Instruction(None, None, None, None, None, None, None, None, None)
+
         for tries in range(self.num_groups):
             warp_group = self.warp_table[self.rr_index]
 
@@ -120,7 +123,12 @@ class SchedulerStage(Stage):
                 # if the last issue for the group was odd DONT INCREATE RR_INDEX
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
-                    return "dummy even instruction"
+                    
+                    instr.pc = warp_group.pc
+                    instr.warp_id = warp_group.group_id * 2
+                    instr.warp_group_id = warp_group.group_id
+                    return instr
+                
                     # DEPRECIATED
                     # return warp_group.group_id, warp_group.group_id * 2, warp_group.pc # EVEN WARP INSTRUCTION
 
@@ -130,7 +138,12 @@ class SchedulerStage(Stage):
                     current_pc = warp_group.pc
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
-                    return "dummy odd instruction" # ODD WARP INSTRUCTION
+
+                    instr.pc = current_pc
+                    instr.warp_id = warp_group.group_id * 2
+                    instr.warp_group_id = warp_group.group_id
+                    return instr
+                
                     # DEPRECIATED
                     # return warp_group.group_id, (warp_group.group_id * 2) + 1, current_pc # ODD WARP INSTRUCTION
 
@@ -138,14 +151,15 @@ class SchedulerStage(Stage):
                 self.rr_index = (self.rr_index + 1) & self.num_groups
 
         # nothing can fetch here
-        return # NONE
+        return instr # NONE
+    
         # DEPRECIATED
         # return 10000, 10000, 10000
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def greedy_oldest(self):
         return
-
+    
     # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
     def compute(self):
         # waiting for ihit
@@ -160,7 +174,10 @@ class SchedulerStage(Stage):
         
         self.collision()
 
-        if self.policy == "RR":
-            instr = self.round_robin()
+        match self.policy:
+            case "RR":
+                instr = self.round_robin()
+            case "GTO":
+                instr = self.greedy_oldest()
 
         return instr
