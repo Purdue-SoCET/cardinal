@@ -14,6 +14,7 @@ class Instruction:
     rd: Bits
     opcode: Op
     predicate: list[Bits] # list of Bits instances, each of length 1
+    num_operands: int
     issued_cycle: Optional[int] = None
     stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
     stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed

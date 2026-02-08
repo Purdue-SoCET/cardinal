@@ -209,12 +209,12 @@ class IssueStage(Stage):
         This matches the "four possibilities" oscillation without over-constraining timing.
         """
         # EVEN bank one read
-        if self.staged_even is not None and self.even_read_progress < 2:
+        if self.staged_even is not None and self.even_read_progress < 2 and self.staged_even.num_operands >= 1:
             if self.even_read_progress == 0:
                 val = self.regfile.read_warp_gran(self.staged_even.warp_id, self.staged_even.rs1)
                 self.staged_even.rdat1 = val
                 self.even_read_progress = 1
-            elif self.even_read_progress == 1:
+            elif self.even_read_progress == 1 and self.staged_even.num_operands == 2:
                 val = self.regfile.read_warp_gran(self.staged_even.warp_id, self.staged_even.rs2)
                 self.staged_even.rdat2 = val
                 self.even_read_progress = 2
@@ -223,12 +223,12 @@ class IssueStage(Stage):
                 self.even_read_progress = 0
 
         # ODD bank one read
-        if self.staged_odd is not None and self.odd_read_progress < 2:
+        if self.staged_odd is not None and self.odd_read_progress < 2 and self.staged_odd.num_operands >= 1:
             if self.odd_read_progress == 0:
                 val = self.regfile.read_warp_gran(self.staged_odd.warp_id, self.staged_odd.rs1)
                 self.staged_odd.rdat1 = val
                 self.odd_read_progress = 1
-            elif self.odd_read_progress == 1:
+            elif self.odd_read_progress == 1 and self.staged_odd.num_operands == 2:
                 val = self.regfile.read_warp_gran(self.staged_odd.warp_id, self.staged_odd.rs2)
                 self.staged_odd.rdat2 = val
                 self.odd_read_progress = 2
