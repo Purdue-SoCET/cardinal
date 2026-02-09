@@ -3,8 +3,8 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from gpu.simulator.base_class import *
-from gpu.simulator.custom_enums_multi import I_Op, S_Op, H_Op
+from simulator.base_class import *
+from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
 
 logger = logging.getLogger(__name__)
 
