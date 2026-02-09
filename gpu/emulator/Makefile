@@ -1,17 +1,18 @@
-PYTHON := venv/bin/python3
+PYTHON := python3
 EMULATOR := src/emulator.py
 GOLDEN_MODEL := src/golden_model.py
 INPUT_FILE := meminit.hex
-KERNEL_DIM := 1024 1
+NUM_THREADS := 32
+NUM_BLOCKS := 1
 START_PC := 0
-TYPE := "hex"
+TYPE := hex
 
 # Defaults for golden runs / diffs (aligns with existing expected/*_exp_32.hex naming)
 THREADS ?= 32
 TRACE ?= 0
 
 run:
-	$(PYTHON) $(EMULATOR) $(INPUT_FILE) $(KERNEL_DIM) $(START_PC) $(TYPE)
+	$(PYTHON) $(EMULATOR) -t $(NUM_THREADS) -b $(NUM_BLOCKS) --start-pc $(START_PC) --mem-format $(TYPE) $(INPUT_FILE)
 
 run-bin:
 	$(MAKE) run TYPE="bin"
