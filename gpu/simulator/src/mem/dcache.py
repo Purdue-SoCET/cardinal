@@ -600,23 +600,20 @@ class LockupFreeCacheStage(Stage):
                     all_halted = False
             
             # If every bank has reached HALT state
-            if self.flushing:
-                all_halted = True
-                for bank in self.banks:
-                    if bank.state == 'START':
-                        bank.start_flush()
-                        all_halted = False
-                    elif bank.state != 'HALT':
-                        all_halted = False
+            if all_halted:
+                print(f"Cache: Flush Complete.")
 
-                if all_halted:
-                     logging.info("Cache: Flush Complete.")
-                     self.output_buffer.append(dMemResponse(
-                         type = 'FLUSH_COMPLETE',
-                         flushed  = True
-                     ))
-                         
-                     self.flushing = False
+                # Create the response
+                response = dMemResponse(
+                     type = 'FLUSH_COMPLETE',
+                     flushed  = True,
+                     uuid = 0,
+                     address = 0,
+                     req = None
+                )
+                 
+                self.output_buffer.append(response)
+                self.flushing = False # Stop checking
 
         # --- 4. Handle Hit Completion & New Inputs ---
         

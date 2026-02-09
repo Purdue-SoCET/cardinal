@@ -68,7 +68,7 @@ def make_test_pipeline():
                              policy = "rr"
                             )
     
-    lsu = Ldst_Fu(MSHR_BUFFER_LEN, 4)
+    lsu = Ldst_Fu(wb_buffer_size = 4)
     lsu.connect_interfaces(dcache_if=lsu_dcache_IF, wb_if=lsu_wb_IF, sched_if=issue_lsu_IF)
     
     for latch in [dcache_mem_req_IF, mem_dcache_req_IF, lsu_dcache_IF, ic_req, ic_resp, issue_lsu_IF, lsu_wb_IF]:
@@ -386,12 +386,67 @@ def test_sb():
         print_banks()
 
 
-
+# TEST PREDICATE
+def test_pred():
+    with open("7.test_pred", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
+        pred = [Bits(bin='0b0') for i in range(32)]
+        pred[0] = Bits(bin='0b1')
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], pred = pred)
+        issue_lsu_IF.push(instr)
+        run_sim(0, 7)
+        
 
 # TEST BACKPRESSURE
+def test_backpressure():
+     with open("8.back_pressure", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
 
+        def gen_addrs(start):
+            return [Bits(int=addr, length=32) for addr in range(start, start + (32*32), 32)]
+                                                                
+        # Instr. 1
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x0))
+        issue_lsu_IF.push(instr)
+        run_sim(0, 1)
+
+        # Instr. 2
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x20))
+        issue_lsu_IF.push(instr)
+        run_sim(1, 1)
+
+        # Instr. 3
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x40))
+        issue_lsu_IF.push(instr)
+        run_sim(2, 1)
+
+        # Instr. 4
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x60))
+        issue_lsu_IF.push(instr)
+        run_sim(3, 4)
+
+        # Instr. 5: Causes backpressure
+        current_cycle = 7
+        while (not issue_lsu_IF.ready_for_push()):
+            run_sim(current_cycle, 1)
+            current_cycle += 1
+            pass
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x80))
+        issue_lsu_IF.push(instr)
+        run_sim(current_cycle, 670)
+        print_banks()
 
 # TEST HALT
+def test_halt():
+    with open("9.back_halt", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b1111111'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
+        issue_lsu_IF.push(instr)
+        run_sim(0, 46)
+        print_banks()
 
 
 if __name__ == "__main__":
@@ -408,3 +463,6 @@ if __name__ == "__main__":
     test_sw()
     test_sh()
     test_sb()
+    test_pred()
+    test_backpressure()
+    test_halt()

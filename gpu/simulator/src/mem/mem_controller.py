@@ -77,7 +77,8 @@ class MemController(Stage):
         if isinstance(payload, list):
             bb = bytearray()
             for w in payload:
-                bb.extend(int(w).to_bytes(4, "little", signed=False))
+                masked_w = int(w) & 0xFFFFFFFF
+                bb.extend(masked_w.to_bytes(4, "little", signed=False))
             return Bits(bytes=bytes(bb)), len(bb)
 
         raise TypeError(f"Unsupported write payload type: {type(payload)}")

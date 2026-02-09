@@ -29,6 +29,8 @@ class Ldst_Fu:
 
     def tick(self, issue_if) -> Optional[Instruction]:
         return_instr = None
+        if hasattr(issue_if, 'valid'):
+            print(f"[DEBUG] Cycle Start: QueueLen={len(self.ldst_q)}, LatchValid={issue_if.valid}")
 
         if issue_if and len(self.ldst_q) < self.ldst_q_size:
             instr = issue_if.pop()
@@ -171,6 +173,8 @@ class pending_mem():
     def parseHit(self, payload):
         if self.halt == True:
             self.finished_idx = [1]
+            return
+        
         for i in range(32):
             if self.addrs[i] == payload.address:
                 self.finished_idx[i] = 1
