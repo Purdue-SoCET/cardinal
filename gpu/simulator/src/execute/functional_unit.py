@@ -5,6 +5,27 @@ from typing import List
 from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import Instruction
+from simulator.mem.ld_st import Ldst_Fu
+
+@dataclass
+class MemBranchUnitConfig:
+    ldst_count: int
+    branch_count: int
+
+    branch_latency: int
+
+    ldst_buffer_size: int
+    ldst_queue_size: int
+
+    @classmethod
+    def get_default_config(cls) -> MemBranchUnitConfig:
+        return cls(
+            ldst_count=1,
+            branch_count=1,
+            branch_latency=1,
+            ldst_buffer_size=1,
+            ldst_queue_size=4
+        )
 
 @dataclass
 class IntUnitConfig:
@@ -67,14 +88,14 @@ class SpecialUnitConfig:
             inv_sqrt_count=1,
             trig_latency=16,
             inv_sqrt_latency=12
-        )
+        )    
     
-class ArithmeticFunctionalUnit(ABC):
+class FunctionalUnit(ABC):
     def __init__(self, subunits: list[FunctionalSubUnit], num: int):
         self.name = f"{self.__class__.__name__}_{num}"
 
         # Convert list of subunits to dict using the names of the subunits as keys
-        self.subunits = {subunit.name: subunit for subunit in subunits}        
+        self.subunits = {subunit.name: subunit for subunit in subunits}    
 
     def compute(self):
         for subunit in self.subunits.values():
@@ -96,7 +117,14 @@ class ArithmeticFunctionalUnit(ABC):
 
         return out_data
 
-class IntUnit(ArithmeticFunctionalUnit):
+class MemBranchUnit(FunctionalUnit):
+    def __init__(self, config: MemBranchUnitConfig, num: int):
+        subunits = []
+        for i in range(config.ldst_count):
+            subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
+        super().__init__(subunits=subunits, num=num)
+    
+class IntUnit(FunctionalUnit):
     def __init__(self, config: IntUnitConfig, num: int):
         subunits = []
         for i in range(config.alu_count):
@@ -107,7 +135,7 @@ class IntUnit(ArithmeticFunctionalUnit):
             subunits.append(Div(latency=config.div_latency, type_=int, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
 
-class FpUnit(ArithmeticFunctionalUnit):
+class FpUnit(FunctionalUnit):
     def __init__(self, config: FpUnitConfig, num: int):
         subunits = []
         for i in range(config.add_sub_count):
@@ -120,7 +148,7 @@ class FpUnit(ArithmeticFunctionalUnit):
             subunits.append(Sqrt(latency=config.sqrt_latency, type_=float, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
 
-class SpecialUnit(ArithmeticFunctionalUnit):
+class SpecialUnit(FunctionalUnit):
     def __init__(self, config: SpecialUnitConfig, num: int):
         subunits = []
         for i in range(config.trig_count):

@@ -14,7 +14,6 @@ class Instruction:
     rd: Bits
     opcode: Op
     predicate: list[Bits] # list of Bits instances, each of length 1
-    num_operands: int
     issued_cycle: Optional[int] = None
     stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
     stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed
@@ -24,6 +23,10 @@ class Instruction:
     rdat1: list[Bits] = None
     rdat2: list[Bits] = None
     wdat: list[Bits] = None
+    imm: Optional[Bits] = None
+    num_operands: Optional[int] = None
+
+
 
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)

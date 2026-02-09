@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from simulator.latch_forward_stage import Stage, LatchIF, Instruction
-from simulator.execute.arithmetic_functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit
+from simulator.execute.functional_unit import MemBranchUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchUnit
 from typing import Dict, Optional
 
 
@@ -11,10 +11,12 @@ class FunctionalUnitConfig:
     int_unit_count: int
     fp_unit_count: int
     special_unit_count: int
+    membranch_unit_count: int
 
     int_config: IntUnitConfig
     fp_config: FpUnitConfig
     special_config: SpecialUnitConfig
+    membranch_config: MemBranchUnitConfig
 
     @classmethod
     def get_default_config(cls) -> FunctionalUnitConfig:
@@ -22,21 +24,24 @@ class FunctionalUnitConfig:
             int_unit_count=1,
             fp_unit_count=1,
             special_unit_count=1,
+            membranch_unit_count=1,
             int_config=IntUnitConfig.get_default_config(),
             fp_config=FpUnitConfig.get_default_config(),
-            special_config=SpecialUnitConfig.get_default_config()
+            special_config=SpecialUnitConfig.get_default_config(),
+            membranch_config=MemBranchUnitConfig.get_default_config()
         )
     
     @classmethod
-    def get_config(cls, int_config: IntUnitConfig, fp_config: FpUnitConfig, special_config: SpecialUnitConfig,
-                   int_unit_count: int =1, fp_unit_count: int =1, special_unit_count: int =1) -> FunctionalUnitConfig:
+    def get_config(cls, int_config: IntUnitConfig, fp_config: FpUnitConfig, special_config: SpecialUnitConfig, membranch_config: MemBranchUnitConfig, int_unit_count: int =1, fp_unit_count: int =1, special_unit_count: int =1, membranch_unit_count: int =1) -> FunctionalUnitConfig:
         return cls(
             int_unit_count=int_unit_count,
             fp_unit_count=fp_unit_count,
             special_unit_count=special_unit_count,
+            membranch_unit_count=membranch_unit_count,
             int_config=int_config,
             fp_config=fp_config,
-            special_config=special_config
+            special_config=special_config,
+            membranch_config=membranch_config
         )
     
     def generate_fust_dict(self) -> Dict[str, bool]:
@@ -52,6 +57,10 @@ class FunctionalUnitConfig:
         for i in range(self.special_unit_count):
             special_unit = SpecialUnit(config=self.special_config, num=i)
             for fsu_name in special_unit.subunits.keys():
+                fust[fsu_name] = True
+        for i in range(self.membranch_unit_count):
+            membranch_unit = MemBranchUnit(config=self.membranch_config, num=i)
+            for fsu_name in membranch_unit.subunits.keys():
                 fust[fsu_name] = True
                 
         return fust
@@ -77,6 +86,8 @@ class ExecuteStage(Stage):
             functional_units_list.append(FpUnit(config=config.fp_config, num=i))
         for i in range(config.special_unit_count):
             functional_units_list.append(SpecialUnit(config=config.special_config, num=i))
+        for i in range(config.membranch_unit_count):
+            functional_units_list.append(MemBranchUnit(config=config.membranch_config, num=i))
 
         self.functional_units = {fu.name: fu for fu in functional_units_list}
 
@@ -87,6 +98,7 @@ class ExecuteStage(Stage):
             for fsu_name, fsu in fu.subunits.items():
                 self.ahead_latches[fsu.ex_wb_interface.name] = fsu.ex_wb_interface
                 self.fsu_perf_counts[fsu.name] = fsu.perf_count
+              
 
     def compute(self) -> None:
         # Dispatch to functional units
