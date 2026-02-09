@@ -11,12 +11,7 @@ START:
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; b = 0x80000000 (unsigned large, signed negative)
     lui   x9, 0x80, 2                   ; x9 = b
 
@@ -31,5 +26,4 @@ COMPUTE:
     ; store result
     sw    x10, x12, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt

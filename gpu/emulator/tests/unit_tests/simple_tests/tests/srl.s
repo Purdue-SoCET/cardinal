@@ -1,24 +1,19 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
 
     ; load stride and base
     lli   x6, 4                         ; stride = 4 bytes/thread
-    lli   x7, 0x10000000                ; heap base address
+    lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; rs1 = 0x80000000 (MSB set)
-    lli   x8, 0x80000000, 2             ; x8 = value to shift
+    lui   x8, 0x80, 2                   ; x8 = value to shift
 
     ; srl: y = 0x80000000 >> TID (logical)
     srl   x10, x8, x3, 2                ; x10 = result
@@ -30,5 +25,4 @@ COMPUTE:
     ; store result
     sw    x10, x12, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt
