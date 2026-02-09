@@ -11,11 +11,23 @@ class FunctionalUnitPipeline(CompactQueue):
         super().__init__(length=latency, type_=Instruction)
 
 class FunctionalSubUnit(ABC):
-    def __init__(self, latency: int, num: int, type_: type):
-        self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
-        self.latency = latency
+    def __init__(self, num: int):
+        self.name = f"{self.__class__.__name__}_{num}"
         self.ready_out = True
         self.perf_count = PerfCount(name=self.name)
+
+        # the way stages are connected in the SM class, we need (latency - 1) latches
+        self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
+    
+    @abstractmethod
+    def tick(self):
+        pass
+
+class ArithmeticSubUnit(FunctionalSubUnit):
+    def __init__(self, latency: int, num: int, type_: type):
+        super().__init__(num=num)
+        self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
+        self.latency = latency
 
         if type_ not in [int, float]:
             raise ValueError(f"Unsupported type '{type_}' for FunctionalSubUnit. Must be {int} or {float}.")
@@ -24,7 +36,6 @@ class FunctionalSubUnit(ABC):
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
         self.pipeline = FunctionalUnitPipeline(latency=max(1, latency-1))
-        self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
     
     @abstractmethod
     def compute(self):
@@ -78,7 +89,7 @@ class FunctionalSubUnit(ABC):
         
         return out_data # return data to the Exectute stage so that all results can be collected and sent to WB stage together
 
-class Alu(FunctionalSubUnit):
+class Alu(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         int: [
             R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, 
@@ -172,7 +183,7 @@ class Alu(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class AddSub(FunctionalSubUnit):
+class AddSub(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         float: [R_Op.ADDF, R_Op.SUBF],
     }
@@ -223,7 +234,7 @@ class AddSub(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class Mul(FunctionalSubUnit):
+class Mul(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         int: [R_Op.MUL],
         float: [R_Op.MULF],
@@ -277,7 +288,7 @@ class Mul(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class Div(FunctionalSubUnit):
+class Div(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         int: [R_Op.DIV],
         float: [R_Op.DIVF],
@@ -339,7 +350,7 @@ class Div(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class Sqrt(FunctionalSubUnit):
+class Sqrt(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         float: [],
     }
@@ -376,7 +387,7 @@ class Sqrt(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class Trig(FunctionalSubUnit):
+class Trig(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         float: [F_Op.SIN, F_Op.COS],
     }
@@ -466,7 +477,7 @@ class Trig(FunctionalSubUnit):
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
-class InvSqrt(FunctionalSubUnit):
+class InvSqrt(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         float: [F_Op.ISQRT],
     }
