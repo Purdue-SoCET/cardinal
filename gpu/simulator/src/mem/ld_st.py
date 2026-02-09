@@ -11,7 +11,7 @@ from simulator.src.execute.functional_sub_unit import FunctionalSubUnit
 logger = logging.getLogger(__name__)
 
 class Ldst_Fu(FunctionalSubUnit):
-    def __init__(self, ldst_q_size=4, wb_buffer_size=1):
+    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
         self.wb_buffer_size = wb_buffer_size
@@ -20,10 +20,12 @@ class Ldst_Fu(FunctionalSubUnit):
 
         self.outstanding = False #Whether we have an outstanding dcache request
 
-    def connect_interfaces(self, dcache_if: LatchIF, wb_if: LatchIF, sched_if = None):
+        super().__init__(num)
+
+    def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
         self.dcache_if: LatchIF = dcache_if
         # self.issue_if: LatchIF = issue_if
-        self.wb_if: LatchIF = wb_if
+        # self.wb_if: LatchIF = wb_if replaced with self.ex_wb_interface
         self.sched_if = sched_if
     
     # def forward_miss(self, instr: Instruction):
@@ -50,9 +52,8 @@ class Ldst_Fu(FunctionalSubUnit):
             self.ready_out = True
 
         #send instr to wb if ready
-        if self.wb_if.ready_for_push() and len(self.wb_buffer) > 0:
+        if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
             return_instr = self.wb_buffer.pop(0)
-            # self.wb_if.push(return_instr) Removed for FU integration
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
 
