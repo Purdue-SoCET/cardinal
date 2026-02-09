@@ -3,10 +3,10 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from simulator.src.base_class import *
-from common.custom_enums_multi import I_Op, S_Op, H_Op
-from simulator.src.base_class import LatchIF
-from simulator.src.execute.functional_sub_unit import FunctionalSubUnit
+from simulator.base_class import *
+from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
+from simulator.base_class import LatchIF
+from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,8 @@ class Ldst_Fu(FunctionalSubUnit):
         self.outstanding = False #Whether we have an outstanding dcache request
 
         super().__init__(num)
+
+        self.connect_interfaces(dcache_if=LatchIF(name=f"MemBranchUnit{num}_Dcache_Latch"), sched_if=LatchIF(name=f"MemBranchUnit{num}_Sched_Latch"))
 
     def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
         self.dcache_if: LatchIF = dcache_if

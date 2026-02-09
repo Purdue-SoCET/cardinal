@@ -24,6 +24,7 @@ class FunctionalUnitConfig:
             int_unit_count=1,
             fp_unit_count=1,
             special_unit_count=1,
+            membranch_unit_count=1,
             int_config=IntUnitConfig.get_default_config(),
             fp_config=FpUnitConfig.get_default_config(),
             special_config=SpecialUnitConfig.get_default_config(),
@@ -31,11 +32,12 @@ class FunctionalUnitConfig:
         )
     
     @classmethod
-    def get_config(cls, int_config: IntUnitConfig, fp_config: FpUnitConfig, special_config: SpecialUnitConfig, membranch_config: MemBranchUnitConfig, int_unit_count: int =1, fp_unit_count: int =1, special_unit_count: int =1) -> FunctionalUnitConfig:
+    def get_config(cls, int_config: IntUnitConfig, fp_config: FpUnitConfig, special_config: SpecialUnitConfig, membranch_config: MemBranchUnitConfig, int_unit_count: int =1, fp_unit_count: int =1, special_unit_count: int =1, membranch_unit_count: int =1) -> FunctionalUnitConfig:
         return cls(
             int_unit_count=int_unit_count,
             fp_unit_count=fp_unit_count,
             special_unit_count=special_unit_count,
+            membranch_unit_count=membranch_unit_count,
             int_config=int_config,
             fp_config=fp_config,
             special_config=special_config,

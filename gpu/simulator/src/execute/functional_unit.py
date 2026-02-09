@@ -23,7 +23,7 @@ class MemBranchUnitConfig:
             ldst_count=1,
             branch_count=1,
             branch_latency=1,
-            ldst_bufer_size=1,
+            ldst_buffer_size=1,
             ldst_queue_size=4
         )
 
@@ -121,7 +121,7 @@ class MemBranchUnit(FunctionalUnit):
     def __init__(self, config: MemBranchUnitConfig, num: int):
         subunits = []
         for i in range(config.ldst_count):
-            subunits.append(Ldst_Fu(ldst_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
+            subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
     
 class IntUnit(FunctionalUnit):
