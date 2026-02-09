@@ -3,12 +3,14 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from simulator.base_class import *
-from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
+from simulator.src.base_class import *
+from common.custom_enums_multi import I_Op, S_Op, H_Op
+from simulator.src.base_class import LatchIF
+from simulator.src.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
 
-class Ldst_Fu:
+class Ldst_Fu(FunctionalSubUnit):
     def __init__(self, ldst_q_size=4, wb_buffer_size=1):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
@@ -27,9 +29,9 @@ class Ldst_Fu:
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
 
-    def tick(self, issue_if) -> Optional[Instruction]:
+    def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
         return_instr = None
-        if hasattr(issue_if, 'valid'):
+        if issue_if and hasattr(issue_if, 'valid'):
             print(f"[DEBUG] Cycle Start: QueueLen={len(self.ldst_q)}, LatchValid={issue_if.valid}")
 
         if issue_if and len(self.ldst_q) < self.ldst_q_size:
@@ -41,14 +43,16 @@ class Ldst_Fu:
         #apply backpressure if ldst_q full
         if len(self.ldst_q) == self.ldst_q_size:
             print(f"[LSU]: The queue is full")
-            issue_if.forward_if.set_wait(True)
+            # issue_if.forward_if.set_wait(True)
+            self.ready_out = False
         else:
-            issue_if.forward_if.set_wait(False)
+            # issue_if.forward_if.set_wait(False)
+            self.ready_out = True
 
         #send instr to wb if ready
         if self.wb_if.ready_for_push() and len(self.wb_buffer) > 0:
             return_instr = self.wb_buffer.pop(0)
-            self.wb_if.push(return_instr)
+            # self.wb_if.push(return_instr) Removed for FU integration
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
 
