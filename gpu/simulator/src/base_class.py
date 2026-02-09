@@ -82,10 +82,15 @@ class dCacheRequest:
     """Wraps a pipeline instruction for the cache."""
     addr_val: int       # The actual memory request
     rw_mode: str        # 'read' or 'write'
-    size: str # 'word' 'half' 'btye'
+    size: str # 'word' 'half' 'byte'
     store_value: Optional[int] = None    # The values that want to be written to cache
     halt: bool = False
     
+    def __repr__(self):
+        # We manually format the address as hex using 0x{...:X}
+        return (f"dCacheRequest(addr_val=0x{self.addr_val:X}, "
+                f"rw_mode='{self.rw_mode}', size='{self.size}', "
+                f"store_value={self.store_value}, halt={self.halt})")
 
     def __post_init__(self):
         self.addr = Addr(self.addr_val) # Create an Addr object and assign it to self.addr
@@ -103,6 +108,25 @@ class dMemResponse: # D$ -> LDST
     stall: bool = False
     uuid: Optional[int] = None
     flushed: bool = False
+
+    def __repr__(self):
+        # Handle Address: Only format as Hex if it exists
+        if self.address is not None:
+            addr_str = f"0x{self.address:X}"
+        else:
+            addr_str = "None"
+
+        # Handle Data: Clean up formatting
+        data_str = str(self.data)
+        if self.data is not None and isinstance(self.data, int):
+             data_str = hex(self.data)
+
+        return (f"dMemResponse(type='{self.type}', "
+                f"req={self.req}, "
+                f"address={addr_str}, "  # Uses the safe string variable
+                f"uuid={self.uuid}, "
+                f"miss={self.miss}, hit={self.hit}, stall={self.stall}, "
+                f"flushed={self.flushed})")
 
 @dataclass
 class MemRequest:
