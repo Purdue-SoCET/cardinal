@@ -5,7 +5,7 @@ from bitstring import Bits
 
 from simulator.base_class import *
 from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
-from simulator.base_class import LatchIF
+from simulator.base_class import LatchIF, ForwardingIF
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
@@ -21,10 +21,11 @@ class Ldst_Fu(FunctionalSubUnit):
         self.outstanding = False #Whether we have an outstanding dcache request
 
         super().__init__(num)
+
+        #Manually instantiate interfaces while doing integration
         self.dcache_if = LatchIF()
         self.dcache_if.forward_if = ForwardingIF()
-
-        self.connect_interfaces(dcache_if=LatchIF(name=f"MemBranchUnit{num}_Dcache_Latch"), sched_if=LatchIF(name=f"MemBranchUnit{num}_Sched_Latch"))
+        self.sched_if = ForwardingIF()
 
     def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
         self.dcache_if: LatchIF = dcache_if
