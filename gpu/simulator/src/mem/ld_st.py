@@ -21,6 +21,8 @@ class Ldst_Fu(FunctionalSubUnit):
         self.outstanding = False #Whether we have an outstanding dcache request
 
         super().__init__(num)
+        self.dcache_if = LatchIF()
+        self.dcache_if.forward_if = ForwardingIF()
 
     def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
         self.dcache_if: LatchIF = dcache_if
