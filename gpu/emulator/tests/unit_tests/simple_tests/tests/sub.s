@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; load initial values
     lli   x4, 31                        ; change this to alter b in (y = b - TID)
@@ -14,12 +14,7 @@ START:
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred              ; p2 = (x3 < x5) == (TID < MAX_THREADS)
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; compute op (y = a - b): x7 = x4 - TID
     sub   x7, x4, x3, 2
 
@@ -30,5 +25,4 @@ COMPUTE:
     ; store result
     sw    x7, x9, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt

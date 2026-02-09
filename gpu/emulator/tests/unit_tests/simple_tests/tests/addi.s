@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
@@ -11,12 +11,7 @@ START:
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; -----------------------------
     ; Test 1: addi with +5
     ; y_pos = TID + 5
@@ -44,5 +39,4 @@ COMPUTE:
     ; store y_neg
     sw    x11, x14, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt

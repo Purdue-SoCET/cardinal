@@ -1,6 +1,6 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                        ; x3 = TID
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
@@ -11,12 +11,7 @@ START:
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred              ; p2 = (TID < MAX_THREADS)
-    jal   x16, COMPUTE, pred
 
-STOP:
-    halt
-
-COMPUTE:
     ; build a signed value: a = TID - 16
     ; use two's complement for -16: 0xFFFFFFF0
     lli   x8, 0xFF0, 2                  ; x8 = -16
@@ -39,5 +34,4 @@ COMPUTE:
     ; store result (one word per thread)
     sw    x11, x13, 0, 2
 
-    ; finish
-    jal   x16, STOP, pred
+    halt
