@@ -260,10 +260,12 @@ def print_banks():
                         print(f"    [Way {way_id}] V:1 {dirty_str} Tag: {tag_hex:<6} (Addr: {addr_hex})")
 
                         for i in range(0, BLOCK_SIZE_WORDS, 4):
-                            w0 = f"0x{frame.block[i]:08X}"
-                            w1 = f"0x{frame.block[i+1]:08X}"
-                            w2 = f"0x{frame.block[i+2]:08X}"
-                            w3 = f"0x{frame.block[i+3]:08X}"
+                            # FIX: Add '& 0xFFFFFFFF' to force unsigned 32-bit representation
+                            w0 = f"0x{(frame.block[i] & 0xFFFFFFFF):08X}"
+                            w1 = f"0x{(frame.block[i+1] & 0xFFFFFFFF):08X}"
+                            w2 = f"0x{(frame.block[i+2] & 0xFFFFFFFF):08X}"
+                            w3 = f"0x{(frame.block[i+3] & 0xFFFFFFFF):08X}"
+                            
                             print(f"        Block[{i:02d}:{i+3:02d}]: {w0} {w1} {w2} {w3}")
 
         if not found_valid_line:
@@ -310,10 +312,9 @@ class TestLoadStoreUnit():
                             warp_group_id=0,
                             rs1=Bits(int=0,length=32),
                             rs2=Bits(int=0,length=32),
-                            imm=Bits(int=0,length=32),
                             rd=rd,
                             wdat=wdat,
-                            opcode=Bits(bin='0b0110000'),
+                            opcode=opcode,
                             rdat1 = rdat1,
                             rdat2 = rdat2,
                             predicate=pred
@@ -353,18 +354,44 @@ def test_lb():
         run_sim(0, 162)
 
 # TEST STORE WORD
+def test_sw():
+    with open("4.sw", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
+        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xDEAD0000, length=32) for _ in range(32)])
+        issue_lsu_IF.push(instr)
+        run_sim(0, 162)
+        print_banks()
 
 
 # TEST STORE HALF-WORD
+def test_sh():
+    with open("5.store_half", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
+        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110001'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBEEF, length=32) for _ in range(32)])
+        issue_lsu_IF.push(instr)
+        run_sim(0, 162)
+        print_banks()
 
 
 # TEST STORE BYTE
+def test_sb():
+    with open("6.sb", "w") as f:
+        sys.stdout = f
+        test = TestLoadStoreUnit()
+        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110010'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBE, length=32) for _ in range(32)])
+        issue_lsu_IF.push(instr)
+        run_sim(0, 162)
+        print_banks()
 
 
-# TEST PREDICATE
 
 
 # TEST BACKPRESSURE
+
+
+# TEST HALT
 
 
 if __name__ == "__main__":
@@ -378,3 +405,6 @@ if __name__ == "__main__":
     test_lw()
     test_lh()
     test_lb()
+    test_sw()
+    test_sh()
+    test_sb()

@@ -140,7 +140,10 @@ class pending_mem():
         for i in range(32):
             self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
             if self.write and self.instr.predicate[i].uint == 1:
-                self.addrs[i] = self.instr.rdat1[i].int + self.instr.imm.int
+                offset = 0
+                if hasattr(self.instr, 'imm') and self.instr.imm is not None:
+                    offset = self.instr.imm.int
+                self.addrs[i] = self.instr.rdat1[i].int + offset
             elif not self.write and self.instr.predicate[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + self.instr.rdat2[i].int
 
