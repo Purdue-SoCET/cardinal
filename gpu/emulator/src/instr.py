@@ -345,13 +345,13 @@ class I_Instr_2(Instr):
             # Memory Read Operations
             case I_Op_2.LW:
                 addr = rdat1.int + imm_val
-                result = (state.mem.read(addr, 4)).int  # Read 32 bits (4 bytes)
+                result = (state.memory.read(addr, 4)).int  # Read 32 bits (4 bytes)
             case I_Op_2.LH:
                 addr = rdat1.int + imm_val
-                result = (state.mem.read(addr, 2)).int  # Read 16 bits (2 bytes)
+                result = (state.memory.read(addr, 2)).int  # Read 16 bits (2 bytes)
             case I_Op_2.LB:
                 addr = rdat1.int + imm_val
-                result = (state.mem.read(addr, 1)).int  # Read 8 bits (1 byte)
+                result = (state.memory.read(addr, 1)).int  # Read 8 bits (1 byte)
   
             # Jump and Link Register
             case I_Op_2.JALR:
