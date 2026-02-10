@@ -17,6 +17,9 @@ class RegFile:
         # TODO: Don't fix this behavior, as not needed for all reg files
         if(rd.int == 0):
             return
+    
+        # Print write as hex
+        print(f"\tr{rd.uint} <- 0x{val.uint:x}")
         self.arr[rd.uint] = val
 
 
