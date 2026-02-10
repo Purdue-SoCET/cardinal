@@ -6,10 +6,11 @@ from enum import Enum
 from pathlib import Path
 gpu_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_root))
+print("here", gpu_root)
 from simulator.base_class import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
 
 class SchedulerStage(Stage):
-    def __init__(self, *args, start_pc, warp_count: int = 32, warp_size: int = 32, **kwargs):
+    def __init__(self, *args, start_pc, warp_count: int = 32, warp_size: int = 32, policy: str = "RR", **kwargs):
         super().__init__(*args, **kwargs)
 
         # static shit
@@ -17,9 +18,13 @@ class SchedulerStage(Stage):
         self.num_groups: int = (warp_count + 1) // 2
         self.warp_size: int = warp_size
         self.at_barrier: int = 0
+        self.policy: str = policy
 
         # warp table
         self.warp_table: List[WarpGroup] = [WarpGroup(pc=start_pc, group_id=id) for id in range(self.num_groups)]
+
+        # oldest queue
+        self.oldest: List[WarpGroup] = []
 
         # scheduler bookkeeping
         self.rr_index: int = 0
@@ -29,9 +34,8 @@ class SchedulerStage(Stage):
         # debug
         self.issued_warp_last_cycle: Optional[int] = None
 
-        # global stop fetching instructions from the cache
-        self.stop_fetching = False
         # could add perf counters
+        self.stop_fetching = False
     
     # figuring out which warps can/cant issue
     def collision(self):
@@ -48,7 +52,7 @@ class SchedulerStage(Stage):
         print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
         print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
         print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
-    
+        
         if (icache_ctrl is None and decode_ctrl is None and issue_ctrl is None and branch_ctrl is None and writeback_ctrl is None):
             print("[SchedulerStage] No control signals received...skipping collision detection.")
             return
@@ -62,17 +66,22 @@ class SchedulerStage(Stage):
             # return
         else:
             self.stop_fetching = False
+        
+        
+        if (decode_ctrl is None and issue_ctrl is None and branch_ctrl is None and writeback_ctrl is None):
+            print("[SchedulerStage] No control signals received, bubble.")
+            return
 
          # if im getting my odd warp EOP out of my decode
+
         if decode_ctrl is not None:
-            print(decode_ctrl)
             if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
                 self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
                 self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
                 self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
             
+            # DEPRECIATED
             # if im getting my odd warp barrier out of my decode
-            #IGNORING THIS FOR NOW AS WE ARE NOT EVALUATING FOR BARRIER SUPPORT THUS FAR.
             # elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
             #     self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
             #     self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
@@ -126,7 +135,6 @@ class SchedulerStage(Stage):
             print(f"[Scheduler] STALLED by ahead latch")
             return False 
         
-
     def dummy_tbs_pop(self):
         if not self.behind_latch.valid:
             return None
@@ -134,7 +142,7 @@ class SchedulerStage(Stage):
         print(f"[{self.name}] Popped from TBS latch: {req}")
         return req
 
-   # RETURN INSTRUCTION OBJECT ALWAYS
+    # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
         # initialize instruction class
         instr = Instruction(None, None, None, None, None, None, None, None, None)
@@ -150,12 +158,10 @@ class SchedulerStage(Stage):
                 # if the last issue for the group was odd DONT INCREATE RR_INDEX
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
-                    return "dummy even instruction"
                     
-                    instr.pc = warp_group.pc
-                    instr.warp_id = warp_group.group_id * 2
-                    instr.warp_group_id = warp_group.group_id
-                    return instr
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
+                    self.push_instruction(instr)
+                    return instr 
                 
                     # DEPRECIATED
                     # return warp_group.group_id, warp_group.group_id * 2, warp_group.pc # EVEN WARP INSTRUCTION
@@ -166,31 +172,25 @@ class SchedulerStage(Stage):
                     current_pc = warp_group.pc
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
-                    return "dummy odd instruction" # ODD WARP INSTRUCTION
 
-                    instr.pc = current_pc
-                    instr.warp_id = warp_group.group_id * 2
-                    instr.warp_group_id = warp_group.group_id
-                    return instr
-
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), current_pc)
+                    self.push_instruction(instr)
+                    return instr 
+                
             else:
                 self.rr_index = (self.rr_index + 1) & self.num_groups
 
         # nothing can fetch here
-        return # NONE
         return instr # NONE
-    
-        # DEPRECIATED
-        # return 10000, 10000, 10000
+
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def greedy_oldest(self):
         return
-           
+    
     # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
     def compute(self):
         # waiting for ihit
-
         #check the behind latch if its attached and whether it has something in it
         if self.behind_latch is not None:
             tbs_req = self.behind_latch.pop()
@@ -208,23 +208,16 @@ class SchedulerStage(Stage):
                 # same issue here with nontype and ints
                 inst =  self.make_instruction(1000,1000,1000)
                 return self.push_instruction(inst)
-                
-        # ADDING LATCH FROM TBS CHECK BEFORE FWD IF CHECKS
 
         self.collision()
 
         if self.stop_fetching == False:
-            # round robin scheduling loop
-            if self.policy == "RR":
-                instr = self.round_robin()
             match self.policy:
                 case "RR":
-                    instr = self.round_robin()
+                    inst = self.round_robin()
                 case "GTO":
-                    instr = self.greedy_oldest()
-        
-        # every warp is unable to issue (syntax with type of thing returned --> needs to go back to none)
-        inst = self.make_instruction(1000,1000,1000)
-        # self.push_instruction(inst)
-        return inst
-    
+                    inst = self.greedy_oldest()
+
+        dummy_inst = self.make_instruction(1000,1000,1000)
+        self.push_instruction(dummy_inst)
+        return dummy_inst

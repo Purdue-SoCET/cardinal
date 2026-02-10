@@ -143,8 +143,7 @@ class MSHREntry:
 class DecodeType:
     halt: int = 0
     EOP: int = 1
-    MOP: int = 2
-    Barrier: int = 3
+    EOS: int = 2
 
 ###TEST CODE BELOW###
 @dataclass
@@ -167,6 +166,8 @@ class MemRequest:
     uuid: int
     warp_id: int
     pc: int 
+    data: int
+    rw_mode: str
     remaining: int = 0
 
 @dataclass
@@ -191,53 +192,6 @@ class WarpGroup:
     in_flight: int = 0
     state: WarpState = WarpState.READY
 
-####### DEPRECIATED INSTRUCTION CLASS #######
-# @dataclass
-# class Instruction:
-#     # ----- required (no defaults) -----
-#     iid: Optional[int] = None
-#     pc: Bits = None
-#     intended_FSU: Optional[str] =None  # <-- no default here
-#     warp: Optional[int] = None
-#     warpGroup: Optional[int] = None
-
-#     opcode: Op = None
-#     rs1: Bits = None
-#     rs2: Bits = None
-#     rd: Bits = None
-
-#     # ----- optional / with defaults (must come after ALL non-defaults) -----
-#     pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
-#     rdat1: list[Bits] = field(default_factory=list)
-#     rdat2: list[Bits] = field(default_factory=list)
-#     wdat: list[Bits] = field(default_factory=list)
-
-#     type: Optional[Any] = None
-#     packet: Optional[Bits] = None
-#     issued_cycle: Optional[int] = None
-#     stage_entry: Dict[str, int] = field(default_factory=dict)
-#     stage_exit:  Dict[str, int] = field(default_factory=dict)
-#     fu_entries:  List[Dict]     = field(default_factory=list)
-#     wb_cycle: Optional[int] = None
-
-#     def mark_stage_enter(self, stage: str, cycle: int):
-#         self.stage_entry.setdefault(stage, cycle)
-
-#     def mark_stage_exit(self, stage: str, cycle: int):
-#         self.stage_exit[stage] = cycle
-
-#     def mark_fu_enter(self, fu: str, cycle: int):
-#         self.fu_entries.append({"fu": fu, "enter": cycle, "exit": None})
-
-#     def mark_fu_exit(self, fu: str, cycle: int):
-#         for e in reversed(self.fu_entries):
-#             if e["fu"] == fu and e["exit"] is None:
-#                 e["exit"] = cycle
-#                 return
-
-#     def mark_writeback(self, cycle: int):
-#         self.wb_cycle = cycle
-
 @dataclass
 class Instruction:
     # ----- required (no defaults) -----
@@ -246,12 +200,12 @@ class Instruction:
     warp_group_id: Optional[int]
 
     # ----- fields populated by decode ----
-    rs1: Optional[Bits]
-    rs2: Optional[Bits]
-    rd: Optional[Bits]
-    opcode: Optional[Op]
-    imm: Optional[Bits] 
-    intended_FU: Optional[str] 
+    rs1: Optional[Bits] = None
+    rs2: Optional[Bits] = None
+    rd: Optional[Bits] = None
+    opcode: Optional[Op] = None
+    imm: Optional[Bits] = None
+    intended_FU: Optional[str] = None
 
     # this is for instruction data memory responses, populated by the MemController
     packet: Optional[Bits] = None

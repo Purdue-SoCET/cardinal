@@ -101,7 +101,14 @@ class MemController(Stage):
     # compatibility fix for naming conventions used across tests
     def _normalize_req(self, req: dict, src: str) -> dict:
         if not isinstance(req, dict):
+            print(f"[MemController] Got the following request: {req}")
+            # pass through if None
+            if req is None:
+                print("[MemController] Pass through None type.")
+                return
+
             raise TypeError(f"[{self.name}] expected dict req, got {type(req)}")
+
 
         req = dict(req)  # copy
         req["src"] = src
@@ -148,6 +155,7 @@ class MemController(Stage):
             raw = self.ic_req_latch.pop()
             return self._normalize_req(raw, "icache")
         raw = self.dc_req_latch.pop()
+
         return self._normalize_req(raw, "dcache")
 
     def _try_start_one_request(self) -> None:
@@ -164,9 +172,11 @@ class MemController(Stage):
             return
 
         inst = req_info.get("inst", None) or self._build_min_inst(req_info)
-
+        
         pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
         warp_id = req_info.get("warp_id", getattr(inst, "warp", 0))
+
+        print(f"[MemController] Starting MemReq", req_info)
 
         mem_req = MemRequest(
             addr=int(req_info["addr"]),
@@ -216,30 +226,12 @@ class MemController(Stage):
             if req.rw_mode == "write":
                 data_bits, nbytes = self._payload_to_bits(req.data, req.size)
                 self.mem_backend.write(req.addr, data_bits, nbytes)
-                resp = {
-                    "src": src,
-                    "rw_mode": "write",
-                    "status": "WRITE_DONE",
-                    "addr": req.addr,
-                    "size": req.size,
-                    "uuid": req.uuid,
-                    "warp": req.warp_id,
-                    "pc": req.pc,
-                    "inst": inst,
-                }
+                # should try to return an instruction type here
+                resp = inst
             else:
                 data_bits = self.mem_backend.read(req.addr, req.size)
-                resp = {
-                    "src": src,
-                    "rw_mode": "read",
-                    "data": data_bits,
-                    "addr": req.addr,
-                    "size": req.size,
-                    "uuid": req.uuid,
-                    "warp": req.warp_id,
-                    "pc": req.pc,
-                    "inst": inst,
-                }
+                inst.packet = data_bits
+                resp = inst
 
             if src == "icache":
                 self.ic_serve_latch.push(resp)
@@ -253,7 +245,8 @@ class MemController(Stage):
     # Main compute
     # -----------------------------
     def compute(self, input_data=None):
-        print("\n[MemController] compute: inflight =", len(self.inflight))
+        print("[MemController] compute: inflight =", len(self.inflight))
+        
         # 1) progress outstanding work
         self._age_inflight()
 
