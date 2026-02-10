@@ -43,6 +43,7 @@ class ICacheStage(Stage):
         self.mem_req_if = mem_req_if
         self.mem_resp_if = mem_resp_if
 
+        self.pending = False
         self.pending_fetch: Optional[Instruction] = None
         self.stalled = False
         self.cycle = 0
@@ -58,18 +59,21 @@ class ICacheStage(Stage):
             victim.data = data_bits
             victim.valid = True
 
-    def _send_ihit(self, val: bool):
+    # sending ready/stalled signals to scheduler
+    def _send_valid(self, val: bool):
         if "ICache_scheduler_Ihit" in self.forward_ifs_write:
             self.forward_ifs_write["ICache_scheduler_Ihit"].push(val)
         if "ihit" in self.forward_ifs_write:
             self.forward_ifs_write["ihit"].set_wait(not val)
 
+    # decoding address
     def _addr_decode(self, pc_int: int):
         block = pc_int // self.block_size
         set_idx = block % self.num_sets
         tag = block // self.num_sets
         return set_idx, tag, block
 
+    # lookup pc from the I$
     def _lookup(self, pc_int: int):
         set_idx, tag, _ = self._addr_decode(pc_int)
         for line in self.cache[set_idx]:
@@ -78,6 +82,7 @@ class ICacheStage(Stage):
                 return line
         return None
 
+    # putting into I$
     def _fill_from_response(self, pc_int: int, data_bits):
         set_idx, tag, _ = self._addr_decode(pc_int)
         self._fill_cache_line(set_idx, tag, data_bits)
@@ -87,98 +92,124 @@ class ICacheStage(Stage):
     def compute(self, input_data=None):
         print(f"[ICache] Received request: {self.behind_latch.snoop()}")
 
-        # STEP 1: Handle incoming memory response (dict FillResponse)
-        if self.mem_resp_if.valid:
-            if self.mem_resp_if.snoop() is not None:
-
+        if self.pending:
+            if self.mem_resp_if.valid:
                 resp = self.mem_resp_if.pop()
-                print(f"[ICache] Received Response from Memory: {resp}")
-                
+                print(f"[I$] Recieved Response from Memory: {resp}")
+
                 pc_int_resp = resp.pc.int if isinstance(resp.pc, Bits) else int(resp.pc)
                 data_bits = Bits(resp.packet)
 
                 if data_bits is None:
-                    print("[ICache] WARNING: MemResp has no data_bits!")
+                    print("[I$] WARNING: MemResp has no data_bits")
 
                 self._fill_from_response(pc_int_resp, data_bits)
 
-                print("[ICache] HIT through Memory")
-                self._send_ihit(True)
-                
-                self.stalled = False
-                self.pending_fetch = None
-                if self.ahead_latch.ready_for_push():
-                    self.ahead_latch.push(resp)
+                print("[I$] Returned value from memory")
+                self._send_valid(True)
+                self.pending = False
+                self.ahead_latch.push(resp)
 
-                self.cycle += 1
-                return
             else:
-                print("[ICache] Pass through None Type")
-                # send as a pass through for now lol...
-                self._send_ihit(None)
-                self.stalled = False
-                self.pending_fetch = None
-                self.cycle += 1
-                return
-        
-        # STEP 2: Stall check
-        if self.stalled:
-            print("[ICache] Still stalled, skipping new fetch")
-            self.cycle += 1
-            return
-
-        # STEP 3: No new fetch request
-        if not self.behind_latch.valid:
-            self.cycle += 1
-            return
-
-        # Instruction comes from previous stage
-        inst: Instruction = self.behind_latch.snoop()
-        pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
-
-        # STEP 4: Lookup
-        hit_line = self._lookup(pc_int)
-        if hit_line:
-            self.behind_latch.pop()
-            print(f"[ICache] HIT through Cache, warp={inst.warp_id} group={inst.warp_group_id} pc=0x{pc_int:X}")
-            self._send_ihit(True)
-
-            inst.packet = hit_line.data
-
-            if self.ahead_latch.ready_for_push():
-                self.ahead_latch.push(inst)
-
-            self.cycle += 1
-            return
+                print(f"[I$] waiting on memory")
+                self._send_valid(False)
 
         else:
-            # STEP 5: MISS
-            print(f"[ICache] MISS warp={inst.warp_id} group={inst.warp_group_id} pc=0x{pc_int:X}")
-            self._send_ihit(False)
-            self.stalled = True
-            self.pending_fetch = inst
+            fetch = self.behind_latch.pop()
 
-            self.behind_latch.pop()
+        # # STEP 1: Handle incoming memory response (dict FillResponse)
+        # if self.mem_resp_if.valid:
+        #     if self.mem_resp_if.snoop() is not None:
 
-            set_idx, tag, block = self._addr_decode(pc_int)
-            block_base = block * self.block_size
+        #         resp = self.mem_resp_if.pop()
+        #         print(f"[ICache] Received Response from Memory: {resp}")
+                
+        #         pc_int_resp = resp.pc.int if isinstance(resp.pc, Bits) else int(resp.pc)
+        #         data_bits = Bits(resp.packet)
 
-            # Send MemReq as dict (addr is BLOCK INDEX here)
-            # why did I do this? im fucking dumb
+        #         if data_bits is None:
+        #             print("[ICache] WARNING: MemResp has no data_bits!")
 
-            if self.mem_req_if.ready_for_push:
-                print("[ICache] Memrequest ACCEPTED by Memory.")
-                self.mem_req_if.push({
-                    "addr": block_base,
-                    "size": self.block_size,
-                    "uuid": block,
-                    "pc": pc_int,
-                    "warp": inst.warp_id,
-                    "warpGroup": inst.warp_group_id,
-                    "inst": inst
-                })
-            else:
-                print("[ICache] Memrequest STALLED due to busy Memory")
+        #         self._fill_from_response(pc_int_resp, data_bits)
+
+        #         print("[ICache] HIT through Memory")
+        #         self._send_ihit(True)
+                
+        #         self.stalled = False
+        #         self.pending_fetch = None
+        #         if self.ahead_latch.ready_for_push():
+        #             self.ahead_latch.push(resp)
+
+        #         self.cycle += 1
+        #         return
+        #     else:
+        #         print("[ICache] Pass through None Type")
+        #         # send as a pass through for now lol...
+        #         self._send_ihit(None)
+        #         self.stalled = False
+        #         self.pending_fetch = None
+        #         self.cycle += 1
+        #         return
+        
+        # # STEP 2: Stall check
+        # if self.stalled:
+        #     print("[ICache] Still stalled, skipping new fetch")
+        #     self.cycle += 1
+        #     return
+
+        # # STEP 3: No new fetch request
+        # if not self.behind_latch.valid:
+        #     self.cycle += 1
+        #     return
+
+        # # Instruction comes from previous stage
+        # inst: Instruction = self.behind_latch.snoop()
+        # pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
+
+        # # STEP 4: Lookup
+        # hit_line = self._lookup(pc_int)
+        # if hit_line:
+        #     self.pending_fetch = None
+        #     self.behind_latch.pop()
+        #     print(f"[ICache] HIT through Cache, warp={inst.warp_id} group={inst.warp_group_id} pc=0x{pc_int:X}")
+        #     self._send_ihit(True)
+
+        #     inst.packet = hit_line.data
+
+        #     if self.ahead_latch.ready_for_push():
+        #         self.ahead_latch.push(inst)
+
+        #     self.cycle += 1
+        #     return
+
+        # else:
+        #     # STEP 5: MISS
+        #     print(f"[ICache] MISS warp={inst.warp_id} group={inst.warp_group_id} pc=0x{pc_int:X}")
+        #     self._send_ihit(False)
+        #     self.stalled = True
+        #     self.pending_fetch = inst
+
+        #     self.behind_latch.pop()
+
+        #     set_idx, tag, block = self._addr_decode(pc_int)
+        #     block_base = block * self.block_size
+
+        #     # Send MemReq as dict (addr is BLOCK INDEX here)
+        #     # why did I do this? im fucking dumb
+
+        #     if self.mem_req_if.ready_for_push:
+        #         print("[ICache] Memrequest ACCEPTED by Memory.")
+        #         self.mem_req_if.push({
+        #             "addr": block_base,
+        #             "size": self.block_size,
+        #             "uuid": block,
+        #             "pc": pc_int,
+        #             "warp": inst.warp_id,
+        #             "warpGroup": inst.warp_group_id,
+        #             "inst": inst
+        #         })
+        #     else:
+        #         print("[ICache] Memrequest STALLED due to busy Memory")
 
         self.cycle += 1
         return

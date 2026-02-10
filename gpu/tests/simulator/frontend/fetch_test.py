@@ -136,13 +136,8 @@ def call_stages(debug=False):
     
     if (debug):
         dump_latches()
-<<<<<<< HEAD
     
     # print(f"\nTBS fetched warp {inst.warp_id} group {inst.warp_group_id} pc 0x{inst.pc:X}\n")
-=======
-        
-    print(f"\nTBS fetched warp {inst.warp_id} group {inst.warp_group_id} pc 0x{inst.pc:X}\n")
->>>>>>> 7d12993 (integrating icache/changing hit logic)
 
 def cycle(cycles = scheduler_stage.warp_count):
     for i in range(cycles):
