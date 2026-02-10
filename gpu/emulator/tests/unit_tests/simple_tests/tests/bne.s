@@ -13,11 +13,8 @@ START:
     sw    x0, x10, 0, 2
 
     ; if (TID != 0) store 1
-    bne   TAKEN, x3, x0, 2
+    bne   p3, x3, x0, 2
 
-    halt
-
-TAKEN:
-    lli   x11, 1, 2
-    sw    x11, x10, 0, 2
+    lli   x11, 1, 3
+    sw    x11, x10, 0, 3
     halt

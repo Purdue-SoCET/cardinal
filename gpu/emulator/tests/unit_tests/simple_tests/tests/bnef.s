@@ -15,11 +15,8 @@ START:
     itof  x8, x3, 2                     ; f1 = float(TID)
 
     ; compare vs 0.0
-    bnef  TAKEN, x8, x0, 2
+    bnef  p3, x8, x0, 2
 
-    halt
-
-TAKEN:
-    lli   x11, 1, 2
-    sw    x11, x10, 0, 2
+    lli   x11, 1, 3
+    sw    x11, x10, 0, 3
     halt

@@ -20,11 +20,8 @@ START:
     itof  x12, x11, 2
 
     ; if (f1 < f2) store 1
-    bltf  TAKEN, x8, x12, 2
+    bltf  p3, x8, x12, 2
 
-    halt
-
-TAKEN:
-    lli   x13, 1, 2
-    sw    x13, x10, 0, 2
+    lli   x13, 1, 3
+    sw    x13, x10, 0, 3
     halt
