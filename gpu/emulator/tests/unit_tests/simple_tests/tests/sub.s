@@ -23,6 +23,6 @@ START:
     sub   x10, x4, x3, 2
 
     ; store result
-    x10, x9, 0, 2
+    sw    x10, x9, 0, 2
 
     halt

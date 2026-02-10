@@ -13,7 +13,7 @@ START:
     blt   p2, x3, x5, pred
 
     ; rs1 = 0x80000000 (negative if interpreted as signed)
-    lli   x8, 0x80000000, 2             ; x8 = value to shift
+    lui   x8, 0x80, 2             ; x8 = value to shift
 
     ; sra: y = 0x80000000 >> TID (arithmetic, sign-extended)
     sra   x10, x8, x3, 2                ; x10 = result
