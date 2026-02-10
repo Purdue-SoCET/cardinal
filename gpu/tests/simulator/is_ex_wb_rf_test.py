@@ -1,16 +1,23 @@
-from simulator.execute.functional_unit import MemBranchUnitConfig
-from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
-from simulator.execute.stage import ExecuteStage
-from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
-from simulator.execute.stage import FunctionalUnitConfig
-from simulator.issue.regfile import RegisterFile
+
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+
+from simulator.src.execute.functional_unit import MemBranchUnitConfig
+from simulator.src.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
+from simulator.src.execute.stage import ExecuteStage
+from simulator.src.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
+from simulator.src.execute.stage import FunctionalUnitConfig
+from simulator.src.issue.regfile import RegisterFile
 
 # Issue Stage stuff
-from simulator.latch_forward_stage import ForwardingIF, Instruction, LatchIF
-from simulator.issue.stage import IssueStage
+from simulator.src.latch_forward_stage import ForwardingIF, Instruction, LatchIF
+from simulator.src.issue.stage import IssueStage
 from pathlib import Path
 from bitstring import Bits
-from gpu.common.custom_enums_multi import *
+from common.custom_enums_multi import *
 
 """
 Create Execute and Writeback Stages
@@ -120,6 +127,7 @@ if __name__ == "__main__":
 
     # 4) Run for enough cycles to propagate through pipeline
     for _ in range(1000):
+        print(f"Cycle #{_}")
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
