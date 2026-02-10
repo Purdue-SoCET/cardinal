@@ -117,6 +117,10 @@ class Instr(ABC):
                 op = B_Op_0(funct3)
                 ret_instr = B_Instr_0(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
                 print(f"\tfunct={op}")
+            case Instr_Type.B_TYPE_1:
+                op = B_Op_1(funct3)
+                ret_instr = B_Instr_1(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
+                print(f"\tfunct={op}")
             case Instr_Type.U_TYPE:
                 op = U_Op(funct3)
                 imm = imm + rs1 #concatenate
@@ -478,6 +482,35 @@ class B_Instr_0(Instr):
             case B_Op_0.BGEU: result = 1 if rdat1.uint >= rdat2.uint else 0
             case B_Op_0.BLT: result = 1 if rdat1.int < rdat2.int else 0
             case B_Op_0.BLTU: result = 1 if rdat1.uint < rdat2.uint else 0
+
+            case _:
+                raise NotImplementedError(f"B-Type operation {self.op} not implemented yet or doesn't exist.")
+
+        print(f"Writing to predicate register {self.preddest.int} value {result}")
+        state.pfile.write_thread(self.preddest, csr.get_thread_id(), bool(result))
+        return None
+
+class B_Instr_1(Instr):
+    def __init__(self, op: B_Op_1, rs1: Bits, rs2: Bits, preddest: Bits) -> None:
+        super().__init__(op)
+        self.rs1 = rs1
+        self.rs2 = rs2
+        self.preddest = preddest
+
+    def eval(self, csr: CsrRegFile, state: State) -> Optional[int]:
+        if not self.check_predication(csr, state):
+            return None
+        
+        rdat1 = state.rfile.read(self.rs1)
+        rdat2 = state.rfile.read(self.rs2)
+
+        # Evaluate branch condition and write result to predicate register
+        match self.op:
+            # Comparison Operations (write to predicate register)
+            case B_Op_1.BEQF: result = 1 if rdat1.float == rdat2.float else 0
+            case B_Op_1.BNEF: result = 1 if rdat1.float != rdat2.float else 0
+            case B_Op_1.BGEF: result = 1 if rdat1.float >= rdat2.float else 0
+            case B_Op_1.BLTF: result = 1 if rdat1.float < rdat2.float else 0
 
             case _:
                 raise NotImplementedError(f"B-Type operation {self.op} not implemented yet or doesn't exist.")
