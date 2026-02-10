@@ -41,8 +41,6 @@ class Ldst_Fu(FunctionalSubUnit):
     
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
-    def compute(self):
-        pass
     
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
         return_instr = None
