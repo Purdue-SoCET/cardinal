@@ -25,6 +25,7 @@ EXPECTED_SUFFIX="_exp_32.hex"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Counters
@@ -74,46 +75,31 @@ for asm_file in $files_found; do
     # --------------------------------------
     # Define Per-Test Log Files
     # --------------------------------------
-    # If anything fails, the error details go here:
     error_log="$DIFF_DIR/${test_name}_error_log.txt"
-    
-    # Artifacts (Only created on diff failure)
     saved_gen="$DIFF_DIR/${test_name}_generated.hex"
     saved_exp="$DIFF_DIR/${test_name}_expected.hex"
 
-    # 1. Check for Expected Data Fragment
+    # Flag to track if we have expected data to compare against
+    has_expected=1
     if [ ! -f "$expected_file_fragment" ]; then
-        echo -e "${YELLOW}[SKIP]${NC} $test_name (No expected data file)"
-        continue
+        has_expected=0
     fi
 
     # --------------------------------------
-    # 2. Run Assembler -> meminit.hex
+    # 1. Run Assembler -> meminit.hex
     # --------------------------------------
-    # Capture ALL output (stdout + stderr) to temp log
     python3 "$ASSEMBLER_SCRIPT" "$asm_file" "$ASM_OUTPUT" hex "$OPCODES" > "$TEMP_CMD_LOG" 2>&1
     
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ERROR]${NC} $test_name: Assembler crashed."
-        # Move the captured output to the final error log
         mv "$TEMP_CMD_LOG" "$error_log"
         ((FAIL_COUNT++))
         continue
     fi
 
     # --------------------------------------
-    # 3. Construct "Final Expected" File
+    # 2. Run Emulator (Make) -> memsim.hex
     # --------------------------------------
-    # A. Format instructions
-    awk '{printf "0x%08x 0x%s\n", (NR-1)*4, $0}' "$ASM_OUTPUT" > "$TEMP_FORMATTED_INSTR"
-
-    # B. Concatenate
-    cat "$TEMP_FORMATTED_INSTR" "$expected_file_fragment" > "$FINAL_EXPECTED"
-
-    # --------------------------------------
-    # 4. Run Emulator (Make) -> memsim.hex
-    # --------------------------------------
-    # Capture ALL output (stdout + stderr) to temp log
     make > "$TEMP_CMD_LOG" 2>&1
     make_status=$?
 
@@ -134,25 +120,36 @@ for asm_file in $files_found; do
     fi
 
     # --------------------------------------
-    # 5. Compare
+    # 3. Compare or Save
     # --------------------------------------
-    # We save the diff output directly to the error log variable
-    diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}[PASS]${NC}   $test_name"
-        # Test Passed: Remove the empty error log
-        rm -f "$error_log"
-        ((PASS_COUNT++))
-    else
-        echo -e "${RED}[FAIL]${NC}   $test_name"
-        # Test Failed: We keep $error_log (which now contains the diff)
-        
-        # Also save the raw files for debugging
+    if [ $has_expected -eq 0 ]; then
+        # Case A: No Expected File -> Just Save Output
         cp "$EMU_OUTPUT" "$saved_gen"
-        cp "$FINAL_EXPECTED" "$saved_exp"
+        echo -e "${BLUE}[SAVE]${NC}   $test_name (No expected file, saved output)"
+        # We do not increment PASS or FAIL counts
+    else
+        # Case B: Expected File Exists -> Construct Final Expected & Compare
         
-        ((FAIL_COUNT++))
+        # Format instructions to match emulator output style
+        awk '{printf "0x%08x 0x%s\n", (NR-1)*4, $0}' "$ASM_OUTPUT" > "$TEMP_FORMATTED_INSTR"
+
+        # Concatenate: [Formatted Instructions] + [Expected Data Fragment]
+        cat "$TEMP_FORMATTED_INSTR" "$expected_file_fragment" > "$FINAL_EXPECTED"
+
+        # Compare
+        diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}[PASS]${NC}   $test_name"
+            rm -f "$error_log"
+            ((PASS_COUNT++))
+        else
+            echo -e "${RED}[FAIL]${NC}   $test_name"
+            # Save artifacts for debugging
+            cp "$EMU_OUTPUT" "$saved_gen"
+            cp "$FINAL_EXPECTED" "$saved_exp"
+            ((FAIL_COUNT++))
+        fi
     fi
 
 done
