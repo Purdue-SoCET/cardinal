@@ -1,3 +1,5 @@
+from common.custom_enums_multi import B_Op
+from simulator.src.base_class import Instruction
 
 class BranchFU:
     def __init__(self, instructions: Instruction, prf_rd_data, op_1, op_2):
@@ -6,7 +8,7 @@ class BranchFU:
             0: "beq",
             1: "bne",
         }
-        self.opcode = self.decode_mapping_table[instructions.opcode]
+        self.opcode = B_Op
         self.prf_rd_data = prf_rd_data
         self.op1 = op_1
         self.op2 = op_2
@@ -19,9 +21,9 @@ class BranchFU:
         return val
 
     def alu_decoder(self):
-        if self.opcode == "beq":
+        if self.opcode == B_Op.BEQ:
             results = [self.op1[i] == self.op2[i] for i in range(self.num_threads)]
-        elif self.opcode == "bne":
+        elif self.opcode == B_Op.BNE:
             results = [self.op1[i] != self.op2[i] for i in range(self.num_threads)]
         else:
             raise ValueError(f"Unknown opcode {self.opcode}")
