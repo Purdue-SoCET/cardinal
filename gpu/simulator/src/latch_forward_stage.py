@@ -24,7 +24,7 @@ class Instruction:
     rdat2: list[Bits] = None
     wdat: list[Bits] = None
     imm: Optional[Bits] = None
-    num_operands: Optional[int] = None
+    num_operands: int = None
 
 
 

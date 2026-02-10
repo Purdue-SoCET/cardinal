@@ -106,6 +106,7 @@ if __name__ == "__main__":
         intended_FU=list(fust.keys())[0],  # Use a valid FSU name from fust.keys() (should be Alu_int_0)
         warp_id=0,
         warp_group_id=0,
+        num_operands = 2,
         rs1=Bits(uint=1, length=32),
         rs2=Bits(uint=1, length=32),
         rd=Bits(uint=2, length=32),
