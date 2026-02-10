@@ -1,6 +1,11 @@
 from dataclasses import dataclass, field
-from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
-from simulator.issue.regfile import RegisterFile
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+from simulator.src.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
+from simulator.src.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple
 from collections import deque
 
@@ -209,7 +214,7 @@ class IssueStage(Stage):
         This matches the "four possibilities" oscillation without over-constraining timing.
         """
         # EVEN bank one read
-        if self.staged_even is not None and self.even_read_progress < 2 and self.staged_even.num_operands >= 1:
+        if self.staged_even is not None and self.even_read_progress < 2 and int(self.staged_even.num_operands or 0) >= 1:
             if self.even_read_progress == 0:
                 val = self.regfile.read_warp_gran(self.staged_even.warp_id, self.staged_even.rs1)
                 self.staged_even.rdat1 = val

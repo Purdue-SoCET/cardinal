@@ -1,9 +1,14 @@
 from __future__ import annotations
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
 from dataclasses import dataclass
 from typing import Dict
-from simulator.issue.regfile import RegisterFile
-from simulator.latch_forward_stage import Instruction, Stage, LatchIF
-from simulator.writeback.writeback_buffer import WritebackBuffer, WritebackBufferCount, WritebackBufferSize, WritebackBufferStructure, WritebackBufferPolicy
+from simulator.src.issue.regfile import RegisterFile
+from simulator.src.latch_forward_stage import Instruction, Stage, LatchIF
+from simulator.src.writeback.writeback_buffer import WritebackBuffer, WritebackBufferCount, WritebackBufferSize, WritebackBufferStructure, WritebackBufferPolicy
 from typing import Union, Optional, Tuple, List
 
 @dataclass

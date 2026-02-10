@@ -1,6 +1,13 @@
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from gpu.common.custom_enums_multi import Op
+from common.custom_enums_multi import Op
 from bitstring import Bits
  
 @dataclass

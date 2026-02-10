@@ -1,12 +1,17 @@
 from __future__ import annotations
-from simulator.circular_buffer import CircularBuffer
-from simulator.compact_queue import CompactQueue
-from simulator.stack import Stack
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+from simulator.src.circular_buffer import CircularBuffer
+from simulator.src.compact_queue import CompactQueue
+from simulator.src.stack import Stack
 from enum import Enum
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union, List
-from simulator.latch_forward_stage import LatchIF, Instruction
-from simulator.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
+from simulator.src.latch_forward_stage import LatchIF, Instruction
+from simulator.src.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
 
 class WritebackBufferCount(Enum):
     BUFFER_PER_FSU = 0

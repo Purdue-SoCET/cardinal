@@ -1,12 +1,18 @@
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+
 import enum
 from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from simulator.base_class import *
-from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
-from simulator.base_class import LatchIF, ForwardingIF
-from simulator.execute.functional_sub_unit import FunctionalSubUnit
+from simulator.src.base_class import *
+from common.custom_enums_multi import I_Op, S_Op, H_Op
+from simulator.src.base_class import LatchIF, ForwardingIF
+from simulator.src.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +41,9 @@ class Ldst_Fu(FunctionalSubUnit):
     
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
-
+    def compute(self):
+        pass
+    
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
         return_instr = None
         if issue_if and hasattr(issue_if, 'valid'):

@@ -1,8 +1,13 @@
 import pandas as pd
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
 import numpy as np
 from typing import Optional, List
-from gpu.common.custom_enums_multi import Op
-from simulator.latch_forward_stage import Instruction
+from common.custom_enums_multi import Op
+from simulator.src.latch_forward_stage import Instruction
 
 class WritebackPerfCount:
     def __init__(self, name: str):

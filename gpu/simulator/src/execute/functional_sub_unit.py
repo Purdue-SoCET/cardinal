@@ -1,10 +1,16 @@
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op
-from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
-from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import LatchIF, Instruction
+from common.custom_enums_multi import Op, R_Op, I_Op, F_Op
+from simulator.src.utils.performance_counter.execute import ExecutePerfCount as PerfCount
+from simulator.src.compact_queue import CompactQueue
+from simulator.src.latch_forward_stage import LatchIF, Instruction
 
 class FunctionalUnitPipeline(CompactQueue):
     def __init__(self, latency: int):

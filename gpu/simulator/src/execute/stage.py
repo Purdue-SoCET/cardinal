@@ -1,8 +1,12 @@
 from __future__ import annotations
+import sys
+from pathlib import Path
 
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
 from dataclasses import dataclass
-from simulator.latch_forward_stage import Stage, LatchIF, Instruction
-from simulator.execute.functional_unit import MemBranchUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchUnit
+from simulator.src.latch_forward_stage import Stage, LatchIF, Instruction
+from simulator.src.execute.functional_unit import MemBranchUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchUnit
 from typing import Dict, Optional
 
 
@@ -103,6 +107,7 @@ class ExecuteStage(Stage):
     def compute(self) -> None:
         # Dispatch to functional units
         for fu in self.functional_units.values():
+            print(f"Check! with {fu}, of type {type(fu)}")
             fu.compute()
         
 

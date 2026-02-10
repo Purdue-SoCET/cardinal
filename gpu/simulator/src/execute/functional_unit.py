@@ -1,11 +1,19 @@
 from __future__ import annotations
+import sys
+from pathlib import Path
+
+gpu_sim_root = Path(__file__).resolve().parents[2]
+sys.path.append(str(gpu_sim_root))
+
+
+
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
-from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import Instruction
-from simulator.mem.ld_st import Ldst_Fu
+from simulator.src.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
+from simulator.src.compact_queue import CompactQueue
+from simulator.src.latch_forward_stage import Instruction
+from simulator.src.mem.ld_st import Ldst_Fu
 
 @dataclass
 class MemBranchUnitConfig:
@@ -98,6 +106,7 @@ class FunctionalUnit(ABC):
         self.subunits = {subunit.name: subunit for subunit in subunits}    
 
     def compute(self):
+
         for subunit in self.subunits.values():
             subunit.compute()
 
@@ -123,7 +132,7 @@ class MemBranchUnit(FunctionalUnit):
         for i in range(config.ldst_count):
             subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
-    
+
 class IntUnit(FunctionalUnit):
     def __init__(self, config: IntUnitConfig, num: int):
         subunits = []
