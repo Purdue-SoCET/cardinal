@@ -21,7 +21,7 @@ START:
     mul   x8, x3, x6, 2             ; TID * stride
     add   x9, x7, x8, 2             ; base + (tid*stride)
 
-    ; compute op (y = a & b): x7 = x4 & TID
+    ; compute op (y = a & b): x10 = x4 & TID
     and   x10, x4, x3, 2
 
     ; store result
