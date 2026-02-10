@@ -8,7 +8,7 @@ class Mem:
     def __init__(self, start_pc: int, input_file: str, mem_format: str) -> None:
         self.memory: dict[int, int] = {}
 
-        endianness = "little"
+        self.endianness = "little"
         addr = start_pc
 
         p = Path(input_file)
@@ -37,7 +37,7 @@ class Mem:
                 # else: 
                 #     word = int(bits, 2) & 0xFFFF_FFFF
                 # split into 4 bytes per chosen endianness
-                if endianness == "little":
+                if self.endianness == "little":
                     b0 = (word >> 0)  & 0xFF
                     b1 = (word >> 8)  & 0xFF
                     b2 = (word >> 16) & 0xFF
@@ -99,7 +99,12 @@ class Mem:
                 if (b0 | b1 | b2 | b3) == 0:
                     continue  # skip all-zero words
 
-                word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+                if self.endianness == 'little':
+                    # Little Endian: Addr+0 is LSB
+                    word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+                else:
+                    # Big Endian: Addr+0 is MSB
+                    word = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
 
                 f.write(f"{base:#010x} {word:#010x}\n")
 

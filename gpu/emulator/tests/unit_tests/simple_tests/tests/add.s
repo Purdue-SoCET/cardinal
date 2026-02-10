@@ -3,7 +3,7 @@ START:
     csrr  x3, x0                     ; x3 = TID
 
     ; load initial values
-    lli   x4, 1                         ; change this to alter b in (y = b + TID)
+    lli   x4, 0                         ; change this to alter b in (y = b + TID)
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
