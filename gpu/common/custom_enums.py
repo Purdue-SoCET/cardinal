@@ -95,6 +95,10 @@ class B_Op_0(Op):
 
 # B-Type Operations (opcode: 1001xxx) - Currently unused but reserved
 class B_Op_1(Op):
+    BEQF = Bits(bin='000', length=3)   # 000
+    BNEF = Bits(bin='001', length=3)   # 001
+    BGEF = Bits(bin='010', length=3)   # 010
+    BLTF = Bits(bin='100', length=3)   # 100
     pass  # No operations defined yet
 
 # U-Type Operations (opcode: 1010xxx)
