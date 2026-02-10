@@ -28,6 +28,9 @@ class FunctionalSubUnit(ABC):
     @abstractmethod
     def tick(self):
         pass
+    
+    def compute(self):
+        pass
 
 class ArithmeticSubUnit(FunctionalSubUnit):
     def __init__(self, latency: int, num: int, type_: type):
@@ -42,10 +45,6 @@ class ArithmeticSubUnit(FunctionalSubUnit):
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
         self.pipeline = FunctionalUnitPipeline(latency=max(1, latency-1))
-    
-    @abstractmethod
-    def compute(self):
-        pass
 
     def single_cycle_latency_compute_tick(self):
         if self.latency != 1 or self.ready_out is False:
