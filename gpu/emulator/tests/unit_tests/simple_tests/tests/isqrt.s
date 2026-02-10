@@ -12,10 +12,11 @@ START:
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
 
-    ; rs1 = TID*TID
-    mul   x8, x3, x3, 2                 ; x8 = tid^2
+    ; x8 = 2.0      TODO: Update to load in 32 different values from memory
+    lui x8, 0x40, 2
 
-    ; rd = isqrt(rs1)
+
+    ; rd = isqrt(TID+1)
     isqrt x9, x8, 2                     ; x9 = isqrt(tid^2) = tid
 
     ; addr = base + tid*stride

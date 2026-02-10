@@ -17,7 +17,7 @@ START:
     add   x10, x7, x9, 2
 
     lmi   x3, 0x101                     ; x3 = 0x101TID ... expect MSB to be cut off, with "1TID" stored
-    sh    x11, x10, 0, 2                ; store to low half
-    sh    x11, x10, 2, 2                ; store to high half
+    sh    x3, x10, 0, 2                ; store to low half
+    sh    x3, x10, 2, 2                ; store to high half
 
     halt
