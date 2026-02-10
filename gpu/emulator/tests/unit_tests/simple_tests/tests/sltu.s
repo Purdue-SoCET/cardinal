@@ -1,13 +1,13 @@
 START:
     ; per-thread id
-    csrr  x3, x1000                     ; x3 = TID
+    csrr  x3, x0                     ; x3 = TID
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
 
     ; load stride and base
     lli   x6, 4                         ; stride = 4 bytes/thread
-    lli   x7, 0x10                      ; heap base address
+    lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
     blt   p2, x3, x5, pred
