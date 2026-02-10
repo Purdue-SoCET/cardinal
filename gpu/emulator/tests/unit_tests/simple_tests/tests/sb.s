@@ -23,13 +23,4 @@ START:
     sb    x3, x10, 2, 2
     sb    x3, x10, 3, 2
 
-    ; read full word back
-    lw    x11, x10, 0, 2
-
-    ; store readback to base+0x100
-    lli   x12, 0x100, 2
-    add   x13, x7, x12, 2
-    add   x14, x13, x9, 2
-    sw    x11, x14, 0, 2
-
     halt
