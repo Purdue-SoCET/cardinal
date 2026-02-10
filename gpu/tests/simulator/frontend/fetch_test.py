@@ -32,7 +32,8 @@ writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
 
 mem = Mem(
     start_pc=0x1000,
-    input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu/tests/simulator/frontend/test.bin",
+    #input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu/tests/simulator/frontend/test.bin",
+    input_file="/home/shay/a/yang2151/cardinal/gpu/tests/simulator/frontend/test.bin",
     fmt="bin",
 )
 
@@ -66,7 +67,7 @@ icache_stage = ICacheStage(
     cache_config={"cache_size": 32 * 1024, 
                     "block_size": 64, 
                     "associativity": 4},
-    forward_ifs_write= {"ICache_scheduler_Ihit": icache_scheduler_fwif},
+    forward_ifs_write= {"ICache_Decode_Ihit": icache_scheduler_fwif},
 )
 
 def dump_sched_fwifs():
@@ -130,16 +131,23 @@ def call_stages(debug=False):
     if (debug):
         dump_latches()
 
-    inst = scheduler_stage.compute() # Scheduler fetching from ICache
+    scheduler_stage.compute() # Scheduler fetching from ICache
+    inst = scheduler_stage.ahead_latch.pop()
+    
     if (debug):
         dump_latches()
+<<<<<<< HEAD
     
     # print(f"\nTBS fetched warp {inst.warp_id} group {inst.warp_group_id} pc 0x{inst.pc:X}\n")
+=======
+        
+    print(f"\nTBS fetched warp {inst.warp_id} group {inst.warp_group_id} pc 0x{inst.pc:X}\n")
+>>>>>>> 7d12993 (integrating icache/changing hit logic)
 
 def cycle(cycles = scheduler_stage.warp_count):
     for i in range(cycles):
-        group, warp, pc = scheduler_stage.compute()
-    return group, warp, pc
+        scheduler_stage.compute()
+
 
 def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test")
@@ -161,9 +169,10 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     # or set some framework value for it in the pipeline
     # so it doesnt tweak out
 
-    icache_scheduler_fwif.payload = None
-    decode_scheduler_fwif.payload = None
-    issue_scheduler_fwif.payload = None
+    # icache_scheduler_fwif.payload = None
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    # decode_scheduler_fwif.payload = None
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
     branch_scheduler_fwif.payload = None
     writeback_scheduler_fwif.payload = None
 

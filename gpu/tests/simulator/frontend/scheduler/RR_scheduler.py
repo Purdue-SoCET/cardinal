@@ -13,7 +13,7 @@ from simulator.src.scheduler.scheduler import SchedulerStage
 START_PC = 0
 WARP_COUNT = 6
 
-icache_scheduler = ForwardingIF(name = "decode_forward_if")
+decode_scheduler = ForwardingIF(name = "decode_forward_if")
 issue_scheduler = ForwardingIF(name = "issue_forward_if")
 branch_scheduler = ForwardingIF(name = "branch_forward_if")
 writeback_scheduler = ForwardingIF(name = "Writeback_forward_if")
