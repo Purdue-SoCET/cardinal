@@ -48,13 +48,14 @@ class R_Op_1(Op):
 # I-Type Operations (opcode: 0010xxx)
 class I_Op_0(Op):
     ADDI = Bits(bin='000', length=3)   # 000
-    SUBI = Bits(bin='001', length=3)   # 001
     ORI = Bits(bin='101', length=3)    # 101
+    XORI = Bits(bin='100', length=3)   # 100
     SLTI = Bits(bin='111', length=3)   # 111
 
 # I-Type Operations (opcode: 0011xxx)
 class I_Op_1(Op):
     SLTIU = Bits(bin='000', length=3)  # 000
+    SLLI = Bits(bin='101', length=3)   # 101
     SRLI = Bits(bin='110', length=3)   # 110
     SRAI = Bits(bin='111', length=3)   # 111
 
