@@ -212,7 +212,7 @@ class R_Instr_1(Instr):
         match self.op:
             # Comparison Operations
             case R_Op_1.SLTU:
-                result = Bits(int=1, length=32) if rdat1.uint < rdat2.uint else Bits(int=0, length=32)
+                result = Bits(uint=1, length=32) if (rdat1.uint < rdat2.uint) else Bits(uint=0, length=32)
             
             # Floating Point Arithmetic Operations
             case R_Op_1.ADDF:
@@ -241,18 +241,17 @@ class R_Instr_1(Instr):
             # Bit Shifting Operations
             case R_Op_1.SLL:
                 shift_amount = rdat2.uint & 0x1F  # Mask to 5 bits
-                result = Bits(rdat1.int << shift_amount, length=32)
+                result = Bits(uint=(rdat1.uint << shift_amount), length=32)
             case R_Op_1.SRL:
                 shift_amount = rdat2.uint & 0x1F
-                result = Bits(rdat1.uint >> shift_amount, length=32)
+                result = Bits(uint=(rdat1.uint >> shift_amount), length=32)
             case R_Op_1.SRA:
                 shift_amount = rdat2.uint & 0x1F
-                result = Bits(rdat1.int >> shift_amount, length=32)  # Python's >> preserves sign for negative numbers
+                result = Bits(int=(rdat1.int >> shift_amount), length=32)  # Python's >> preserves sign for negative numbers
             
             case _:
                 raise NotImplementedError(f"R-Type 1 operation {self.op} not implemented yet or doesn't exist.")
 
-        self.check_overflow(result.float, csr.get_global_thread_id())
         state.rfile.write(self.rd, result)
         return None
     
@@ -275,12 +274,13 @@ class I_Instr_0(Instr):
             # Immediate INT Arithmetic
             case I_Op_0.ADDI:
                 result = rdat1.int + imm_val
-            case I_Op_0.SUBI:
-                raise NotImplementedError("SUBI has been deprecated in favor of ADDI with negative immediate.")
             
             # Immediate Logical Operators
             case I_Op_0.ORI:
                 result = rdat1.int | imm_val
+            
+            case I_Op_0.XORI:
+                result = rdat1.int ^ imm_val
             
             # Immediate Comparison
             case I_Op_0.SLTI:
@@ -315,12 +315,15 @@ class I_Instr_1(Instr):
             case I_Op_1.SRAI:
                 shift_amount = imm_val & 0x1F  # Mask to 5 bits
                 result = rdat1.int >> shift_amount  # Arithmetic right shift (sign-extends)
+            case I_Op_1.SLLI:
+                shift_amount = imm_val & 0x1F  # Mask to 5 bits
+                result = rdat1.uint << shift_amount
             
             case _:
                 raise NotImplementedError(f"I-Type 1 operation {self.op} not implemented yet or doesn't exist.")
 
         out = result & 0xFFFFFFFF
-        state.rfile.write(self.rd, Bits(int=out, length=32))
+        state.rfile.write(self.rd, Bits(uint=out, length=32))
         return None
 
 class I_Instr_2(Instr):
