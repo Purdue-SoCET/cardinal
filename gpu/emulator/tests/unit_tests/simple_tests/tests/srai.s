@@ -6,7 +6,7 @@ START:
     lli   x5, 32                        ; MAX_THREADS = 32
 
     ; load stride and base
-    lli   x6, 4                         ; stride = 4 bytes/thread
+    lli   x6, 8                         ; stride = 4 bytes/thread
     lui   x7, 0x10                      ; base = 0x10000000
 
     ; if (tid < MAX_THREADS) -> compute
@@ -30,11 +30,6 @@ START:
     ; -----------------------------
     lui   x11, 0x80, 2                  ; x11 = 0x80000000
     srai  x11, x11, 31, 2               ; x11 = x11 >> 31 (arith)
-
-    ; addr2 = (base + 0x100) + tid*stride
-    lli   x12, 0x100, 2
-    add   x13, x7, x12, 2
-    add   x14, x13, x9, 2
-    sw    x11, x14, 0, 2                ; store y2
+    sw    x11, x10, 4, 2                 ; store y2
 
     halt
