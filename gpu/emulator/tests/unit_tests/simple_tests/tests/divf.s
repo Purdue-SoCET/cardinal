@@ -16,7 +16,8 @@ START:
     itof  x8, x3, 2                     ; x8 = float(TID)
 
     ; load 1.5 as IEEE-754 float
-    lli   x9, 0x3FC00000, 2             ; x9 = 1.5f
+    lui   x9, 0x3F, 2
+    lmi   x9, 0xC00, 2                  ; x9 = 1.5f
 
     ; float divide: y = float(TID) / 1.5
     divf  x10, x8, x9, 2                ; x10 = y (float bits)
