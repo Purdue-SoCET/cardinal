@@ -143,7 +143,8 @@ class MSHREntry:
 class DecodeType:
     halt: int = 0
     EOP: int = 1
-    EOS: int = 2
+    MOP: int = 2
+    EOS: int = 3
 
 ###TEST CODE BELOW###
 @dataclass

@@ -54,11 +54,11 @@ class SchedulerStage(Stage):
             self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
             self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
         
-        # if im getting my odd warp barrier out of my decode
-        elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
-            self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-            self.at_barrier += 1
+        # # if im getting my odd warp barrier out of my decode
+        # elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
+        #     self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
+        #     self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
+        #     self.at_barrier += 1
 
         # if im getting my odd warp halt out of my decode
         elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:

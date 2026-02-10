@@ -171,62 +171,6 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     branch_scheduler_fwif.payload = None
     writeback_scheduler_fwif.payload = None
 
-    # # first set of instructions: fill in the pipeline. 
-    # dummy_Instruction = Instruction(
-    #     pc=Bits(uint=0, length=32),
-    #     intended_FSU=None,
-    #     warp=0,
-    # )
-
-    # sched_icache_dummy_Instruction = Instruction(
-    #     pc=Bits(uint=0, length=32),
-    #     intended_FSU=None,
-    #     warp=0,
-    #     warpGroup=None
-    # )
-
-    # icache_mem_req_dummy_Instruction = {
-    #         "addr": 0,
-    #         "size": 4,
-    #         "uuid": 0,
-    #         "warp_id": 0,
-    #         "pc": 0,
-    #         "data": 0,
-    #         "rw_mode": "read",
-    #         "remaining": LAT
-    # }
-
-    # dummy_dcache_mem_req_Instruction = {
-    #     "addr": 0,
-    #     "size": 4,
-    #     "uuid": 0,
-    #     "warp_id": 0,
-    #     "pc": 0,
-    #     "data": 0,
-    #     "rw_mode": "read",
-    #     "remaining": LAT
-    # }
-
-    # mem_icache_resp_dummy_Instruction = Instruction(
-    #     ,
-    #     pc=Bits(uint=0, length=32),
-    #     intended_FSU=None,
-    #     warp=0,
-    #     warpGroup=None,
-    #     packet=Bits(uint=0, length=32
-    #     ))
-
-    # icache_decode_dummy_Instruction = Instruction(
-    #     ,
-    #     pc=Bits(hex='ABABABAB', length=32),
-    #     intended_FSU=None,
-    #     warp=0,
-    #     warpGroup=None,
-    #     opcode=None,
-    #     rs1=0,
-    #     rs2=0,
-    #     rd=0
-    # )
 
     # setup some bullshit at the beginning for the latches 
     # this is initializing the latches for ONE cycle.
