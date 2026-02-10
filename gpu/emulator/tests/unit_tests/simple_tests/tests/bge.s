@@ -16,11 +16,8 @@ START:
     addi  x8, x3, -16, 2
 
     ; if (rs1 >= 0) store 1  (signed compare)
-    bge   TAKEN, x8, x0, 2
+    bge   p3, x8, x0, 2
 
-    halt
-
-TAKEN:
-    lli   x11, 1, 2
-    sw    x11, x10, 0, 2
+    lli   x11, 1, 3
+    sw    x11, x10, 0, 3
     halt
