@@ -1,4 +1,4 @@
-from common.custom_enums_multi import B_Op
+from common.custom_enums_multi import B_Op, P_Op
 from simulator.src.base_class import Instruction
 
 class BranchFU:
@@ -8,7 +8,7 @@ class BranchFU:
             0: "beq",
             1: "bne",
         }
-        self.opcode = B_Op
+        self.opcode = B_Op | P_Op
         self.prf_rd_data = prf_rd_data
         self.op1 = op_1
         self.op2 = op_2
@@ -25,7 +25,8 @@ class BranchFU:
             results = [self.op1[i] == self.op2[i] for i in range(self.num_threads)]
         elif self.opcode == B_Op.BNE:
             results = [self.op1[i] != self.op2[i] for i in range(self.num_threads)]
-        else:
+        elif self.opcode == P_Op.JPNZ:
+            results = [self.op[i] != 0 for i in range(self.num_threads)]
             raise ValueError(f"Unknown opcode {self.opcode}")
         return results
 
