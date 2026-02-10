@@ -132,7 +132,7 @@ def call_stages(debug=False):
         dump_latches()
 
     scheduler_stage.compute() # Scheduler fetching from ICache
-    inst = scheduler_stage.ahead_latch.pop()
+    inst = scheduler_stage.ahead_latch.snoop()
     
     if (debug):
         dump_latches()

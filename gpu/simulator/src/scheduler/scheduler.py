@@ -127,7 +127,7 @@ class SchedulerStage(Stage):
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
                     
-                    # instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
                     self.push_instruction(instr)
                     return 
                 
@@ -198,13 +198,13 @@ class SchedulerStage(Stage):
         self.collision()
 
         # wait for ihit
-        if not self.forward_ifs_read["ICache_Scheduler"].pop():
+        if self.forward_ifs_read["ICache_Scheduler"].pop():
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         match self.policy:
             case "RR":
-                instr = self.round_robin()
+                self.round_robin()
             case "GTO":
-                instr = self.greedy_oldest()
+                self.greedy_oldest()
 
-        self.ahead_latch.push(instr)
+        # self.ahead_latch.push(instr)
