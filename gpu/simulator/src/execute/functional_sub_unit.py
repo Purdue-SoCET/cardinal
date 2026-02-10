@@ -29,6 +29,7 @@ class FunctionalSubUnit(ABC):
     def tick(self):
         pass
     
+    @abstractmethod
     def compute(self):
         pass
 
@@ -42,6 +43,8 @@ class ArithmeticSubUnit(FunctionalSubUnit):
             raise ValueError(f"Unsupported type '{type_}' for FunctionalSubUnit. Must be {int} or {float}.")
 
         self.type_ = type_
+
+        self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
         self.pipeline = FunctionalUnitPipeline(latency=max(1, latency-1))
