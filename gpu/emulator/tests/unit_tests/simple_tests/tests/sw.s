@@ -15,22 +15,8 @@ START:
     ; addr = base + tid*stride
     mul   x9,  x3, x6, 2                ; x9  = TID*4
     add   x10, x7, x9, 2                ; x10 = addr
-
-    ; -----------------------------
-    ; sw: store per-thread word
-    ; val = (TID << 8) | 0xA5
-    ; -----------------------------
-    sll   x8, x3, x6, 2                 ; x8 = TID << 4  (since x6=4)
-    sll   x8, x8, x6, 2                 ; x8 = TID << 8
-    ori   x8, x8, 0xA5, 2               ; x8 = (TID<<8) | 0xA5
-
-    sw    x8, x10, 0, 2                 ; store word
-    lw    x11, x10, 0, 2                ; read back
-
-    ; store readback to base+0x100
-    lli   x12, 0x100, 2
-    add   x13, x7, x12, 2
-    add   x14, x13, x9, 2
-    sw    x11, x14, 0, 2
+    
+    lui   x3, 0xFF, 2                   ; Ensure upper bits are stored
+    sw    x3, x10, 0, 2                 ; store word
 
     halt
