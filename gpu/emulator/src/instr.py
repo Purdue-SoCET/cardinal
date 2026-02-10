@@ -37,7 +37,6 @@ class Instr(ABC):
         if self.op in {H_Op.HALT, I_Op_2.JALR, P_Op.JPNZ, J_Op.JAL}:
             return True  
 
-        print(f"\tThread {local_thread_id} Predicate {self.pred} got: {state.pfile.read_thread(self.pred, local_thread_id)}")
         return state.pfile.read_thread(self.pred, local_thread_id)
 
 
@@ -77,8 +76,6 @@ class Instr(ABC):
     @staticmethod
     def decode(instruction: Bits, pc: Bits) -> 'Instr':
         # TODO: Investigate the indexing and how the hell it works
-        # Flip instructoin 
-        fliped_instruction = Bits(bytes=instruction.bytes[::-1])
         opcode = Bits(bin=instruction.bin[25:29], length=4) # bits 31:27
         funct3 = Bits(bin=instruction.bin[29:32], length=3) # bits 26:24
         rs2  = Bits(bin=instruction.bin[7:13], length=6) #24:19
@@ -151,15 +148,6 @@ class Instr(ABC):
         ret_instr.pred = pred
         return ret_instr
 
-    def _to_float(self, bits_obj) -> float:
-        # Encapsulate the "flip and read" logic
-        return Bits(bytes=bits_obj.bytes[::-1]).float
-    
-    def _from_float(self, float_val) -> Bits:
-        # Encapsulate the "write and flip back" logic
-        res = Bits(float=float_val, length=32)
-        return Bits(bytes=res.bytes[::-1])
-
 class R_Instr_0(Instr):
     def __init__(self, op: R_Op_0, rs1: Bits, rs2: Bits, rd: Bits) -> None:
         super().__init__(op)
@@ -228,25 +216,27 @@ class R_Instr_1(Instr):
             
             # Floating Point Arithmetic Operations
             case R_Op_1.ADDF:
-                rdat1 = self._to_float(rdat1)
-                rdat2 = self._to_float(rdat2)
-                result = self._from_float(rdat1 + rdat2)
+                rdat1 = rdat1.float
+                rdat2 = rdat2.float
+                # Print calc
+                result = Bits(float=(rdat1 + rdat2), length=32)
+
             case R_Op_1.SUBF:
-                rdat1 = self._to_float(rdat1)
-                rdat2 = self._to_float(rdat2)
-                result = self._from_float(rdat1 - rdat2)
+                rdat1 = rdat1.float
+                rdat2 = rdat2.float
+                result = Bits(float=(rdat1 - rdat2), length=32)
             case R_Op_1.MULF:
-                rdat1 = self._to_float(rdat1)
-                rdat2 = self._to_float(rdat2)
-                result = self._from_float(rdat1 * rdat2)
+                rdat1 = rdat1.float
+                rdat2 = rdat2.float
+                result = Bits(float=(rdat1 * rdat2), length=32)
             case R_Op_1.DIVF:
-                rdat1 = self._to_float(rdat1)
-                rdat2 = self._to_float(rdat2)
+                rdat1 = rdat1.float
+                rdat2 = rdat2.float
                 if rdat2 == 0.0:
                     logger.warning(f"Division by zero in DIVF from thread ID {csr.get_global_thread_id()}: R{self.rd} = R{self.rs1.int} / R{self.rs2.int}")
-                    result = self._from_float(0.0)
+                    result = Bits(float=0.0, length=32)
                 else:
-                    result = self._from_float(rdat1 / rdat2)
+                    result = Bits(float=(rdat1 / rdat2), length=32)
             
             # Bit Shifting Operations
             case R_Op_1.SLL:
@@ -393,7 +383,7 @@ class F_Instr(Instr):
         match self.op:
             # Root Operations
             case F_Op.ISQRT:
-                val = self._to_float(rdat1)
+                val = rdat1.float
                 if val <= 0:
                     logger.warning(f"Invalid value for ISQRT from thread ID {csr.get_global_thread_id()}: R{self.rs1.int} = {val}")
                     result = 0.0
@@ -402,9 +392,9 @@ class F_Instr(Instr):
             
             # Trigonometric Operations
             case F_Op.SIN:
-                result = math.sin(self._to_float(rdat1))
+                result = math.sin(rdat1.float)
             case F_Op.COS:
-                result = math.cos(self._to_float(rdat1))
+                result = math.cos(rdat1.float)
 
             # Type Conversion Operations
             case F_Op.ITOF:
@@ -412,8 +402,8 @@ class F_Instr(Instr):
                 result = float(rdat1.int)
             case F_Op.FTOI:
                 # Float to Integer (truncate towards zero)
-                result = int(self._to_float(rdat1))
-
+                result = int(rdat1.float)
+            
             case _:
                 raise NotImplementedError(f"F-Type operation {self.op} not implemented yet or doesn't exist.")
 
@@ -425,7 +415,7 @@ class F_Instr(Instr):
         if self.op == F_Op.FTOI:
             state.rfile.write(self.rd, Bits(int=result, length=32))
         else:
-            state.rfile.write(self.rd, self._from_float(result))
+            state.rfile.write(self.rd, Bits(float=result, length=32))
         
         return None
 

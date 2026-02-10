@@ -16,7 +16,7 @@ START:
     itof  x8, x3, 2                     ; x8 = float(TID)
 
     ; load 0.5 as IEEE-754 float
-    lli   x9, 0x3F000000, 2             ; x9 = 0.5f
+    lui   x9, 0x3F, 2                    ; x9 = 0.5f
 
     ; float add: y = float(TID) + 0.5
     addf  x10, x8, x9, 2                ; x10 = y
