@@ -13,7 +13,7 @@ from simulator.src.mem.mem_controller import MemController
 from simulator.src.mem.Memory import Mem
 from simulator.base_class import *
 
-START_PC = 4
+START_PC = 0x1000
 LAT = 2
 WARP_COUNT = 6
 
@@ -65,8 +65,8 @@ icache_stage = ICacheStage(
     mem_req_if=icache_mem_req_if,
     mem_resp_if=mem_icache_resp_if,
     cache_config={"cache_size": 32 * 1024, 
-                    "block_size": 64, 
-                    "associativity": 4},
+                    "block_size": 4, 
+                    "associativity": 1},
     forward_ifs_write= {"ICache_Decode_Ihit": icache_scheduler_fwif},
 )
 
