@@ -42,7 +42,6 @@ class SchedulerStage(Stage):
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
-        icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
         decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
         issue_ctrl = self.forward_ifs_read["Issue_Scheduler"].pop()
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
@@ -112,9 +111,6 @@ class SchedulerStage(Stage):
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
-        # initialize instruction class
-        instr = Instruction(None, None, None, None, None, None, None, None, None)
-
         for tries in range(self.num_groups):
             warp_group = self.warp_table[self.rr_index]
 
@@ -141,9 +137,7 @@ class SchedulerStage(Stage):
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
 
-                    instr.pc = Bits(current_pc)
-                    instr.warp_id = (warp_group.group_id * 2) + 1
-                    instr.warp_group_id = warp_group.group_id
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, warp_group.pc)
                     self.push_instruction(instr)
                     return
                 

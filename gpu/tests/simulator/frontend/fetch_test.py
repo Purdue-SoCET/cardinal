@@ -166,7 +166,6 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
 
     # icache_scheduler_fwif.payload = None
     decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
-    # decode_scheduler_fwif.payload = None
     issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
     branch_scheduler_fwif.payload = None
     writeback_scheduler_fwif.payload = None
@@ -183,22 +182,47 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
 
     input("---- Press Enter to continue to cycle #2 ----")
     
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
     call_stages(debug=False)  # cycle -1
 
     input("---- Press Enter to continue to cycle #3 ----")
     
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
     call_stages(debug=False) # cycle 0
 
     input("---- Press Enter to continue to cycle #4 ----")
     
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
     call_stages(debug=False)  # cycle -1
 
     input("---- Press Enter to continue to cycle #5 ----")
     
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
     call_stages(debug=False) # cycle 0
 
     input("---- Press Enter to continue to cycle #5 ----")
     
+    decode_scheduler_fwif.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0})
+    issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
     call_stages(debug=False) # cycle 1
 
     
