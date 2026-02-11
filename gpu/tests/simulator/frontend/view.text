@@ -1,0 +1,344 @@
+here /home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu
+Scheduler to ICacheStage Requests Test
+
+
+Cycle #0
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #1
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Memrequest ACCEPTED by Memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #2
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4, 'size': 4, 'uuid': 1, 'pc': 4, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #3
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #4
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: b'X"}\x80'
+[ICache] Received request: Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Recieved Response from Memory: Instruction(pc=4, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x58227d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[ICache] FILL complete: pc=0x4
+[I$] Returned value from memory
+
+Cycle #5
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x58227d80
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=12, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 12 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Memrequest ACCEPTED by Memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #6
+
+[Issue] Received Instruction(pc=4, warp_id=0, warp_group_id=0, intended_FU='ADD', rs1=19, rs2=4, rd=Bits('0b111011'), src_pred=12, dest_pred=None, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<R_Op.ADD: Bits('0b0000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x58227d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 8, 'size': 4, 'uuid': 2, 'pc': 8, 'warp': 1, 'warpGroup': 0, 'inst': Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None), 'src': 'icache', 'warp_id': 1, 'warp_group_id': 0}
+[ICache] Received request: Instruction(pc=4, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #7
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: Instruction(pc=4, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #8
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: b'\xd8B}\x80'
+[ICache] Received request: Instruction(pc=4, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Recieved Response from Memory: Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0xd8427d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[ICache] FILL complete: pc=0x8
+[I$] Returned value from memory
+
+Cycle #9
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0xd8427d80
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=12, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 12 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #10
+
+[Issue] Received Instruction(pc=8, warp_id=1, warp_group_id=0, intended_FU='ADD', rs1=19, rs2=8, rd=Bits('0b111011'), src_pred=12, dest_pred=None, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<R_Op.ADD: Bits('0b0000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0xd8427d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode]: Received Raw Instruction Data: 0x58227d80
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=12, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 12 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #11
+
+[Issue] Received Instruction(pc=4, warp_id=4, warp_group_id=2, intended_FU='ADD', rs1=19, rs2=4, rd=Bits('0b111011'), src_pred=12, dest_pred=None, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<R_Op.ADD: Bits('0b0000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x58227d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=12, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Memrequest ACCEPTED by Memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #12
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 12, 'size': 4, 'uuid': 3, 'pc': 12, 'warp': 1, 'warpGroup': 0, 'inst': Instruction(pc=12, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None), 'src': 'icache', 'warp_id': 1, 'warp_group_id': 0}
+[ICache] Received request: Instruction(pc=8, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #13
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: Instruction(pc=8, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #14
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: b'\x82a \xc0'
+[ICache] Received request: Instruction(pc=8, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Recieved Response from Memory: Instruction(pc=12, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x826120c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[ICache] FILL complete: pc=0xC
+[I$] Returned value from memory
+
+Cycle #15
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x826120c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=1, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 1 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=8, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #16
+
+[Issue] Received Instruction(pc=12, warp_id=1, warp_group_id=0, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=1, dest_pred=1, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x826120c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode]: Received Raw Instruction Data: 0xd8427d80
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=12, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 12 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #17
+
+[Issue] Received Instruction(pc=8, warp_id=2, warp_group_id=1, intended_FU='ADD', rs1=19, rs2=8, rd=Bits('0b111011'), src_pred=12, dest_pred=None, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<R_Op.ADD: Bits('0b0000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0xd8427d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=12, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #18
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x826120c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=1, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 1 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #19
+
+[Issue] Received Instruction(pc=12, warp_id=5, warp_group_id=2, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=1, dest_pred=1, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x826120c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=12, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #20
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x826120c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=1, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 1 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #21
+
+[Issue] Received Instruction(pc=12, warp_id=0, warp_group_id=0, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=1, dest_pred=1, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x826120c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=16, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Memrequest ACCEPTED by Memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #22
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 16, 'size': 4, 'uuid': 4, 'pc': 16, 'warp': 1, 'warpGroup': 0, 'inst': Instruction(pc=16, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None), 'src': 'icache', 'warp_id': 1, 'warp_group_id': 0}
+[ICache] Received request: Instruction(pc=12, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #23
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: Instruction(pc=12, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #24
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: b'\x80a(\xc0'
+[ICache] Received request: Instruction(pc=12, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Recieved Response from Memory: Instruction(pc=16, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x806128c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[ICache] FILL complete: pc=0x10
+[I$] Returned value from memory
+
+Cycle #25
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x806128c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=12, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #26
+
+[Issue] Received Instruction(pc=16, warp_id=1, warp_group_id=0, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=0, dest_pred=17, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x806128c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode]: Received Raw Instruction Data: 0x826120c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=1, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 1 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #27
+
+[Issue] Received Instruction(pc=12, warp_id=2, warp_group_id=1, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=1, dest_pred=1, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x826120c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=16, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #28
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x806128c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #29
+
+[Issue] Received Instruction(pc=16, warp_id=5, warp_group_id=2, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=0, dest_pred=17, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x806128c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=16, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+
+Cycle #30
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode]: Received Raw Instruction Data: 0x806128c0
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #31
+
+[Issue] Received Instruction(pc=16, warp_id=0, warp_group_id=0, intended_FU='BRANCH', rs1=9, rs2=12, rd=None, src_pred=0, dest_pred=17, predicate=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False], opcode=<B_Op.BEQ: Bits('0b1000000')>, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0x806128c0'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=20, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Memrequest ACCEPTED by Memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #32
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 20, 'size': 4, 'uuid': 5, 'pc': 20, 'warp': 1, 'warpGroup': 0, 'inst': Instruction(pc=20, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None), 'src': 'icache', 'warp_id': 1, 'warp_group_id': 0}
+[ICache] Received request: Instruction(pc=16, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #33
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: Instruction(pc=16, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] waiting on memory
+[Scheduler] Pushing inst to ahead latch
+
+Cycle #34
+
+[Issue] Did not receive any valid instruction in this cycle.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: b'\xd1\x87\r\x80'
+[ICache] Received request: Instruction(pc=16, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[I$] Recieved Response from Memory: Instruction(pc=20, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, rdat1=[], rdat2=[], wdat=[], packet=Bits('0xd1870d80'), stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None)
+[ICache] FILL complete: pc=0x14
+[I$] Returned value from memory

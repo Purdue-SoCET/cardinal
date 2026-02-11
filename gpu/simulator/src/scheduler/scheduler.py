@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
+from bitstring import Bits
 gpu_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_root))
 print("here", gpu_root)
@@ -28,6 +29,7 @@ class SchedulerStage(Stage):
 
         # scheduler bookkeeping
         self.rr_index: int = 0
+        self.current_warp: int = 0
         # self.max_issues_per_cycle: int = 1
         # self.ready_queue = deque(range(warp_count))
 
@@ -40,64 +42,26 @@ class SchedulerStage(Stage):
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
-        icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
         decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
         issue_ctrl = self.forward_ifs_read["Issue_Scheduler"].pop()
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
 
         # if im getting my odd warp EOP out of my decode
-        print("[SchedulerStage] Warp Issue Check, Decode Control:", decode_ctrl)
-        print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
+        if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
+            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
+            self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
+            self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
         
-        if (icache_ctrl is None and decode_ctrl is None and issue_ctrl is None and branch_ctrl is None and writeback_ctrl is None):
-            print("[SchedulerStage] No control signals received...skipping collision detection.")
-            return
-        
-        if icache_ctrl is False:
-            print("[Scheduler] Stalling pipeline due to Icache miss!")
-            # method 1: some global stop signal
-            self.stop_fetching = True
-            # should I return back or evaulate the warps based on the current conditions nonetheless?
-            # i should NOT because I still want to evaluate everything based on the current state 
-            # return
-        else:
-            self.stop_fetching = False
-        
-        
-        if (decode_ctrl is None and issue_ctrl is None and branch_ctrl is None and writeback_ctrl is None):
-            print("[SchedulerStage] No control signals received, bubble.")
-            return
+        # # if im getting my odd warp barrier out of my decode
+        # elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
+        #     self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
+        #     self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
+        #     self.at_barrier += 1
 
-         # if im getting my odd warp EOP out of my decode
-
-        if decode_ctrl is not None:
-            if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
-                self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
-                self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-                self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
-            
-            # DEPRECIATED
-            # if im getting my odd warp barrier out of my decode
-            # elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
-            #     self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
-            #     self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-            #     self.at_barrier += 1
-
-            # if im getting my odd warp halt out of my decode
-            elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
-                self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
-
-        # # clear barrier MIGHT NOT NEED BARRIER ANYMORE
-        # if self.at_barrier == self.num_groups:
-        #     self.at_barrier = 0
-        #     self.rr_index = 0
-        #     for warp_group in self.warp_table:
-        #         warp_group.state = WarpState.READY
-        #         return
+        # if im getting my odd warp halt out of my decode
+        elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
+            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
 
         # change pc for branch
         if branch_ctrl is not None:
@@ -122,10 +86,12 @@ class SchedulerStage(Stage):
                 self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
                 self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
 
+    # might not need
     def make_instruction(self, group, warp, pc):
         inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group)
         return inst 
     
+    # might not need
     def push_instruction(self, inst):
         if self.ahead_latch.ready_for_push:
             print(f"[Scheduler] Pushing inst to ahead latch")
@@ -134,7 +100,8 @@ class SchedulerStage(Stage):
         else:
             print(f"[Scheduler] STALLED by ahead latch")
             return False 
-        
+
+    # might not need 
     def dummy_tbs_pop(self):
         if not self.behind_latch.valid:
             return None
@@ -144,9 +111,6 @@ class SchedulerStage(Stage):
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
-        # initialize instruction class
-        instr = Instruction(None, None, None, None, None, None, None, None, None)
-
         for tries in range(self.num_groups):
             warp_group = self.warp_table[self.rr_index]
 
@@ -161,7 +125,7 @@ class SchedulerStage(Stage):
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
                     self.push_instruction(instr)
-                    return instr 
+                    return 
                 
                     # DEPRECIATED
                     # return warp_group.group_id, warp_group.group_id * 2, warp_group.pc # EVEN WARP INSTRUCTION
@@ -173,51 +137,68 @@ class SchedulerStage(Stage):
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
 
-                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), current_pc)
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, warp_group.pc)
                     self.push_instruction(instr)
-                    return instr 
+                    return
                 
             else:
                 self.rr_index = (self.rr_index + 1) & self.num_groups
 
         # nothing can fetch here
-        return instr # NONE
+        return # NONE
 
 
-    # RETURN INSTRUCTION OBJECT ALWAYS
+    ############### RETURN INSTRUCTION OBJECT ALWAYS WIP
     def greedy_oldest(self):
-        return
+        # initialize instruction class
+        instr = Instruction(None, None, None, None, None, None, None, None, None)
+
+        # current group
+        curr_group = self.warp_table[self.current_warp]
+
+        # if current group is able to issue
+        if curr_group.state == WarpState.READY:
+            # odd group
+            if not curr_group.last_issue_even:
+                curr_group.last_issue_even = True
+
+                instr.pc = curr_group.pc
+                instr.warp_id = curr_group.group_id * 2
+                instr.warp_group_id = curr_group.group_id
+                return instr
+
+            # even group
+            else:
+                curr_group.last_issue_even = False
+                current_pc = curr_group.pc
+                curr_group.pc += 4
+
+                instr.pc = current_pc
+                instr.warp_id = (curr_group.group_id * 2) + 1
+                instr.warp_group_id = curr_group.group_id
+                return instr
+            
+        # current group not able to issue
+        else:
+
+            return instr
+
+        # nothing
+        return instr
     
     # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
     def compute(self):
-        # waiting for ihit
-        #check the behind latch if its attached and whether it has something in it
-        if self.behind_latch is not None:
-            tbs_req = self.behind_latch.pop()
-            if tbs_req is not None:
-                print(f"[{self.name}] Received from TBS: {tbs_req}")
-                warp_group = self.warp_table[tbs_req["warp_id"] // 2]
-                warp_group.pc = tbs_req["pc"]
-            else:
-                print(f"[{self.name}] No request from TBS this cycle!")
-
-        # check the forwarding interfaces from other stages for forwarded information
-        for fwd_if in self.forward_ifs_read.values():
-            if fwd_if.wait:
-                print(f"[{self.name}] Stalled due to wait from next stage")
-                # same issue here with nontype and ints
-                inst =  self.make_instruction(1000,1000,1000)
-                return self.push_instruction(inst)
-
+        # determining next states
         self.collision()
 
-        if self.stop_fetching == False:
-            match self.policy:
-                case "RR":
-                    inst = self.round_robin()
-                case "GTO":
-                    inst = self.greedy_oldest()
+        # wait for ihit
+        if self.forward_ifs_read["ICache_Scheduler"].pop():
+            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
-        dummy_inst = self.make_instruction(1000,1000,1000)
-        self.push_instruction(dummy_inst)
-        return dummy_inst
+        match self.policy:
+            case "RR":
+                self.round_robin()
+            case "GTO":
+                self.greedy_oldest()
+
+        # self.ahead_latch.push(instr)

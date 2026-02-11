@@ -150,7 +150,11 @@ class MSHREntry:
 class DecodeType:
     halt: int = 0
     EOP: int = 1
-    EOS: int = 2
+    MOP: int = 2 # the set default value
+    EOS: int = 3
+    empty: int = 4 # start up junk value..
+
+
 
 ###TEST CODE BELOW###
 @dataclass

@@ -111,7 +111,7 @@ def dump_latches():
     print("Decode->Issue:")
     print("  ", s(decode_issue_if))
 
-def call_stages(debug=False):
+def call_stages(debug, filler_is_sched, filler_de_sched):
     # compute order is called in reverse: 
     # this is wrt. to cycle order: 0
     # 1) ICache taking a response back from MemController for -2 cycle
@@ -122,8 +122,6 @@ def call_stages(debug=False):
 
     # step #1: initiate computes to pass through dummy instructions
     # until we reach the first real fetch from TBS
-
-    print("\n")
 
     # dummy issue stage pop
     if (debug):
@@ -154,19 +152,18 @@ def call_stages(debug=False):
     if (debug):
         dump_latches()
 
+    if(issue_scheduler_fwif.payload is None or decode_issue_if.payload is None):
+        issue_scheduler_fwif.push(filler_is_sched)
+        decode_scheduler_fwif.push(filler_de_sched)
+    
     inst = scheduler_stage.compute() # Scheduler fetching from ICache
     if (debug):
         dump_latches()
     
-    if inst.warp_id == 1000 and inst.warp_group_id == 1000:
-        print("\nTBS received some randomw bullshit.\n")
-    else:
-        print(f"\nTBS fetched warp {inst.warp_id} group {inst.warp_group_id} pc 0x{inst.pc:X}\n")
-
-def cycle(num_cycles):
+def cycle(num_cycles, filler_is_sched, filler_de_sched):
     for i in range(num_cycles):
-        print(f"Cycle #{i}")
-        call_stages(debug=False)
+        print(f"\nCycle #{i}\n")
+        call_stages(False, filler_is_sched, filler_de_sched)
 
 def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test\n")
@@ -187,10 +184,11 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     # initialize the payload initially to what we expect,
     # or set some framework value for it in the pipeline
     # so it doesnt tweak out
-
+    filler_decode_scheduler = {"type": DecodeType.MOP, "warp_id":0, "pc": 0}
+    filler_issue_scheduler = [0] * scheduler_stage.num_groups
     icache_scheduler_fwif.payload = None
-    decode_scheduler_fwif.payload = None
-    issue_scheduler_fwif.payload = None
+    decode_scheduler_fwif.push(filler_decode_scheduler)
+    issue_scheduler_fwif.push(filler_issue_scheduler)
     branch_scheduler_fwif.payload = None
     writeback_scheduler_fwif.payload = None
 
@@ -200,7 +198,7 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     tbs_ws_if.push({"warp_id": warp_id, 
                     "pc": START_PC + warp_id * 4})
     
-    cycle(num_cycles=35)
+    cycle(35, filler_issue_scheduler, filler_decode_scheduler)
 
 
 if __name__ == "__main__":

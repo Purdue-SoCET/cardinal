@@ -95,12 +95,7 @@ class DecodeStage(Stage):
             forward_ifs_write=forward_ifs_write or {},
         )
         self.prf = prf  # predicate register file reference
-        self.inflight: list[PredRequest] = [] # current request being serviced by the pred reg file
     
-    def _age_inflight(self) -> None:
-        for req in self.inflight:
-            req.remaining -= 1
-
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
             self.ahead_latch.push(inst)
@@ -109,30 +104,6 @@ class DecodeStage(Stage):
         
         return
     
-    def _lookup_after_one_cycle_for_predication(self):
-
-        for req in list(self.inflight):
-            if req.remaining > 0:
-                continue
-            
-            mostly_filled_instruction = getattr(req, "inst", None)
-
-            pred_mask = self.prf.read_predicate(
-                prf_rd_en=req.rd_en,
-                prf_rd_wsel=req.rd_wrp_sel,
-                prf_rd_psel=req.rd_pred_sel,
-                prf_neg=req.prf_neg
-            )
-
-            if pred_mask is None:
-                pred_mask = [True] * 32
-
-            mostly_filled_instruction.predicate = pred_mask
-
-            self._push_instruction_to_next_stage(mostly_filled_instruction)
-
-            return
-
     def _service_the_incoming_instruction(self) -> None:
         
         inst = None
@@ -261,13 +232,14 @@ class DecodeStage(Stage):
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
 
-        packet_marker = None
         if decoded_opcode == H_Op:
             packet_marker = DecodeType.halt
         elif EOP_bit == 1:
             packet_marker = DecodeType.EOP
         elif EOS_bit == 1:
             packet_marker = DecodeType.EOS
+        else:
+            packet_marker = DecodeType.MOP
 
         # the  forwarding happens immediately
         if packet_marker is not None:
@@ -286,32 +258,29 @@ class DecodeStage(Stage):
                 prf_neg=0,
                 remaining=1
             )
-            pred_req.inst = inst
-            self.inflight.append(pred_req)
+            
+            print(f"[Decode] Initiating PRF Read {pred_req}")
 
-            print("[Decode] Initiating one-cycle PRF lookup")
-            return 1 #return back here so its serviced in the next cycle
-        else:
-            # this should only be true for te following instruction types:
-            # For J,P,H types
-            # nothing is appended then, so we can just push to the next stage and keep on going
-            self._push_instruction_to_next_stage(inst)
-            return 0
+            pred_mask = self.prf.read_predicate(
+                prf_rd_en=pred_req.rd_en,
+                prf_rd_wsel=pred_req.rd_wrp_sel,
+                prf_rd_psel=pred_req.rd_pred_sel,
+                prf_neg=pred_req.prf_neg
+            )
+
+            if pred_mask is None:
+                pred_mask = [True] * 32
+
+            inst.predicate = pred_mask
+
+        self._push_instruction_to_next_stage(inst)
+        return 
     
     def compute(self, input_data: Optional[Any] = None):
         """Decode the raw instruction word coming from behind_latch."""
-        # this isnt that crazy it just sets the counter down on the request
-
-        # so the fuckass counter decreases I guess
-        self._age_inflight()   
-
-        # then try to service an inflight request to the pred reg file as needed
-        # pred delay tells us whether the instruction was pushed to the next stage or not
-        # if its serviced (0), then we by pass the look after one cycle stage
-        pred_delay = self._service_the_incoming_instruction()
+        self._service_the_incoming_instruction()
         
-        if (pred_delay):
-            self._lookup_after_one_cycle_for_predication()
+        return
 
 
        
