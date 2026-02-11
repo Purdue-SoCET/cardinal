@@ -67,7 +67,7 @@ icache_stage = ICacheStage(
     cache_config={"cache_size": 32 * 1024, 
                     "block_size": 4, 
                     "associativity": 1},
-    forward_ifs_write= {"ICache_Decode_Ihit": icache_scheduler_fwif},
+    forward_ifs_write= {"ICache_Scheduler": icache_scheduler_fwif},
 )
 
 def dump_sched_fwifs():
