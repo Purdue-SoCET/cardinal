@@ -12,15 +12,12 @@ START:
     ; default = 0
     sw    x0, x10, 0, 2
 
-    ; f1 = float(TID)
+    ; f1 = float(TID-16)
+    addi x3, x3, -16
     itof  x8, x3, 2
 
-    ; f2 = float(16)
-    lli   x11, 16, 2
-    itof  x12, x11, 2
-
     ; if (f1 >= f2) store 1
-    bgef  p3, x8, x12, 2
+    bgef  p3, x8, x0, 2
 
     lli   x13, 1, 3
     sw    x13, x10, 0, 3

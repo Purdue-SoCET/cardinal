@@ -9,9 +9,6 @@ START:
     mul   x9,  x3, x6, 2
     add   x10, x7, x9, 2
 
-    ; default = 0
-    sw    x0, x10, 0, 2
-
     ; rs1 = TID - 16 (signed range -16..15)
     addi  x8, x3, -16, 2
 
