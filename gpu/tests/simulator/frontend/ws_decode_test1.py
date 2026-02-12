@@ -65,7 +65,7 @@ writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
 
 mem = Mem(
     start_pc=0x0,
-    input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu/tests/simulator/frontend/test.bin",
+    input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu/tests/simulator/frontend/ws_decode_test_binaries/no_eop.bin",
     fmt="bin",
 )
 
@@ -203,9 +203,10 @@ def call_stages(debug, filler_is_sched, filler_de_sched, all_instructions):
 def cycle(num_cycles, filler_is_sched, filler_de_sched, all_instructions):
     for i in range(num_cycles):
         print(f"\nCycle #{i}\n")
+        # simulate signals from issue
         call_stages(False, filler_is_sched, filler_de_sched, all_instructions)
 
-def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6):
+def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6, num_cycles):
     print("Scheduler to ICacheStage Requests Test\n")
 
     warp_id = 0
@@ -239,12 +240,12 @@ def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6):
                     "pc": START_PC + warp_id * 4})
     
     all_instructions = [] # list to hold the instructions decoded
-    cycle(2325, filler_issue_scheduler, filler_decode_scheduler, all_instructions)
-    dump_array_to_timestamped_file("./test_log", all_instructions, prefix="issue_dump")
+    cycle(num_cycles, filler_issue_scheduler, filler_decode_scheduler, all_instructions)
+    dump_array_to_timestamped_file("./test_log", all_instructions, prefix="test1_dump")
 
     
 
 
 if __name__ == "__main__":
-    test_fetch()
+    test_fetch(int(sys.argv[1]))
 
