@@ -195,6 +195,9 @@ class WarpGroup:
 @dataclass
 class Instruction:
     # ----- required (no defaults) -----
+    # STRUCTURAL HAZARD WITH PRED REG FILE WRITE AND READ LATER ON
+    # INSTRUCTION JUST CONTAINS THE OPCODE INFORMATION
+    # discusss more later about this..
     pc: Optional[Bits] = None
     warp_id: Optional[int] = None
     warp_group_id: Optional[int] = None
