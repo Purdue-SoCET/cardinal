@@ -1,8 +1,9 @@
 from common.custom_enums_multi import B_Op, P_Op
 from simulator.src.base_class import Instruction
 
-class BranchFU:
+class BranchFU(FunctionalSubUnit):
     def __init__(self, instructions: Instruction, prf_rd_data, op_1, op_2):
+        super.__init__(num=0) # only one branch unit
         self.warp_id = instructions.warp
         self.decode_mapping_table = {
             0: "beq",
