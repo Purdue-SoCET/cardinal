@@ -82,6 +82,8 @@ class IssueStage(Stage):
         # self.fust_latency_cycles = max(1, int(fust_latency_cycles))
         self.fust_latency_cycles = max(1, int(self.fust_latency_cycles))
 
+        self.cycle = 0
+
         # --- Register files (banks) ---
         # self._evenRF_fn = evenRF_fn
         # self._oddRF_fn = oddRF_fn
@@ -148,9 +150,13 @@ class IssueStage(Stage):
             self.forward_signals(fname, self.iBuff_Full_Flags)
 
         if len(self.dispatched) != 0:
-            self.ahead_latch.push(self.dispatched[0])
-            self.dispatched = []
+            self.dispatched[0].issued_cycle = self.cycle
+            if self.fust[self.dispatched[0].intended_FU] == 0:
+                self.ahead_latch.push(self.dispatched[0])
+                self.dispatched = [] 
 
+        self.cycle += 1
+        
         return self.dispatched
 
     # --------------------------------

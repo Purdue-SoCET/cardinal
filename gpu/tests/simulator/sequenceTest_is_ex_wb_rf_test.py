@@ -263,15 +263,10 @@ def test_all_operations():
     
     # Cycle 1: Feed instructions
     for idx, instr in enumerate(instruction_list):
-        # Issue Stage: Send new instruction
-        issue_stage.compute(instr)
-        
-        # Advance Pipeline: Tick logic
         wb_stage.tick()
         ex_stage.tick()
-        
-        # Advance Pipeline: Compute logic
         ex_stage.compute()
+        issue_stage.compute(instr)
     
     print("All instructions issued. Flushing pipeline...")
 
@@ -279,10 +274,10 @@ def test_all_operations():
     # We loop enough times to cover the latency of the slowest unit
     FLUSH_CYCLES = 50
     for _ in range(FLUSH_CYCLES):
-        issue_stage.compute(None) # No new instruction
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
+        issue_stage.compute(None)
 
     print("Pipeline flush complete.")
 
