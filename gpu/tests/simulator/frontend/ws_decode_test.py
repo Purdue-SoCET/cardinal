@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 from pathlib import Path
 
@@ -14,6 +15,35 @@ from simulator.src.mem.Memory import Mem
 from simulator.src.decode.decode_class import DecodeStage
 from simulator.src.decode.predicate_reg_file import PredicateRegFile
 from simulator.base_class import *
+from datetime import datetime
+from typing import Iterable, Any
+
+
+def dump_array_to_timestamped_file(
+    out_dir: str | Path,
+    arr: Iterable[Any],
+    prefix: str = "dump",
+    ext: str = "txt",
+    sep: str = "\n",
+    include_index: bool = True,
+) -> Path:
+    """
+    Creates out_dir if needed, writes arr to a timestamped file, returns the Path.
+    Filename format: {prefix}_YYYY-MM-DD_HH-MM-SS.{ext}
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{prefix}_{ts}.{ext.lstrip('.')}"
+    out_path = out_dir / filename
+
+    with out_path.open("w", encoding="utf-8") as f:
+        for i, x in enumerate(arr):
+            line = f"{i}: {x}" if include_index else str(x)
+            f.write(line + sep)
+
+    return out_path
 
 START_PC = 0x1000
 LAT = 2
@@ -111,7 +141,7 @@ def dump_latches():
     print("Decode->Issue:")
     print("  ", s(decode_issue_if))
 
-def call_stages(debug, filler_is_sched, filler_de_sched):
+def call_stages(debug, filler_is_sched, filler_de_sched, all_instructions):
     # compute order is called in reverse: 
     # this is wrt. to cycle order: 0
     # 1) ICache taking a response back from MemController for -2 cycle
@@ -135,6 +165,12 @@ def call_stages(debug, filler_is_sched, filler_de_sched):
         print("[Issue] Did not receive any valid instruction in this cycle.")
     else:
         print(f"[Issue] Received {updated_instruction}")
+
+        pkt = updated_instruction.packet
+        word_le = int.from_bytes(pkt.bytes, "little")   # canonical 32-bit instruction word
+        print(f"[Issue] packet bytes: {pkt.bytes.hex(' ')}  word(le)=0x{word_le:08x}  bits={word_le:032b}")
+
+        all_instructions.append([updated_instruction.warp_group_id, updated_instruction.warp_id, pkt])
 
     if (debug): 
         dump_latches()
@@ -164,10 +200,10 @@ def call_stages(debug, filler_is_sched, filler_de_sched):
     if (debug):
         dump_latches()
     
-def cycle(num_cycles, filler_is_sched, filler_de_sched):
+def cycle(num_cycles, filler_is_sched, filler_de_sched, all_instructions):
     for i in range(num_cycles):
         print(f"\nCycle #{i}\n")
-        call_stages(False, filler_is_sched, filler_de_sched)
+        call_stages(False, filler_is_sched, filler_de_sched, all_instructions)
 
 def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test\n")
@@ -202,7 +238,11 @@ def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6):
     tbs_ws_if.push({"warp_id": warp_id, 
                     "pc": START_PC + warp_id * 4})
     
-    cycle(20, filler_issue_scheduler, filler_decode_scheduler)
+    all_instructions = [] # list to hold the instructions decoded
+    cycle(2325, filler_issue_scheduler, filler_decode_scheduler, all_instructions)
+    dump_array_to_timestamped_file("./test_log", all_instructions, prefix="issue_dump")
+
+    
 
 
 if __name__ == "__main__":

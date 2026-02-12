@@ -228,16 +228,17 @@ class DecodeStage(Stage):
         elif is_P:
             inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11).int
         elif is_H:
-            inst.imm = Bits(uint=0xFFFFFF, length=23).int
+            inst.imm = Bits(uint=0x7FFFFF, length=23).int
         else:
             inst.imm = None
 
+        # change this according to what we 
         inst.intended_FU = classify_fust_unit(inst.opcode)
 
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
 
-        if decoded_opcode == H_Op:
+        if decoded_opcode == H_Op.HALT:
             packet_marker = DecodeType.halt
         elif EOP_bit == 1:
             packet_marker = DecodeType.EOP
