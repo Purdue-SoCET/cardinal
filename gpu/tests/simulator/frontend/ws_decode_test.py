@@ -15,7 +15,7 @@ from simulator.src.decode.decode_class import DecodeStage
 from simulator.src.decode.predicate_reg_file import PredicateRegFile
 from simulator.base_class import *
 
-START_PC = 4
+START_PC = 0x1000
 LAT = 2
 WARP_COUNT = 6
 
@@ -69,7 +69,7 @@ icache_stage = ICacheStage(
     cache_config={"cache_size": 32 * 1024, 
                     "block_size": 4, 
                     "associativity": 1},
-    forward_ifs_write= {"ICache_scheduler_Ihit": icache_scheduler_fwif},
+    forward_ifs_write= {"ICache_Scheduler": icache_scheduler_fwif},
 )
 
 prf = PredicateRegFile(
@@ -152,9 +152,13 @@ def call_stages(debug, filler_is_sched, filler_de_sched):
     if (debug):
         dump_latches()
 
-    if(issue_scheduler_fwif.payload is None or decode_issue_if.payload is None):
+    if(issue_scheduler_fwif.payload is None):
         issue_scheduler_fwif.push(filler_is_sched)
+        print(f"[TB] REPLACED ISSUE FWIF {issue_scheduler_fwif.payload}")
+    
+    if(decode_scheduler_fwif.payload is None):
         decode_scheduler_fwif.push(filler_de_sched)
+        print(f"[TB] REPLACED DECODE FWIF {decode_scheduler_fwif.payload.get(type)}")
     
     inst = scheduler_stage.compute() # Scheduler fetching from ICache
     if (debug):
@@ -165,7 +169,7 @@ def cycle(num_cycles, filler_is_sched, filler_de_sched):
         print(f"\nCycle #{i}\n")
         call_stages(False, filler_is_sched, filler_de_sched)
 
-def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
+def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6):
     print("Scheduler to ICacheStage Requests Test\n")
 
     warp_id = 0
@@ -198,7 +202,7 @@ def test_fetch(LAT=2, START_PC=4, WARP_COUNT=6):
     tbs_ws_if.push({"warp_id": warp_id, 
                     "pc": START_PC + warp_id * 4})
     
-    cycle(35, filler_issue_scheduler, filler_decode_scheduler)
+    cycle(20, filler_issue_scheduler, filler_decode_scheduler)
 
 
 if __name__ == "__main__":
