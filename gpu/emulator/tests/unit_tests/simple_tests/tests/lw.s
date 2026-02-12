@@ -6,7 +6,7 @@ START:
     lli   x5, 32                        ; MAX_THREADS = 32
 
     ; load stride and base
-    lli   x6, 4                         ; stride = 4 bytes/thread
+    lli   x6, 8                         ; stride = 4 bytes/thread
     lui   x7, 0x10                      ; base = 0x10000000
 
     ; if (tid < MAX_THREADS) -> compute
@@ -18,13 +18,11 @@ START:
 
     ; -----------------------------
     ; Setup: store known word
-    ; val = 0x11223344 ^ TID
+    ; val = 0x11223344
     ; -----------------------------
     lui   x8, 0x11, 2                   ; x8 = 0x11000000
-    lmi   x8, 0x2, 2                    ; x8 = 0x11200000
-    lli   x8, 0x44, 2                   ; x8 = 0x11223344 (per your nibble loaders)
-    xori  x8, x8, 0x0, 2                ; (no-op placeholder if your assembler needs 2-tagged op)
-    xor   x8, x8, x3, 2                 ; x8 = 0x11223344 ^ TID
+    lmi   x8, 0x223, 2                    ; x8 = 0x11223000
+    lli   x8, 0x344, 2                   ; x8 = 0x11223344
     sw    x8, x10, 0, 2                 ; store to memory
 
     ; -----------------------------
@@ -32,10 +30,7 @@ START:
     ; -----------------------------
     lw    x11, x10, 0, 2                ; x11 = *(word*)addr
 
-    ; store loaded result to base+0x100 region
-    lli   x12, 0x100, 2
-    add   x13, x7, x12, 2
-    add   x14, x13, x9, 2
-    sw    x11, x14, 0, 2
+    ; store loaded result
+    sw    x11, x10, 4, 2
 
     halt
