@@ -46,18 +46,17 @@ class SchedulerStage(Stage):
         issue_ctrl = self.forward_ifs_read["Issue_Scheduler"].pop()
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
+        
+        print("[SchedulerStage] Warp Issue Check, Decode Control:", decode_ctrl)
+        print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
+        print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
+        print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
 
         # if im getting my odd warp EOP out of my decode
         if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
             self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
             self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
             self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
-        
-        # # if im getting my odd warp barrier out of my decode
-        # elif decode_ctrl["type"] == DecodeType.Barrier and decode_ctrl["warp_id"] % 2:
-        #     self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.BARRIER
-        #     self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-        #     self.at_barrier += 1
 
         # if im getting my odd warp halt out of my decode
         elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
@@ -112,6 +111,7 @@ class SchedulerStage(Stage):
     # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
         for tries in range(self.num_groups):
+            print(len(self.warp_table))
             warp_group = self.warp_table[self.rr_index]
 
             # if we can issue this warp group
@@ -124,11 +124,10 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = True
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
+                    print(f"[Scheduler] Issuing an instruction for {warp_group.group_id}, {(warp_group.group_id * 2)}, {warp_group.pc}")
                     self.push_instruction(instr)
                     return 
                 
-                    # DEPRECIATED
-                    # return warp_group.group_id, warp_group.group_id * 2, warp_group.pc # EVEN WARP INSTRUCTION
 
                 # if the last issue for the group was even increase index
                 else:
@@ -137,12 +136,14 @@ class SchedulerStage(Stage):
                     warp_group.pc += 4
                     warp_group.last_issue_even = False
 
-                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, warp_group.pc)
+                    instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, current_pc)
+                    print(f"[Scheduler] Issuing an instruction for {warp_group.group_id}, {(warp_group.group_id * 2) + 1}, {current_pc}")
                     self.push_instruction(instr)
                     return
                 
             else:
-                self.rr_index = (self.rr_index + 1) & self.num_groups
+                print(f"[Scheduler] Round-robin skipping this warp group {tries} due to being stalled.")
+                self.rr_index = (self.rr_index + 1) % self.num_groups
 
         # nothing can fetch here
         return # NONE
@@ -192,7 +193,8 @@ class SchedulerStage(Stage):
         self.collision()
 
         # wait for ihit
-        if self.forward_ifs_read["ICache_Scheduler"].pop():
+        if not self.forward_ifs_read["ICache_Scheduler"].pop():
+            print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         match self.policy:

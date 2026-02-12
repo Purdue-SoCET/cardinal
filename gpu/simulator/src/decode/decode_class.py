@@ -120,8 +120,13 @@ class DecodeStage(Stage):
 
 
         raw_bits = inst.packet
-        print(f"[Decode]: Received Raw Instruction Data: {raw_bits}")
-        raw = raw_bits.uint
+        print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
+        # Make the bytes explicit (adapt depending on your Bits type)
+        raw_bytes = raw_bits.bytes if hasattr(raw_bits, "bytes") else bytes(raw_bits)
+
+        raw = int.from_bytes(raw_bytes, "little")  # <-- canonical instruction word
+
+        opcode7 = raw & 0x7F
 
         # bits [6:0]
         opcode7 = raw & 0x7F
@@ -242,9 +247,9 @@ class DecodeStage(Stage):
             packet_marker = DecodeType.MOP
 
         # the  forwarding happens immediately
-        if packet_marker is not None:
-            push_pkt = {"type": packet_marker, "warp_id": inst.warp_id, "pc": inst.pc}
-            self.forward_ifs_write["Decode_Scheduler_Pckt"].push(push_pkt)
+        push_pkt = {"type": packet_marker, "warp_id": inst.warp_id, "pc": inst.pc}
+        self.forward_ifs_write["Decode_Scheduler_Pckt"].push(push_pkt)
+
         # -------------------------------------------------------
         # 6) Predicate register file lookup
         # ---------------------------------------------------------

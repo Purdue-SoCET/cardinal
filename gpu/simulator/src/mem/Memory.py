@@ -44,11 +44,13 @@ class Mem:
                     b1 = (word >> 8) & 0xFF
                     b2 = (word >> 16) & 0xFF
                     b3 = (word >> 24) & 0xFF
+                    print(b0, b1, b2, b3)
                 else:
                     b3 = (word >> 0) & 0xFF
                     b2 = (word >> 8) & 0xFF
                     b1 = (word >> 16) & 0xFF
                     b0 = (word >> 24) & 0xFF
+                    print(b0, b1, b2, b3)
 
                 self.memory[addr + 0] = b0
                 self.memory[addr + 1] = b1
@@ -61,7 +63,8 @@ class Mem:
     def read(self, addr: int, size: int = 4) -> Bits:
         byte_addr = int(addr)
         data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
-        print("[Memory] Returning data:", data)
+        word = int.from_bytes(data, "little")
+        print(f"[Memory] Returning data: {word:08x}")
         return Bits(bytes=data)
 
     def write(self, addr: int, data: Bits, bytes_t: int):
