@@ -263,10 +263,15 @@ def test_all_operations():
     
     # Cycle 1: Feed instructions
     for idx, instr in enumerate(instruction_list):
+
+        if instr.rd.uint == 30:
+            abcHI = 1
+
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
         issue_stage.compute(instr)
+
     
     print("All instructions issued. Flushing pipeline...")
 
@@ -296,6 +301,9 @@ def test_all_operations():
         reg_list=regs_to_check,
         verbose=True
     )
+
+    pipeline_rf.dump()
+    golden_rf.dump()
 
     if passed:
         print("\n✅ SUCCESS: All register values match golden model.")

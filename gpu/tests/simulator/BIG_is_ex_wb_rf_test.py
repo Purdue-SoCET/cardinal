@@ -424,8 +424,8 @@ def test_all_operations():
     else:
         print(f"\nResult: {failed_tests} TEST(S) FAILED\n")
 
-    # pipeline_rf.dump()
-    # golden_rf.dump()
+    pipeline_rf.dump()
+    golden_rf.dump()
     
     return passed_tests, failed_tests
 
