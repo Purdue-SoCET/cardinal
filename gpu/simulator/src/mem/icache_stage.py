@@ -63,10 +63,11 @@ class ICacheStage(Stage):
 
     # sending ready/stalled signals to scheduler
     def _send_valid(self, val: bool):
-        if "ICache_scheduler_Ihit" in self.forward_ifs_write:
-            self.forward_ifs_write["ICache_scheduler_Ihit"].push(val)
-        if "ihit" in self.forward_ifs_write:
-            self.forward_ifs_write["ihit"].set_wait(not val)
+        self.forward_ifs_write["ICache_Scheduler"].push(val)
+        # if "ICache_scheduler_Ihit" in self.forward_ifs_write:
+        #     self.forward_ifs_write["ICache_scheduler_Ihit"].push(val)
+        # if "ihit" in self.forward_ifs_write:
+        #     self.forward_ifs_write["ihit"].set_wait(not val)
 
     # decoding address
     def _addr_decode(self, pc_int: int):
@@ -167,6 +168,10 @@ class ICacheStage(Stage):
                     else:
                         print("[I$] Memrequest STALLED due tobusy memory")
                         self.req_latched = True
+
+            # if scheduler isnt fetching and if theres no pending memory request
+            else:
+                self._send_valid(True)
 
         self.cycle += 1
         return
