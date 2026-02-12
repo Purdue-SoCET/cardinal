@@ -52,6 +52,8 @@ class ArithmeticSubUnit(FunctionalSubUnit):
     def tick(self, behind_latch: LatchIF) -> Instruction:
         if isinstance(behind_latch, LatchIF):
             in_data = behind_latch.snoop()
+            if in_data.rd.int == 53:
+                abcHI = 1
         else:
             in_data = None
 

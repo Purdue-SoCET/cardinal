@@ -54,7 +54,7 @@ class IssueStage(Stage):
         self.fust = fust
 
         self.num_iBuffer = 16
-        self.num_entries = 4
+        self.num_entries = 100
         # --- iBuffer: 16 warpGroups × 4-deep FIFO each ---
         self.iBuffer: List[List[Optional[Instruction]]] = [
             [None for _ in range(self.num_entries)] for _ in range(self.num_iBuffer)
@@ -152,11 +152,13 @@ class IssueStage(Stage):
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
             if self.fust[self.dispatched[0].intended_FU] == 0:
+                if self.dispatched[0].rd.int == 53:
+                    abcHI = 1
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
 
-        self.cycle += 1
-        
+        self.cycle += 1        
+
         return self.dispatched
 
     # --------------------------------

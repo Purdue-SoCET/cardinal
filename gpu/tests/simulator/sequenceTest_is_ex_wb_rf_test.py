@@ -233,7 +233,7 @@ def test_all_operations():
                     golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
 
         golden_rf.write_warp_gran(
-            warp_id=warp_id,
+            warp_id=rd_reg % 2,
             dest_operand=Bits(uint=rd_reg, length=32),
             data=golden_res
         )
@@ -242,7 +242,7 @@ def test_all_operations():
         instr = Instruction(
             pc=Bits(uint=0x0, length=32),
             intended_FU=intended_fu,
-            warp_id=warp_id,
+            warp_id=rd_reg % 2,
             warp_group_id=0,
             num_operands=2,
             rs1=Bits(uint=rs1_reg, length=32),
@@ -251,9 +251,10 @@ def test_all_operations():
             wdat=[Bits(uint=0, length=32) for _ in range(pipeline_rf.threads_per_warp)],
             opcode=opcode,
             predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
-            target_bank=0,
+            target_bank=rd_reg % 2,
         )
         instruction_list.append(instr)
+        print(instr.target_bank)
 
     print(f"Generated {len(instruction_list)} instructions.")
 
@@ -264,7 +265,7 @@ def test_all_operations():
     # Cycle 1: Feed instructions
     for idx, instr in enumerate(instruction_list):
 
-        if instr.rd.uint == 30:
+        if instr.rd.uint == 53:
             abcHI = 1
 
         wb_stage.tick()
@@ -277,7 +278,7 @@ def test_all_operations():
 
     # Cycle 2: Flush pipeline (allow remaining instructions to complete)
     # We loop enough times to cover the latency of the slowest unit
-    FLUSH_CYCLES = 50
+    FLUSH_CYCLES = 25
     for _ in range(FLUSH_CYCLES):
         wb_stage.tick()
         ex_stage.tick()

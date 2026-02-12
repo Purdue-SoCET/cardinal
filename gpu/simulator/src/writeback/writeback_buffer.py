@@ -185,6 +185,8 @@ class WritebackBuffer:
         for bank, buffer in buffers_to_writeback.items():
             if buffer is not None:
                 values_to_writeback[bank] = buffer.pop()
+                if values_to_writeback[bank].rd.int == 53:
+                    abcHI = 1
                 for i in range(32):
                     values_to_writeback[bank].wdat[i] = None if values_to_writeback[bank].predicate[i].bin == '0' else values_to_writeback[bank].wdat[i]
                 # Track writeback for the source buffer
@@ -205,6 +207,8 @@ class WritebackBuffer:
                 latch.pop()
                 continue
             if in_data is not None:
+                if in_data.rd.int == 53:
+                    abcHI = 1
                 match self.count_scheme:
                     case WritebackBufferCount.BUFFER_PER_FSU:
                         target_buffer = in_data.intended_FU

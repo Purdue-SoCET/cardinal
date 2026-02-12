@@ -112,6 +112,8 @@ class ExecuteStage(Stage):
             in_data = self.behind_latch.snoop()
 
             if isinstance(in_data, Instruction):
+                if in_data.rd.int == 53:
+                    abcHI = 1
                 in_data.mark_stage_enter(self.name, self.cycle)
             
             fu_out_data = fu.tick(self.behind_latch, fust=self.fust)
