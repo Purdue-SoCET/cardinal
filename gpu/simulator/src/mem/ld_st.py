@@ -27,6 +27,29 @@ class Ldst_Fu:
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
 
+    def print_dcache_resp(self, dcache_response):
+        if dcache_response:
+            msg_type = dcache_response.type
+            uuid = dcache_response.uuid
+            data = dcache_response.data
+
+            # --- Helper: Format Data as Hex ---
+            data_hex = data
+            if isinstance(data, int):
+                data_hex = f"0x{data:08X}" # Format as 8-digit Hex
+            elif isinstance(data, list):
+                data_hex = [f"0x{x:X}" for x in data] # Format list items
+            # ----------------------------------
+
+            if (msg_type == 'MISS_ACCEPTED'):
+                print(f"[LSU] Received: MISS ACCEPTED (UUID: {uuid})")
+            elif (msg_type == 'HIT_COMPLETE'):
+                print(f"[LSU] Received: HIT COMPLETE (Data: {data_hex})")
+            elif (msg_type == 'MISS_COMPLETE'):
+                print(f"[LSU] Received: MISS COMPLETE (UUID: {uuid}) - Data is in cache")
+            elif (msg_type == 'HIT_STALL'):
+                print(f"[LSU] Received: HIT STALL")
+
     def tick(self, issue_if) -> Optional[Instruction]:
         return_instr = None
         if hasattr(issue_if, 'valid'):
@@ -35,7 +58,7 @@ class Ldst_Fu:
         if issue_if and len(self.ldst_q) < self.ldst_q_size:
             instr = issue_if.pop()
             if instr != None:
-                print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
+                print(f"LDST_FU: Accepting instruction from latch pc: {instr}")
                 self.ldst_q.append(pending_mem(instr))
 
         #apply backpressure if ldst_q full
@@ -44,36 +67,16 @@ class Ldst_Fu:
             issue_if.forward_if.set_wait(True)
         else:
             issue_if.forward_if.set_wait(False)
-
-        #send instr to wb if ready
-        if self.wb_if.ready_for_push() and len(self.wb_buffer) > 0:
-            return_instr = self.wb_buffer.pop(0)
-            self.wb_if.push(return_instr)
-            if (return_instr):
-                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
-
-        #send req to cache if not waiting for response
-        if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
-            req = self.ldst_q[0].genReq()
-            if req:
-                self.dcache_if.push(
-                    self.ldst_q[0].genReq()
-                )
-                self.outstanding = True
-
-        #move mem_req to wb_buffer if finished
-        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
-            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
-            self.wb_buffer.append(self.ldst_q.pop(0).instr)
-
+        
         #handle dcache packet
-        if self.dcache_if.forward_if.pop():
+        payload: dMemResponse = self.dcache_if.forward_if.pop()
+        if payload:
+            self.dcache_if.forward_if.payload = None
             if len(self.ldst_q) == 0:
                 print(f"LSQ is length 0 and recieved a dcache response")
 
-            payload: dMemResponse = self.dcache_if.forward_if.pop()
-
             mem_req = self.ldst_q[0]
+            self.print_dcache_resp(payload)
             match payload.type:
                 case 'MISS_ACCEPTED':
                     # logger.info("Handling dcache MISS_ACCEPTED")
@@ -86,10 +89,34 @@ class Ldst_Fu:
                     mem_req.parseMshrHit(payload)
                 case 'FLUSH_COMPLETE':
                     mem_req.parseHit(payload)
+                    mem_req.finished_idx = [1] * 32 
+                    self.outstanding = False
                 case 'HIT_COMPLETE':
                     # logger.info("Handling dcache HIT_COMPLETE")
                     mem_req.parseHit(payload)
                     self.outstanding = False
+        
+        #move mem_req to wb_buffer if finished
+        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
+            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
+            self.wb_buffer.append(self.ldst_q.pop(0).instr)
+        
+        #send req to cache if not waiting for response
+        if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
+            req = self.ldst_q[0].genReq()
+            if req:
+                self.dcache_if.push(
+                    self.ldst_q[0].genReq()
+                )
+                self.outstanding = True
+
+        #send instr to wb if ready
+        if self.wb_if.ready_for_push() and len(self.wb_buffer) > 0:
+            return_instr = self.wb_buffer.pop(0)
+            self.wb_if.push(return_instr)
+            if (return_instr):
+                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
+
     
         return return_instr
             

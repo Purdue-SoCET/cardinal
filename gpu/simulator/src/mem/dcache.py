@@ -716,14 +716,13 @@ class LockupFreeCacheStage(Stage):
                 self.behind_latch.forward_if.set_wait(1)
                 # We can't accept a new request (hit or miss) because the
                 # hit pipeline resource is occupied.
-                if self.hit_stall:
+                if self.pending_request is not None:
                     # We have a request, but the hit pipeline is busy
                     self.output_buffer.append(dMemResponse(
                         type = 'HIT_STALL',
                         stall = True,
                         req = self.pending_request
                     ))
-                    self.behind_latch.forward_if.set_wait(1)
                     
         # If we are still holding a request at the end of the cycle, 
         # we MUST tell the LSU to stall for the next cycle.

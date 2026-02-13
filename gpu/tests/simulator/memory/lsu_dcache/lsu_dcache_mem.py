@@ -174,29 +174,6 @@ def run_sim (start, cycles):
         mem.compute(input_data = None)
         dCache.compute()
         lsu.tick(issue_if = issue_lsu_IF)
-
-        dcache_response = dcache_lsu_resp_IF.payload
-        if dcache_response:
-            msg_type = dcache_response.type
-            uuid = dcache_response.uuid
-            data = dcache_response.data
-
-            # --- Helper: Format Data as Hex ---
-            data_hex = data
-            if isinstance(data, int):
-                data_hex = f"0x{data:08X}" # Format as 8-digit Hex
-            elif isinstance(data, list):
-                data_hex = [f"0x{x:X}" for x in data] # Format list items
-            # ----------------------------------
-
-            if (msg_type == 'MISS_ACCEPTED'):
-                print(f"[Cycle {cycle}] LSU Received: MISS ACCEPTED (UUID: {uuid})")
-            elif (msg_type == 'HIT_COMPLETE'):
-                print(f"[Cycle {cycle}] LSU Received: HIT COMPLETE (Data: {data_hex})")
-            elif (msg_type == 'MISS_COMPLETE'):
-                print(f"[Cycle {cycle}] LSU Received: MISS COMPLETE (UUID: {uuid}) - Data is in cache")
-            elif (msg_type == 'HIT_STALL'):
-                print(f"[Cycle {cycle}] LSU Received: HIT STALL")
         
         if ic_resp.valid:
             i_response = ic_resp.pop()
@@ -206,9 +183,6 @@ def run_sim (start, cycles):
         print_latch_states(all_interfaces, all_forward, cycle, "after")
         
         dcache_lsu_resp_IF.pop()
-        lsu_response = lsu_wb_IF.pop()
-        if (lsu_response):
-            print(f"[Cycle {cycle}] WB Received instruction from LSU")
     print(f"=== Test ended ===")
     return (cycles)
 
@@ -333,7 +307,13 @@ def test_lw():
         test = TestLoadStoreUnit()
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 220)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
 
 # TEST LOAD HALF-WORD
 def test_lh():
@@ -342,7 +322,13 @@ def test_lh():
         test = TestLoadStoreUnit()
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100001'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 162)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
 
 # TEST BYTE
 def test_lb():
@@ -351,7 +337,13 @@ def test_lb():
         test = TestLoadStoreUnit()
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100010'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 162)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
 
 # TEST STORE WORD
 def test_sw():
@@ -360,7 +352,13 @@ def test_sw():
         test = TestLoadStoreUnit()
         instr = test.genStore(pc=0, opcode=Bits(bin='0b0110000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xDEAD0000, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 162)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
         print_banks()
 
 
@@ -371,7 +369,13 @@ def test_sh():
         test = TestLoadStoreUnit()
         instr = test.genStore(pc=0, opcode=Bits(bin='0b0110001'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBEEF, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 162)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
         print_banks()
 
 
@@ -382,7 +386,13 @@ def test_sb():
         test = TestLoadStoreUnit()
         instr = test.genStore(pc=0, opcode=Bits(bin='0b0110010'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBE, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 162)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
         print_banks()
 
 
@@ -395,7 +405,13 @@ def test_pred():
         pred[0] = Bits(bin='0b1')
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], pred = pred)
         issue_lsu_IF.push(instr)
-        run_sim(0, 7)
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
         
 
 # TEST BACKPRESSURE
@@ -425,27 +441,71 @@ def test_backpressure():
         # Instr. 4
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x60))
         issue_lsu_IF.push(instr)
-        run_sim(3, 4)
+        run_sim(3, 1)
 
         # Instr. 5: Causes backpressure
-        current_cycle = 7
-        while (not issue_lsu_IF.ready_for_push()):
+        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x80))
+        issue_lsu_IF.push(instr)
+        run_sim(4, 1)
+        current_cycle = 5
+        while (not issue_lsu_IF.ready_for_push()):      # Finished 1st instruction
             run_sim(current_cycle, 1)
             current_cycle += 1
             pass
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x80))
         issue_lsu_IF.push(instr)
-        run_sim(current_cycle, 670)
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+
+        while (not lsu_wb_IF.valid):                    # Finished 2nd instruction
+            run_sim(current_cycle, 1)
+            current_cycle += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+        
+        while (not lsu_wb_IF.valid):                    # Finished 3rd instruction
+            run_sim(current_cycle, 1)
+            current_cycle += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+        
+        while (not lsu_wb_IF.valid):                    # Finished 4th instruction
+            run_sim(current_cycle, 1)
+            current_cycle += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+
+        while (not lsu_wb_IF.valid):                    # Finished 5th instruction
+            run_sim(current_cycle, 1)
+            current_cycle += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+        
+        run_sim(current_cycle, 10)
+
         print_banks()
 
 # TEST HALT
 def test_halt():
-    with open("9.back_halt", "w") as f:
+    with open("9.test_halt", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
         instr = test.genLoad(pc=0, opcode=Bits(bin='0b1111111'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
-        run_sim(0, 46)
+
+        current = 0
+        while (not lsu_wb_IF.valid):
+            run_sim(current, 1)
+            current += 1
+        lsu_response = lsu_wb_IF.pop()
+        if (lsu_response):
+            print(f"WB Received instruction from LSU!")
+
         print_banks()
 
 
