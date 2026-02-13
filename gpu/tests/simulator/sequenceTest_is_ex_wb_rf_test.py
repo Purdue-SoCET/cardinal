@@ -140,6 +140,8 @@ def test_all_operations():
         12: [1.57 for _ in range(pipeline_rf.threads_per_warp)],
         13: [4.0 for _ in range(pipeline_rf.threads_per_warp)],
     }
+
+    imm_test_value = Bits(int=5, length=32)  # Immediate value for I-type instructions
     
     for reg_num, values in test_values.items():
         if reg_num >= 10:
@@ -200,13 +202,17 @@ def test_all_operations():
         if intended_fu not in fust:
             print(f"  Warning: Skipping {test_name} (FU {intended_fu} not configured)")
             continue
-
+        
         # --- A. Update Golden Model ---
         bank = warp_id % golden_rf.banks
         w_idx = warp_id // 2
         rs1_vals = golden_rf.regs[bank][w_idx][rs1_reg]
         rs2_vals = golden_rf.regs[bank][w_idx][rs2_reg]
         golden_res = []
+
+        if isinstance(opcode, I_Op): # if opcode is for an immediate type
+            imm_val = imm_test_value
+            rs2_vals = None
 
         for i in range(golden_rf.threads_per_warp):
             # 1. Special Functions
@@ -224,6 +230,12 @@ def test_all_operations():
             elif rd_reg >= 50: 
                 res = python_op(rs1_vals[i].float, rs2_vals[i].float)
                 golden_res.append(Bits(float=res, length=32))
+            elif isinstance(opcode, I_Op): # Immediate ops
+                res = python_op(rs1_vals[i].int, imm_val.int)
+                if res < 0:
+                    golden_res.append(Bits(int=res, length=32))
+                else:
+                    golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
             # 3. Int Ops
             else:
                 res = python_op(rs1_vals[i].int, rs2_vals[i].int)
@@ -252,6 +264,7 @@ def test_all_operations():
             opcode=opcode,
             predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
             target_bank=rd_reg % 2,
+            imm=imm_val if isinstance(opcode, I_Op) else None
         )
         instruction_list.append(instr)
         print(instr.target_bank)

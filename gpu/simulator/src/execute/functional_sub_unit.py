@@ -129,12 +129,16 @@ class Alu(ArithmeticSubUnit):
         for i in range(32):
             if instr.predicate[i].bin == 0b0:
                 continue
-
-            if self.type_ == int: 
-                a = instr.rdat1[i].int
-                b = instr.rdat2[i].int
-            else:
+            
+            if self.type_ != int: 
                 raise ValueError("ALU only supports integer operations.")
+
+            a = instr.rdat1[i].int
+            
+            if isinstance(instr.opcode, I_Op):
+                b = instr.imm.int
+            else:
+                b = instr.rdat2[i].int
 
             match instr.opcode:
                 case R_Op.ADD | I_Op.ADDI:

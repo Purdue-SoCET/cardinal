@@ -158,7 +158,6 @@ class WritebackBuffer:
         if self.count_scheme == WritebackBufferCount.BUFFER_PER_BANK:
             # Directly select one buffer per bank
             for bank_name in self.buffer_names:
-                bank_name = f"bank_{i}"
                 match self.primary_policy:
                     case WritebackBufferPolicy.AGE_PRIORITY:
                         buffers_to_writeback[bank_name] = self._find_age_priority_for_writeback(target_bank=bank_name)
