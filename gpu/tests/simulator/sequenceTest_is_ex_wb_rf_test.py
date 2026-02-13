@@ -256,7 +256,7 @@ def test_all_operations():
             intended_FU=intended_fu,
             warp_id=rd_reg % 2,
             warp_group_id=0,
-            num_operands=2,
+            num_operands=1 if isinstance(opcode, I_Op) else 2,
             rs1=Bits(uint=rs1_reg, length=32),
             rs2=Bits(uint=rs2_reg, length=32),
             rd=Bits(uint=rd_reg, length=32),
