@@ -138,10 +138,11 @@ int main(int argc, char** argv) {
         }
 
     // Camera
+        float focal_range = 1.0f;
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
-            {0.0f, -1.0f, 0.0f}, 
-            {-OUTPUT_W/2, OUTPUT_H/2, -150.0f},
+            {0.0f, 1.0f * ((float)OUTPUT_H / (float)OUTPUT_W), 0.0f}, 
+            {0.0f, 0.0f, -focal_range * ((float)OUTPUT_H / (float)OUTPUT_W)},
         };
 
         const vector_t abcTranspose[3] = {
@@ -179,7 +180,15 @@ int main(int argc, char** argv) {
         vertex_args->threeDVert = verts;
         vertex_args->camera = camera_C;
         vertex_args->invTrans = cameraProjMatrix;
-    
+   
+    //viewport 
+    ALLOCATE_MEM(viewport_w, float, 1);
+    ALLOCATE_MEM(viewport_h, float, 1);
+    *viewport_w = OUTPUT_W;
+    *viewport_h = OUTPUT_H;
+    vertex_args->viewport_w = *viewport_w;
+    vertex_args->viewport_h = *viewport_h;
+
     // Allocate Output Space
         ALLOCATE_MEM(tVerts, vertex_t, num_verts);
         vertex_args->threeDVertTrans = tVerts;
@@ -351,7 +360,7 @@ int main(int argc, char** argv) {
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
 
-    createPPMFile(fname, int_color_output);
+    createPPMFile(fname, int_color_output, OUTPUT_W, OUTPUT_H);
     free(int_color_output);
 
     // --- Clean Up ---
