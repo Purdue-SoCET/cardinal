@@ -23,6 +23,10 @@ typedef struct {
     float* invTrans;        //inverse transformation matrix
     // threeDVertTrans is also an input 
 
+    /*viewport*/
+    float viewport_w;
+    float viewport_h;
+
     /*output*/
     vertex_t* twoDVert;        //output 2D  vertors
 } vertexShader_arg_t;

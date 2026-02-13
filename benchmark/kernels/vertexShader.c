@@ -160,5 +160,9 @@ void kernel_vertexShader(void* arg)
     args->twoDVert[i].s = args->threeDVert[i].s;
     args->twoDVert[i].t = args->threeDVert[i].t;
 
+    //viewport
+    args->twoDVert[i].coords.x = (args->twoDVert[i].coords.x + 1) * args->viewport_w / 2;
+    args->twoDVert[i].coords.y = (1 - args->twoDVert[i].coords.y) * args->viewport_h / 2;
+
     return;
 }
