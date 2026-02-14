@@ -123,16 +123,10 @@ class Rasterizer():
                 de0_dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
                 de0_dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
                 de0_dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
-                de1_dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
-                de1_dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
-                de1_dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
 
                 de0_dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
                 de0_dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
                 de0_dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
-                de1_dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
-                de1_dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
-                de1_dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
                 
             
             bx = ss_min.x + 0.5
@@ -252,9 +246,9 @@ class Rasterizer():
                         e0_1 += de0_dx1
                         e0_2 += de0_dx2
                         e0_3 += de0_dx3
-                        e1_1 += de1_dx1
-                        e1_2 += de1_dx2
-                        e1_3 += de1_dx3
+                        e1_1 += de0_dx1
+                        e1_2 += de0_dx2
+                        e1_3 += de0_dx3
                     
                     edge1 += de_dx1
                     edge2 += de_dx2
@@ -264,9 +258,9 @@ class Rasterizer():
                     e0_1_ini += de0_dy1
                     e0_2_ini += de0_dy2
                     e0_3_ini += de0_dy3
-                    e1_1_ini += de1_dy1
-                    e1_2_ini += de1_dy2
-                    e1_3_ini += de1_dy3
+                    e1_1_ini += de0_dy1
+                    e1_2_ini += de0_dy2
+                    e1_3_ini += de0_dy3
                 
                 e_ini1 += de_dy1
                 e_ini2 += de_dy2
