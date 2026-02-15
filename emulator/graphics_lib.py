@@ -29,11 +29,13 @@ class Vec3:
         return self
 
 class Vertex(Vec3):
-    def __init__(self, x = 0.0, y = 0.0, z = 0.0, color= [0, 0, 0]):
+    def __init__(self, x = 0.0, y = 0.0, z = 0.0, color= [0, 0, 0], u = 0.0, v = 0.0):
         super().__init__(x, y, z)
         self.R = color[0]
         self.G = color[1]
         self.B = color[2]
+        self.u = u
+        self.v = v
         self.color = color
 
 class Triangle:
