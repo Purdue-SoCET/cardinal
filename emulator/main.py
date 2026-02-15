@@ -33,17 +33,9 @@ col3 = [c3, c2]
 #I recommend sticking to this test case. It's relatively simple while also testing z and top left rule well enough.
 #The test above is extremely strict for msaa, even hardware is expected to fail it at lower resolutions with msaa. Use at your own discretion.
 
-vx1 = [-0.8, -1.4, 0.8]
-vy1 = [-0.6, -0.4, -0.6]
-vz1  = [-2,   -2,   -2]
-
-vx2 = [0.8, -0.8, 1.4]
-vy2 = [-0.6, -0.6, 0.4]
-vz2  = [-2,   -2,   -2]
-
-vx3 = [0.0, 0.0, -0.4]
-vy3 = [0.6, 0.6, 1]
-vz3  = [-2,  -2,  -3]
+vs = [[[-0.8, -0.6, -2], [0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 1
+      [[-1.4, -0.4, -2], [-0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 2
+      [[0.8, -0.6, -2], [1.4, 0.4, -2], [-0.4, 1, -3]]] #triangle 3
 
 col1 = [[1,0,0], [0,0,1], [1,1,1]]
 col2 = [[0,1,0], [0,1,0], [1,1,1]]
@@ -114,10 +106,7 @@ After running above you can run rasterEngine.showScreen() and it will show you y
 '''
 
 rasterEngine = Rasterizer(
-    vx1, vy1, vz1,
-    vx2, vy2, vz2,
-    vx3, vy3, vz3,
-    col1, col2, col3
+    vs, col1, col2, col3
 ) #defaults to 720p, msaa = 0, near = 1, far = 10
 
 start = perf_counter()
