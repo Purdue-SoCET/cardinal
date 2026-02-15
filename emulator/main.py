@@ -1,7 +1,7 @@
 from rasterizer import Rasterizer
 from time import perf_counter
 
-
+'''
 v0 = (-0.8, -0.8, -2)  # bottom left
 v1 = ( 0.8, -0.8, -2)  # bottom right
 v2 = ( 0.8,  0.8, -2)  # top right
@@ -28,11 +28,11 @@ vz3 = [v3[2], v2[2]]
 col1 = [c0, c1]
 col2 = [c1, c3]
 col3 = [c3, c2]
-
+'''
 
 #I recommend sticking to this test case. It's relatively simple while also testing z and top left rule well enough.
 #The test above is extremely strict for msaa, even hardware is expected to fail it at lower resolutions with msaa. Use at your own discretion.
-'''
+
 vx1 = [-0.8, -1.4, 0.8]
 vy1 = [-0.6, -0.4, -0.6]
 vz1  = [-2,   -2,   -2]
@@ -48,7 +48,7 @@ vz3  = [-2,  -2,  -3]
 col1 = [[1,0,0], [0,0,1], [1,1,1]]
 col2 = [[0,1,0], [0,1,0], [1,1,1]]
 col3 = [[0,0,1], [1,0,0], [1,1,1]]
-'''
+
 
 '''
 Invalid state is what indicates that that pixel wasn't touched.
@@ -117,7 +117,7 @@ rasterEngine = Rasterizer(
     vx1, vy1, vz1,
     vx2, vy2, vz2,
     vx3, vy3, vz3,
-    col1, col2, col3, w = 800, h = 800
+    col1, col2, col3
 ) #defaults to 720p, msaa = 0, near = 1, far = 10
 
 start = perf_counter()
