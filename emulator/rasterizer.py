@@ -305,8 +305,8 @@ class Rasterizer():
         plt.axis('off')
         plt.show()
 
-    def saveScreen(self):
+    def saveScreen(self, filename = 'lossless.png'):
         #Save image
         img_unit8 = (self.screen * 255).astype(np.uint8)
         img = Image.fromarray(img_unit8)
-        img.save('lossless.png', mode='RGB')
+        img.save(filename, mode='RGB')
