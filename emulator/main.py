@@ -43,7 +43,7 @@ col3 = [[0,0,1], [1,0,0], [1,1,1]]
 
 
 '''
-Invalid state is what indicates that that pixel wasn't touched.
+Invalid state is what indicates that that pixel wasn't touched. uv coordinates expected between 0 and 1.
 
 General:
 h = height of screen
