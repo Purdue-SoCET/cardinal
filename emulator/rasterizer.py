@@ -163,11 +163,12 @@ class Rasterizer():
             e_ini2 = edge2
             e_ini3 = edge3
 
+            #This is to enforce top left rule. It checks which triangle is a top or a left edge. If it is a top or a left edge it draws it in when the pixel is exactly on it. If it is not on it, it doesn't draw it in.
             check1 = 0 if self.validEdge(ss_tri.B, ss_tri.C) else -1e-12 #adjust for subtle fp errors
             check2 = 0 if self.validEdge(ss_tri.C, ss_tri.A) else -1e-12
             check3 = 0 if self.validEdge(ss_tri.A, ss_tri.B) else -1e-12
 
-            #Do edge testing
+            #Do edge testing and interpolation.
             for y in range(ss_min.y, ss_max.y):
 
                 if (self.msaa == 2):
