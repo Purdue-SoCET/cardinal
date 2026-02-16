@@ -22,8 +22,7 @@ class Mem:
 
                 word = 0
                 if mem_format == "hex":
-                    # Split by whitespace to check for "ADDR DATA" pair
-                    parts = line_clean.split()
+                    parts = line_clean.split() # Split by whitespace to check for "ADDR DATA" pair
                     
                     if len(parts) == 2: # Format: 0xADDR 0xDATA
                         explicit_addr = int(parts[0], 16)
@@ -45,9 +44,7 @@ class Mem:
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
 
-                # ---------------------------------------------------------
                 # Write to Memory (Endianness Handling)
-                # ---------------------------------------------------------
                 if self.endianness == "little":
                     b0 = (word >> 0)  & 0xFF
                     b1 = (word >> 8)  & 0xFF
