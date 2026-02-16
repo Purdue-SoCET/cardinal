@@ -1,5 +1,6 @@
 from rasterizer import Rasterizer
 from time import perf_counter
+import numpy as np
 
 '''
 v0 = (-0.8, -0.8, -2)  # bottom left
@@ -106,7 +107,7 @@ After running above you can run rasterEngine.showScreen() and it will show you y
 '''
 
 rasterEngine = Rasterizer(
-    vs, col1, col2, col3
+    vs, col1, col2, col3, msaa = 2
 ) #defaults to 720p, msaa = 0, near = 1, far = 10
 
 start = perf_counter()
