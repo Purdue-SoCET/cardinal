@@ -1,15 +1,28 @@
 ﻿#include "graphics_lib.h"
-#include <iostream>
 #include <vector>
 
 using namespace std;
 
 int main()
 {
-	
-	Vertex point1{ -0.8, -0.6, -2, 0, 0, {1,0,0} };
-	Vertex point2;
-	Vertex point3;
+	fVector3 point1{ -0.8, -0.6, -2};
+	fVector3 point2{ 0.8, -0.6, -2 };
+	fVector3 point3{ 0.0, 0.6, -2 };
+
+	Vertex v1{ point1 };
+	Vertex v2{ point2 };
+	Vertex v3{ point3 };
+
+	Triangle t1{ v1, v2, v3 };
+
+	Projector projector{};
+	projector.toNearPlane(&t1);
+	projector.toNDC(&t1);
+	projector.toScreenSpace(&t1);
+
+	t1.A.screenSpacePoint.print();
+	t1.B.screenSpacePoint.print();
+	t1.C.screenSpacePoint.print();
 
 	return 0;
 }

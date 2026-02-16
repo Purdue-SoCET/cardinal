@@ -10,9 +10,10 @@ if (POLICY CMP0141)
 endif()
 
 project ("raster_engine")
+include_directories("include")
 
 # Add source to this project's executable.
-add_executable (CMakeProject1 "main.cpp"  "graphics_lib.h")
+add_executable (CMakeProject1 "main.cpp"  "include/graphics_lib.h" "include/rasterizer.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET CMakeProject1 PROPERTY CXX_STANDARD 20)
