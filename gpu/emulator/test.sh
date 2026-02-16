@@ -5,8 +5,8 @@
 # ==========================================
 ASSEMBLER_SCRIPT="../assembler/assembler.py"
 OPCODES="../assembler/opcodes.txt"
-TEST_DIR="tests/unit_tests/simple_tests/tests"
-EXPECTED_DIR="tests/unit_tests/simple_tests/expected"
+TEST_DIR="tests/unit_tests/tests"
+EXPECTED_DIR="tests/unit_tests/expected"
 DIFF_DIR="test_diffs"
 
 # File names
