@@ -1,35 +1,31 @@
-#code for I
-csrr x3, x1000 #fictional thread ID
-## load arguments, default values ok
-lli x15, 92
-lw x4, x15, 0  #n
-lli x15, 96
-lw x5, x15, 0 #a
-lli x15, 100
-addi x6, x15, 0 #x array start
-lli x15, 100
-lmi x15, 1
-addi x7, x15, 0 #y array start
-## if (i < n)
-blt p2, x3, x4, pred, 1, 1 #compute predicate 
-jal x16, COMPUTE_LABEL, pred, 1, 1 #jump based on predicate
-DONE_LABEL:
+START:
+    ; Get thread ID
+    csrr x3, x0 #fictional thread ID
+    
+    ; load arguments from 0x20 - TODO: Update from CSRR arg pointer
+    lui x15, 0x20
+    lw x4, x15, 0               ; x4 = N = Width of array
+    lw x5, x15, 4               ; x5 = A = Scalar
+    lw x6, x15, 8               ; x6 = X = Array 1 start
+    lw x7, x15, 12              ; x7 = Y = Array 1 start
+
+    ; if (i < N)
+    blt p2, x3, x4
+
+    ; Add offset for X and Y
+    slli x3, x3, 2
+    add x6, x6, x3, 2
+    add x7, x7, x3, 2
+
+    ; load x[i] and y[i]
+    lw x8, x6, 0, 2             ; x8 = x[i]
+    lw x9, x7, 0, 2             ; x9 = y[i]
+
+    ; x10 = a * x[i]
+    mulf x10, x8, x5, 2
+    ; x11 = x10 + y[i]
+    addf x11, x10, x9, 2
+    ; y[i] = x11
+    sw x11, x7, 0, 2
+   
     halt
-## complete multiply
-COMPUTE_LABEL:
-    #compute offset for x and y
-    addi x14, x0, 2
-    sll x3, x3, x14
-    add x8, x6, x3, 2, 1, 0
-    add x9, x7, x3, 2, 0, 1
-    #load current x[i] and y[i]
-    lw x10, x8,0, 2, 1, 0
-    lw x11, x9,0, 2, 0, 1
-    # a * x[i]
-    mulf x12, x10, x5, 2, 0, 1
-    # + y[i]
-    addf x13, x12, x11, 2, 1, 1
-    #y[i] = 
-    sw x13, x9,0, 2, 1, 1
-    #end program
-    jal x16, DONE_LABEL, pred, 1, 1
