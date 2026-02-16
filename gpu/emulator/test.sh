@@ -9,11 +9,12 @@ TEST_ROOT="tests"
 DIFF_DIR="test_diffs"
 
 # Intermediate files
-ASM_OUTPUT="meminit.hex"      # Assembler Output
-EMU_OUTPUT="memsim.hex"       # Emulator Output (Fixed name from Makefile)
-TEMP_FORMATTED_INSTR="temp_instr.hex"
+RAW_ASM_OUTPUT="raw_instr.hex"      # Raw output from assembler (no addresses)
+FORMATTED_INSTR="formatted_instr.hex" # Instructions with 0x0000 0x.... addresses
+MEMINIT="meminit.hex"               # Final input to emulator (Instr + Data)
+EMU_OUTPUT="memsim.hex"             
 FINAL_EXPECTED="final_expected_combined.hex"
-TEMP_CMD_LOG="temp_command_output.txt" 
+TEMP_CMD_LOG="temp_command_output.txt"
 
 # Counters
 PASS_COUNT=0
@@ -30,7 +31,6 @@ NC='\033[0m'
 # ==========================================
 # Setup
 # ==========================================
-# Default pattern to all .s files if no argument provided
 SEARCH_PATTERN="${1:-*.s}"
 if [[ "$SEARCH_PATTERN" != *".s" ]]; then SEARCH_PATTERN="$SEARCH_PATTERN.s"; fi
 
@@ -43,7 +43,6 @@ echo "      Root:    $TEST_ROOT"
 echo "      Pattern: $SEARCH_PATTERN"
 echo "========================================"
 
-# Find all test sources
 files_found=$(find "$TEST_ROOT" -name "$SEARCH_PATTERN" | sort)
 
 if [ -z "$files_found" ]; then
@@ -58,41 +57,40 @@ for asm_file in $files_found; do
     dir_name=$(dirname "$asm_file")
     base_name=$(basename "$asm_file" .s)
     
-    # --------------------------------------
-    # 1. Dynamic Expected File Search
-    # --------------------------------------
-    # Look for any file matching: [testname]_exp_*.hex in the same directory
-    # This finds "add_exp_t32_b1.hex" automatically
-    expected_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_exp_*.hex" | head -n 1)
-
     # Logging paths
     error_log="$DIFF_DIR/${base_name}_error.log"
     saved_gen="$DIFF_DIR/${base_name}_gen.hex"
     saved_exp="$DIFF_DIR/${base_name}_exp.hex"
 
-    # Default params if no expected file found
+    # --------------------------------------
+    # 1. Identify Resources
+    # --------------------------------------
+    # A. Expected Output
+    expected_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_exp_*.hex" | head -n 1)
+
+    # B. Input Data (Raw Hex with Addresses) <--- NEW: Looks for _data.hex
+    input_data_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_data.hex" | head -n 1)
+
+    # Default params
     THREADS=32
     BLOCKS=1
     has_expected=0
 
+    # Parse Expected Params
     if [ -n "$expected_file" ]; then
         has_expected=1
-        
-        # --------------------------------------
-        # 2. Parse Config from Filename
-        # --------------------------------------
-        # Extract matches for "t32" and "b1"
         if [[ "$expected_file" =~ _t([0-9]+) ]]; then THREADS="${BASH_REMATCH[1]}"; fi
         if [[ "$expected_file" =~ _b([0-9]+) ]]; then BLOCKS="${BASH_REMATCH[1]}"; fi
     else
-        # If no expected file, we skip comparison but still run checks
         ((MISSING_COUNT++))
     fi
 
     # --------------------------------------
-    # 3. Run Assembler
+    # 2. Run Assembler
     # --------------------------------------
-    python3 "$ASSEMBLER_SCRIPT" "$asm_file" "$ASM_OUTPUT" hex "$OPCODES" > "$TEMP_CMD_LOG" 2>&1
+    # Generates raw hex (DATADATA)
+    python3 "$ASSEMBLER_SCRIPT" "$asm_file" "$RAW_ASM_OUTPUT" hex "$OPCODES" > "$TEMP_CMD_LOG" 2>&1
+    
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ASM FAIL]${NC} $base_name"
         cat "$TEMP_CMD_LOG" > "$error_log"
@@ -101,13 +99,29 @@ for asm_file in $files_found; do
     fi
 
     # --------------------------------------
-    # 4. Run Emulator (via Makefile)
+    # 3. Post-Process & Merge
     # --------------------------------------
-    # We pass the dynamic THREADS and BLOCKS variables here
-    make run INPUT="$ASM_OUTPUT" THREADS="$THREADS" BLOCKS="$BLOCKS" > "$TEMP_CMD_LOG" 2>&1
+    
+    # A. Format Instructions: Add 0xADDR 0xDATA
+    awk '{printf "0x%08x 0x%s\n", (NR-1)*4, $0}' "$RAW_ASM_OUTPUT" > "$FORMATTED_INSTR"
+
+    # B. Create Final Memory Init File
+    cat "$FORMATTED_INSTR" > "$MEMINIT"
+
+    # C. Append Input Data (if it exists)
+    if [ -n "$input_data_file" ]; then
+        cat "$input_data_file" >> "$MEMINIT"
+        # Optional: Add a newline if your emulator is picky about concatenation
+        # echo "" >> "$MEMINIT" 
+    fi
+
+    # --------------------------------------
+    # 4. Run Emulator
+    # --------------------------------------
+    make run INPUT="$MEMINIT" THREADS="$THREADS" BLOCKS="$BLOCKS" > "$TEMP_CMD_LOG" 2>&1
     
     if [ $? -ne 0 ] || [ ! -f "$EMU_OUTPUT" ]; then
-        echo -e "${RED}[RUN FAIL]${NC} $base_name (t=$THREADS, b=$BLOCKS)"
+        echo -e "${RED}[RUN FAIL]${NC} $base_name (t=$THREADS)"
         cat "$TEMP_CMD_LOG" > "$error_log"
         ((FAIL_COUNT++))
         continue
@@ -118,19 +132,17 @@ for asm_file in $files_found; do
     # --------------------------------------
     if [ $has_expected -eq 0 ]; then
         cp "$EMU_OUTPUT" "$saved_gen"
-        echo -e "${YELLOW}[NO REF]${NC}   $base_name (Ran with defaults t=$THREADS, b=$BLOCKS)"
+        echo -e "${YELLOW}[NO REF]${NC}   $base_name (t=$THREADS)"
     else
-        # Format Assembler output to align with Emulator dump format (Addr + Hex)
-        awk '{printf "0x%08x 0x%s\n", (NR-1)*4, $0}' "$ASM_OUTPUT" > "$TEMP_FORMATTED_INSTR"
-        
-        # Combine [Instructions] + [Expected Data] to create the full Golden Reference
-        cat "$TEMP_FORMATTED_INSTR" "$expected_file" > "$FINAL_EXPECTED"
+        # We re-use FORMATTED_INSTR + Expected Data to build the "Perfect Golden" file
+        # Note: We assume the expected file contains the final state of EVERYTHING relevant
+        cat "$FORMATTED_INSTR" "$expected_file" > "$FINAL_EXPECTED"
 
         # Diff
         diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
         
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
+            echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS)"
             rm -f "$error_log"
             ((PASS_COUNT++))
         else
@@ -145,7 +157,7 @@ done
 # ==========================================
 # Cleanup
 # ==========================================
-rm -f "$ASM_OUTPUT" "$EMU_OUTPUT" "$TEMP_FORMATTED_INSTR" "$FINAL_EXPECTED" "$TEMP_CMD_LOG"
+rm -f "$RAW_ASM_OUTPUT" "$EMU_OUTPUT" "$FORMATTED_INSTR" "$FINAL_EXPECTED" "$TEMP_CMD_LOG" "$MEMINIT"
 
 echo "========================================"
 echo "Summary"
