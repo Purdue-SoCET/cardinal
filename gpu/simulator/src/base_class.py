@@ -12,7 +12,7 @@ from bitstring import Bits
 from enum import Enum
 from pathlib import Path
 import sys
-parent = Path(__file__).resolve().parent
+parent = Path(__file__).resolve().parents[2]
 sys.path.append(str(parent))
 from gpu.common.custom_enums_multi import Op
 
@@ -138,7 +138,15 @@ class MemRequest:
     data: int 
     rw_mode: str
     remaining: int = 0
-    
+
+@dataclass 
+class PredRequest:
+    rd_en: int
+    rd_wrp_sel: int
+    rd_pred_sel: int
+    prf_neg: int
+    remaining: int
+
 @dataclass
 class dCacheFrame:
     """Simulates one cache line (frame)."""
@@ -166,8 +174,11 @@ class MSHREntry:
 class DecodeType:
     halt: int = 0
     EOP: int = 1
-    MOP: int = 2
-    Barrier: int = 3
+    MOP: int = 2 # the set default value
+    EOS: int = 3
+    empty: int = 4 # start up junk value..
+
+
 
 ###TEST CODE BELOW###
 @dataclass
@@ -183,15 +194,6 @@ class FetchRequest:
     warp_id: int
     uuid: Optional[int] = None
     
-@dataclass
-class MemRequest:
-    addr: int
-    size: int
-    uuid: int
-    warp_id: int
-    pc: int 
-    remaining: int = 0
-
 @dataclass
 class Warp:
     pc: int
@@ -217,31 +219,37 @@ class WarpGroup:
 @dataclass
 class Instruction:
     # ----- required (no defaults) -----
-    iid: Optional[int] = None
-    pc: Bits = None
-    intended_FSU: Optional[str] =None  # <-- no default here
-    warp: Optional[int] = None
-    warpGroup: Optional[int] = None
+    # STRUCTURAL HAZARD WITH PRED REG FILE WRITE AND READ LATER ON
+    # INSTRUCTION JUST CONTAINS THE OPCODE INFORMATION
+    # discusss more later about this..
+    pc: Optional[Bits] = None
+    warp_id: Optional[int] = None
+    warp_group_id: Optional[int] = None
 
-    opcode: Op = None
-    rs1: Bits = None
-    rs2: Bits = None
-    rd: Bits = None
+    # ----- fields populated by decode ----
+    intended_FU: Optional[str] = None 
+    rs1: Optional[Bits] = None
+    rs2: Optional[Bits] = None
+    rd: Optional[Bits]= None
+    src_pred: Optional[Bits]= None
+    dest_pred: Optional[Bits]= None
+    predicate:Optional[Bits] = None
+    opcode: Optional[Op]= None
+    imm: Optional[Bits]= None
 
-    # ----- optional / with defaults (must come after ALL non-defaults) -----
-    pred: list[Bits] = field(default_factory=list)   # list of 1-bit Bits
     rdat1: list[Bits] = field(default_factory=list)
     rdat2: list[Bits] = field(default_factory=list)
     wdat: list[Bits] = field(default_factory=list)
 
-    type: Optional[Any] = None
+    # ----- optional / with defaults (must come after ALL non-defaults) -----
+    # this is for instruction data memory responses, populated by the MemController
     packet: Optional[Bits] = None
-    issued_cycle: Optional[int] = None
     stage_entry: Dict[str, int] = field(default_factory=dict)
     stage_exit:  Dict[str, int] = field(default_factory=dict)
     fu_entries:  List[Dict]     = field(default_factory=list)
     wb_cycle: Optional[int] = None
-
+    target_bank: int = None 
+    
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)
 
@@ -259,6 +267,7 @@ class Instruction:
 
     def mark_writeback(self, cycle: int):
         self.wb_cycle = cycle
+
 @dataclass
 class ForwardingIF:
     payload: Optional[Any] = None
@@ -270,13 +279,15 @@ class ForwardingIF:
         self.wait = False
     
     def pop(self) -> Optional[Any]:
-        return self.payload
+        data = self.payload
+        self.payload = None
+        return data
     
     def set_wait(self, flag: bool) -> None:
         self.wait = bool(flag)
 
     def __repr__(self) -> str:
-        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+        return (f"<{self.name} wait={self.wait} "
             f"payload={self.payload!r}>")
 
 @dataclass
