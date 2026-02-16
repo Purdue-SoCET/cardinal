@@ -1,6 +1,9 @@
 gpu_sim/emulator/src/__pycache__
 gpu_sim/emulator/venv
 gpu_sim/common/__pycache__
+graphics_hw/__pycache__
+graphics_hw_cpp/.vs
+graphics_hw_cpp/out
 
 __pycache__/
 venv/
