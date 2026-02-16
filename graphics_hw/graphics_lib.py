@@ -69,7 +69,7 @@ class Projector:
         return Vertex(point.x / (self.near * self.aspect), point.y / self.near, point.z, point.color, point.u, point.v)
     def depth(self, point : Vertex):
         z = point.z
-        point.z = (-(self.far + self.near) / (self.far - self.near)*z) - (2*self.far*self.near / (self.near - self.far))
+        point.z = (-(self.far + self.near) / (self.far - self.near)*z) - (2*self.far*self.near / (self.far - self.near))
         return point.z
     
     def toScreenSpace(self, ndc : Vertex):
