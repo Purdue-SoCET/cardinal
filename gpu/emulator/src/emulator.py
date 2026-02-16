@@ -73,23 +73,34 @@ if __name__ == "__main__":
 
     print(f"Starting Simulation: {args.input_file}")
     print(f"Threads: {args.threads_per_block} | Blocks: {args.num_blocks} | Start PC: {hex(args.start_pc)}")
+    warps_per_block = (args.threads_per_block + 31) // 32
 
-    # Creating the Common State
+    # Shared State
     mem = Mem(args.start_pc, str(args.input_file), args.mem_format)
-    pfile = PredicateRegFile(thread_per_warp=(args.threads_per_block * args.num_blocks)) # For now, creating one mega threadblock-warp for predicates
-    rfile = RegFile() # Only for one thread, needs to be reset every new thread...
-    state = State(memory=mem, rfile=rfile, pfile=pfile)
 
-    # Go through each block and thread
-    for block_id, thread_id in [(b, t) for b in range(args.num_blocks) for t in range(args.threads_per_block)]:
-        csr_file = CsrRegFile(thread_id=thread_id, block_id=block_id, arg_ptr=args.arg_pointer)
-        thread = Thread(state_data=state, start_pc=args.start_pc, csr_file=csr_file)
-        print(f"\n --- Starting Thread: {thread_id} in Block: {block_id} --- ")
-        thread.run_until_halt()
-        print(f" --- Thread: {thread_id} in Block: {block_id} Halted --- ")
+    for block_id, warp_id in [(b, w) for b in range(args.num_blocks) for w in range(warps_per_block)]:
+        pfile = PredicateRegFile(thread_per_warp=32)
 
-        # Reset the register file for the next thread
-        state.reg_file = RegFile()
+        rfiles = []
+        states = []
+        csr_files = []
+        threads = []
+
+        # Setup Warp
+        for tid in range(32):
+            rfiles.append(RegFile())
+            states.append(State(memory=mem, rfile=rfiles[tid], pfile=pfile))
+            csr_files.append(CsrRegFile(thread_id=(32*warp_id + tid), block_id=block_id, arg_ptr=args.arg_pointer))
+            threads.append(Thread(state_data=states[tid], start_pc=args.start_pc, csr_file=csr_files[tid]))
+
+        # Run Warp
+        print(f"\n --- Starting Warp: {warp_id} in Block: {block_id} --- ")
+        has_halted = False
+        while(not has_halted):
+            for thread in threads:
+                thread_halted = thread.step_instruction()
+                if(has_halted): assert(thread_halted) # Ensure once one halts all do
+                has_halted = thread_halted
 
     mem.dump()
 

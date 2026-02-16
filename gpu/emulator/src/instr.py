@@ -96,6 +96,15 @@ class Instr(ABC):
                 op = R_Op_1(funct3)
                 print(f"\tfunct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
                 ret_instr = R_Instr_1(op=op, rs1=rs1, rs2=rs2, rd=rd)
+            case Instr_Type.R_TYPE_2: # Also depricated B_TYPE_1
+                try: # R_TYPE_2
+                    op = R_Op_2(funct3)
+                    print(f"\tfunct={op}, rs1={rs1.int}, rs2={rs2.int}, rd={rd.uint}")  
+                    ret_instr = R_Instr_2(op=op, rs1=rs1, rs2=rs2, rd=rd)
+                except: # B_TYPE_1
+                    op = B_Op_1(funct3)
+                    ret_instr = B_Instr_1(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
+                    print(f"\tfunct={op}")
             case Instr_Type.I_TYPE_0:
                 op = I_Op_0(funct3)
                 print(f"\tfunct={op},rd={rd.int},rs1={rs1.int},imm={imm.int}")
@@ -116,10 +125,6 @@ class Instr(ABC):
             case Instr_Type.B_TYPE_0:
                 op = B_Op_0(funct3)
                 ret_instr = B_Instr_0(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
-                print(f"\tfunct={op}")
-            case Instr_Type.B_TYPE_1:
-                op = B_Op_1(funct3)
-                ret_instr = B_Instr_1(op=op, rs1=rs1, rs2=rs2, preddest=rd) #reads preddest in the normal rd spot
                 print(f"\tfunct={op}")
             case Instr_Type.U_TYPE:
                 op = U_Op(funct3)
@@ -259,6 +264,38 @@ class R_Instr_1(Instr):
         state.rfile.write(self.rd, result)
         return None
     
+
+        
+class R_Instr_2(Instr):
+    def __init__(self, op: R_Op_1, rs1: Bits, rs2: Bits, rd: Bits) -> None:
+        super().__init__(op)
+        self.rs1 = rs1
+        self.rs2 = rs2
+        self.rd = rd
+
+    def eval(self, csr: CsrRegFile, state: State) -> Optional[int]:
+        if not self.check_predication(csr, state):
+            return None
+        
+        rdat1 = state.rfile.read(self.rs1)
+        rdat2 = state.rfile.read(self.rs2)
+        
+        match self.op:
+            # Comparison Operations
+            case R_Op_2.SLTF:
+                result = 1 if rdat1.float < rdat2.float else 0
+            case R_Op_2.SGE:
+                result = 1 if rdat1.int >= rdat2.int else 0
+            case R_Op_2.SGEU:
+                result = 1 if rdat1.uint >= rdat2.uint else 0
+            case R_Op_2.SGEF:
+                result = 1 if rdat1.float >= rdat2.float else 0
+
+            case _:
+                raise NotImplementedError(f"R-Type 2 operation {self.op} not implemented yet or doesn't exist.")
+
+        state.rfile.write(self.rd, Bits(int=result, length=32))
+        return None
 
 class I_Instr_0(Instr):
     def __init__(self, op: I_Op_0, rs1: Bits, rd: Bits, imm: Bits) -> None:
