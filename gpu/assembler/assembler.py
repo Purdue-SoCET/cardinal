@@ -10,8 +10,9 @@ import sys
 from typing import Dict, List, Tuple, Optional
 
 # Instruction format categorization
-R_TYPE = {'add', 'sub', 'mul', 'div', 'and', 'xor', 'or', 'slt', 'sltu',
-          'addf', 'subf', 'mulf', 'divf', 'sll', 'srl', 'sra'}
+R_TYPE = {'add', 'sub', 'mul', 'div', 'and', 'xor', 'or', 'slt',
+          'sltu', 'addf', 'subf', 'mulf', 'divf', 'sll', 'srl', 'sra',
+          'sltf', 'sge', 'sgeu', 'sgef'}
 I_TYPE = {'addi', 'subi', 'xori', 'ori', 'slti', 'sltiu', 'slli', 'srli', 'srai',
           'lw', 'lh', 'lb'}
 F_TYPE = {'isqrt', 'sin', 'cos', 'itof', 'ftoi'}
