@@ -7,7 +7,6 @@ from bitstring import Bits
 class Mem: 
     def __init__(self, start_pc: int, input_file: str, mem_format: str) -> None:
         self.memory: dict[int, int] = {}
-
         self.endianness = "little"
         addr = start_pc
 
@@ -17,26 +16,38 @@ class Mem:
 
         with p.open("r", encoding="utf-8") as f:
             for line_no, raw in enumerate(f, start=1):
-                # clean line: remove comments/whitespace/underscores
-                for marker in ("//", "#"):
-                    i = raw.find(marker)
-                    if i != -1:
-                        raw = raw[:i]
-                bits = raw.strip().replace("_", "").upper()
-                if not bits:
+                line_clean = raw.split("//")[0].split("#")[0].strip()
+                if not line_clean:
                     continue
-                if (mem_format == "hex"):
-                    if len(bits) != 8 or any(c not in "0123456789ABCDEF" for c in bits):
-                        raise ValueError(f"Line {line_no}: expected 8 hex, got {bits!r}")
-                    word = int(bits, 16) & 0xFFFF_FFFF
-                
-                elif (mem_format == "bin"):
+
+                word = 0
+                if mem_format == "hex":
+                    # Split by whitespace to check for "ADDR DATA" pair
+                    parts = line_clean.split()
+                    
+                    if len(parts) == 2: # Format: 0xADDR 0xDATA
+                        explicit_addr = int(parts[0], 16)
+                        word = int(parts[1], 16)
+                        addr = explicit_addr
+                        
+                    elif len(parts) == 1: # Format: 0xDATA (Legacy/Sequential)
+                        word = int(parts[0], 16)
+                    else:
+                        raise ValueError(f"Line {line_no}: Expected 1 or 2 hex tokens, got {len(parts)}")
+
+
+                    word &= 0xFFFF_FFFF
+
+                elif mem_format == "bin":
+                    # Legacy binary handling (strict 32-bit string)
+                    bits = line_clean.replace("_", "").upper()
                     if len(bits) != 32 or any(c not in "01" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
-                # else: 
-                #     word = int(bits, 2) & 0xFFFF_FFFF
-                # split into 4 bytes per chosen endianness
+
+                # ---------------------------------------------------------
+                # Write to Memory (Endianness Handling)
+                # ---------------------------------------------------------
                 if self.endianness == "little":
                     b0 = (word >> 0)  & 0xFF
                     b1 = (word >> 8)  & 0xFF
@@ -48,13 +59,14 @@ class Mem:
                     b1 = (word >> 16) & 0xFF
                     b0 = (word >> 24) & 0xFF
 
-                # store 4 consecutive bytes
                 self.memory[addr + 0] = b0
                 self.memory[addr + 1] = b1
                 self.memory[addr + 2] = b2
                 self.memory[addr + 3] = b3
 
-                addr += 4  # next word starts 4 bytes later
+                # Auto-increment address for the next line (unless overridden by explicit addr)
+                addr += 4
+
         atexit.register(self.dump_on_exit)
 
     def read(self, addr: int, bytes: int) -> Bits:
