@@ -5,8 +5,8 @@ from pathlib import Path
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 
-from simulator.base_class import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
 from common.custom_enums import Op
 from simulator.src.scheduler.scheduler import SchedulerStage
 from simulator.src.mem.icache_stage import ICacheStage
@@ -14,7 +14,7 @@ from simulator.src.mem.mem_controller import MemController
 from simulator.src.mem.Memory import Mem
 from simulator.src.decode.decode_class import DecodeStage
 from simulator.src.decode.predicate_reg_file import PredicateRegFile
-from simulator.base_class import *
+from simulator.latch_forward_stage import *
 from datetime import datetime
 from typing import Iterable, Any
 
@@ -64,8 +64,8 @@ branch_scheduler_fwif = ForwardingIF(name = "branch_forward_if")
 writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
 
 mem = Mem(
-    start_pc=0x0,
-    input_file="/home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu/tests/simulator/frontend/ws_decode_test_binaries/no_eop.bin",
+    start_pc=0x1000,
+    input_file="/home/asicfab/a/ee/cardinal/gpu/tests/simulator/frontend/ws_decode_test_binaries/no_eop.bin",
     fmt="bin",
 )
 
@@ -206,7 +206,7 @@ def cycle(num_cycles, filler_is_sched, filler_de_sched, all_instructions):
         # simulate signals from issue
         call_stages(False, filler_is_sched, filler_de_sched, all_instructions)
 
-def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6, num_cycles):
+def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6, num_cycles = 10):
     print("Scheduler to ICacheStage Requests Test\n")
 
     warp_id = 0
@@ -247,5 +247,5 @@ def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6, num_cycles):
 
 
 if __name__ == "__main__":
-    test_fetch(int(sys.argv[1]))
+    test_fetch()
 
