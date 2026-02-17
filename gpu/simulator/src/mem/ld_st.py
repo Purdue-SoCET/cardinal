@@ -3,10 +3,9 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from simulator.base_class import *
+from gpu.simulator.src.base_class import *
 from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
-from simulator.base_class import LatchIF, ForwardingIF
-from simulator.execute.functional_sub_unit import FunctionalSubUnit
+from gpu.simulator.src.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
 
@@ -81,13 +80,39 @@ class Ldst_Fu(FunctionalSubUnit):
         else:
             # issue_if.forward_if.set_wait(False)
             self.ready_out = True
+        
+        #handle dcache packet
+        if self.dcache_if.forward_if.pop():
+            if len(self.ldst_q) == 0:
+                print(f"LSQ is length 0 and recieved a dcache response")
 
-        #send instr to wb if ready
-        if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
-            return_instr = self.wb_buffer.pop(0)
-            if (return_instr):
-                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
+            payload: dMemResponse = self.dcache_if.forward_if.pop()
 
+            mem_req = self.ldst_q[0]
+            match payload.type:
+                case 'MISS_ACCEPTED':
+                    # logger.info("Handling dcache MISS_ACCEPTED")
+                    mem_req.parseMiss(payload)     
+                    self.outstanding = False                   
+                case 'HIT_STALL':
+                    pass
+                case 'MISS_COMPLETE':
+                    # logger.info("Handling dcache MISS_COMPLETE")
+                    mem_req.parseMshrHit(payload)
+                case 'FLUSH_COMPLETE':
+                    mem_req.parseHit(payload)
+                    mem_req.finished_idx = [1] * 32 
+                    self.outstanding = False
+                case 'HIT_COMPLETE':
+                    # logger.info("Handling dcache HIT_COMPLETE")
+                    mem_req.parseHit(payload)
+                    self.outstanding = False
+        
+        #move mem_req to wb_buffer if finished
+        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
+            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
+            self.wb_buffer.append(self.ldst_q.pop(0).instr)
+        
         #send req to cache if not waiting for response
         if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
             req = self.ldst_q[0].genReq()
@@ -97,10 +122,11 @@ class Ldst_Fu(FunctionalSubUnit):
                 )
                 self.outstanding = True
 
-        #move mem_req to wb_buffer if finished
-        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
-            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
-            self.wb_buffer.append(self.ldst_q.pop(0).instr)
+        #send instr to wb if ready
+        if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
+            return_instr = self.wb_buffer.pop(0)
+            if (return_instr):
+                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
     
         return return_instr
             
