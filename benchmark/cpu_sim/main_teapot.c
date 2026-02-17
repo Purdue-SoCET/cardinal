@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 00.0f; camera_C->y = 05.0f; camera_C->z = 100.0f; //z=60
+        camera_C->x = 00.0f; camera_C->y = 05.0f; camera_C->z = 80.0f; //z=60
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
 
@@ -359,6 +359,7 @@ int main(int argc, char** argv) {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
     }
+
 
     // --- Create Image from Data ---
     

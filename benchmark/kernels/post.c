@@ -1,7 +1,6 @@
 #include "include/kernel.h"
 #include "include/post.h"
 #include "include/graphics_lib.h"
-#include <stdlib.h>
 
 #define F_ABS(n) ((n) < 0.0f ? -(n) : (n))
 
@@ -30,7 +29,7 @@ void kernel_post(void* arg) {
 
     //Bounds and edge check (if you're out of bounds you don't want to seg fault you just want to ignore!)
     float ctr = zbuff[ctr_idx];
-    int* edge = malloc (sizeof(int) * 8);
+    float edge[8];
     for (int i = 0; i < 8; i++) {
         edge[i] = -1;
     }
