@@ -6,6 +6,7 @@ class texture_unit():
         self.textures = textures
 
 
+
     # def tex_map(self, uv, texture):
     #
     #     # uv: len : h * w * 2, [0] = u, [1] = v
@@ -29,7 +30,7 @@ class texture_unit():
     #                 out[row][col] = current_texture[v_scaled][u_scaled]
     #     return out
 
-    def tex_map(self, uv, texture):
+    def tex_map(self, uv, texture,mode = 0):
 
         # uv: len : h * w * 2, [0] = u, [1] = v
         #texture: len : h * w
@@ -48,10 +49,22 @@ class texture_unit():
 
             #extract masked uvs
             uv_masked = uv[mask]
-            u_scaled = (uv_masked[:,0] * (tex_width-1)).astype(int)
-            v_scaled = (uv_masked[:,1] * (tex_height-1)).astype(int)
 
-            out[mask] = current_texture[v_scaled,u_scaled]
+            if mode == 0:
+                u_scaled = (np.round(uv_masked[:, 0] * (tex_width - 1))).astype(int)
+                v_scaled = (np.round(uv_masked[:, 1] * (tex_height - 1))).astype(int)
+                out[mask] = current_texture[v_scaled,u_scaled]
+
+            if mode == 1:
+                u_floor = (np.floor(uv_masked[:, 0] * (tex_width - 1))).astype(int)
+                v_floor = (np.floor(uv_masked[:, 1] * (tex_height - 1))).astype(int)
+                u_ceil = (np.ceil(uv_masked[:, 0] * (tex_width - 1))).astype(int)
+                v_ceil = (np.ceil(uv_masked[:, 1] * (tex_height - 1))).astype(int)
+
+                out[mask] = (current_texture[v_floor,u_floor] + current_texture[v_ceil,u_ceil] +
+                            current_texture[v_floor,u_ceil] + current_texture[v_ceil,u_floor])/4
+
+
 
         return out
 
