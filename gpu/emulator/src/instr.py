@@ -135,9 +135,6 @@ class Instr(ABC):
                 op = J_Op(funct3)
                 imm = pred + rs2 + rs1 #rs1 + rs2 + pred #concatenate
                 ret_instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc)
-            case Instr_Type.P_TYPE:
-                # TODO: Create P-Type Instruction Class
-                raise NotImplementedError("P-Type instruction not implemented yet.")
             case Instr_Type.C_TYPE:
                 op = C_Op(funct3)
                 rs1 = rs1[0:5]
@@ -147,6 +144,10 @@ class Instr(ABC):
                 op = F_Op(funct3)
                 print(f"ftype, funct={op},imm={imm.int}")
                 ret_instr = F_Instr(op=op, rs1=rs1, rd=rd)
+            case Instr_Type.P_TYPE:
+                op = P_Op(funct3)
+                print(f"ptype, funct={op}, prd={rd}, rs2={rs2}, imm={rs1}")
+                ret_instr = P_Instr(op, prd=rd, rs2=rs2, imm=rs1, pc=pc)
             case Instr_Type.H_TYPE:
                 op=H_Op(funct3)
                 print(f"halt, funct={op}, {funct3}")
@@ -480,7 +481,7 @@ class S_Instr_0(Instr):
         imm_val = self.imm.int  # Sign-extended immediate
         
         # Calculate address
-        addr = rdat1.int + imm_val
+        addr = rdat1.uint + imm_val
         match self.op:
             # Memory Write Operations
             case S_Op_0.SW: # Store Word (32 bits / 4 bytes)
@@ -645,11 +646,38 @@ class J_Instr(Instr):
         return target_addr & 0xFFFFFFFE  # Ensure LSB is zero (word-aligned)
 
 class P_Instr(Instr):
-    def __init__(self, op: P_Op, rs1: Bits, rs2: Bits, pc: Bits, pred_reg_file: PredicateRegFile) -> None:
-        raise NotImplementedError(f"P-Type operation {self.op} not implemented yet or doesn't exist.")
+    def __init__(self, op: P_Op, prd: Bits, rs2: Bits, imm: Bits, pc: Bits) -> None:
+        super().__init__(op)
+        self.prd = prd[1:6]
+        self.rs2 = rs2
+        self.imm = imm
+        self.pc = pc # Program counter for JPNZ
 
     def eval(self, csr: CsrRegFile, state: State) -> bool:
-        raise NotImplementedError(f"P-Type operation {self.op} not implemented yet or doesn't exist.")
+        # Mark first thread in each warp
+        is_first_thread = True
+        if(csr.get_thread_id() % state.pfile.threads_per_warp):
+            is_first_thread = False
+
+        addr = state.rfile.read(self.rs2).uint + self.imm.int
+
+        match self.op:
+            # Jump Pred
+            case P_Op.JPNZ:
+                if(state.pfile.read(self.pred).uint != 0): # Has at least a predicate bit high
+                    return self.pc.int + self.imm.int
+                else: # No predicate is set, let pass
+                    return None
+
+            # Predicate Access
+            case P_Op.PRSW:
+                if(not is_first_thread): return None
+                state.memory.write(addr, state.pfile.read(self.pred), 4)
+            case P_Op.PRLW:
+                if(not is_first_thread): return None
+                state.pfile.write(self.prd, state.memory.read(addr, 4))
+
+        return None
 
 class H_Instr(Instr): #returns true
     def __init__(self, op: H_Op, funct3: Bits, r_pred: Bits = Bits(bin='11111', length=5)) -> None:

@@ -79,7 +79,7 @@ if __name__ == "__main__":
     mem = Mem(args.start_pc, str(args.input_file), args.mem_format)
 
     for block_id, warp_id in [(b, w) for b in range(args.num_blocks) for w in range(warps_per_block)]:
-        pfile = PredicateRegFile(thread_per_warp=32)
+        pfile = PredicateRegFile(threads_per_warp=32)
 
         rfiles = []
         states = []
