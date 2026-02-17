@@ -1,0 +1,853 @@
+
+=== Cycle 0 ===
+[DEBUG] Cycle Start: QueueLen=0, LatchValid=True
+LDST_FU: Accepting instruction from latch pc: Instruction(pc=0, intended_FU='ldst', warp_id=0, warp_group_id=0, rs1=Bits('0x00000000'), rs2=Bits('0x00000000'), rd=0, opcode=Bits('0b1111111'), predicate=[Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1')], issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None, rdat1=[Bits('0x00000000'), Bits('0x00000020'), Bits('0x00000040'), Bits('0x00000060'), Bits('0x00000080'), Bits('0x000000a0'), Bits('0x000000c0'), Bits('0x000000e0'), Bits('0x00000100'), Bits('0x00000120'), Bits('0x00000140'), Bits('0x00000160'), Bits('0x00000180'), Bits('0x000001a0'), Bits('0x000001c0'), Bits('0x000001e0'), Bits('0x00000200'), Bits('0x00000220'), Bits('0x00000240'), Bits('0x00000260'), Bits('0x00000280'), Bits('0x000002a0'), Bits('0x000002c0'), Bits('0x000002e0'), Bits('0x00000300'), Bits('0x00000320'), Bits('0x00000340'), Bits('0x00000360'), Bits('0x00000380'), Bits('0x000003a0'), Bits('0x000003c0'), Bits('0x000003e0')], rdat2=[Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000')], wdat=[Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0x00006343'), Bits('0x00006b43'), Bits('0x00007343'), Bits('0x00007b43')])
+=== Latch State at End of Cycle 0 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=None, halt=True)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 1 ===
+Cache: Received HALT signal. Starting flush.
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 1 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 2 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 2 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 3 ===
+Bank 0: Flushing address 0x0
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 3 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x0', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x807D2258', '0x807D42D8', '0xC0206182', '0xC0286180', '0x800D87D1', '0x8001E220', '0x800E07D1', '0x-21524142', '0x800E87D1', '0x8001E320', '0x800E87D1', '0x800027D2', '0x8001E3A0', '0xC0206144', '0xC0222860', '0x-21524142', '0x80100710', '0x8070618D', '0x4418C400', '0x8418E480', '0x44010520', '0x840125A0', '0x84294602', '0x-21524142', '0xC449A030', '0xC0022860', '0x40000', '0x40', '0x0', '0x803F', '0x40'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 4 ===
+Bank 1: Flushing address 0x80
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 4 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8040', '0xA040', '0xC040', '0xE040', '0x41', '0x1041', '0x2041', '0x-21524142', '0x4041', '0x5041', '0x6041', '0x7041', '0x8041', '0x8841', '0x9041', '0x-21524142', '0xA041', '0xA841', '0xB041', '0xB841', '0xC041', '0xC841', '0xD041', '0x-21524142', '0xE041', '0xE841', '0xF041', '0xF841', '0x42', '0x442', '0x842'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 5 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 5 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8040', '0xA040', '0xC040', '0xE040', '0x41', '0x1041', '0x2041', '0x-21524142', '0x4041', '0x5041', '0x6041', '0x7041', '0x8041', '0x8841', '0x9041', '0x-21524142', '0xA041', '0xA841', '0xB041', '0xB841', '0xC041', '0xC841', '0xD041', '0x-21524142', '0xE041', '0xE841', '0xF041', '0xF841', '0x42', '0x442', '0x842'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 6 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 6 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8040', '0xA040', '0xC040', '0xE040', '0x41', '0x1041', '0x2041', '0x-21524142', '0x4041', '0x5041', '0x6041', '0x7041', '0x8041', '0x8841', '0x9041', '0x-21524142', '0xA041', '0xA841', '0xB041', '0xB841', '0xC041', '0xC841', '0xD041', '0x-21524142', '0xE041', '0xE841', '0xF041', '0xF841', '0x42', '0x442', '0x842'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 7 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 7 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8040', '0xA040', '0xC040', '0xE040', '0x41', '0x1041', '0x2041', '0x-21524142', '0x4041', '0x5041', '0x6041', '0x7041', '0x8041', '0x8841', '0x9041', '0x-21524142', '0xA041', '0xA841', '0xB041', '0xB841', '0xC041', '0xC841', '0xD041', '0x-21524142', '0xE041', '0xE841', '0xF041', '0xF841', '0x42', '0x442', '0x842'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 8 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 8 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x80', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8040', '0xA040', '0xC040', '0xE040', '0x41', '0x1041', '0x2041', '0x-21524142', '0x4041', '0x5041', '0x6041', '0x7041', '0x8041', '0x8841', '0x9041', '0x-21524142', '0xA041', '0xA841', '0xB041', '0xB841', '0xC041', '0xC841', '0xD041', '0x-21524142', '0xE041', '0xE841', '0xF041', '0xF841', '0x42', '0x442', '0x842'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 9 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 9 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 10 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 10 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 11 ===
+Bank 0: Flushing address 0x100
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 11 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x1042', '0x1442', '0x1842', '0x1C42', '0x2042', '0x2442', '0x2842', '0x-21524142', '0x3042', '0x3442', '0x3842', '0x3C42', '0x4042', '0x4442', '0x4842', '0x-21524142', '0x5042', '0x5442', '0x5842', '0x5C42', '0x6042', '0x6442', '0x6842', '0x-21524142', '0x7042', '0x7442', '0x7842', '0x7C42', '0x8042', '0x8242', '0x8442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 12 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 12 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x1042', '0x1442', '0x1842', '0x1C42', '0x2042', '0x2442', '0x2842', '0x-21524142', '0x3042', '0x3442', '0x3842', '0x3C42', '0x4042', '0x4442', '0x4842', '0x-21524142', '0x5042', '0x5442', '0x5842', '0x5C42', '0x6042', '0x6442', '0x6842', '0x-21524142', '0x7042', '0x7442', '0x7842', '0x7C42', '0x8042', '0x8242', '0x8442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 13 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 13 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x1042', '0x1442', '0x1842', '0x1C42', '0x2042', '0x2442', '0x2842', '0x-21524142', '0x3042', '0x3442', '0x3842', '0x3C42', '0x4042', '0x4442', '0x4842', '0x-21524142', '0x5042', '0x5442', '0x5842', '0x5C42', '0x6042', '0x6442', '0x6842', '0x-21524142', '0x7042', '0x7442', '0x7842', '0x7C42', '0x8042', '0x8242', '0x8442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 14 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 14 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 15 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 15 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 16 ===
+Bank 1: Flushing address 0x180
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 16 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8842', '0x8A42', '0x8C42', '0x8E42', '0x9042', '0x9242', '0x9442', '0x-21524142', '0x9842', '0x9A42', '0x9C42', '0x9E42', '0xA042', '0xA242', '0xA442', '0x-21524142', '0xA842', '0xAA42', '0xAC42', '0xAE42', '0xB042', '0xB242', '0xB442', '0x-21524142', '0xB842', '0xBA42', '0xBC42', '0xBE42', '0xC042', '0xC242', '0xC442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 17 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 17 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8842', '0x8A42', '0x8C42', '0x8E42', '0x9042', '0x9242', '0x9442', '0x-21524142', '0x9842', '0x9A42', '0x9C42', '0x9E42', '0xA042', '0xA242', '0xA442', '0x-21524142', '0xA842', '0xAA42', '0xAC42', '0xAE42', '0xB042', '0xB242', '0xB442', '0x-21524142', '0xB842', '0xBA42', '0xBC42', '0xBE42', '0xC042', '0xC242', '0xC442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 18 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 18 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x8842', '0x8A42', '0x8C42', '0x8E42', '0x9042', '0x9242', '0x9442', '0x-21524142', '0x9842', '0x9A42', '0x9C42', '0x9E42', '0xA042', '0xA242', '0xA442', '0x-21524142', '0xA842', '0xAA42', '0xAC42', '0xAE42', '0xB042', '0xB242', '0xB442', '0x-21524142', '0xB842', '0xBA42', '0xBC42', '0xBE42', '0xC042', '0xC242', '0xC442'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 19 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 19 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 20 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 20 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 21 ===
+Bank 0: Flushing address 0x200
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 21 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x200', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0xC842', '0xCA42', '0xCC42', '0xCE42', '0xD042', '0xD242', '0xD442', '0x-21524142', '0xD842', '0xDA42', '0xDC42', '0xDE42', '0xE042', '0xE242', '0xE442', '0x-21524142', '0xE842', '0xEA42', '0xEC42', '0xEE42', '0xF042', '0xF242', '0xF442', '0x-21524142', '0xF842', '0xFA42', '0xFC42', '0xFE42', '0x43', '0x143', '0x243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 22 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 22 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x200', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0xC842', '0xCA42', '0xCC42', '0xCE42', '0xD042', '0xD242', '0xD442', '0x-21524142', '0xD842', '0xDA42', '0xDC42', '0xDE42', '0xE042', '0xE242', '0xE442', '0x-21524142', '0xE842', '0xEA42', '0xEC42', '0xEE42', '0xF042', '0xF242', '0xF442', '0x-21524142', '0xF842', '0xFA42', '0xFC42', '0xFE42', '0x43', '0x143', '0x243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 23 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 23 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x200', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0xC842', '0xCA42', '0xCC42', '0xCE42', '0xD042', '0xD242', '0xD442', '0x-21524142', '0xD842', '0xDA42', '0xDC42', '0xDE42', '0xE042', '0xE242', '0xE442', '0x-21524142', '0xE842', '0xEA42', '0xEC42', '0xEE42', '0xF042', '0xF242', '0xF442', '0x-21524142', '0xF842', '0xFA42', '0xFC42', '0xFE42', '0x43', '0x143', '0x243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 24 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 24 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 25 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 25 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 26 ===
+Bank 1: Flushing address 0x280
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 26 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x280', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x443', '0x543', '0x643', '0x743', '0x843', '0x943', '0xA43', '0x-21524142', '0xC43', '0xD43', '0xE43', '0xF43', '0x1043', '0x1143', '0x1243', '0x-21524142', '0x1443', '0x1543', '0x1643', '0x1743', '0x1843', '0x1943', '0x1A43', '0x-21524142', '0x1C43', '0x1D43', '0x1E43', '0x1F43', '0x2043', '0x2143', '0x2243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 27 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 27 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x280', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x443', '0x543', '0x643', '0x743', '0x843', '0x943', '0xA43', '0x-21524142', '0xC43', '0xD43', '0xE43', '0xF43', '0x1043', '0x1143', '0x1243', '0x-21524142', '0x1443', '0x1543', '0x1643', '0x1743', '0x1843', '0x1943', '0x1A43', '0x-21524142', '0x1C43', '0x1D43', '0x1E43', '0x1F43', '0x2043', '0x2143', '0x2243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 28 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 28 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x280', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x443', '0x543', '0x643', '0x743', '0x843', '0x943', '0xA43', '0x-21524142', '0xC43', '0xD43', '0xE43', '0xF43', '0x1043', '0x1143', '0x1243', '0x-21524142', '0x1443', '0x1543', '0x1643', '0x1743', '0x1843', '0x1943', '0x1A43', '0x-21524142', '0x1C43', '0x1D43', '0x1E43', '0x1F43', '0x2043', '0x2143', '0x2243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 29 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 29 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 30 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 30 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 31 ===
+Bank 0: Flushing address 0x300
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 31 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x300', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x2443', '0x2543', '0x2643', '0x2743', '0x2843', '0x2943', '0x2A43', '0x-21524142', '0x2C43', '0x2D43', '0x2E43', '0x2F43', '0x3043', '0x3143', '0x3243', '0x-21524142', '0x3443', '0x3543', '0x3643', '0x3743', '0x3843', '0x3943', '0x3A43', '0x-21524142', '0x3C43', '0x3D43', '0x3E43', '0x3F43', '0x4043', '0x4143', '0x4243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 32 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 32 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x300', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x2443', '0x2543', '0x2643', '0x2743', '0x2843', '0x2943', '0x2A43', '0x-21524142', '0x2C43', '0x2D43', '0x2E43', '0x2F43', '0x3043', '0x3143', '0x3243', '0x-21524142', '0x3443', '0x3543', '0x3643', '0x3743', '0x3843', '0x3943', '0x3A43', '0x-21524142', '0x3C43', '0x3D43', '0x3E43', '0x3F43', '0x4043', '0x4143', '0x4243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 33 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 33 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x300', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0x-21524142', '0x2443', '0x2543', '0x2643', '0x2743', '0x2843', '0x2943', '0x2A43', '0x-21524142', '0x2C43', '0x2D43', '0x2E43', '0x2F43', '0x3043', '0x3143', '0x3243', '0x-21524142', '0x3443', '0x3543', '0x3643', '0x3743', '0x3843', '0x3943', '0x3A43', '0x-21524142', '0x3C43', '0x3D43', '0x3E43', '0x3F43', '0x4043', '0x4143', '0x4243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 34 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 34 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 35 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 35 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 36 ===
+Bank 1: Flushing address 0x380
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 36 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x380', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x4443', '0x4543', '0x4643', '0x4743', '0x4843', '0x4943', '0x4A43', '0x-21524142', '0x4C43', '0x4D43', '0x4E43', '0x4F43', '0x5043', '0x5143', '0x5243', '0x-21524142', '0x5443', '0x5543', '0x5643', '0x5743', '0x5843', '0x5943', '0x5A43', '0x-21524142', '0x5C43', '0x5D43', '0x5E43', '0x5F43', '0x6043', '0x6143', '0x6243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 37 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 37 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x380', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x4443', '0x4543', '0x4643', '0x4743', '0x4843', '0x4943', '0x4A43', '0x-21524142', '0x4C43', '0x4D43', '0x4E43', '0x4F43', '0x5043', '0x5143', '0x5243', '0x-21524142', '0x5443', '0x5543', '0x5643', '0x5743', '0x5843', '0x5943', '0x5A43', '0x-21524142', '0x5C43', '0x5D43', '0x5E43', '0x5F43', '0x6043', '0x6143', '0x6243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 38 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 38 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] VALID: {'addr': '0x380', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x-21524142', '0x4443', '0x4543', '0x4643', '0x4743', '0x4843', '0x4943', '0x4A43', '0x-21524142', '0x4C43', '0x4D43', '0x4E43', '0x4F43', '0x5043', '0x5143', '0x5243', '0x-21524142', '0x5443', '0x5543', '0x5643', '0x5743', '0x5843', '0x5943', '0x5A43', '0x-21524142', '0x5C43', '0x5D43', '0x5E43', '0x5F43', '0x6043', '0x6143', '0x6243'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 39 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 39 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 40 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 40 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 41 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 41 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 42 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 42 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 43 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 43 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 44 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 44 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 45 ===
+Cache: Flush Complete.
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+LDST_FU: Finished processing Instruction pc: 0
+LDST_FU: Pushing Instruction for WB pc: 0
+=== Latch State at End of Cycle 45 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] VALID: Instruction(pc=0, intended_FU='ldst', warp_id=0, warp_group_id=0, rs1=Bits('0x00000000'), rs2=Bits('0x00000000'), rd=0, opcode=Bits('0b1111111'), predicate=[Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1'), Bits('0b1')], issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None, rdat1=[Bits('0x00000000'), Bits('0x00000020'), Bits('0x00000040'), Bits('0x00000060'), Bits('0x00000080'), Bits('0x000000a0'), Bits('0x000000c0'), Bits('0x000000e0'), Bits('0x00000100'), Bits('0x00000120'), Bits('0x00000140'), Bits('0x00000160'), Bits('0x00000180'), Bits('0x000001a0'), Bits('0x000001c0'), Bits('0x000001e0'), Bits('0x00000200'), Bits('0x00000220'), Bits('0x00000240'), Bits('0x00000260'), Bits('0x00000280'), Bits('0x000002a0'), Bits('0x000002c0'), Bits('0x000002e0'), Bits('0x00000300'), Bits('0x00000320'), Bits('0x00000340'), Bits('0x00000360'), Bits('0x00000380'), Bits('0x000003a0'), Bits('0x000003c0'), Bits('0x000003e0')], rdat2=[Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000')], wdat=[Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0x00006343'), Bits('0x00006b43'), Bits('0x00007343'), Bits('0x00007b43')])
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+WB Received instruction from LSU!
+
+======== Bank 0 ========
+  ---- Set 0 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000000)
+        Block[00:03]: 0xDEADBEBE 0x807D2258 0x807D42D8 0xC0206182
+        Block[04:07]: 0xC0286180 0x800D87D1 0x8001E220 0x800E07D1
+        Block[08:11]: 0xDEADBEBE 0x800E87D1 0x8001E320 0x800E87D1
+        Block[12:15]: 0x800027D2 0x8001E3A0 0xC0206144 0xC0222860
+        Block[16:19]: 0xDEADBEBE 0x80100710 0x8070618D 0x4418C400
+        Block[20:23]: 0x8418E480 0x44010520 0x840125A0 0x84294602
+        Block[24:27]: 0xDEADBEBE 0xC449A030 0xC0022860 0x00040000
+        Block[28:31]: 0x00000040 0x00000000 0x0000803F 0x00000040
+  ---- Set 1 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000100)
+        Block[00:03]: 0xDEADBEBE 0x00001042 0x00001442 0x00001842
+        Block[04:07]: 0x00001C42 0x00002042 0x00002442 0x00002842
+        Block[08:11]: 0xDEADBEBE 0x00003042 0x00003442 0x00003842
+        Block[12:15]: 0x00003C42 0x00004042 0x00004442 0x00004842
+        Block[16:19]: 0xDEADBEBE 0x00005042 0x00005442 0x00005842
+        Block[20:23]: 0x00005C42 0x00006042 0x00006442 0x00006842
+        Block[24:27]: 0xDEADBEBE 0x00007042 0x00007442 0x00007842
+        Block[28:31]: 0x00007C42 0x00008042 0x00008242 0x00008442
+  ---- Set 2 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000200)
+        Block[00:03]: 0xDEADBEBE 0x0000C842 0x0000CA42 0x0000CC42
+        Block[04:07]: 0x0000CE42 0x0000D042 0x0000D242 0x0000D442
+        Block[08:11]: 0xDEADBEBE 0x0000D842 0x0000DA42 0x0000DC42
+        Block[12:15]: 0x0000DE42 0x0000E042 0x0000E242 0x0000E442
+        Block[16:19]: 0xDEADBEBE 0x0000E842 0x0000EA42 0x0000EC42
+        Block[20:23]: 0x0000EE42 0x0000F042 0x0000F242 0x0000F442
+        Block[24:27]: 0xDEADBEBE 0x0000F842 0x0000FA42 0x0000FC42
+        Block[28:31]: 0x0000FE42 0x00000043 0x00000143 0x00000243
+  ---- Set 3 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000300)
+        Block[00:03]: 0xDEADBEBE 0x00002443 0x00002543 0x00002643
+        Block[04:07]: 0x00002743 0x00002843 0x00002943 0x00002A43
+        Block[08:11]: 0xDEADBEBE 0x00002C43 0x00002D43 0x00002E43
+        Block[12:15]: 0x00002F43 0x00003043 0x00003143 0x00003243
+        Block[16:19]: 0xDEADBEBE 0x00003443 0x00003543 0x00003643
+        Block[20:23]: 0x00003743 0x00003843 0x00003943 0x00003A43
+        Block[24:27]: 0xDEADBEBE 0x00003C43 0x00003D43 0x00003E43
+        Block[28:31]: 0x00003F43 0x00004043 0x00004143 0x00004243
+  ---- Set 4 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000400)
+        Block[00:03]: 0x00006343 0x00006443 0x00006543 0x00006643
+        Block[04:07]: 0x00006743 0x00006843 0x00006943 0x00006A43
+        Block[08:11]: 0x00006B43 0x00006C43 0x00006D43 0x00006E43
+        Block[12:15]: 0x00006F43 0x00007043 0x00007143 0x00007243
+        Block[16:19]: 0x00007343 0x00007443 0x00007543 0x00007643
+        Block[20:23]: 0x00007743 0x00007843 0x00007943 0x00007A43
+        Block[24:27]: 0x00007B43 0x00007C43 0x00007D43 0x00007E43
+        Block[28:31]: 0x00007F43 0x00008043 0x00808043 0x00008143
+
+======== Bank 1 ========
+  ---- Set 0 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000080)
+        Block[00:03]: 0xDEADBEBE 0x00008040 0x0000A040 0x0000C040
+        Block[04:07]: 0x0000E040 0x00000041 0x00001041 0x00002041
+        Block[08:11]: 0xDEADBEBE 0x00004041 0x00005041 0x00006041
+        Block[12:15]: 0x00007041 0x00008041 0x00008841 0x00009041
+        Block[16:19]: 0xDEADBEBE 0x0000A041 0x0000A841 0x0000B041
+        Block[20:23]: 0x0000B841 0x0000C041 0x0000C841 0x0000D041
+        Block[24:27]: 0xDEADBEBE 0x0000E041 0x0000E841 0x0000F041
+        Block[28:31]: 0x0000F841 0x00000042 0x00000442 0x00000842
+  ---- Set 1 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000180)
+        Block[00:03]: 0xDEADBEBE 0x00008842 0x00008A42 0x00008C42
+        Block[04:07]: 0x00008E42 0x00009042 0x00009242 0x00009442
+        Block[08:11]: 0xDEADBEBE 0x00009842 0x00009A42 0x00009C42
+        Block[12:15]: 0x00009E42 0x0000A042 0x0000A242 0x0000A442
+        Block[16:19]: 0xDEADBEBE 0x0000A842 0x0000AA42 0x0000AC42
+        Block[20:23]: 0x0000AE42 0x0000B042 0x0000B242 0x0000B442
+        Block[24:27]: 0xDEADBEBE 0x0000B842 0x0000BA42 0x0000BC42
+        Block[28:31]: 0x0000BE42 0x0000C042 0x0000C242 0x0000C442
+  ---- Set 2 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000280)
+        Block[00:03]: 0xDEADBEBE 0x00000443 0x00000543 0x00000643
+        Block[04:07]: 0x00000743 0x00000843 0x00000943 0x00000A43
+        Block[08:11]: 0xDEADBEBE 0x00000C43 0x00000D43 0x00000E43
+        Block[12:15]: 0x00000F43 0x00001043 0x00001143 0x00001243
+        Block[16:19]: 0xDEADBEBE 0x00001443 0x00001543 0x00001643
+        Block[20:23]: 0x00001743 0x00001843 0x00001943 0x00001A43
+        Block[24:27]: 0xDEADBEBE 0x00001C43 0x00001D43 0x00001E43
+        Block[28:31]: 0x00001F43 0x00002043 0x00002143 0x00002243
+  ---- Set 3 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000380)
+        Block[00:03]: 0xDEADBEBE 0x00004443 0x00004543 0x00004643
+        Block[04:07]: 0x00004743 0x00004843 0x00004943 0x00004A43
+        Block[08:11]: 0xDEADBEBE 0x00004C43 0x00004D43 0x00004E43
+        Block[12:15]: 0x00004F43 0x00005043 0x00005143 0x00005243
+        Block[16:19]: 0xDEADBEBE 0x00005443 0x00005543 0x00005643
+        Block[20:23]: 0x00005743 0x00005843 0x00005943 0x00005A43
+        Block[24:27]: 0xDEADBEBE 0x00005C43 0x00005D43 0x00005E43
+        Block[28:31]: 0x00005F43 0x00006043 0x00006143 0x00006243
