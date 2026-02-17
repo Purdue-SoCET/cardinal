@@ -1,0 +1,1233 @@
+Test Case: Halt
+
+=== Cycle 651 ===
+Cache: Received HALT signal. Starting flush.
+=== Latch State at End of Cycle 651 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 652 ===
+=== Latch State at End of Cycle 652 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 653 ===
+Bank 0: Flushing address 0x0
+=== Latch State at End of Cycle 653 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 654 ===
+Bank 1: Flushing address 0x1F180
+=== Latch State at End of Cycle 654 ===
+  [dcache_mem] VALID: {'addr': '0x1F180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 655 ===
+=== Latch State at End of Cycle 655 ===
+  [dcache_mem] VALID: {'addr': '0x1F180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 656 ===
+=== Latch State at End of Cycle 656 ===
+  [dcache_mem] VALID: {'addr': '0x1F180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 657 ===
+=== Latch State at End of Cycle 657 ===
+  [dcache_mem] VALID: {'addr': '0x1F180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 658 ===
+=== Latch State at End of Cycle 658 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x0', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 659 ===
+=== Latch State at End of Cycle 659 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 660 ===
+=== Latch State at End of Cycle 660 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 661 ===
+Bank 0: Flushing address 0x1E100
+=== Latch State at End of Cycle 661 ===
+  [dcache_mem] VALID: {'addr': '0x1E100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 662 ===
+=== Latch State at End of Cycle 662 ===
+  [dcache_mem] VALID: {'addr': '0x1E100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 663 ===
+=== Latch State at End of Cycle 663 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1F180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 664 ===
+=== Latch State at End of Cycle 664 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 665 ===
+=== Latch State at End of Cycle 665 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 666 ===
+Bank 1: Flushing address 0x1D180
+=== Latch State at End of Cycle 666 ===
+  [dcache_mem] VALID: {'addr': '0x1D180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 667 ===
+=== Latch State at End of Cycle 667 ===
+  [dcache_mem] VALID: {'addr': '0x1D180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 668 ===
+=== Latch State at End of Cycle 668 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1E100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 669 ===
+=== Latch State at End of Cycle 669 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 670 ===
+=== Latch State at End of Cycle 670 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 671 ===
+Bank 0: Flushing address 0x1C100
+=== Latch State at End of Cycle 671 ===
+  [dcache_mem] VALID: {'addr': '0x1C100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 672 ===
+=== Latch State at End of Cycle 672 ===
+  [dcache_mem] VALID: {'addr': '0x1C100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 673 ===
+=== Latch State at End of Cycle 673 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1D180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 674 ===
+=== Latch State at End of Cycle 674 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 675 ===
+=== Latch State at End of Cycle 675 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 676 ===
+Bank 1: Flushing address 0x1B180
+=== Latch State at End of Cycle 676 ===
+  [dcache_mem] VALID: {'addr': '0x1B180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 677 ===
+=== Latch State at End of Cycle 677 ===
+  [dcache_mem] VALID: {'addr': '0x1B180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 678 ===
+=== Latch State at End of Cycle 678 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1C100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 679 ===
+=== Latch State at End of Cycle 679 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 680 ===
+=== Latch State at End of Cycle 680 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 681 ===
+Bank 0: Flushing address 0x1A100
+=== Latch State at End of Cycle 681 ===
+  [dcache_mem] VALID: {'addr': '0x1A100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 682 ===
+=== Latch State at End of Cycle 682 ===
+  [dcache_mem] VALID: {'addr': '0x1A100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 683 ===
+=== Latch State at End of Cycle 683 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1B180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 684 ===
+=== Latch State at End of Cycle 684 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 685 ===
+=== Latch State at End of Cycle 685 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 686 ===
+Bank 1: Flushing address 0x19180
+=== Latch State at End of Cycle 686 ===
+  [dcache_mem] VALID: {'addr': '0x19180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 687 ===
+=== Latch State at End of Cycle 687 ===
+  [dcache_mem] VALID: {'addr': '0x19180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 688 ===
+=== Latch State at End of Cycle 688 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x1A100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 689 ===
+=== Latch State at End of Cycle 689 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 690 ===
+=== Latch State at End of Cycle 690 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 691 ===
+Bank 0: Flushing address 0x18100
+=== Latch State at End of Cycle 691 ===
+  [dcache_mem] VALID: {'addr': '0x18100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 692 ===
+=== Latch State at End of Cycle 692 ===
+  [dcache_mem] VALID: {'addr': '0x18100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 693 ===
+=== Latch State at End of Cycle 693 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x19180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 694 ===
+=== Latch State at End of Cycle 694 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 695 ===
+=== Latch State at End of Cycle 695 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 696 ===
+Bank 1: Flushing address 0x17180
+=== Latch State at End of Cycle 696 ===
+  [dcache_mem] VALID: {'addr': '0x17180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 697 ===
+=== Latch State at End of Cycle 697 ===
+  [dcache_mem] VALID: {'addr': '0x17180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 698 ===
+=== Latch State at End of Cycle 698 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x18100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 699 ===
+=== Latch State at End of Cycle 699 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 700 ===
+=== Latch State at End of Cycle 700 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 701 ===
+Bank 0: Flushing address 0x16100
+=== Latch State at End of Cycle 701 ===
+  [dcache_mem] VALID: {'addr': '0x16100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 702 ===
+=== Latch State at End of Cycle 702 ===
+  [dcache_mem] VALID: {'addr': '0x16100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 703 ===
+=== Latch State at End of Cycle 703 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x17180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 704 ===
+=== Latch State at End of Cycle 704 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 705 ===
+=== Latch State at End of Cycle 705 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 706 ===
+Bank 1: Flushing address 0x15180
+=== Latch State at End of Cycle 706 ===
+  [dcache_mem] VALID: {'addr': '0x15180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 707 ===
+=== Latch State at End of Cycle 707 ===
+  [dcache_mem] VALID: {'addr': '0x15180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 708 ===
+=== Latch State at End of Cycle 708 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x16100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 709 ===
+=== Latch State at End of Cycle 709 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 710 ===
+=== Latch State at End of Cycle 710 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 711 ===
+Bank 0: Flushing address 0x14100
+=== Latch State at End of Cycle 711 ===
+  [dcache_mem] VALID: {'addr': '0x14100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 712 ===
+=== Latch State at End of Cycle 712 ===
+  [dcache_mem] VALID: {'addr': '0x14100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 713 ===
+=== Latch State at End of Cycle 713 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x15180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 714 ===
+=== Latch State at End of Cycle 714 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 715 ===
+=== Latch State at End of Cycle 715 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 716 ===
+Bank 1: Flushing address 0x13180
+=== Latch State at End of Cycle 716 ===
+  [dcache_mem] VALID: {'addr': '0x13180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 717 ===
+=== Latch State at End of Cycle 717 ===
+  [dcache_mem] VALID: {'addr': '0x13180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 718 ===
+=== Latch State at End of Cycle 718 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x14100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 719 ===
+=== Latch State at End of Cycle 719 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 720 ===
+=== Latch State at End of Cycle 720 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 721 ===
+Bank 0: Flushing address 0x12100
+=== Latch State at End of Cycle 721 ===
+  [dcache_mem] VALID: {'addr': '0x12100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 722 ===
+=== Latch State at End of Cycle 722 ===
+  [dcache_mem] VALID: {'addr': '0x12100', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 723 ===
+=== Latch State at End of Cycle 723 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x13180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 724 ===
+=== Latch State at End of Cycle 724 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 725 ===
+=== Latch State at End of Cycle 725 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 726 ===
+Bank 1: Flushing address 0x11180
+=== Latch State at End of Cycle 726 ===
+  [dcache_mem] VALID: {'addr': '0x11180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x0', '0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 727 ===
+=== Latch State at End of Cycle 727 ===
+  [dcache_mem] VALID: {'addr': '0x11180', 'size': 128, 'uuid': 0, 'warp': 1, 'rw_mode': 'write', 'data': ['0x0', '0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 728 ===
+=== Latch State at End of Cycle 728 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x12100', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 729 ===
+=== Latch State at End of Cycle 729 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 730 ===
+=== Latch State at End of Cycle 730 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 731 ===
+Bank 0: Flushing address 0x20200
+=== Latch State at End of Cycle 731 ===
+  [dcache_mem] VALID: {'addr': '0x20200', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 732 ===
+=== Latch State at End of Cycle 732 ===
+  [dcache_mem] VALID: {'addr': '0x20200', 'size': 128, 'uuid': 0, 'warp': 0, 'rw_mode': 'write', 'data': ['0xDEADBEEF', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0', '0x0'], 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 733 ===
+=== Latch State at End of Cycle 733 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x11180', 'size': 128, 'uuid': 0, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 734 ===
+=== Latch State at End of Cycle 734 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 735 ===
+=== Latch State at End of Cycle 735 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 736 ===
+=== Latch State at End of Cycle 736 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 737 ===
+=== Latch State at End of Cycle 737 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 738 ===
+=== Latch State at End of Cycle 738 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'write', 'status': 'WRITE_DONE', 'addr': '0x20200', 'size': 128, 'uuid': 0, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=0, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 739 ===
+=== Latch State at End of Cycle 739 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 740 ===
+=== Latch State at End of Cycle 740 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='FLUSH_COMPLETE', req=None, address=None, uuid=None, miss=False, hit=False, stall=False, flushed=True)
+=== Test ended ===
+
+======== Bank 0 ========
+  ---- Set 0 ----
+    LRU Order: [6, 7, 0, 1, 2, 3, 4, 5] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xE    (Addr: 0x0000E000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xC    (Addr: 0x0000C000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xA    (Addr: 0x0000A000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x8    (Addr: 0x00008000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x6    (Addr: 0x00006000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x4    (Addr: 0x00004000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x1    (Addr: 0x00001000)
+        Block[00:03]: 0x00C07844 0x00007944 0x00407944 0x00807944
+        Block[04:07]: 0x00C07944 0x00007A44 0x00407A44 0x00807A44
+        Block[08:11]: 0x00C07A44 0x00007B44 0x00407B44 0x00807B44
+        Block[12:15]: 0x00C07B44 0x00007C44 0x00407C44 0x00807C44
+        Block[16:19]: 0x00C07C44 0x00007D44 0x00407D44 0x00807D44
+        Block[20:23]: 0x00C07D44 0x00007E44 0x00407E44 0x00807E44
+        Block[24:27]: 0x00C07E44 0x00007F44 0x00407F44 0x00807F44
+        Block[28:31]: 0x00C07F44 0x00000000 0x00000040 0x00008040
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000000)
+        Block[00:03]: 0x807DBEBE 0x807D2258 0x807D42D8 0xC0206182
+        Block[04:07]: 0xC0286180 0x800D87D1 0x8001E220 0x800E07D1
+        Block[08:11]: 0x8001E2A0 0x800E87D1 0x8001E320 0x800E87D1
+        Block[12:15]: 0x800027D2 0x8001E3A0 0xC0206144 0xC0222860
+        Block[16:19]: 0xFFFFFFFF 0x80100710 0x8070618D 0x4418C400
+        Block[20:23]: 0x8418E480 0x44010520 0x840125A0 0x84294602
+        Block[24:27]: 0xC4598680 0xC449A030 0xC0022860 0x00040000
+        Block[28:31]: 0x00000040 0x00000000 0x0000803F 0x00000040
+  ---- Set 1 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0x1E   (Addr: 0x0001E100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0x1C   (Addr: 0x0001C100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0x1A   (Addr: 0x0001A100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x18   (Addr: 0x00018100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x16   (Addr: 0x00016100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x14   (Addr: 0x00014100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x12   (Addr: 0x00012100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x21   (Addr: 0x00021100)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+  ---- Set 2 ----
+    LRU Order: [5, 6, 7, 0, 1, 2, 3, 4] (Front=MRU, Back=LRU)
+    [Way 5] V:1   Tag: 0x23   (Addr: 0x00023200)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x22   (Addr: 0x00022200)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x20   (Addr: 0x00020200)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+  ---- Set 4 ----
+    LRU Order: [5, 6, 7, 0, 1, 2, 3, 4] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0x42   (Addr: 0x00042400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0x40   (Addr: 0x00040400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0x3E   (Addr: 0x0003E400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x3C   (Addr: 0x0003C400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x3A   (Addr: 0x0003A400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x48   (Addr: 0x00048400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x46   (Addr: 0x00046400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x44   (Addr: 0x00044400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+
+======== Bank 1 ========
+  ---- Set 0 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xF    (Addr: 0x0000F080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xD    (Addr: 0x0000D080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xB    (Addr: 0x0000B080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x9    (Addr: 0x00009080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x7    (Addr: 0x00007080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x5    (Addr: 0x00005080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x3    (Addr: 0x00003080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x1    (Addr: 0x00001080)
+        Block[00:03]: 0x0000C040 0x00000041 0x00002041 0x00004041
+        Block[04:07]: 0x00006041 0x00008041 0x00009041 0x0000A041
+        Block[08:11]: 0x0000B041 0x0000C041 0x0000D041 0x0000E041
+        Block[12:15]: 0x0000F041 0x00000042 0x00000842 0x00001042
+        Block[16:19]: 0x00001842 0x00002042 0x00002842 0x00003042
+        Block[20:23]: 0x00003842 0x00004042 0x00004842 0x00005042
+        Block[24:27]: 0x00005842 0x00006042 0x00006842 0x00007042
+        Block[28:31]: 0x00007842 0x00008042 0x00008442 0x00008842
+  ---- Set 1 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0x1F   (Addr: 0x0001F180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0x1D   (Addr: 0x0001D180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0x1B   (Addr: 0x0001B180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x19   (Addr: 0x00019180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x17   (Addr: 0x00017180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x15   (Addr: 0x00015180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x13   (Addr: 0x00013180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x11   (Addr: 0x00011180)
+        Block[00:03]: 0x00000000 0xDEADBEEF 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000

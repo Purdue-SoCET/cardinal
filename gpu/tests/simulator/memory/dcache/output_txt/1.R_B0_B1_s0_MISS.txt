@@ -1,0 +1,1117 @@
+Test Case: R_B0_B1_s0 - Miss
+
+=== Cycle 0 ===
+[Cycle 0] LSU Received: MISS ACCEPTED (UUID: 1)
+=== Latch State at End of Cycle 0 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False), address=0x0, uuid=1, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 1 ===
+[Cycle 1] LSU Received: MISS ACCEPTED (UUID: 129)
+=== Latch State at End of Cycle 1 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x1080, rw_mode='read', size='word', store_value=0, halt=False), address=0x1080, uuid=129, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 2 ===
+[Cycle 2] LSU Received: MISS ACCEPTED (UUID: 2)
+=== Latch State at End of Cycle 2 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x2000, rw_mode='read', size='word', store_value=0, halt=False), address=0x2000, uuid=2, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 3 ===
+[Cycle 3] LSU Received: MISS ACCEPTED (UUID: 130)
+=== Latch State at End of Cycle 3 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x3080, rw_mode='read', size='word', store_value=0, halt=False), address=0x3080, uuid=130, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 4 ===
+[Cycle 4] LSU Received: MISS ACCEPTED (UUID: 3)
+=== Latch State at End of Cycle 4 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x4000, rw_mode='read', size='word', store_value=0, halt=False), address=0x4000, uuid=3, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 5 ===
+[Cycle 5] LSU Received: MISS ACCEPTED (UUID: 131)
+=== Latch State at End of Cycle 5 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x5080, rw_mode='read', size='word', store_value=0, halt=False), address=0x5080, uuid=131, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 6 ===
+[Cycle 6] LSU Received: MISS ACCEPTED (UUID: 4)
+=== Latch State at End of Cycle 6 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x6000, rw_mode='read', size='word', store_value=0, halt=False), address=0x6000, uuid=4, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 7 ===
+[Cycle 7] LSU Received: MISS ACCEPTED (UUID: 132)
+=== Latch State at End of Cycle 7 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x7080, rw_mode='read', size='word', store_value=0, halt=False), address=0x7080, uuid=132, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 8 ===
+[Cycle 8] LSU Received: MISS ACCEPTED (UUID: 5)
+=== Latch State at End of Cycle 8 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x8000, rw_mode='read', size='word', store_value=0, halt=False), address=0x8000, uuid=5, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 9 ===
+[Cycle 9] LSU Received: MISS ACCEPTED (UUID: 133)
+=== Latch State at End of Cycle 9 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x9080, rw_mode='read', size='word', store_value=0, halt=False), address=0x9080, uuid=133, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 10 ===
+[Cycle 10] LSU Received: MISS ACCEPTED (UUID: 6)
+=== Latch State at End of Cycle 10 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xA000, rw_mode='read', size='word', store_value=0, halt=False), address=0xA000, uuid=6, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 11 ===
+[Cycle 11] LSU Received: MISS ACCEPTED (UUID: 134)
+=== Latch State at End of Cycle 11 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xB080, rw_mode='read', size='word', store_value=0, halt=False), address=0xB080, uuid=134, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 12 ===
+[Cycle 12] LSU Received: MISS ACCEPTED (UUID: 7)
+=== Latch State at End of Cycle 12 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xC000, rw_mode='read', size='word', store_value=0, halt=False), address=0xC000, uuid=7, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 13 ===
+[Cycle 13] LSU Received: MISS ACCEPTED (UUID: 135)
+=== Latch State at End of Cycle 13 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xD080, rw_mode='read', size='word', store_value=0, halt=False), address=0xD080, uuid=135, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 14 ===
+[Cycle 14] LSU Received: MISS ACCEPTED (UUID: 8)
+=== Latch State at End of Cycle 14 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xE000, rw_mode='read', size='word', store_value=0, halt=False), address=0xE000, uuid=8, miss=True, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+=== Cycle 15 ===
+[Cycle 15] LSU Received: MISS ACCEPTED (UUID: 136)
+=== Latch State at End of Cycle 15 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0xF080, rw_mode='read', size='word', store_value=0, halt=False), address=0xF080, uuid=136, miss=True, hit=False, stall=False, flushed=False)
+
+=== Cycle 16 ===
+=== Latch State at End of Cycle 16 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 17 ===
+Bank 0: Sent READ req to Memory for 0x0
+=== Latch State at End of Cycle 17 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 18 ===
+Bank 1: Sent READ req to Memory for 0x1080
+=== Latch State at End of Cycle 18 ===
+  [dcache_mem] VALID: {'addr': '0x1080', 'size': 128, 'uuid': 129, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 19 ===
+=== Latch State at End of Cycle 19 ===
+  [dcache_mem] VALID: {'addr': '0x1080', 'size': 128, 'uuid': 129, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 20 ===
+=== Latch State at End of Cycle 20 ===
+  [dcache_mem] VALID: {'addr': '0x1080', 'size': 128, 'uuid': 129, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 21 ===
+=== Latch State at End of Cycle 21 ===
+  [dcache_mem] VALID: {'addr': '0x1080', 'size': 128, 'uuid': 129, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 22 ===
+=== Latch State at End of Cycle 22 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0xd8017d8058227d80d8427d80826120c0806128c0d1870d8020e20180d1070e80a0e20180d1870e8020e30180d1870e80d2270080a0e30180446120c0602822c0ffffffff100710808d61708000c4184480e4188420050144a025018402462984808659c430a049c4602802c00000040040000000000000003f80000040...')  # length=1024, 'addr': '0x0', 'size': 128, 'uuid': 1, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=1, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 23 ===
+=== Latch State at End of Cycle 23 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 24 ===
+[Cycle 24] LSU Received: MISS COMPLETE (UUID: 1) - Data is in cache
+=== Latch State at End of Cycle 24 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False), address=0x0, uuid=1, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 25 ===
+Bank 0: Sent READ req to Memory for 0x2000
+=== Latch State at End of Cycle 25 ===
+  [dcache_mem] VALID: {'addr': '0x2000', 'size': 128, 'uuid': 2, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 26 ===
+=== Latch State at End of Cycle 26 ===
+  [dcache_mem] VALID: {'addr': '0x2000', 'size': 128, 'uuid': 2, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 27 ===
+=== Latch State at End of Cycle 27 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x40c0000041000000412000004140000041600000418000004190000041a0000041b0000041c0000041d0000041e0000041f0000042000000420800004210000042180000422000004228000042300000423800004240000042480000425000004258000042600000426800004270000042780000428000004284000042...')  # length=1024, 'addr': '0x1080', 'size': 128, 'uuid': 129, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=129, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 28 ===
+=== Latch State at End of Cycle 28 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 29 ===
+[Cycle 29] LSU Received: MISS COMPLETE (UUID: 129) - Data is in cache
+=== Latch State at End of Cycle 29 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x1080, rw_mode='read', size='word', store_value=0, halt=False), address=0x1080, uuid=129, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 30 ===
+Bank 1: Sent READ req to Memory for 0x3080
+=== Latch State at End of Cycle 30 ===
+  [dcache_mem] VALID: {'addr': '0x3080', 'size': 128, 'uuid': 130, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 31 ===
+=== Latch State at End of Cycle 31 ===
+  [dcache_mem] VALID: {'addr': '0x3080', 'size': 128, 'uuid': 130, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 32 ===
+=== Latch State at End of Cycle 32 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x44f8c00044f9000044f9400044f9800044f9c00044fa000044fa400044fa800044fac00044fb000044fb400044fb800044fbc00044fc000044fc400044fc800044fcc00044fd000044fd400044fd800044fdc00044fe000044fe400044fe800044fec00044ff000044ff400044ff800044ffc000000000000000000000...')  # length=1024, 'addr': '0x2000', 'size': 128, 'uuid': 2, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=2, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 33 ===
+=== Latch State at End of Cycle 33 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 34 ===
+[Cycle 34] LSU Received: MISS COMPLETE (UUID: 2) - Data is in cache
+=== Latch State at End of Cycle 34 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x2000, rw_mode='read', size='word', store_value=0, halt=False), address=0x2000, uuid=2, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 35 ===
+Bank 0: Sent READ req to Memory for 0x4000
+=== Latch State at End of Cycle 35 ===
+  [dcache_mem] VALID: {'addr': '0x4000', 'size': 128, 'uuid': 3, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 36 ===
+=== Latch State at End of Cycle 36 ===
+  [dcache_mem] VALID: {'addr': '0x4000', 'size': 128, 'uuid': 3, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 37 ===
+=== Latch State at End of Cycle 37 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x3080', 'size': 128, 'uuid': 130, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=130, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 38 ===
+=== Latch State at End of Cycle 38 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 39 ===
+[Cycle 39] LSU Received: MISS COMPLETE (UUID: 130) - Data is in cache
+=== Latch State at End of Cycle 39 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x3080, rw_mode='read', size='word', store_value=0, halt=False), address=0x3080, uuid=130, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 40 ===
+Bank 1: Sent READ req to Memory for 0x5080
+=== Latch State at End of Cycle 40 ===
+  [dcache_mem] VALID: {'addr': '0x5080', 'size': 128, 'uuid': 131, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 41 ===
+=== Latch State at End of Cycle 41 ===
+  [dcache_mem] VALID: {'addr': '0x5080', 'size': 128, 'uuid': 131, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 42 ===
+=== Latch State at End of Cycle 42 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x4000', 'size': 128, 'uuid': 3, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=3, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 43 ===
+=== Latch State at End of Cycle 43 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 44 ===
+[Cycle 44] LSU Received: MISS COMPLETE (UUID: 3) - Data is in cache
+=== Latch State at End of Cycle 44 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x4000, rw_mode='read', size='word', store_value=0, halt=False), address=0x4000, uuid=3, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 45 ===
+Bank 0: Sent READ req to Memory for 0x6000
+=== Latch State at End of Cycle 45 ===
+  [dcache_mem] VALID: {'addr': '0x6000', 'size': 128, 'uuid': 4, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 46 ===
+=== Latch State at End of Cycle 46 ===
+  [dcache_mem] VALID: {'addr': '0x6000', 'size': 128, 'uuid': 4, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 47 ===
+=== Latch State at End of Cycle 47 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x5080', 'size': 128, 'uuid': 131, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=131, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 48 ===
+=== Latch State at End of Cycle 48 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 49 ===
+[Cycle 49] LSU Received: MISS COMPLETE (UUID: 131) - Data is in cache
+=== Latch State at End of Cycle 49 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x5080, rw_mode='read', size='word', store_value=0, halt=False), address=0x5080, uuid=131, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 50 ===
+Bank 1: Sent READ req to Memory for 0x7080
+=== Latch State at End of Cycle 50 ===
+  [dcache_mem] VALID: {'addr': '0x7080', 'size': 128, 'uuid': 132, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 51 ===
+=== Latch State at End of Cycle 51 ===
+  [dcache_mem] VALID: {'addr': '0x7080', 'size': 128, 'uuid': 132, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 52 ===
+=== Latch State at End of Cycle 52 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x6000', 'size': 128, 'uuid': 4, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=4, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 53 ===
+=== Latch State at End of Cycle 53 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 54 ===
+[Cycle 54] LSU Received: MISS COMPLETE (UUID: 4) - Data is in cache
+=== Latch State at End of Cycle 54 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x6000, rw_mode='read', size='word', store_value=0, halt=False), address=0x6000, uuid=4, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 55 ===
+Bank 0: Sent READ req to Memory for 0x8000
+=== Latch State at End of Cycle 55 ===
+  [dcache_mem] VALID: {'addr': '0x8000', 'size': 128, 'uuid': 5, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 56 ===
+=== Latch State at End of Cycle 56 ===
+  [dcache_mem] VALID: {'addr': '0x8000', 'size': 128, 'uuid': 5, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 57 ===
+=== Latch State at End of Cycle 57 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x7080', 'size': 128, 'uuid': 132, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=132, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 58 ===
+=== Latch State at End of Cycle 58 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 59 ===
+[Cycle 59] LSU Received: MISS COMPLETE (UUID: 132) - Data is in cache
+=== Latch State at End of Cycle 59 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x7080, rw_mode='read', size='word', store_value=0, halt=False), address=0x7080, uuid=132, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 60 ===
+Bank 1: Sent READ req to Memory for 0x9080
+=== Latch State at End of Cycle 60 ===
+  [dcache_mem] VALID: {'addr': '0x9080', 'size': 128, 'uuid': 133, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 61 ===
+=== Latch State at End of Cycle 61 ===
+  [dcache_mem] VALID: {'addr': '0x9080', 'size': 128, 'uuid': 133, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 62 ===
+=== Latch State at End of Cycle 62 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x8000', 'size': 128, 'uuid': 5, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=5, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 63 ===
+=== Latch State at End of Cycle 63 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 64 ===
+[Cycle 64] LSU Received: MISS COMPLETE (UUID: 5) - Data is in cache
+=== Latch State at End of Cycle 64 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x8000, rw_mode='read', size='word', store_value=0, halt=False), address=0x8000, uuid=5, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 65 ===
+Bank 0: Sent READ req to Memory for 0xA000
+=== Latch State at End of Cycle 65 ===
+  [dcache_mem] VALID: {'addr': '0xA000', 'size': 128, 'uuid': 6, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 66 ===
+=== Latch State at End of Cycle 66 ===
+  [dcache_mem] VALID: {'addr': '0xA000', 'size': 128, 'uuid': 6, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 67 ===
+=== Latch State at End of Cycle 67 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0x9080', 'size': 128, 'uuid': 133, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=133, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 68 ===
+=== Latch State at End of Cycle 68 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 69 ===
+[Cycle 69] LSU Received: MISS COMPLETE (UUID: 133) - Data is in cache
+=== Latch State at End of Cycle 69 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x9080, rw_mode='read', size='word', store_value=0, halt=False), address=0x9080, uuid=133, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 70 ===
+Bank 1: Sent READ req to Memory for 0xB080
+=== Latch State at End of Cycle 70 ===
+  [dcache_mem] VALID: {'addr': '0xB080', 'size': 128, 'uuid': 134, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 71 ===
+=== Latch State at End of Cycle 71 ===
+  [dcache_mem] VALID: {'addr': '0xB080', 'size': 128, 'uuid': 134, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 72 ===
+=== Latch State at End of Cycle 72 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xA000', 'size': 128, 'uuid': 6, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=6, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 73 ===
+=== Latch State at End of Cycle 73 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 74 ===
+[Cycle 74] LSU Received: MISS COMPLETE (UUID: 6) - Data is in cache
+=== Latch State at End of Cycle 74 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xA000, rw_mode='read', size='word', store_value=0, halt=False), address=0xA000, uuid=6, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 75 ===
+Bank 0: Sent READ req to Memory for 0xC000
+=== Latch State at End of Cycle 75 ===
+  [dcache_mem] VALID: {'addr': '0xC000', 'size': 128, 'uuid': 7, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 76 ===
+=== Latch State at End of Cycle 76 ===
+  [dcache_mem] VALID: {'addr': '0xC000', 'size': 128, 'uuid': 7, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 77 ===
+=== Latch State at End of Cycle 77 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xB080', 'size': 128, 'uuid': 134, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=134, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 78 ===
+=== Latch State at End of Cycle 78 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 79 ===
+[Cycle 79] LSU Received: MISS COMPLETE (UUID: 134) - Data is in cache
+=== Latch State at End of Cycle 79 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xB080, rw_mode='read', size='word', store_value=0, halt=False), address=0xB080, uuid=134, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 80 ===
+Bank 1: Sent READ req to Memory for 0xD080
+=== Latch State at End of Cycle 80 ===
+  [dcache_mem] VALID: {'addr': '0xD080', 'size': 128, 'uuid': 135, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 81 ===
+=== Latch State at End of Cycle 81 ===
+  [dcache_mem] VALID: {'addr': '0xD080', 'size': 128, 'uuid': 135, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 82 ===
+=== Latch State at End of Cycle 82 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xC000', 'size': 128, 'uuid': 7, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=7, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 83 ===
+=== Latch State at End of Cycle 83 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 84 ===
+[Cycle 84] LSU Received: MISS COMPLETE (UUID: 7) - Data is in cache
+=== Latch State at End of Cycle 84 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xC000, rw_mode='read', size='word', store_value=0, halt=False), address=0xC000, uuid=7, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 85 ===
+Bank 0: Sent READ req to Memory for 0xE000
+=== Latch State at End of Cycle 85 ===
+  [dcache_mem] VALID: {'addr': '0xE000', 'size': 128, 'uuid': 8, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 86 ===
+=== Latch State at End of Cycle 86 ===
+  [dcache_mem] VALID: {'addr': '0xE000', 'size': 128, 'uuid': 8, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 87 ===
+=== Latch State at End of Cycle 87 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xD080', 'size': 128, 'uuid': 135, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=135, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 88 ===
+=== Latch State at End of Cycle 88 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 89 ===
+[Cycle 89] LSU Received: MISS COMPLETE (UUID: 135) - Data is in cache
+=== Latch State at End of Cycle 89 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xD080, rw_mode='read', size='word', store_value=0, halt=False), address=0xD080, uuid=135, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 90 ===
+Bank 1: Sent READ req to Memory for 0xF080
+=== Latch State at End of Cycle 90 ===
+  [dcache_mem] VALID: {'addr': '0xF080', 'size': 128, 'uuid': 136, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 91 ===
+=== Latch State at End of Cycle 91 ===
+  [dcache_mem] VALID: {'addr': '0xF080', 'size': 128, 'uuid': 136, 'warp': 1, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 92 ===
+=== Latch State at End of Cycle 92 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xE000', 'size': 128, 'uuid': 8, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=8, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 93 ===
+=== Latch State at End of Cycle 93 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 94 ===
+[Cycle 94] LSU Received: MISS COMPLETE (UUID: 8) - Data is in cache
+=== Latch State at End of Cycle 94 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xE000, rw_mode='read', size='word', store_value=0, halt=False), address=0xE000, uuid=8, miss=False, hit=False, stall=False, flushed=False)
+
+=== Cycle 95 ===
+=== Latch State at End of Cycle 95 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 96 ===
+=== Latch State at End of Cycle 96 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 97 ===
+=== Latch State at End of Cycle 97 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...')  # length=1024, 'addr': '0xF080', 'size': 128, 'uuid': 136, 'warp': 1, 'pc': '0x0', 'inst': Instruction(iid=136, pc=Bits('0x00000000'), intended_FSU=None, warp=1, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 98 ===
+=== Latch State at End of Cycle 98 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 99 ===
+[Cycle 99] LSU Received: MISS COMPLETE (UUID: 136) - Data is in cache
+=== Latch State at End of Cycle 99 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0xF080, rw_mode='read', size='word', store_value=0, halt=False), address=0xF080, uuid=136, miss=False, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+======== Bank 0 ========
+  ---- Set 0 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xE    (Addr: 0x0000E000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xC    (Addr: 0x0000C000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xA    (Addr: 0x0000A000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x8    (Addr: 0x00008000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x6    (Addr: 0x00006000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x4    (Addr: 0x00004000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x2    (Addr: 0x00002000)
+        Block[00:03]: 0x00C0F844 0x0000F944 0x0040F944 0x0080F944
+        Block[04:07]: 0x00C0F944 0x0000FA44 0x0040FA44 0x0080FA44
+        Block[08:11]: 0x00C0FA44 0x0000FB44 0x0040FB44 0x0080FB44
+        Block[12:15]: 0x00C0FB44 0x0000FC44 0x0040FC44 0x0080FC44
+        Block[16:19]: 0x00C0FC44 0x0000FD44 0x0040FD44 0x0080FD44
+        Block[20:23]: 0x00C0FD44 0x0000FE44 0x0040FE44 0x0080FE44
+        Block[24:27]: 0x00C0FE44 0x0000FF44 0x0040FF44 0x0080FF44
+        Block[28:31]: 0x00C0FF44 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x0    (Addr: 0x00000000)
+        Block[00:03]: 0x807D01D8 0x807D2258 0x807D42D8 0xC0206182
+        Block[04:07]: 0xC0286180 0x800D87D1 0x8001E220 0x800E07D1
+        Block[08:11]: 0x8001E2A0 0x800E87D1 0x8001E320 0x800E87D1
+        Block[12:15]: 0x800027D2 0x8001E3A0 0xC0206144 0xC0222860
+        Block[16:19]: 0xFFFFFFFF 0x80100710 0x8070618D 0x4418C400
+        Block[20:23]: 0x8418E480 0x44010520 0x840125A0 0x84294602
+        Block[24:27]: 0xC4598680 0xC449A030 0xC0022860 0x00040000
+        Block[28:31]: 0x00000040 0x00000000 0x0000803F 0x00000040
+
+======== Bank 1 ========
+  ---- Set 0 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xF    (Addr: 0x0000F080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xD    (Addr: 0x0000D080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xB    (Addr: 0x0000B080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x9    (Addr: 0x00009080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x7    (Addr: 0x00007080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x5    (Addr: 0x00005080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x3    (Addr: 0x00003080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x1    (Addr: 0x00001080)
+        Block[00:03]: 0x0000C040 0x00000041 0x00002041 0x00004041
+        Block[04:07]: 0x00006041 0x00008041 0x00009041 0x0000A041
+        Block[08:11]: 0x0000B041 0x0000C041 0x0000D041 0x0000E041
+        Block[12:15]: 0x0000F041 0x00000042 0x00000842 0x00001042
+        Block[16:19]: 0x00001842 0x00002042 0x00002842 0x00003042
+        Block[20:23]: 0x00003842 0x00004042 0x00004842 0x00005042
+        Block[24:27]: 0x00005842 0x00006042 0x00006842 0x00007042
+        Block[28:31]: 0x00007842 0x00008042 0x00008442 0x00008842

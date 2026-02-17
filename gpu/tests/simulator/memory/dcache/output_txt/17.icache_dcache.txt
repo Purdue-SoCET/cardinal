@@ -1,0 +1,681 @@
+Test Case: icache and dcache request simultaneously
+
+=== Cycle 621 ===
+[Cycle 621] LSU Received: MISS ACCEPTED (UUID: 40)
+=== Latch State at End of Cycle 621 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_ACCEPTED', req=dCacheRequest(addr_val=0x1000, rw_mode='read', size='word', store_value=0, halt=False), address=0x1000, uuid=40, miss=True, hit=False, stall=False, flushed=False)
+
+=== Cycle 622 ===
+=== Latch State at End of Cycle 622 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 623 ===
+=== Latch State at End of Cycle 623 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 624 ===
+=== Latch State at End of Cycle 624 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 625 ===
+=== Latch State at End of Cycle 625 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 626 ===
+=== Latch State at End of Cycle 626 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 627 ===
+=== Latch State at End of Cycle 627 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 628 ===
+=== Latch State at End of Cycle 628 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 629 ===
+=== Latch State at End of Cycle 629 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 630 ===
+=== Latch State at End of Cycle 630 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 631 ===
+=== Latch State at End of Cycle 631 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 632 ===
+=== Latch State at End of Cycle 632 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 633 ===
+=== Latch State at End of Cycle 633 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 634 ===
+=== Latch State at End of Cycle 634 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 635 ===
+=== Latch State at End of Cycle 635 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 636 ===
+=== Latch State at End of Cycle 636 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 637 ===
+=== Latch State at End of Cycle 637 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+=== Test ended ===
+
+=== Cycle 638 ===
+Bank 0: Sent READ req to Memory for 0x1000
+=== Latch State at End of Cycle 638 ===
+  [dcache_mem] VALID: {'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 639 ===
+=== Latch State at End of Cycle 639 ===
+  [dcache_mem] VALID: {'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 640 ===
+=== Latch State at End of Cycle 640 ===
+  [dcache_mem] VALID: {'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 641 ===
+=== Latch State at End of Cycle 641 ===
+  [dcache_mem] VALID: {'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 642 ===
+=== Latch State at End of Cycle 642 ===
+  [dcache_mem] VALID: {'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'rw_mode': 'read', 'src': 'dcache'}
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 643 ===
+[Cycle 643] ICache Received: Data from Memory (UUID: 999)
+Data: 0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...
+=== Latch State at End of Cycle 643 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 644 ===
+=== Latch State at End of Cycle 644 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 645 ===
+=== Latch State at End of Cycle 645 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 646 ===
+=== Latch State at End of Cycle 646 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 647 ===
+=== Latch State at End of Cycle 647 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 648 ===
+=== Latch State at End of Cycle 648 ===
+  [dcache_mem] Empty
+  [mem_dcache] VALID: {'src': 'dcache', 'rw_mode': 'read', 'data': Bits('0x4478c0004479000044794000447980004479c000447a0000447a4000447a8000447ac000447b0000447b4000447b8000447bc000447c0000447c4000447c8000447cc000447d0000447d4000447d8000447dc000447e0000447e4000447e8000447ec000447f0000447f4000447f8000447fc000000000004000000040...')  # length=1024, 'addr': '0x1000', 'size': 128, 'uuid': 40, 'warp': 0, 'pc': '0x0', 'inst': Instruction(iid=40, pc=Bits('0x00000000'), intended_FSU=None, warp=0, warpGroup=None, opcode=None, rs1=Bits('0b00000'), rs2=Bits('0b00000'), rd=Bits('0b00000'), pred=[], rdat1=[], rdat2=[], wdat=[], type=None, packet=None, issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None)}
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 649 ===
+=== Latch State at End of Cycle 649 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] Empty
+
+=== Cycle 650 ===
+[Cycle 650] LSU Received: MISS COMPLETE (UUID: 40) - Data is in cache
+=== Latch State at End of Cycle 650 ===
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [LSU_dCache] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+  [DCache_LSU_Resp] VALID: dMemResponse(type='MISS_COMPLETE', req=dCacheRequest(addr_val=0x1000, rw_mode='read', size='word', store_value=0, halt=False), address=0x1000, uuid=40, miss=False, hit=False, stall=False, flushed=False)
+=== Test ended ===
+
+======== Bank 0 ========
+  ---- Set 0 ----
+    LRU Order: [6, 7, 0, 1, 2, 3, 4, 5] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xE    (Addr: 0x0000E000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xC    (Addr: 0x0000C000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xA    (Addr: 0x0000A000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x8    (Addr: 0x00008000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x6    (Addr: 0x00006000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x4    (Addr: 0x00004000)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x1    (Addr: 0x00001000)
+        Block[00:03]: 0x00C07844 0x00007944 0x00407944 0x00807944
+        Block[04:07]: 0x00C07944 0x00007A44 0x00407A44 0x00807A44
+        Block[08:11]: 0x00C07A44 0x00007B44 0x00407B44 0x00807B44
+        Block[12:15]: 0x00C07B44 0x00007C44 0x00407C44 0x00807C44
+        Block[16:19]: 0x00C07C44 0x00007D44 0x00407D44 0x00807D44
+        Block[20:23]: 0x00C07D44 0x00007E44 0x00407E44 0x00807E44
+        Block[24:27]: 0x00C07E44 0x00007F44 0x00407F44 0x00807F44
+        Block[28:31]: 0x00C07F44 0x00000000 0x00000040 0x00008040
+    [Way 7] V:1 D Tag: 0x0    (Addr: 0x00000000)
+        Block[00:03]: 0x807DBEBE 0x807D2258 0x807D42D8 0xC0206182
+        Block[04:07]: 0xC0286180 0x800D87D1 0x8001E220 0x800E07D1
+        Block[08:11]: 0x8001E2A0 0x800E87D1 0x8001E320 0x800E87D1
+        Block[12:15]: 0x800027D2 0x8001E3A0 0xC0206144 0xC0222860
+        Block[16:19]: 0xFFFFFFFF 0x80100710 0x8070618D 0x4418C400
+        Block[20:23]: 0x8418E480 0x44010520 0x840125A0 0x84294602
+        Block[24:27]: 0xC4598680 0xC449A030 0xC0022860 0x00040000
+        Block[28:31]: 0x00000040 0x00000000 0x0000803F 0x00000040
+  ---- Set 1 ----
+    LRU Order: [7, 0, 1, 2, 3, 4, 5, 6] (Front=MRU, Back=LRU)
+    [Way 0] V:1 D Tag: 0x1E   (Addr: 0x0001E100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1 D Tag: 0x1C   (Addr: 0x0001C100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1 D Tag: 0x1A   (Addr: 0x0001A100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1 D Tag: 0x18   (Addr: 0x00018100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1 D Tag: 0x16   (Addr: 0x00016100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1 D Tag: 0x14   (Addr: 0x00014100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1 D Tag: 0x12   (Addr: 0x00012100)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x21   (Addr: 0x00021100)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+  ---- Set 2 ----
+    LRU Order: [5, 6, 7, 0, 1, 2, 3, 4] (Front=MRU, Back=LRU)
+    [Way 5] V:1   Tag: 0x23   (Addr: 0x00023200)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x22   (Addr: 0x00022200)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1 D Tag: 0x20   (Addr: 0x00020200)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+  ---- Set 4 ----
+    LRU Order: [5, 6, 7, 0, 1, 2, 3, 4] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0x42   (Addr: 0x00042400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0x40   (Addr: 0x00040400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0x3E   (Addr: 0x0003E400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x3C   (Addr: 0x0003C400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x3A   (Addr: 0x0003A400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x48   (Addr: 0x00048400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x46   (Addr: 0x00046400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x44   (Addr: 0x00044400)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+
+======== Bank 1 ========
+  ---- Set 0 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1   Tag: 0xF    (Addr: 0x0000F080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1   Tag: 0xD    (Addr: 0x0000D080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1   Tag: 0xB    (Addr: 0x0000B080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1   Tag: 0x9    (Addr: 0x00009080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1   Tag: 0x7    (Addr: 0x00007080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1   Tag: 0x5    (Addr: 0x00005080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1   Tag: 0x3    (Addr: 0x00003080)
+        Block[00:03]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1   Tag: 0x1    (Addr: 0x00001080)
+        Block[00:03]: 0x0000C040 0x00000041 0x00002041 0x00004041
+        Block[04:07]: 0x00006041 0x00008041 0x00009041 0x0000A041
+        Block[08:11]: 0x0000B041 0x0000C041 0x0000D041 0x0000E041
+        Block[12:15]: 0x0000F041 0x00000042 0x00000842 0x00001042
+        Block[16:19]: 0x00001842 0x00002042 0x00002842 0x00003042
+        Block[20:23]: 0x00003842 0x00004042 0x00004842 0x00005042
+        Block[24:27]: 0x00005842 0x00006042 0x00006842 0x00007042
+        Block[28:31]: 0x00007842 0x00008042 0x00008442 0x00008842
+  ---- Set 1 ----
+    LRU Order: [0, 1, 2, 3, 4, 5, 6, 7] (Front=MRU, Back=LRU)
+    [Way 0] V:1 D Tag: 0x1F   (Addr: 0x0001F180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 1] V:1 D Tag: 0x1D   (Addr: 0x0001D180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 2] V:1 D Tag: 0x1B   (Addr: 0x0001B180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 3] V:1 D Tag: 0x19   (Addr: 0x00019180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 4] V:1 D Tag: 0x17   (Addr: 0x00017180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 5] V:1 D Tag: 0x15   (Addr: 0x00015180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 6] V:1 D Tag: 0x13   (Addr: 0x00013180)
+        Block[00:03]: 0xDEADBEEF 0x00000000 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000
+    [Way 7] V:1 D Tag: 0x11   (Addr: 0x00011180)
+        Block[00:03]: 0x00000000 0xDEADBEEF 0x00000000 0x00000000
+        Block[04:07]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[08:11]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[12:15]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[16:19]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[20:23]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[24:27]: 0x00000000 0x00000000 0x00000000 0x00000000
+        Block[28:31]: 0x00000000 0x00000000 0x00000000 0x00000000

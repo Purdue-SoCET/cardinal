@@ -1,0 +1,70 @@
+
+=== Cycle 0 ===
+[DEBUG] Cycle Start: QueueLen=0, LatchValid=True
+LDST_FU: Accepting instruction from latch pc: Instruction(pc=0, intended_FU='ldst', warp_id=0, warp_group_id=0, rs1=Bits('0x00000000'), rs2=Bits('0x00000000'), rd=0, opcode=Bits('0b0100000'), predicate=[Bits('0b1'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0')], issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None, rdat1=[Bits('0x00000000'), Bits('0x00000020'), Bits('0x00000040'), Bits('0x00000060'), Bits('0x00000080'), Bits('0x000000a0'), Bits('0x000000c0'), Bits('0x000000e0'), Bits('0x00000100'), Bits('0x00000120'), Bits('0x00000140'), Bits('0x00000160'), Bits('0x00000180'), Bits('0x000001a0'), Bits('0x000001c0'), Bits('0x000001e0'), Bits('0x00000200'), Bits('0x00000220'), Bits('0x00000240'), Bits('0x00000260'), Bits('0x00000280'), Bits('0x000002a0'), Bits('0x000002c0'), Bits('0x000002e0'), Bits('0x00000300'), Bits('0x00000320'), Bits('0x00000340'), Bits('0x00000360'), Bits('0x00000380'), Bits('0x000003a0'), Bits('0x000003c0'), Bits('0x000003e0')], rdat2=[Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000')], wdat=[Bits('0x000000d8'), Bits('0x000000a0'), Bits('0x000000ff'), Bits('0x00000080'), Bits('0x00000040'), Bits('0x00000041'), Bits('0x00000041'), Bits('0x00000041'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000042'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043'), Bits('0x00000043')])
+=== Latch State at End of Cycle 0 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] VALID: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 1 ===
+Cache: Received new request: dCacheRequest(addr_val=0x0, rw_mode='read', size='word', store_value=0, halt=False)
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 1 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 2 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+=== Latch State at End of Cycle 2 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] Empty
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+
+=== Cycle 3 ===
+[DEBUG] Cycle Start: QueueLen=1, LatchValid=False
+[LSU] Received: HIT COMPLETE (Data: 0xDEADBEBE)
+LDST_FU: Finished processing Instruction pc: 0
+LDST_FU: Pushing Instruction for WB pc: 0
+=== Latch State at End of Cycle 3 ===
+  [issue_lsu_req] Empty
+  [LSU_dCache] Empty
+  [dcache_mem] Empty
+  [mem_dcache] Empty
+  [lsu_wb_resp] VALID: Instruction(pc=0, intended_FU='ldst', warp_id=0, warp_group_id=0, rs1=Bits('0x00000000'), rs2=Bits('0x00000000'), rd=0, opcode=Bits('0b0100000'), predicate=[Bits('0b1'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0'), Bits('0b0')], issued_cycle=None, stage_entry={}, stage_exit={}, fu_entries=[], wb_cycle=None, target_bank=None, rdat1=[Bits('0x00000000'), Bits('0x00000020'), Bits('0x00000040'), Bits('0x00000060'), Bits('0x00000080'), Bits('0x000000a0'), Bits('0x000000c0'), Bits('0x000000e0'), Bits('0x00000100'), Bits('0x00000120'), Bits('0x00000140'), Bits('0x00000160'), Bits('0x00000180'), Bits('0x000001a0'), Bits('0x000001c0'), Bits('0x000001e0'), Bits('0x00000200'), Bits('0x00000220'), Bits('0x00000240'), Bits('0x00000260'), Bits('0x00000280'), Bits('0x000002a0'), Bits('0x000002c0'), Bits('0x000002e0'), Bits('0x00000300'), Bits('0x00000320'), Bits('0x00000340'), Bits('0x00000360'), Bits('0x00000380'), Bits('0x000003a0'), Bits('0x000003c0'), Bits('0x000003e0')], rdat2=[Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000'), Bits('0x00000000')], wdat=[Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe'), Bits('0xdeadbebe')])
+  [icache_mem_req] Empty
+  [mem_icache_resp] Empty
+
+Forward latches:
+  [dcache_lsu_forward_if] Empty
+  [lsu_sched_forward_if] Empty
+=== Test ended ===
+WB Received instruction from LSU!

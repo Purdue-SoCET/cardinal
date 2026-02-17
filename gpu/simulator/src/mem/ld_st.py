@@ -38,6 +38,29 @@ class Ldst_Fu(FunctionalSubUnit):
 
     def compute(self):
         pass
+    
+    def print_dcache_resp(self, dcache_response):
+        if dcache_response:
+            msg_type = dcache_response.type
+            uuid = dcache_response.uuid
+            data = dcache_response.data
+
+            # --- Helper: Format Data as Hex ---
+            data_hex = data
+            if isinstance(data, int):
+                data_hex = f"0x{data:08X}" # Format as 8-digit Hex
+            elif isinstance(data, list):
+                data_hex = [f"0x{x:X}" for x in data] # Format list items
+            # ----------------------------------
+
+            if (msg_type == 'MISS_ACCEPTED'):
+                print(f"[LSU] Received: MISS ACCEPTED (UUID: {uuid})")
+            elif (msg_type == 'HIT_COMPLETE'):
+                print(f"[LSU] Received: HIT COMPLETE (Data: {data_hex})")
+            elif (msg_type == 'MISS_COMPLETE'):
+                print(f"[LSU] Received: MISS COMPLETE (UUID: {uuid}) - Data is in cache")
+            elif (msg_type == 'HIT_STALL'):
+                print(f"[LSU] Received: HIT STALL")
         
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
         return_instr = None
@@ -78,31 +101,6 @@ class Ldst_Fu(FunctionalSubUnit):
         if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
             print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
             self.wb_buffer.append(self.ldst_q.pop(0).instr)
-
-        #handle dcache packet
-        if self.dcache_if.forward_if.pop():
-            if len(self.ldst_q) == 0:
-                print(f"LSQ is length 0 and recieved a dcache response")
-
-            payload: dMemResponse = self.dcache_if.forward_if.pop()
-
-            mem_req = self.ldst_q[0]
-            match payload.type:
-                case 'MISS_ACCEPTED':
-                    # logger.info("Handling dcache MISS_ACCEPTED")
-                    mem_req.parseMiss(payload)     
-                    self.outstanding = False                   
-                case 'HIT_STALL':
-                    pass
-                case 'MISS_COMPLETE':
-                    # logger.info("Handling dcache MISS_COMPLETE")
-                    mem_req.parseMshrHit(payload)
-                case 'FLUSH_COMPLETE':
-                    mem_req.parseHit(payload)
-                case 'HIT_COMPLETE':
-                    # logger.info("Handling dcache HIT_COMPLETE")
-                    mem_req.parseHit(payload)
-                    self.outstanding = False
     
         return return_instr
             
