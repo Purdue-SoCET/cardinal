@@ -125,6 +125,7 @@ void kernel_vertexShader(void* arg)
         if(j == 2)
             args->threeDVertTrans[i].coords.z = p_world[j] + args->Oa->z;
     }
+
     args->threeDVertTrans[i].s = args->threeDVert[i].s;
     args->threeDVertTrans[i].t = args->threeDVert[i].t;
 

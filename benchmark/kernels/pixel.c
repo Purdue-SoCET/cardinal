@@ -47,6 +47,10 @@ void kernel_pixel(void* arg) {
     float det = m00 * (m11 * m22 - m21 * m12) -
                 m01 * (m10 * m22 - m12 * m20) +
                 m02 * (m10 * m21 - m11 * m20);
+
+    if (det > -0.00001 && det < 0.00001) { // added to render teapot
+        return; 
+    }
     
     float invDet = 1.0 / det;
 
