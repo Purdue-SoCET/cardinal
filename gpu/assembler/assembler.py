@@ -21,11 +21,11 @@ B_TYPE = {'beq', 'bne', 'bge', 'bgeu', 'blt', 'bltu', 'beqf', 'bnef', 'bgef', 'b
 U_TYPE = {'auipc', 'lli', 'lmi', 'lui'}
 C_TYPE = {'csrr'}
 J_TYPE = {'jal'}
-P_TYPE = {'jpnz', 'prr', 'prw'}
+P_TYPE = {'jpnz', 'prsw', 'prlw'}
 H_TYPE = {'halt'}
 
 # Instructions without predication
-NO_PREDICATE = {'halt', 'prw', 'prr', 'jpnz', 'jal', 'jalr'}
+NO_PREDICATE = {'halt', 'jal', 'jalr'}
 
 
 def load_opcodes(opcode_file: str) -> Dict[str, str]:
@@ -272,7 +272,7 @@ class Assembler:
         elif opcode in J_TYPE:
             required_ops = 2  # rd, imm/label
         elif opcode in P_TYPE:
-            required_ops = 2  # rs1, rs2
+            required_ops = 3  # prd, rs2, imm
         elif opcode in H_TYPE:
             required_ops = 0  # no operands
         else:
@@ -402,13 +402,33 @@ class Assembler:
                    self.to_binary(imm, 17) + self.to_binary(rd, 6) + op_bits)
         
         elif opcode in P_TYPE:
-            # P-type: [end, start, pred, rs2[24:19], rs1[18:13], x[12:7], opcode[6:0]]
-            # Note: No predication for these instructions
-            rs1 = self.parse_register(operands[0])
-            rs2 = self.parse_register(operands[1])
+            # P-type: {end[31], start[30], p[29:25], rs2[24:19], imm[18:13], rd[12:7], opcode[6:0]}	
+            # prd, rs2, imm
+            if(opcode == 'prsw'): # prsw prs, rs2, imm
+                predicate = self.parse_predicate(operands[0])
+                rs2 = self.parse_register(operands[1])
+                imm = self.parse_immediate(operands[2])
+                rd = 0
+            elif(opcode == 'prlw'):
+                rd = self.parse_predicate(operands[0])
+                rs2 = self.parse_register(operands[1])
+                imm = self.parse_immediate(operands[2])
+                predicate = 0
+            elif(opcode == 'jpnz'):
+                predicate = self.parse_predicate(operands[0])
+                if operands[1] in self.labels:
+                    target = self.labels[operands[1]]
+                    imm = target - addr  # PC-relative offset
+                else:
+                    imm = self.parse_immediate(operands[1])
+                rs2 = 0
+                rd = 0
+            else:
+                raise ValueError(f"P-type opcode {opcode} found but implemented")
+            
             return (self.to_binary(end, 1) + self.to_binary(start, 1) + 
-                   '00000' + self.to_binary(rs2, 6) + 
-                   self.to_binary(rs1, 6) + '000000' + op_bits)
+                   self.to_binary(predicate, 5) + self.to_binary(rs2, 6) + 
+                   self.to_binary(imm, 6) + self.to_binary(rd, 6) + op_bits)
         
         elif opcode in H_TYPE:
             # H-type (HALT): [end=1, start=0, 1s[29:7], opcode[6:0]]

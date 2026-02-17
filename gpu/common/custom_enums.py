@@ -127,6 +127,9 @@ class J_Op(Op):
 # P-Type Operations (opcode: 1101xxx)
 class P_Op(Op):
     JPNZ = Bits(bin='000', length=3)   # 000
+    PRSW = Bits(bin='100', length=3)   # 100
+    PRLW = Bits(bin='101', length=3)   # 101
+
 
 # H-Type Operations (opcode: 1111xxx)
 class H_Op(Op):
