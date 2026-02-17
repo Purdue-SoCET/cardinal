@@ -24,32 +24,32 @@ class RegFile:
 
 
 class PredicateRegFile(RegFile):
-    def __init__(self, size: int=32, thread_per_warp: int=32) -> None:
-        self.thread_per_warp = thread_per_warp
-        super().__init__(num_regs=size, num_bits_per_reg=thread_per_warp, init_value=0)
-        self.write(Bits(uint=0, length=5), Bits(uint=(1 << thread_per_warp) - 1, length=thread_per_warp))  # set p0 to all ones
+    def __init__(self, size: int=32, threads_per_warp: int=32) -> None:
+        self.threads_per_warp = threads_per_warp
+        super().__init__(num_regs=size, num_bits_per_reg=threads_per_warp, init_value=0)
+        self.write(Bits(uint=0, length=5), Bits(uint=(1 << threads_per_warp) - 1, length=threads_per_warp))  # set p0 to all ones
 
     def read(self, rd: Bits) -> Bits:
         return self.arr[rd.uint]
     
     def read_thread(self, rd: Bits, thread_id: int) -> bool:
-        if(thread_id >= self.thread_per_warp):
+        if(thread_id >= self.threads_per_warp):
             # TODO: Remove this behavior after memory system better defined for non linear thread system
-            thread_id = thread_id % self.thread_per_warp
+            thread_id = thread_id % self.threads_per_warp
 
         reg_val = self.arr[rd.uint]
         return (reg_val.uint >> thread_id) & 0x1
 
     def write_thread(self, rd: Bits, thread_id: int, val: bool) -> None:
-        if(thread_id >= self.thread_per_warp):
+        if(thread_id >= self.threads_per_warp):
             # TODO: Remove this behavior after memory system better defined for non linear thread system
-            thread_id = thread_id % self.thread_per_warp
+            thread_id = thread_id % self.threads_per_warp
 
         reg_val = self.arr[rd.uint]
         if(val):
-            self.arr[rd.uint] = Bits(uint=(reg_val.uint | (1 << thread_id)), length=self.thread_per_warp)
+            self.arr[rd.uint] = Bits(uint=(reg_val.uint | (1 << thread_id)), length=self.threads_per_warp)
         else:
-            self.arr[rd.uint] = Bits(uint=(reg_val.uint & ~(1 << thread_id)), length=self.thread_per_warp)
+            self.arr[rd.uint] = Bits(uint=(reg_val.uint & ~(1 << thread_id)), length=self.threads_per_warp)
 
     def write(self, rd: Bits, val: Bits) -> None:
         self.arr[rd.uint] = val

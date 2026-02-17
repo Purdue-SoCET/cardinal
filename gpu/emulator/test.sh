@@ -9,9 +9,9 @@ TEST_ROOT="tests"
 DIFF_DIR="test_diffs"
 
 # Intermediate files
-RAW_ASM_OUTPUT="raw_instr.hex"      # Raw output from assembler (no addresses)
+RAW_ASM_OUTPUT="raw_instr.hex"        # Raw output from assembler (no addresses)
 FORMATTED_INSTR="formatted_instr.hex" # Instructions with 0x0000 0x.... addresses
-MEMINIT="meminit.hex"               # Final input to emulator (Instr + Data)
+MEMINIT="meminit.hex"                 # Final input to emulator (Instr + Data)
 EMU_OUTPUT="memsim.hex"             
 FINAL_EXPECTED="final_expected_combined.hex"
 TEMP_CMD_LOG="temp_command_output.txt"
@@ -56,101 +56,104 @@ fi
 for asm_file in $files_found; do
     dir_name=$(dirname "$asm_file")
     base_name=$(basename "$asm_file" .s)
-    
-    # Logging paths
-    error_log="$DIFF_DIR/${base_name}_error.log"
-    saved_gen="$DIFF_DIR/${base_name}_gen.hex"
-    saved_exp="$DIFF_DIR/${base_name}_exp.hex"
 
     # --------------------------------------
-    # 1. Identify Resources
+    # 1. Run Assembler (Run ONCE per source)
     # --------------------------------------
-    # A. Expected Output
-    expected_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_exp_*.hex" | head -n 1)
-
-    # B. Input Data (Raw Hex with Addresses) <--- NEW: Looks for _data.hex
-    input_data_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_data.hex" | head -n 1)
-
-    # Default params
-    THREADS=32
-    BLOCKS=1
-    has_expected=0
-
-    # Parse Expected Params
-    if [ -n "$expected_file" ]; then
-        has_expected=1
-        if [[ "$expected_file" =~ _t([0-9]+) ]]; then THREADS="${BASH_REMATCH[1]}"; fi
-        if [[ "$expected_file" =~ _b([0-9]+) ]]; then BLOCKS="${BASH_REMATCH[1]}"; fi
-    else
-        ((MISSING_COUNT++))
-    fi
-
-    # --------------------------------------
-    # 2. Run Assembler
-    # --------------------------------------
-    # Generates raw hex (DATADATA)
+    # We generate the machine code once, as it doesn't change based on thread count.
     python3 "$ASSEMBLER_SCRIPT" "$asm_file" "$RAW_ASM_OUTPUT" hex "$OPCODES" > "$TEMP_CMD_LOG" 2>&1
     
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ASM FAIL]${NC} $base_name"
-        cat "$TEMP_CMD_LOG" > "$error_log"
+        mv "$TEMP_CMD_LOG" "$DIFF_DIR/${base_name}_asm_error.log"
         ((FAIL_COUNT++))
         continue
     fi
 
     # --------------------------------------
-    # 3. Post-Process & Merge
+    # 2. Prepare Base Memory Image
     # --------------------------------------
-    
     # A. Format Instructions: Add 0xADDR 0xDATA
     awk '{printf "0x%08x 0x%s\n", (NR-1)*4, $0}' "$RAW_ASM_OUTPUT" > "$FORMATTED_INSTR"
 
-    # B. Create Final Memory Init File
-    cat "$FORMATTED_INSTR" > "$MEMINIT"
+    # B. Look for Input Data (e.g. saxpy_data.hex)
+    input_data_file=$(find "$dir_name" -maxdepth 1 -name "${base_name}_data.hex" | head -n 1)
 
-    # C. Append Input Data (if it exists)
+    # C. Create MEMINIT (Instructions + Optional Data)
+    cat "$FORMATTED_INSTR" > "$MEMINIT"
     if [ -n "$input_data_file" ]; then
         cat "$input_data_file" >> "$MEMINIT"
-        # Optional: Add a newline if your emulator is picky about concatenation
-        # echo "" >> "$MEMINIT" 
     fi
 
     # --------------------------------------
-    # 4. Run Emulator
+    # 3. Find All Test Configurations
     # --------------------------------------
-    make run INPUT="$MEMINIT" THREADS="$THREADS" BLOCKS="$BLOCKS" > "$TEMP_CMD_LOG" 2>&1
-    
-    if [ $? -ne 0 ] || [ ! -f "$EMU_OUTPUT" ]; then
-        echo -e "${RED}[RUN FAIL]${NC} $base_name (t=$THREADS)"
-        cat "$TEMP_CMD_LOG" > "$error_log"
-        ((FAIL_COUNT++))
-        continue
-    fi
+    # Find ALL expected files (saxpy_exp_t32.hex, saxpy_exp_t1024.hex, etc.)
+    expected_files=$(find "$dir_name" -maxdepth 1 -name "${base_name}_exp_*.hex" | sort)
 
     # --------------------------------------
-    # 5. Compare Results
+    # 4. Run Tests
     # --------------------------------------
-    if [ $has_expected -eq 0 ]; then
-        cp "$EMU_OUTPUT" "$saved_gen"
-        echo -e "${YELLOW}[NO REF]${NC}   $base_name (t=$THREADS)"
-    else
-        # We re-use FORMATTED_INSTR + Expected Data to build the "Perfect Golden" file
-        # Note: We assume the expected file contains the final state of EVERYTHING relevant
-        cat "$FORMATTED_INSTR" "$expected_file" > "$FINAL_EXPECTED"
-
-        # Diff
-        diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
+    if [ -z "$expected_files" ]; then
+        # --- CASE A: No Expected Files (Run Default) ---
+        THREADS=32
+        BLOCKS=1
         
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS)"
-            rm -f "$error_log"
-            ((PASS_COUNT++))
-        else
-            echo -e "${RED}[FAIL]${NC}     $base_name"
-            cp "$EMU_OUTPUT" "$saved_gen"
-            cp "$FINAL_EXPECTED" "$saved_exp"
+        make run INPUT="$MEMINIT" THREADS="$THREADS" BLOCKS="$BLOCKS" > "$TEMP_CMD_LOG" 2>&1
+        
+        if [ $? -ne 0 ] || [ ! -f "$EMU_OUTPUT" ]; then
+            echo -e "${RED}[RUN FAIL]${NC} $base_name (t=$THREADS)"
+            mv "$TEMP_CMD_LOG" "$DIFF_DIR/${base_name}_run_error.log"
             ((FAIL_COUNT++))
+        else
+            echo -e "${YELLOW}[NO REF]${NC}   $base_name (t=$THREADS) - Output saved"
+            cp "$EMU_OUTPUT" "$DIFF_DIR/${base_name}_gen.hex"
+            cp "$MEMINIT" "$DIFF_DIR/${base_name}_meminit.hex" # <--- Added Dump
+            ((MISSING_COUNT++))
         fi
+
+    else
+        # --- CASE B: Multiple Configurations ---
+        for exp_file in $expected_files; do
+            # Parse params
+            THREADS=32
+            BLOCKS=1
+            if [[ "$exp_file" =~ _t([0-9]+) ]]; then THREADS="${BASH_REMATCH[1]}"; fi
+            if [[ "$exp_file" =~ _b([0-9]+) ]]; then BLOCKS="${BASH_REMATCH[1]}"; fi
+            
+            # Unique Test ID
+            test_id="${base_name}_t${THREADS}_b${BLOCKS}"
+            error_log="$DIFF_DIR/${test_id}_error.log"
+
+            # Run Emulator
+            make run INPUT="$MEMINIT" THREADS="$THREADS" BLOCKS="$BLOCKS" > "$TEMP_CMD_LOG" 2>&1
+            
+            if [ $? -ne 0 ] || [ ! -f "$EMU_OUTPUT" ]; then
+                echo -e "${RED}[RUN FAIL]${NC} $base_name (t=$THREADS, b=$BLOCKS)"
+                cat "$TEMP_CMD_LOG" > "$error_log"
+                cp "$MEMINIT" "$DIFF_DIR/${test_id}_meminit.hex" # <--- Added Dump
+                ((FAIL_COUNT++))
+                continue
+            fi
+            
+            # Compare
+            cat "$FORMATTED_INSTR" "$exp_file" > "$FINAL_EXPECTED"
+
+            diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
+                rm -f "$error_log"
+                ((PASS_COUNT++))
+            else
+                echo -e "${RED}[FAIL]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
+                # Save all artifacts for debugging
+                cp "$EMU_OUTPUT" "$DIFF_DIR/${test_id}_gen.hex"
+                cp "$FINAL_EXPECTED" "$DIFF_DIR/${test_id}_exp.hex"
+                cp "$MEMINIT" "$DIFF_DIR/${test_id}_meminit.hex" # <--- Added Dump
+                ((FAIL_COUNT++))
+            fi
+        done
     fi
 done
 
@@ -166,7 +169,7 @@ echo -e "Failed:  ${RED}$FAIL_COUNT${NC}"
 echo -e "No Ref:  ${YELLOW}$MISSING_COUNT${NC}"
 
 if [ $FAIL_COUNT -gt 0 ]; then
-    echo "Check '$DIFF_DIR/' for logs."
+    echo "Check '$DIFF_DIR/' for logs and generated assembly."
     exit 1
 fi
 exit 0
