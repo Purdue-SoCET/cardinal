@@ -278,6 +278,11 @@ class DecodeStage(Stage):
                 pred_mask = [True] * 32
 
             inst.predicate = pred_mask
+        
+        if inst.warp_id % 2 == 0:
+            inst.target_bank = 0
+        else:
+            inst.target_bank = 1
 
         self._push_instruction_to_next_stage(inst)
         return 
