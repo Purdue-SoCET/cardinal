@@ -57,7 +57,7 @@ class Rasterizer():
         self.z_buffer = np.full((h,w,msaa if msaa > 0 else 1),np.inf)
         self.color_buffer = np.zeros((h,w,msaa if msaa > 0 else 1,3))
         self.uv_buffer = np.full((h,w,2),np.nan) #if there is a valid uv to be applied for a pixel then np.isfinite(u) and np.isfinite(v)
-        self.sampleId_buffer = np.ones((h,w)) * -1 #The sample you should be pulling from for each pixel. 
+        self.sampleId_buffer = (np.ones((h,w)) * -1).astype(int) #The sample you should be pulling from for each pixel.
 
     def getUV(self):
         return self.uv_buffer
