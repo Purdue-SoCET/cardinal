@@ -82,13 +82,14 @@ class Ldst_Fu(FunctionalSubUnit):
             self.ready_out = True
         
         #handle dcache packet
-        if self.dcache_if.forward_if.pop():
+        payload: dMemResponse = self.dcache_if.forward_if.pop()
+        if payload:
+            self.dcache_if.forward_if.payload = None
             if len(self.ldst_q) == 0:
-                print(f"LSQ is length 0 and recieved a dcache response")
-
-            payload: dMemResponse = self.dcache_if.forward_if.pop()
+                print(f"LSQ is length 0 and recieved a dcache response. Should never happen!")
 
             mem_req = self.ldst_q[0]
+            self.print_dcache_resp(payload)
             match payload.type:
                 case 'MISS_ACCEPTED':
                     # logger.info("Handling dcache MISS_ACCEPTED")
@@ -125,6 +126,7 @@ class Ldst_Fu(FunctionalSubUnit):
         #send instr to wb if ready
         if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
             return_instr = self.wb_buffer.pop(0)
+            self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
     
