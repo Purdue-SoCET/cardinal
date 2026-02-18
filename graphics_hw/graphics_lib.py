@@ -64,7 +64,7 @@ class Projector:
         self.aspect = width / height
     
     def toNearPlane(self, point : Vertex):
-        return Vertex((point.x * self.near) / (-point.z), (point.y * self.near) / (-point.z), point.z, point.color, point.u/ (-point.z), point.v/ (-point.z))
+        return Vertex((point.x * self.near) / (-point.z), (point.y * self.near) / (-point.z), point.z, point.color, point.u, point.v)
     def toNDC(self, point : Vertex):
         return Vertex(point.x / (self.near * self.aspect), point.y / self.near, point.z, point.color, point.u, point.v)
     def depth(self, point : Vertex):
