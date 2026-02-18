@@ -1,334 +1,376 @@
 import numpy as np
+from graphics_lib import Triangle, Projector, Vertex
 import matplotlib.pyplot as plt
 from PIL import Image
-from graphics_lib import Triangle, Projector, Vertex
 
+#Set up machines
+class Rasterizer():
 
-class Rasterizer:
-    def __init__(self, vs=None, col1=None, col2=None, col3=None,
-                 u=None, v=None, msaa=0, w=1280, h=720, near=1, far=10, tex_id=None):
-        if vs is None: vs = [[[]]]
-        if col1 is None: col1 = [[]]
-        if col2 is None: col2 = [[]]
-        if col3 is None: col3 = [[]]
-        if u is None: u = [[-1, -1, -1]]
-        if v is None: v = [[-1, -1, -1]]
-        if tex_id is None: tex_id = [-1]
-
-        self.msaa = 2 if (msaa > 2) else msaa
-        self.w = w
-        self.h = h
-        self.vs = vs
-        self.col1 = col1
-        self.col2 = col2
-        self.col3 = col3
-
-        count = len(vs)
-        self.u = u * count if u[0][0] == -1 else u
-        self.v = v * count if v[0][0] == -1 else v
-        self.tex_ids = tex_id * count if tex_id[0] == -1 else tex_id
-
-        self.projector = Projector(self.w, self.h, near, far)
-        self.screen = np.zeros((h, w, 3))
-
-        z_depth = self.msaa if self.msaa > 0 else 1
-        self.z_buffer = np.full((h, w, z_depth), np.inf)
-        self.color_buffer = np.zeros((h, w, z_depth, 3))
-        self.uv_buffer = np.full((h, w, 2), np.nan)
-        self.sampleId_buffer = np.full((h, w), -1.0, dtype=int)
-
-    # --- Geometry Helpers ---
-
-    def getNDC(self, vertex: Vertex):
+    def getNDC(self, vertex : Vertex):
         near_point = self.projector.toNearPlane(vertex)
-        ndc = self.projector.toNDC(near_point)
+        ndc : Vertex = self.projector.toNDC(near_point)
         ndc.z = self.projector.depth(ndc)
         return ndc
 
     def project(self, vert):
+        #Convert to NDC
         ndc = self.getNDC(vert)
+
+        #Convert to screen space
         return self.projector.toScreenSpace(ndc)
 
     def edge(self, a, b, x, y):
         return (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x)
 
-    def validEdge(self, v0, v1):
+    def validEdge (self, v0, v1):
         edge_vec = [v1.x - v0.x, v1.y - v0.y]
-        is_top = (edge_vec[1] == 0 and edge_vec[0] < 0)
-        is_left = (edge_vec[1] < 0)
-        return is_top or is_left
-
+        top = edge_vec[1] == 0 and edge_vec[0] < 0  
+        left = edge_vec[1] < 0                      
+        return top or left
+    
     def de_dx(self, a, b):
         return -b.y + a.y
-
     def de_dy(self, a, b):
         return b.x - a.x
 
-    # --- Buffer Accessors ---
+    def __init__(self, vs = [[[]]], col1 = [[]], col2 = [[]], col3 = [[]], u = [[-1, -1, -1]], v = [[-1, -1, -1]], msaa = 0, w=1280, h=720, near = 1, far = 10, tex_id = [-1]):
+        msaa = 2 if (msaa > 2) else msaa
+        
+        #numpy arrays, all of them. Cols will be nx3x3 array
+        self.vs = vs
+
+        self.col1 = col1
+        self.col2 = col2
+        self.col3 = col3
+
+        self.u = u * len(vs) if u[0][0] == -1 else u
+        self.v = v * len(vs) if v[0][0] == -1 else v
+
+        self.msaa = msaa
+        self.w = w
+        self.h = h
+
+        self.tex_ids = tex_id * len(vs) if tex_id[0] == -1 else tex_id #The sample name or number whatever you want for each triangle. len = no. triangles
+
+        self.projector = Projector(self.w, self.h, near, far) #width, height, near plane, far plane
+        self.screen = np.zeros((h,w,3))
+        self.z_buffer = np.full((h,w,msaa if msaa > 0 else 1),np.inf)
+        self.color_buffer = np.zeros((h,w,msaa if msaa > 0 else 1,3))
+        self.uv_buffer = np.full((h,w,2),np.nan) #if there is a valid uv to be applied for a pixel then np.isfinite(u) and np.isfinite(v)
+        self.sampleId_buffer = np.ones((h,w)) * -1 #The sample you should be pulling from for each pixel. 
 
     def getUV(self):
         return self.uv_buffer
-
     def getSamples(self):
         return self.sampleId_buffer
 
-    def applyTextures(self, newRGB: np.array):
-        # Optimized Apply Textures
-        mask = np.isfinite(self.uv_buffer[:, :, 0])
+    def applyTextures(self, newRGB : np.array):
+        #Modulate math, just uses original interpolated color as albedo to apply to texture. 
+        for h, datH in enumerate(newRGB):
+            for w, datW in enumerate(datH):
 
-        # Extract texture RGBs where valid
-        # newRGB shape matches screen shape, so we can just use the mask
+                if not np.isfinite(self.uv_buffer[h][w][0]): 
+                    continue
 
-        if self.msaa == 2:
-            # We need to broadcast the texture data to the MSAA samples
-            # newRGB is (H, W, 3). color_buffer is (H, W, 2, 3)
-            # We can multiply.
+                if (self.msaa == 2):
+                    self.color_buffer[h][w][0][0] *= datW[0]
+                    self.color_buffer[h][w][0][1] *= datW[1]
+                    self.color_buffer[h][w][0][2] *= datW[2]
 
-            # Expand dims of newRGB to (H, W, 1, 3) so it broadcasts over the 2 samples
-            tex_data = newRGB[:, :, np.newaxis, :]
+                    self.color_buffer[h][w][1][0] *= datW[0]
+                    self.color_buffer[h][w][1][1] *= datW[1]
+                    self.color_buffer[h][w][1][2] *= datW[2]
 
-            # Apply to color buffer only where mask is true
-            self.color_buffer[mask] *= tex_data[mask]
-
-            # Resolve to screen
-            self.screen[mask] = np.mean(self.color_buffer[mask], axis=1)
-
-        else:
-            self.screen[mask] *= newRGB[mask]
-
-    # --- Rendering ---
-
+                    self.screen[h][w][0] = (self.color_buffer[h][w][0][0] + self.color_buffer[h][w][1][0]) / 2
+                    self.screen[h][w][1] = (self.color_buffer[h][w][0][1] + self.color_buffer[h][w][1][1]) / 2
+                    self.screen[h][w][2] = (self.color_buffer[h][w][0][2] + self.color_buffer[h][w][1][2]) / 2
+                else:
+                    self.screen[h][w][0] *= datW[0]
+                    self.screen[h][w][1] *= datW[1]
+                    self.screen[h][w][2] *= datW[2]
+            
     def render(self):
-        if self.msaa == 2:
-            self.render_2msaa()
-        else:
-            self.render_0msaa()
+        self.render_2msaa() if self.msaa == 2 else self.render_0msaa()
 
-    def render_2msaa(self):
-        for i in range(len(self.vs)):
-            v1 = Vertex(self.vs[i][0][0], self.vs[i][0][1], self.vs[i][0][2], self.col1[i], self.u[i][0], self.v[i][0])
-            v2 = Vertex(self.vs[i][1][0], self.vs[i][1][1], self.vs[i][1][2], self.col2[i], self.u[i][1], self.v[i][1])
-            v3 = Vertex(self.vs[i][2][0], self.vs[i][2][1], self.vs[i][2][2], self.col3[i], self.u[i][2], self.v[i][2])
+    def render_2msaa(self): #Attribute interpolator + rasterizer
+        for i in range(0,len(self.vs)):
 
-            tri_orig = Triangle(v1, v2, v3)
+            #Get primitives
 
-            ss_v1 = self.project(tri_orig.A)
-            ss_v2 = self.project(tri_orig.B)
-            ss_v3 = self.project(tri_orig.C)
+            vertex1 = Vertex(self.vs[i][0][0], self.vs[i][0][1], self.vs[i][0][2], self.col1[i], self.u[i][0], self.v[i][0])
+            vertex2 = Vertex(self.vs[i][1][0], self.vs[i][1][1], self.vs[i][1][2], self.col2[i], self.u[i][1], self.v[i][1])
+            vertex3 = Vertex(self.vs[i][2][0], self.vs[i][2][1], self.vs[i][2][2], self.col3[i], self.u[i][2], self.v[i][2])
+
+            triangle = Triangle(vertex1, vertex2, vertex3)
+
+            #Convert to screen space
+
+            ss_v1 = self.project(triangle.A)
+            ss_v2 = self.project(triangle.B)
+            ss_v3 = self.project(triangle.C) 
+
             ss_tri = Triangle(ss_v1, ss_v2, ss_v3)
 
-            area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2
+            ss_min = ss_tri.min().floor()
+            ss_max = ss_tri.max().ceil()
+
+            #Check winding.
+            area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2 #Edge equation is cross product, so divide by 2 to get area of triangle instead of parallelogram.
             if area < 0:
                 ss_tri.B, ss_tri.C = ss_tri.C, ss_tri.B
                 area = -area
+            norm_factor = 1 / (2 * area)
 
-            if area == 0: continue
-            norm_factor = 1.0 / (2 * area)
-
-            # --- Bounding Box & Scissor Clamping ---
-            raw_min = ss_tri.min().floor()
-            raw_max = ss_tri.max().ceil()
-
-            min_x = max(0, int(raw_min.x))
-            max_x = min(self.w, int(raw_max.x))
-            min_y = max(0, int(raw_min.y))
-            max_y = min(self.h, int(raw_max.y))
-
-            # If triangle is off screen, skip
-            if min_x >= max_x or min_y >= max_y:
-                continue
-
-            # --- Setup Edges ---
-            # IMPORTANT: We initialize edge functions based on the CLAMPED min_x/min_y
-            # This ensures the loop logic stays consistent.
-            x0, y0 = min_x + 0.25, min_y + 0.25
-            x1, y1 = min_x + 0.75, min_y + 0.75
-            cx, cy = min_x + 0.50, min_y + 0.50
+            
+            x0 = ss_min.x + 0.25
+            y0 = ss_min.y + 0.25
+            x1 = ss_min.x + 0.75
+            y1 = ss_min.y + 0.75
 
             e0_1 = self.edge(ss_tri.B, ss_tri.C, x0, y0) * norm_factor
             e0_2 = self.edge(ss_tri.C, ss_tri.A, x0, y0) * norm_factor
             e0_3 = self.edge(ss_tri.A, ss_tri.B, x0, y0) * norm_factor
-
             e1_1 = self.edge(ss_tri.B, ss_tri.C, x1, y1) * norm_factor
             e1_2 = self.edge(ss_tri.C, ss_tri.A, x1, y1) * norm_factor
             e1_3 = self.edge(ss_tri.A, ss_tri.B, x1, y1) * norm_factor
 
-            ec_1 = self.edge(ss_tri.B, ss_tri.C, cx, cy) * norm_factor
-            ec_2 = self.edge(ss_tri.C, ss_tri.A, cx, cy) * norm_factor
-            ec_3 = self.edge(ss_tri.A, ss_tri.B, cx, cy) * norm_factor
+            e0_1_ini = e0_1
+            e0_2_ini = e0_2
+            e0_3_ini = e0_3
+            e1_1_ini = e1_1
+            e1_2_ini = e1_2
+            e1_3_ini = e1_3
 
-            dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
-            dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
-            dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
+            de0_dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
+            de0_dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
+            de0_dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
 
-            dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
-            dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
-            dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
+            de0_dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
+            de0_dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
+            de0_dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
+                
+            
+            bx = ss_min.x + 0.5
+            by = ss_min.y + 0.5
+            edge1 = self.edge(ss_tri.B, ss_tri.C, bx, by) * norm_factor #Similar logic. Divide by 2 to get triangle area and then divide by area to normalize the result. The cross product above gives unnormalized barycentric coordinates. 
+            edge2 = self.edge(ss_tri.C, ss_tri.A, bx, by) * norm_factor
+            edge3 = self.edge(ss_tri.A, ss_tri.B, bx, by) * norm_factor
+            de_dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
+            de_dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
+            de_dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
+            de_dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
+            de_dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
+            de_dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
+            e_ini1 = edge1
+            e_ini2 = edge2
+            e_ini3 = edge3
 
-            row_e0_1, row_e0_2, row_e0_3 = e0_1, e0_2, e0_3
-            row_e1_1, row_e1_2, row_e1_3 = e1_1, e1_2, e1_3
-            row_ec_1, row_ec_2, row_ec_3 = ec_1, ec_2, ec_3
-
-            check1 = 0 if self.validEdge(ss_tri.B, ss_tri.C) else -1e-12
+            #This is to enforce top left rule. It checks which triangle is a top or a left edge. If it is a top or a left edge it draws it in when the pixel is exactly on it. If it is not on it, it doesn't draw it in.
+            check1 = 0 if self.validEdge(ss_tri.B, ss_tri.C) else -1e-12 #adjust for subtle fp errors
             check2 = 0 if self.validEdge(ss_tri.C, ss_tri.A) else -1e-12
             check3 = 0 if self.validEdge(ss_tri.A, ss_tri.B) else -1e-12
 
-            for y in range(min_y, max_y):
-                e0_1, e0_2, e0_3 = row_e0_1, row_e0_2, row_e0_3
-                e1_1, e1_2, e1_3 = row_e1_1, row_e1_2, row_e1_3
-                ec_1, ec_2, ec_3 = row_ec_1, row_ec_2, row_ec_3
+            #Do edge testing and interpolation.
+            for y in range(ss_min.y, ss_max.y):
 
-                for x in range(min_x, max_x):
-                    cov0 = (e0_1 + check1 >= 0) and (e0_2 + check2 >= 0) and (e0_3 + check3 >= 0)
-                    cov1 = (e1_1 + check1 >= 0) and (e1_2 + check2 >= 0) and (e1_3 + check3 >= 0)
+                e0_1 = e0_1_ini
+                e0_2 = e0_2_ini
+                e0_3 = e0_3_ini
+                e1_1 = e1_1_ini
+                e1_2 = e1_2_ini
+                e1_3 = e1_3_ini
+                
+                edge1 = e_ini1
+                edge2 = e_ini2
+                edge3 = e_ini3
+                    
+                for j in range(ss_min.x, ss_max.x):
+                    if area == 0:
+                        continue
 
-                    if cov0 or cov1:
-                        z0 = (ss_tri.A.z * e0_1 + ss_tri.B.z * e0_2 + ss_tri.C.z * e0_3)
-                        z1 = (ss_tri.A.z * e1_1 + ss_tri.B.z * e1_2 + ss_tri.C.z * e1_3)
+                    cov0 = 0
+                    cov1 = 0
 
-                        pass0 = cov0 and (z0 <= self.z_buffer[y][x][0])
-                        pass1 = cov1 and (z1 <= self.z_buffer[y][x][1])
+                    if ((e0_1 + check1 >= 0) and (e0_2 >= 0 + check2) and (e0_3 >= 0 + check3)):
+                        cov0 = 1
 
-                        if pass0 or pass1:
-                            self.sampleId_buffer[y][x] = self.tex_ids[i]
+                    if ((e1_1 >= 0 + check1) and (e1_2 >= 0 + check2) and (e1_3 >= 0 + check3)):
+                        cov1 = 1
 
-                            if pass0 and not pass1:
-                                w1, w2, w3 = e0_1, e0_2, e0_3
-                            elif not pass0 and pass1:
-                                w1, w2, w3 = e1_1, e1_2, e1_3
-                            else:
-                                w1, w2, w3 = ec_1, ec_2, ec_3
+                    z0 = (ss_tri.A.z * e0_1 + ss_tri.B.z * e0_2 + ss_tri.C.z * e0_3)
+                    z1 = (ss_tri.A.z * e1_1 + ss_tri.B.z * e1_2 + ss_tri.C.z * e1_3)
 
-                            # Attribute Interpolation
-                            r = ss_tri.A.R * w1 + ss_tri.B.R * w2 + ss_tri.C.R * w3
-                            g = ss_tri.A.G * w1 + ss_tri.B.G * w2 + ss_tri.C.G * w3
-                            b = ss_tri.A.B * w1 + ss_tri.B.B * w2 + ss_tri.C.B * w3
-                            u_interp = ss_tri.A.u * w1 + ss_tri.B.u * w2 + ss_tri.C.u * w3
-                            v_interp = ss_tri.A.v * w1 + ss_tri.B.v * w2 + ss_tri.C.v * w3
+                    pass0 = (cov0 and z0 <= self.z_buffer[y][j][0])
+                    pass1 = (cov1 and z1 <= self.z_buffer[y][j][1])
 
-                            self.uv_buffer[y][x][0] = u_interp
-                            self.uv_buffer[y][x][1] = v_interp
+                    if (pass0 or pass1):
+                        r0 = self.color_buffer[y][j][0][0]
+                        g0 = self.color_buffer[y][j][0][1]
+                        b0 = self.color_buffer[y][j][0][2]
 
-                            if pass0:
-                                self.z_buffer[y][x][0] = z0
-                                self.color_buffer[y][x][0] = [r, g, b]
+                        r1 = self.color_buffer[y][j][1][0]
+                        g1 = self.color_buffer[y][j][1][1]
+                        b1 = self.color_buffer[y][j][1][2]
 
-                            if pass1:
-                                self.z_buffer[y][x][1] = z1
-                                self.color_buffer[y][x][1] = [r, g, b]
+                        self.sampleId_buffer[y][j] = self.tex_ids[i] #due to per pixel nature of uv, last triangle to shade this pixel owns it outright
+                        
+                        accum1 = ss_tri.A.R * edge1 + ss_tri.B.R * edge2 + ss_tri.C.R * edge3
+                        accum2 = ss_tri.A.G * edge1 + ss_tri.B.G * edge2 + ss_tri.C.G * edge3
+                        accum3 = ss_tri.A.B * edge1 + ss_tri.B.B * edge2 + ss_tri.C.B * edge3
+                        
+                        accumu = ss_tri.A.u * edge1 + ss_tri.B.u * edge2 + ss_tri.C.u * edge3
+                        accumv = ss_tri.A.v * edge1 + ss_tri.B.v * edge2 + ss_tri.C.v * edge3
 
-                            c0 = self.color_buffer[y][x][0]
-                            c1 = self.color_buffer[y][x][1]
-                            self.screen[y][x] = (c0 + c1) / 2.0
+                        if (pass0 and not pass1):
+                            accum1 = ss_tri.A.R * e0_1 + ss_tri.B.R * e0_2 + ss_tri.C.R * e0_3
+                            accum2 = ss_tri.A.G * e0_1 + ss_tri.B.G * e0_2 + ss_tri.C.G * e0_3
+                            accum3 = ss_tri.A.B * e0_1 + ss_tri.B.B * e0_2 + ss_tri.C.B * e0_3
+                            accumu = ss_tri.A.u * e0_1 + ss_tri.B.u * e0_2 + ss_tri.C.u * e0_3
+                            accumv = ss_tri.A.v * e0_1 + ss_tri.B.v * e0_2 + ss_tri.C.v * e0_3
+                        elif (not pass0 and pass1):
+                            accum1 = ss_tri.A.R * e1_1 + ss_tri.B.R * e1_2 + ss_tri.C.R * e1_3
+                            accum2 = ss_tri.A.G * e1_1 + ss_tri.B.G * e1_2 + ss_tri.C.G * e1_3
+                            accum3 = ss_tri.A.B * e1_1 + ss_tri.B.B * e1_2 + ss_tri.C.B * e1_3
+                            accumu = ss_tri.A.u * e1_1 + ss_tri.B.u * e1_2 + ss_tri.C.u * e1_3
+                            accumv = ss_tri.A.v * e1_1 + ss_tri.B.v * e1_2 + ss_tri.C.v * e1_3
 
-                    e0_1 += dx1;
-                    e0_2 += dx2;
-                    e0_3 += dx3
-                    e1_1 += dx1;
-                    e1_2 += dx2;
-                    e1_3 += dx3
-                    ec_1 += dx1;
-                    ec_2 += dx2;
-                    ec_3 += dx3
+                        self.uv_buffer[y][j][0] = accumu
+                        self.uv_buffer[y][j][1] = accumv
 
-                row_e0_1 += dy1;
-                row_e0_2 += dy2;
-                row_e0_3 += dy3
-                row_e1_1 += dy1;
-                row_e1_2 += dy2;
-                row_e1_3 += dy3
-                row_ec_1 += dy1;
-                row_ec_2 += dy2;
-                row_ec_3 += dy3
+                        if (pass0):
+                            self.z_buffer[y][j][0] = z0
+                            r0 = accum1
+                            g0 = accum2
+                            b0 = accum3
 
-    def render_0msaa(self):
-        for i in range(len(self.vs)):
-            v1 = Vertex(self.vs[i][0][0], self.vs[i][0][1], self.vs[i][0][2], self.col1[i], self.u[i][0], self.v[i][0])
-            v2 = Vertex(self.vs[i][1][0], self.vs[i][1][1], self.vs[i][1][2], self.col2[i], self.u[i][1], self.v[i][1])
-            v3 = Vertex(self.vs[i][2][0], self.vs[i][2][1], self.vs[i][2][2], self.col3[i], self.u[i][2], self.v[i][2])
+                        self.color_buffer[y][j][0][0] = r0
+                        self.color_buffer[y][j][0][1] = g0
+                        self.color_buffer[y][j][0][2] = b0
 
-            tri_orig = Triangle(v1, v2, v3)
+                        if (pass1):
+                            self.z_buffer[y][j][1] = z1
+                            r1 = accum1
+                            g1 = accum2
+                            b1 = accum3
 
-            ss_v1 = self.project(tri_orig.A)
-            ss_v2 = self.project(tri_orig.B)
-            ss_v3 = self.project(tri_orig.C)
+                        self.color_buffer[y][j][1][0] = r1
+                        self.color_buffer[y][j][1][1] = g1
+                        self.color_buffer[y][j][1][2] = b1
+
+                        self.screen[y][j][0] = (r0 + r1) / 2
+                        self.screen[y][j][1] = (g0 + g1) / 2
+                        self.screen[y][j][2] = (b0 + b1) / 2
+                        
+                    
+                    e0_1 += de0_dx1
+                    e0_2 += de0_dx2
+                    e0_3 += de0_dx3
+                    e1_1 += de0_dx1
+                    e1_2 += de0_dx2
+                    e1_3 += de0_dx3
+                    
+                    edge1 += de_dx1
+                    edge2 += de_dx2
+                    edge3 += de_dx3
+                
+                
+                e0_1_ini += de0_dy1
+                e0_2_ini += de0_dy2
+                e0_3_ini += de0_dy3
+                e1_1_ini += de0_dy1
+                e1_2_ini += de0_dy2
+                e1_3_ini += de0_dy3
+                
+                e_ini1 += de_dy1
+                e_ini2 += de_dy2
+                e_ini3 += de_dy3
+                    
+    def render_0msaa(self): #Attribute interpolator + rasterizer
+        for i in range(0,len(self.vs)):
+
+            #Get primitives
+
+            vertex1 = Vertex(self.vs[i][0][0], self.vs[i][0][1], self.vs[i][0][2], self.col1[i], self.u[i][0], self.v[i][0])
+            vertex2 = Vertex(self.vs[i][1][0], self.vs[i][1][1], self.vs[i][1][2], self.col2[i], self.u[i][1], self.v[i][1])
+            vertex3 = Vertex(self.vs[i][2][0], self.vs[i][2][1], self.vs[i][2][2], self.col3[i], self.u[i][2], self.v[i][2])
+
+            triangle = Triangle(vertex1, vertex2, vertex3)
+
+            #Convert to screen space
+
+            ss_v1 = self.project(triangle.A)
+            ss_v2 = self.project(triangle.B)
+            ss_v3 = self.project(triangle.C) 
+
             ss_tri = Triangle(ss_v1, ss_v2, ss_v3)
 
-            area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2
+            ss_min = ss_tri.min().floor()
+            ss_max = ss_tri.max().ceil()
+
+            #Check winding.
+            area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2 #Edge equation is cross product, so divide by 2 to get area of triangle instead of parallelogram.
             if area < 0:
                 ss_tri.B, ss_tri.C = ss_tri.C, ss_tri.B
                 area = -area
+            norm_factor = 1 / (2 * area)
+                
+            bx = ss_min.x + 0.5
+            by = ss_min.y + 0.5
+            edge1 = self.edge(ss_tri.B, ss_tri.C, bx, by) * norm_factor #Similar logic. Divide by 2 to get triangle area and then divide by area to normalize the result. The cross product above gives unnormalized barycentric coordinates. 
+            edge2 = self.edge(ss_tri.C, ss_tri.A, bx, by) * norm_factor
+            edge3 = self.edge(ss_tri.A, ss_tri.B, bx, by) * norm_factor
+            de_dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
+            de_dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
+            de_dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
+            de_dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
+            de_dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
+            de_dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
+            e_ini1 = edge1
+            e_ini2 = edge2
+            e_ini3 = edge3
 
-            if area == 0: continue
-            norm_factor = 1.0 / (2 * area)
-
-            # --- Bounding Box & Scissor Clamping ---
-            raw_min = ss_tri.min().floor()
-            raw_max = ss_tri.max().ceil()
-
-            min_x = max(0, int(raw_min.x))
-            max_x = min(self.w, int(raw_max.x))
-            min_y = max(0, int(raw_min.y))
-            max_y = min(self.h, int(raw_max.y))
-
-            if min_x >= max_x or min_y >= max_y:
-                continue
-
-            # --- Setup Edges ---
-            cx, cy = min_x + 0.5, min_y + 0.5
-
-            e_1 = self.edge(ss_tri.B, ss_tri.C, cx, cy) * norm_factor
-            e_2 = self.edge(ss_tri.C, ss_tri.A, cx, cy) * norm_factor
-            e_3 = self.edge(ss_tri.A, ss_tri.B, cx, cy) * norm_factor
-
-            dx1 = self.de_dx(ss_tri.B, ss_tri.C) * norm_factor
-            dx2 = self.de_dx(ss_tri.C, ss_tri.A) * norm_factor
-            dx3 = self.de_dx(ss_tri.A, ss_tri.B) * norm_factor
-
-            dy1 = self.de_dy(ss_tri.B, ss_tri.C) * norm_factor
-            dy2 = self.de_dy(ss_tri.C, ss_tri.A) * norm_factor
-            dy3 = self.de_dy(ss_tri.A, ss_tri.B) * norm_factor
-
-            row_e1, row_e2, row_e3 = e_1, e_2, e_3
-
-            check1 = 0 if self.validEdge(ss_tri.B, ss_tri.C) else -1e-12
+            #This is to enforce top left rule. It checks which triangle is a top or a left edge. If it is a top or a left edge it draws it in when the pixel is exactly on it. If it is not on it, it doesn't draw it in.
+            check1 = 0 if self.validEdge(ss_tri.B, ss_tri.C) else -1e-12 #adjust for subtle fp errors
             check2 = 0 if self.validEdge(ss_tri.C, ss_tri.A) else -1e-12
             check3 = 0 if self.validEdge(ss_tri.A, ss_tri.B) else -1e-12
 
-            for y in range(min_y, max_y):
-                e_1, e_2, e_3 = row_e1, row_e2, row_e3
+            #Do edge testing and interpolation.
+            for y in range(ss_min.y, ss_max.y):
+                edge1 = e_ini1
+                edge2 = e_ini2
+                edge3 = e_ini3
+                    
+                for j in range(ss_min.x, ss_max.x):
+                    if area == 0:
+                        continue
 
-                for x in range(min_x, max_x):
-                    if (e_1 + check1 >= 0) and (e_2 + check2 >= 0) and (e_3 + check3 >= 0):
-                        z = ss_tri.A.z * e_1 + ss_tri.B.z * e_2 + ss_tri.C.z * e_3
+                    z = ss_tri.A.z * edge1 + ss_tri.B.z * edge2 + ss_tri.C.z * edge3
 
-                        if z <= self.z_buffer[y][x][0]:
-                            r = ss_tri.A.R * e_1 + ss_tri.B.R * e_2 + ss_tri.C.R * e_3
-                            g = ss_tri.A.G * e_1 + ss_tri.B.G * e_2 + ss_tri.C.G * e_3
-                            b = ss_tri.A.B * e_1 + ss_tri.B.B * e_2 + ss_tri.C.B * e_3
+                    if ((edge1 + check1 >= 0) and (edge2 + check2 >= 0) and (edge3 + check3 >= 0) and z <= self.z_buffer[y][j][0]):
+                        self.screen[y][j][0] = ss_tri.A.R * edge1 + ss_tri.B.R * edge2 + ss_tri.C.R * edge3
+                        self.screen[y][j][1] = ss_tri.A.G * edge1 + ss_tri.B.G * edge2 + ss_tri.C.G * edge3
+                        self.screen[y][j][2] = ss_tri.A.B * edge1 + ss_tri.B.B * edge2 + ss_tri.C.B * edge3
+                        self.sampleId_buffer[y][j] = self.tex_ids[i]
+                        self.uv_buffer[y][j][0] = ss_tri.A.u * edge1 + ss_tri.B.u * edge2 + ss_tri.C.u * edge3
+                        self.uv_buffer[y][j][1] = ss_tri.A.v * edge1 + ss_tri.B.v * edge2 + ss_tri.C.v * edge3
 
-                            u = ss_tri.A.u * e_1 + ss_tri.B.u * e_2 + ss_tri.C.u * e_3
-                            v = ss_tri.A.v * e_1 + ss_tri.B.v * e_2 + ss_tri.C.v * e_3
+                        self.z_buffer[y][j][0] = z
 
-                            self.screen[y][x] = [r, g, b]
-                            self.sampleId_buffer[y][x] = self.tex_ids[i]
-                            self.uv_buffer[y][x] = [u, v]
-                            self.z_buffer[y][x][0] = z
+                    edge1 += de_dx1
+                    edge2 += de_dx2
+                    edge3 += de_dx3
 
-                    e_1 += dx1
-                    e_2 += dx2
-                    e_3 += dx3
-
-                row_e1 += dy1
-                row_e2 += dy2
-                row_e3 += dy3
+                e_ini1 += de_dy1
+                e_ini2 += de_dy2
+                e_ini3 += de_dy3    
 
     def showScreen(self):
         plt.imshow(np.clip(self.screen, 0.0, 1.0))
         plt.axis('off')
         plt.show()
 
-    def saveScreen(self, filename='lossless.png'):
-        img_uint8 = (np.clip(self.screen, 0.0, 1.0) * 255).astype(np.uint8)
-        img = Image.fromarray(img_uint8)
+    def saveScreen(self, filename = 'lossless.png'):
+        #Save image
+        img_unit8 = (self.screen * 255).astype(np.uint8)
+        img = Image.fromarray(img_unit8)
         img.save(filename, mode='RGB')
