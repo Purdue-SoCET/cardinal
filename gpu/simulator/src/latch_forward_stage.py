@@ -252,7 +252,7 @@ class Instruction:
     stage_entry: Dict[str, int] = field(default_factory=dict)
     stage_exit:  Dict[str, int] = field(default_factory=dict)
     fu_entries:  List[Dict]     = field(default_factory=list)
-    num_operands: int
+    num_operands: Optional[int] = None
     
 
 
