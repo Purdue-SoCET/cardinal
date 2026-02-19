@@ -5,7 +5,7 @@ from pathlib import Path
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 
-from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
+from simulator.src.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
 from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
 from common.custom_enums import Op
 from simulator.src.scheduler.scheduler import SchedulerStage
@@ -14,7 +14,7 @@ from simulator.src.mem.mem_controller import MemController
 from simulator.src.mem.Memory import Mem
 from simulator.src.decode.decode_class import DecodeStage
 from simulator.src.decode.predicate_reg_file import PredicateRegFile
-from simulator.latch_forward_stage import *
+from simulator.src.latch_forward_stage import *
 from datetime import datetime
 from typing import Iterable, Any
 
