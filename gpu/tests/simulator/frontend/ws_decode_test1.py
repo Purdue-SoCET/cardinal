@@ -63,9 +63,10 @@ issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
 branch_scheduler_fwif = ForwardingIF(name = "branch_forward_if")
 writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
 
+PROJECT_ROOT = Path(__file__).resolve().parent
 mem = Mem(
     start_pc=0x1000,
-    input_file="/home/asicfab/a/ee/cardinal/gpu/tests/simulator/frontend/ws_decode_test_binaries/no_eop.bin",
+    input_file = PROJECT_ROOT / "ws_decode_test_binaries" / "no_eop.bin",
     fmt="bin",
 )
 
