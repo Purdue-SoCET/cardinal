@@ -12,30 +12,6 @@ from collections import deque
 from gpu.simulator.src.base_class import *
 
 
-# --- Cache Configuration ---
-NUM_BANKS = 2           # Number of banks
-NUM_SETS_PER_BANK = 16  # Number of sets per bank
-NUM_WAYS = 8            # Number of ways in each set
-BLOCK_SIZE_WORDS = 32   # Number of words in each block
-WORD_SIZE_BYTES = 4     # Size of each word in BYTE
-CACHE_SIZE = 32768      # Cache size [Bytes]
-UUID_SIZE = 8           # From [UUID_SIZE-1:0]
-
-# Address bit lengths
-BYTE_OFF_BIT_LEN = (WORD_SIZE_BYTES - 1).bit_length()     # 4 - 1 = 3 -> 2 bits representation
-BLOCK_OFF_BIT_LEN = (BLOCK_SIZE_WORDS - 1).bit_length() # 32 - 1 = 31 -> 5 bits representation
-BANK_ID_BIT_LEN = (NUM_BANKS - 1).bit_length()          # 2 - 1 = 1 -> 1 bit representation
-SET_INDEX_BIT_LEN = (NUM_SETS_PER_BANK - 1).bit_length()  # 16 - 1 = 15 -> 4 bit representation
-
-# Tag = 32 - (2 + 5 + 1 + 4) = 20 bits
-TAG_BIT_LEN = 32 - (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)
-
-# Other constants
-MSHR_BUFFER_LEN = 16    # The number of latches inside each MSHR buffer/Number of miss requests that can fit in each buffer
-HIT_LATENCY = 2         # Parameterized cache hit latency
-
-
-# --- Simulator Modules ---
 class MSHRBuffer:
     """Simulates cache_mshr_buffer.sv."""
     def __init__(self, buffer_len=MSHR_BUFFER_LEN, bank_id: int = 0):
