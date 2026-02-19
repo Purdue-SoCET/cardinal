@@ -84,6 +84,7 @@ class DecodeStage(Stage):
         behind_latch: Optional[LatchIF],
         ahead_latch: Optional[LatchIF],
         prf,
+        fust,
         forward_ifs_read: Optional[Dict[str, ForwardingIF]] = None,
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
     ):
@@ -95,6 +96,7 @@ class DecodeStage(Stage):
             forward_ifs_write=forward_ifs_write or {},
         )
         self.prf = prf  # predicate register file reference
+        self.fust = fust
     
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
@@ -189,19 +191,23 @@ class DecodeStage(Stage):
 
         # rs1 present for R/I/F/S/B/P
         if is_R or is_I or is_F or is_S or is_B or is_P:
-            inst.rs1 = (raw >> 13) & 0x3F
+            inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
 
             opcode_lower = opcode7 & 0x7
             if is_P and opcode_lower not in (0x4, 0x5):
                 inst.rs1 = None
+                inst.num_operands = 0 ### ADDED ###
         else:
             inst.rs1 = None
+            inst.num_operands = 0 ### ADDED ###
 
         # rs2 present for R/S/B
         if is_R or is_S or is_B:
-            inst.rs2 = (raw >> 19) & 0x3F
+            inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=5)
+            inst.num_operands = 2 ### ADDED ###
         else:
             inst.rs2 = None
+            inst.num_operands = 1 ### ADDED ###
 
         # src_pred present for R/I/F/S/U/B (your original intent)
         if is_R or is_I or is_F or is_S or is_U or is_B:

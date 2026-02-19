@@ -142,6 +142,9 @@ def test_all_operations():
         policy="rr"
     )
 
+    functional_unit_config = FunctionalUnitConfig.get_default_config()
+    fust = functional_unit_config.generate_fust_dict()
+
     scheduler_stage = SchedulerStage(
         name="Scheduler_Stage",
         behind_latch=tbs_ws_if,
@@ -174,15 +177,13 @@ def test_all_operations():
         behind_latch=icache_decode_if,
         ahead_latch=decode_issue_if,
         prf=prf,
+        fust=fust,
         forward_ifs_read={"ICache_Decode_Ihit": icache_scheduler_fwif},
         forward_ifs_write={"Decode_Scheduler_Pckt": decode_scheduler_fwif}
     )
     
     pipeline_rf = RegisterFile()
     golden_rf = RegisterFile()
-    
-    functional_unit_config = FunctionalUnitConfig.get_default_config()
-    fust = functional_unit_config.generate_fust_dict()
     
     is_ex_latch = LatchIF(name="IS_EX_Latch")
     
