@@ -4,8 +4,8 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 sys.path.append(str(parent_dir))
 
-from simulator.base_class import LatchIF, Stage, Instruction, MemRequest
-from simulator.src.mem.Memory import Mem
+from simulator.latch_forward_stage import LatchIF, Stage, Instruction, MemRequest
+from simulator.mem.Memory import Mem
 from typing import Any, Dict, Optional, Deque, Tuple
 from bitstring import Bits
 

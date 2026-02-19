@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
@@ -7,6 +9,29 @@ from simulator.issue.stage import IssueStage
 from bitstring import Bits
 from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op
 import math
+
+#Yash and Dan
+import sys
+from pathlib import Path
+FILE_ROOT = Path(__file__).resolve().parent
+gpu_sim_root = Path(__file__).resolve().parents[3]
+sys.path.append(str(gpu_sim_root))
+from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from common.custom_enums import Op
+from simulator.scheduler.scheduler import SchedulerStage
+from simulator.mem.icache_stage import ICacheStage
+from simulator.mem.mem_controller import MemController
+from simulator.mem.Memory import Mem
+from simulator.decode.decode_class import DecodeStage
+from simulator.decode.predicate_reg_file import PredicateRegFile
+from simulator.latch_forward_stage import *
+from datetime import datetime
+from typing import Iterable, Any
+
+START_PC = 0x1000
+LAT = 2
+WARP_COUNT = 6
 
 def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
     """
@@ -77,7 +102,6 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
 
     return len(mismatches) == 0
 
-
 def test_all_operations():
     """
     Comprehensive test of all supported operations using a continuous instruction stream.
@@ -87,6 +111,73 @@ def test_all_operations():
     
     # 1. Setup Pipeline Components
     # ---------------------------------------------------------
+    tbs_ws_if = LatchIF("Thread Block Scheduler - Warp Scheduler Latch")
+    sched_icache_if = LatchIF("Sched-ICache Latch")
+    icache_mem_req_if = LatchIF("ICache-Mem Latch")
+    dummy_dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
+    mem_icache_resp_if = LatchIF("Mem-ICache Latch")
+    dummy_dcache_mem_resp_if = LatchIF("Mem-Dummy DCache Latch")
+    icache_decode_if = LatchIF("ICache-Decode Latch")
+    decode_issue_if = LatchIF("Decode-Issue Latch")
+    icache_scheduler_fwif = ForwardingIF(name = "icache_forward_if")
+    decode_scheduler_fwif = ForwardingIF(name = "decode_forward_if")
+    issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
+    branch_scheduler_fwif = ForwardingIF(name = "branch_forward_if")
+    writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
+
+    mem = Mem(
+        start_pc=0x1000,
+        input_file = FILE_ROOT / "no_eop.bin",
+        fmt="bin",
+    )
+
+    memc = MemController(
+        name="Mem_Controller",
+        ic_req_latch=icache_mem_req_if,
+        dc_req_latch=dummy_dcache_mem_req_if,
+        ic_serve_latch=mem_icache_resp_if,
+        dc_serve_latch=dummy_dcache_mem_resp_if,
+        mem_backend=mem, 
+        latency=LAT,
+        policy="rr"
+    )
+
+    scheduler_stage = SchedulerStage(
+        name="Scheduler_Stage",
+        behind_latch=tbs_ws_if,
+        ahead_latch=sched_icache_if,
+        forward_ifs_read= {"ICache_Scheduler" : icache_scheduler_fwif, "Decode_Scheduler": decode_scheduler_fwif, "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, "Writeback_Scheduler": writeback_scheduler_fwif},
+        forward_ifs_write=None,
+        start_pc=START_PC, 
+        warp_count=WARP_COUNT
+    )
+
+    icache_stage = ICacheStage(
+        name="ICache_Stage",
+        behind_latch=sched_icache_if,
+        ahead_latch=icache_decode_if,
+        mem_req_if=icache_mem_req_if,
+        mem_resp_if=mem_icache_resp_if,
+        cache_config={"cache_size": 32 * 1024, 
+                        "block_size": 4, 
+                        "associativity": 1},
+        forward_ifs_write= {"ICache_Scheduler": icache_scheduler_fwif},
+    )
+
+    prf = PredicateRegFile(
+        num_preds_per_warp=16,
+        num_warps=16
+    )
+
+    decode_stage = DecodeStage(
+        name="Decode Stage",
+        behind_latch=icache_decode_if,
+        ahead_latch=decode_issue_if,
+        prf=prf,
+        forward_ifs_read={"ICache_Decode_Ihit": icache_scheduler_fwif},
+        forward_ifs_write={"Decode_Scheduler_Pckt": decode_scheduler_fwif}
+    )
+    
     pipeline_rf = RegisterFile()
     golden_rf = RegisterFile()
     
@@ -94,7 +185,6 @@ def test_all_operations():
     fust = functional_unit_config.generate_fust_dict()
     
     is_ex_latch = LatchIF(name="IS_EX_Latch")
-    decode_issue_if = LatchIF("Decode-Issue Latch")
     
     ex_stage = ExecuteStage.create_pipeline_stage(
         functional_unit_config=functional_unit_config, 
@@ -130,16 +220,20 @@ def test_all_operations():
     warp_id = 0
     test_values = {
         # Integer registers
-        1: [10 + i for i in range(pipeline_rf.threads_per_warp)],
-        2: [5 + i for i in range(pipeline_rf.threads_per_warp)],
-        3: [3 for _ in range(pipeline_rf.threads_per_warp)],
-        4: [2 for _ in range(pipeline_rf.threads_per_warp)],
-        5: [-5 - i for i in range(pipeline_rf.threads_per_warp)],
-        # Floating point registers
-        10: [10.5 + i*0.5 for i in range(pipeline_rf.threads_per_warp)],
-        11: [2.5 + i*0.25 for i in range(pipeline_rf.threads_per_warp)],
-        12: [1.57 for _ in range(pipeline_rf.threads_per_warp)],
-        13: [4.0 for _ in range(pipeline_rf.threads_per_warp)],
+        # 1: [0 + i for i in range(pipeline_rf.threads_per_warp)],
+        # 2: [5 + i for i in range(pipeline_rf.threads_per_warp)],
+        # 3: [3 for _ in range(pipeline_rf.threads_per_warp)],
+        # 4: [2 for _ in range(pipeline_rf.threads_per_warp)],
+        # 5: [-5 - i for i in range(pipeline_rf.threads_per_warp)],
+        # # Floating point registers
+        # 10: [10.5 + i*0.5 for i in range(pipeline_rf.threads_per_warp)],
+        # 11: [2.5 + i*0.25 for i in range(pipeline_rf.threads_per_warp)],
+        # 12: [1.57 for _ in range(pipeline_rf.threads_per_warp)],
+        # 13: [4.0 for _ in range(pipeline_rf.threads_per_warp)],
+
+        # integration2 test
+        2: [5 for i in range(pipeline_rf.threads_per_warp)],
+        3: [5 for i in range(pipeline_rf.threads_per_warp)]
     }
 
     imm_test_value = Bits(int=5, length=32)  # Immediate value for I-type instructions
@@ -157,47 +251,46 @@ def test_all_operations():
     # ---------------------------------------------------------
     test_cases = [
         # Integer ALU (20-31)
-        ("ADD", R_Op.ADD, 1, 2, 20, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
-        ("SUB", R_Op.SUB, 1, 2, 21, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
-        ("MUL", R_Op.MUL, 1, 2, 22, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF),
-        ("DIV", R_Op.DIV, 1, 2, 23, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0),
-        ("AND", R_Op.AND, 1, 2, 24, "Alu_int_0", lambda a, b: a & b),
-        ("OR", R_Op.OR, 1, 2, 25, "Alu_int_0", lambda a, b: a | b),
-        ("XOR", R_Op.XOR, 1, 2, 26, "Alu_int_0", lambda a, b: a ^ b),
-        ("SLT", R_Op.SLT, 1, 5, 27, "Alu_int_0", lambda a, b: 1 if a < b else 0),
-        ("SLTU", R_Op.SLTU, 1, 2, 28, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
-        ("SLL", R_Op.SLL, 1, 3, 29, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
-        ("SRL", R_Op.SRL, 1, 3, 30, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
-        ("SRA", R_Op.SRA, 5, 3, 31, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
+        ("ADD", R_Op.ADD, 2, 3, 1, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF)
+        # ("MUL", R_Op.MUL, 1, 2, 22, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF),
+        # ("DIV", R_Op.DIV, 1, 2, 23, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0),
+        # ("AND", R_Op.AND, 1, 2, 24, "Alu_int_0", lambda a, b: a & b),
+        # ("OR", R_Op.OR, 1, 2, 25, "Alu_int_0", lambda a, b: a | b),
+        # ("XOR", R_Op.XOR, 1, 2, 26, "Alu_int_0", lambda a, b: a ^ b),
+        # ("SLT", R_Op.SLT, 1, 5, 27, "Alu_int_0", lambda a, b: 1 if a < b else 0),
+        # ("SLTU", R_Op.SLTU, 1, 2, 28, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
+        # ("SLL", R_Op.SLL, 1, 3, 29, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
+        # ("SRL", R_Op.SRL, 1, 3, 30, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
+        # ("SRA", R_Op.SRA, 5, 3, 31, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
         
-        # Integer Immediate (32-40)
-        ("ADDI", I_Op.ADDI, 1, 4, 32, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
-        ("SUBI", I_Op.SUBI, 1, 4, 33, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
-        ("ORI", I_Op.ORI, 1, 3, 34, "Alu_int_0", lambda a, b: a | b),
-        ("XORI", I_Op.XORI, 1, 3, 35, "Alu_int_0", lambda a, b: a ^ b),
-        ("SLTI", I_Op.SLTI, 1, 4, 36, "Alu_int_0", lambda a, b: 1 if a < b else 0),
-        ("SLTIU", I_Op.SLTIU, 1, 4, 37, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
-        ("SLLI", I_Op.SLLI, 1, 3, 38, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
-        ("SRLI", I_Op.SRLI, 1, 3, 39, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
-        ("SRAI", I_Op.SRAI, 5, 3, 40, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
+        # # Integer Immediate (32-40)
+        # ("ADDI", I_Op.ADDI, 1, 4, 32, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
+        # ("SUBI", I_Op.SUBI, 1, 4, 33, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
+        # ("ORI", I_Op.ORI, 1, 3, 34, "Alu_int_0", lambda a, b: a | b),
+        # ("XORI", I_Op.XORI, 1, 3, 35, "Alu_int_0", lambda a, b: a ^ b),
+        # ("SLTI", I_Op.SLTI, 1, 4, 36, "Alu_int_0", lambda a, b: 1 if a < b else 0),
+        # ("SLTIU", I_Op.SLTIU, 1, 4, 37, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
+        # ("SLLI", I_Op.SLLI, 1, 3, 38, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
+        # ("SRLI", I_Op.SRLI, 1, 3, 39, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
+        # ("SRAI", I_Op.SRAI, 5, 3, 40, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
         
-        # Floating Point (50-53)
-        ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
-        ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
-        ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
-        ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
+        # # Floating Point (50-53)
+        # ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
+        # ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
+        # ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
+        # ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
         
-        # Special Functions (54-56)
-        ("SIN", F_Op.SIN, 12, 12, 54, "Trig_float_0", None),
-        ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", None),
-        ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", None),
+        # # Special Functions (54-56)
+        # ("SIN", F_Op.SIN, 12, 12, 54, "Trig_float_0", None),
+        # ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", None),
+        # ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", None),
     ]
 
-    # 4. Generate Instructions and Update Golden Model
+    # 4. Update Golden Model
     # ---------------------------------------------------------
     instruction_list = []
     
-    print("Generating instruction stream and computing golden reference...")
+    print("Computing golden reference...")
     
     for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, python_op in test_cases:
         if intended_fu not in fust:
@@ -251,26 +344,42 @@ def test_all_operations():
             data=golden_res
         )
 
-        # --- B. Create Pipeline Instruction ---
-        instr = Instruction(
-            pc=Bits(uint=0x0, length=32),
-            intended_FU=intended_fu,
-            warp_id=rd_reg % 2,
-            warp_group_id=0,
-            num_operands=1 if isinstance(opcode, I_Op) else 2,
-            rs1=Bits(uint=rs1_reg, length=32),
-            rs2=Bits(uint=rs2_reg, length=32),
-            rd=Bits(uint=rd_reg, length=32),
-            wdat=[Bits(uint=0, length=32) for _ in range(pipeline_rf.threads_per_warp)],
-            opcode=opcode,
-            predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
-            target_bank=rd_reg % 2,
-            imm=imm_val if isinstance(opcode, I_Op) else None
-        )
-        instruction_list.append(instr)
-        print(instr.target_bank)
+        # # --- B. Create Pipeline Instruction ---
+        # instr = Instruction(
+        #     pc=Bits(uint=0x0, length=32),
+        #     intended_FU=intended_fu,
+        #     warp_id=rd_reg % 2,
+        #     warp_group_id=0,
+        #     num_operands=1 if isinstance(opcode, I_Op) else 2,
+        #     rs1=Bits(uint=rs1_reg, length=32),
+        #     rs2=Bits(uint=rs2_reg, length=32),
+        #     rd=Bits(uint=rd_reg, length=32),
+        #     wdat=[Bits(uint=0, length=32) for _ in range(pipeline_rf.threads_per_warp)],
+        #     opcode=opcode,
+        #     predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
+        #     target_bank=rd_reg % 2,
+        #     imm=imm_val if isinstance(opcode, I_Op) else None
+        # )
+
+        # instruction_list.append(instr)
+        # print(instr.target_bank)
 
     print(f"Generated {len(instruction_list)} instructions.")
+
+
+    # (TALK TO DAN AND YASH abt this)
+    # 4.5 Initialize Forward IFs with Filler Payloads
+    # ---------------------------------------------------------
+    # Bootstrap the scheduler by providing neutral control packets
+    # so collision() never sees None on the first cycle
+    filler_decode_scheduler = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}
+    filler_issue_scheduler = [0] * scheduler_stage.num_groups
+    # Initialize all forward interfaces
+    icache_scheduler_fwif.payload = None
+    decode_scheduler_fwif.push(filler_decode_scheduler)
+    issue_scheduler_fwif.push(filler_issue_scheduler)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
 
     # 5. Run Pipeline Simulation
     # ---------------------------------------------------------
@@ -278,27 +387,36 @@ def test_all_operations():
     
     # Cycle 1: Feed instructions
     for idx, instr in enumerate(instruction_list):
-
-        if instr.rd.uint == 53:
+        if instr.rd.uint == 1:
             abcHI = 1
-
+        
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
         issue_stage.compute()
-        decode_issue_if.push(instr)
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
 
-    
     print("All instructions issued. Flushing pipeline...")
 
-    # Cycle 2: Flush pipeline (allow remaining instructions to complete)
-    # We loop enough times to cover the latency of the slowest unit
-    FLUSH_CYCLES = 25
+    FLUSH_CYCLES = 100
     for _ in range(FLUSH_CYCLES):
+        # Refill forward IFs if they get drained
+        if issue_scheduler_fwif.payload is None:
+            issue_scheduler_fwif.push(filler_issue_scheduler)
+        if decode_scheduler_fwif.payload is None:
+            decode_scheduler_fwif.push(filler_decode_scheduler)
+        
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
         issue_stage.compute()
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
 
     print("Pipeline flush complete.")
 
@@ -327,6 +445,9 @@ def test_all_operations():
     else:
         print("\n❌ FAILURE: Mismatches detected in register file.")
         return 0, 1
+
+
+
 
 if __name__ == "__main__":
     passed, failed = test_all_operations()

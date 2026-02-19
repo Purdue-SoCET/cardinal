@@ -254,9 +254,6 @@ class Instruction:
     fu_entries:  List[Dict]     = field(default_factory=list)
     num_operands: Optional[int] = None
     
-
-
-
     
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)

@@ -94,7 +94,7 @@ class IssueStage(Stage):
     # ---------------------------
     # Public entry point (1→4)
     # ---------------------------
-    def compute(self, input_data: Instruction) -> List[Instruction]:
+    def compute(self):
         """
         Executes the Issue stage in this exact order every cycle:
           1) Try to dispatch ready instructions via FUST (start from EVEN).
@@ -108,6 +108,7 @@ class IssueStage(Stage):
                                (order: EVEN-first if both dispatched).
         """
         inst_in: Optional[Instruction] = None
+        input_data = self.behind_latch.pop()
         # dispatched_inst: Optional[Instruction] = None
         FU_stall_issue: bool = False
         # if input_data is not None and getattr(input_data, "instruction", None) is not None:

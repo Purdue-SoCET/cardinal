@@ -53,10 +53,11 @@ class SchedulerStage(Stage):
         print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
 
         # if im getting my odd warp EOP out of my decode
-        if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
-            self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-            self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
+        if decode_ctrl is not None and decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
+            if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
+                self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
+                self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
+                self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
 
         # if im getting my odd warp halt out of my decode
         elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:

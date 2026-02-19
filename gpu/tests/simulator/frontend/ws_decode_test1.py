@@ -44,7 +44,6 @@ def dump_array_to_timestamped_file(
             f.write(line + sep)
 
     return out_path
-
 START_PC = 0x1000
 LAT = 2
 WARP_COUNT = 6
@@ -212,7 +211,6 @@ def test_fetch(LAT=2, START_PC=0x1000, WARP_COUNT=6, num_cycles = 10):
 
     warp_id = 0
     total_cycles = 15
-
 
     # initializing all the latches and such
     tbs_ws_if.clear_all()
