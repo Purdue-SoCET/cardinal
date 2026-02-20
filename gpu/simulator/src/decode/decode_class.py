@@ -5,55 +5,15 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 
 sys.path.append(str(parent_dir))
-from simulator.base_class import ForwardingIF, LatchIF, Stage, PredRequest, DecodeType
+from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, PredRequest, DecodeType
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from bitstring import Bits 
 
-from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
-from common.custom_enums import Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
+from gpu.common.custom_enums import Op
 
 global_cycle = 0
-
-
-# at top of the file, after imports / decode_opcode
-FUST_CLASSES = {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"}
-
-def classify_fust_unit(op) -> Optional[str]:
-    """
-    Map an Op (or R_Op/I_Op/F_Op/...) to a FUST class:
-    one of {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"} or None.
-    Adjust the name checks to match your actual enum names.
-    """
-    if op is None:
-        return None
-
-    name = getattr(op, "name", str(op))
-
-    # Branch unit
-    if isinstance(op, B_Op) or "BRANCH" in name or name.startswith("B"):
-        return "BRANCH"
-
-    # Load / Store
-    if isinstance(op, S_Op) or name.startswith("LD") or name.startswith("ST"):
-        return "LDST"
-
-    # Mul / Div / Sqrt (could be integer or FP)
-    if "MUL" in name:
-        return "MUL"
-    if "DIV" in name:
-        return "DIV"
-    if "SQRT" in name:
-        return "SQRT"
-
-    # Generic ALU: ADD/SUB or “everything else” mapped to ADD lane
-    if "SUB" in name:
-        return "SUB"
-    if "ADD" in name:
-        return "ADD"
-
-    # Fallback: treat as ADD-lane ALU
-    return "ADD"
 
 def decode_opcode(bits7: Bits):
     """
@@ -97,6 +57,110 @@ class DecodeStage(Stage):
         )
         self.prf = prf  # predicate register file reference
         self.fust = fust
+    
+    def classify_fust_unit(self, op) -> Optional[str]:
+        """
+        Map an opcode to an actual functional unit name from self.fust.
+        Returns the name of an available functional unit that can execute this operation,
+        or None if no suitable unit is found.
+        """
+        if op is None or not self.fust:
+            return None
+
+        # Get the opcode name for matching
+        op_name = getattr(op, "name", str(op))
+        
+        # Determine operation type and look for matching functional units
+        
+        # Integer ALU operations (ADD, SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA, etc.)
+        if isinstance(op, R_Op) and op in [R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, R_Op.XOR, 
+                                            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Integer immediate operations (ADDI, SUBI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI)
+        if isinstance(op, I_Op) and op in [I_Op.ADDI, I_Op.SUBI, I_Op.ORI, I_Op.XORI, 
+                                            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, I_Op.SRAI]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Integer multiplication
+        if isinstance(op, R_Op) and op == R_Op.MUL:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Mul_int_"):
+                    return fu_name
+        
+        # Integer division
+        if isinstance(op, R_Op) and op == R_Op.DIV:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Div_int_"):
+                    return fu_name
+        
+        # Floating-point add/sub
+        if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("AddSub_float_"):
+                    return fu_name
+        
+        # Floating-point multiplication
+        if isinstance(op, R_Op) and op == R_Op.MULF:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Mul_float_"):
+                    return fu_name
+        
+        # Floating-point division
+        if isinstance(op, R_Op) and op == R_Op.DIVF:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Div_float_"):
+                    return fu_name
+        
+        # Square root
+        if isinstance(op, F_Op) and op == F_Op.ISQRT:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("InvSqrt_float_"):
+                    return fu_name
+        
+        # Trigonometric functions (SIN, COS)
+        if isinstance(op, F_Op) and op in [F_Op.SIN, F_Op.COS]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Trig_float_"):
+                    return fu_name
+        
+        # Type conversion (ITOF, FTOI) - typically handled by ALU or special unit
+        if isinstance(op, F_Op) and op in [F_Op.ITOF, F_Op.FTOI]:
+            # Try Alu first, then any available unit
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Load/Store operations
+        if isinstance(op, (S_Op, I_Op)) and (op in [S_Op.SW, S_Op.SH, S_Op.SB] or 
+                                              op in [I_Op.LW, I_Op.LH, I_Op.LB]):
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Ldst_Fu_"):
+                    return fu_name
+        
+        # Branch operations
+        if isinstance(op, B_Op):
+            for fu_name in self.fust.keys():
+                if "Branch" in fu_name or "branch" in fu_name:
+                    return fu_name
+        
+        # Jump operations
+        if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
+            for fu_name in self.fust.keys():
+                if "Branch" in fu_name or "branch" in fu_name:
+                    return fu_name
+        
+        # Fallback: return first available Alu if nothing else matches
+        for fu_name in self.fust.keys():
+            if fu_name.startswith("Alu_int_"):
+                return fu_name
+        
+        # Final fallback: return first available unit
+        return next(iter(self.fust.keys()), None)
     
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
@@ -238,8 +302,8 @@ class DecodeStage(Stage):
         else:
             inst.imm = None
 
-        # change this according to what we 
-        inst.intended_FU = classify_fust_unit(inst.opcode)
+        # Map opcode to actual functional unit name from fust
+        inst.intended_FU = self.classify_fust_unit(inst.opcode)
 
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
@@ -283,7 +347,12 @@ class DecodeStage(Stage):
             if pred_mask is None:
                 pred_mask = [True] * 32
 
-            inst.predicate = pred_mask
+            # Convert boolean list to Bits objects for pipeline compatibility
+            inst.predicate = [Bits(uint=1 if p else 0, length=1) for p in pred_mask]
+        
+        # Initialize wdat list for result storage (32 threads per warp)
+        if not inst.wdat or len(inst.wdat) == 0:
+            inst.wdat = [Bits(uint=0, length=32) for _ in range(32)]
         
         if inst.warp_id % 2 == 0:
             inst.target_bank = 0

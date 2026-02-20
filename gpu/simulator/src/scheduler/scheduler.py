@@ -8,7 +8,7 @@ from bitstring import Bits
 gpu_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_root))
 print("here", gpu_root)
-from simulator.base_class import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
+from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
 
 class SchedulerStage(Stage):
     def __init__(self, *args, start_pc, warp_count: int = 32, warp_size: int = 32, policy: str = "RR", **kwargs):

@@ -340,7 +340,8 @@ def test_all_operations():
                     golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
 
         golden_rf.write_warp_gran(
-            warp_id=rd_reg % 2,
+            # warp_id=rd_reg % 2,
+            warp_id=warp_id,
             dest_operand=Bits(uint=rd_reg, length=32),
             data=golden_res
         )
@@ -365,7 +366,7 @@ def test_all_operations():
         # instruction_list.append(instr)
         # print(instr.target_bank)
 
-    print(f"Generated {len(instruction_list)} instructions.")
+    # print(f"Generated {len(instruction_list)} instructions.")
 
 
     # (TALK TO DAN AND YASH abt this)
@@ -427,7 +428,8 @@ def test_all_operations():
     
     # We check all destination registers that were written to
     # Int Ops: 20-40, Float Ops: 50-56
-    regs_to_check = list(range(20, 41)) + list(range(50, 57))
+    # regs_to_check = list(range(20, 41)) + list(range(50, 57))
+    regs_to_check = list(range(0, 63))
     
     passed = compare_register_files(
         pipeline_rf=pipeline_rf,
@@ -446,8 +448,6 @@ def test_all_operations():
     else:
         print("\n❌ FAILURE: Mismatches detected in register file.")
         return 0, 1
-
-
 
 
 if __name__ == "__main__":
