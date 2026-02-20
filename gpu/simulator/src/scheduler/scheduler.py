@@ -60,7 +60,7 @@ class SchedulerStage(Stage):
                 self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
 
         # if im getting my odd warp halt out of my decode
-        elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
+        elif decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
             self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
 
         # change pc for branch

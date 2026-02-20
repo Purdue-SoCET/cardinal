@@ -388,9 +388,10 @@ def test_all_operations():
     print("\nStarting pipeline simulation...")
     
     # Cycle 1: Feed instructions
-    for idx, instr in enumerate(instruction_list):
-        if instr.rd.uint == 1:
-            abcHI = 1
+    # for idx, instr in enumerate(instruction_list):
+    for cycle in range(len(test_cases)):
+        # if instr.rd.uint == 1:
+        #     abcHI = 1
         
         wb_stage.tick()
         ex_stage.tick()
