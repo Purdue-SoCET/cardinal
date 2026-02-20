@@ -6,15 +6,26 @@
 
 //Don't pad, just check for out of bounds. This is doing FXAA currently. Should probably have called all this FXAA.
 
-void kernel_post(void* arg) {
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_post(void* arg)
+#endif
+{
+
+#ifdef GPU_SIM
+    post_arg_t* args = (post_arg_t*) argPtr();
+    int ctr_idx = threadIdx();
+    #else
     post_arg_t* args = (post_arg_t*) arg;
+    int ctr_idx = threadIdx;
+    #endif
 
     //Make 3x3 idxs
     //tl up tr
     //ml ctr mr
     //bl down br
 
-    int ctr_idx = threadIdx;
     int up_idx = ctr_idx - args->buff_w;
     int down_idx = ctr_idx + args->buff_w;
     int tl_idx = up_idx - 1;

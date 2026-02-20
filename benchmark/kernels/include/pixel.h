@@ -22,6 +22,10 @@ typedef struct {
 
 } pixel_arg_t;
 
+#ifdef GPU_SIM
+void main(void*);
+#else
 void kernel_pixel(void*);
+#endif
 
 #endif

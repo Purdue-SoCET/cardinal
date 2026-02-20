@@ -27,6 +27,10 @@ typedef struct {
     vertex_t* twoDVert;        //output 2D  vertors
 } vertexShader_arg_t;
 
+#ifdef GPU_SIM
+void main(void*);
+#else
 void kernel_vertexShader(void*);
+#endif
 
 #endif

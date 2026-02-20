@@ -2,11 +2,21 @@
 #include "include/vertexShader.h"
 #include "include/graphics_lib.h"
 
-void kernel_vertexShader(void* arg)
-{
-    vertexShader_arg_t* args = (vertexShader_arg_t*) arg;
 
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_vertexShader(void* arg)
+#endif
+{
+    #ifdef GPU_SIM
+    vertexShader_arg_t* args = (vertexShader_arg_t*) argPtr();
+    int i = blockIdx() * blockDim() + threadIdx();
+    #else
+    vertexShader_arg_t* args = (vertexShader_arg_t*) arg;
     int i = blockIdx * blockDim + threadIdx;
+    #endif
+
     if(i > 1023) return;
 
     /****** ThreeD Rotation ******/ 
@@ -151,8 +161,12 @@ void kernel_vertexShader(void* arg)
         }
     }
 
-    if (q[2] < 0.0) return;
-    if (q[2] == 0.0) return;
+    if (q[2] < 0.0){
+        return;
+    }
+    if (q[2] == 0.0){
+        return;
+    }
 
     args->twoDVert[i].coords.x = q[0] / q[2];
     args->twoDVert[i].coords.y = q[1] / q[2];

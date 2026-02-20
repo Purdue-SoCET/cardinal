@@ -2,16 +2,34 @@
 #include "include/pixel.h"
 #include "include/graphics_lib.h"
 
-void kernel_pixel(void* arg) {
-    pixel_arg_t* args = (pixel_arg_t*) arg;
-    
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_pixel(void* arg)
+#endif
+{
     int u, v;
+    #ifdef GPU_SIM
+    pixel_arg_t* args = (pixel_arg_t*) argPtr();
+
+    u = (((threadIdx())) - (args->buff_w)*(((threadIdx()))/(args->buff_w)));
+    // u = mod(threadIdx, args->buff_w);
+    v = (((threadIdx()) / args->buff_w) - (args->buff_h)*(((threadIdx()) / args->buff_w)/(args->buff_h)));
+    // v = mod(threadIdx / args->buff_w, args->buff_h);
+    
+    int tag = args->tag_buff[threadIdx()];
+    #else
+    pixel_arg_t* args = (pixel_arg_t*) arg;
+
     u = (((threadIdx)) - (args->buff_w)*(((threadIdx))/(args->buff_w)));
     // u = mod(threadIdx, args->buff_w);
     v = (((threadIdx) / args->buff_w) - (args->buff_h)*(((threadIdx) / args->buff_w)/(args->buff_h)));
     // v = mod(threadIdx / args->buff_w, args->buff_h);
     
     int tag = args->tag_buff[threadIdx];
+    #endif
+    
+
     if(tag < 0) return;
 
     triangle_t tri = args->tris[tag];

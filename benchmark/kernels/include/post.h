@@ -14,6 +14,10 @@ typedef struct {
     int threshold;
 } post_arg_t;
 
+#ifdef GPU_SIM
+void main(void*);
+#else
 void kernel_post(void*);
+#endif
 
 #endif
