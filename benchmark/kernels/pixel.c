@@ -132,5 +132,9 @@ void kernel_pixel(void* arg)
 
     // 3. Texture Lookup
     int idx = texel_y * args->texture.w + texel_x;
+    #ifdef GPU_SIM
+    args->color[threadIdx()] = args->texture.color_arr[idx];
+    #else
     args->color[threadIdx] = args->texture.color_arr[idx];
+    #endif
 }
