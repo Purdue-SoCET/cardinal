@@ -1,12 +1,12 @@
 from __future__ import annotations
-from simulator.circular_buffer import CircularBuffer
-from simulator.compact_queue import CompactQueue
-from simulator.stack import Stack
+from gpu.simulator.src.circular_buffer import CircularBuffer
+from gpu.simulator.src.compact_queue import CompactQueue
+from gpu.simulator.src.stack import Stack
 from enum import Enum
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union, List
-from simulator.latch_forward_stage import LatchIF, Instruction
-from simulator.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
+from gpu.simulator.src.latch_forward_stage import LatchIF, Instruction
+from gpu.simulator.src.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
 
 class WritebackBufferCount(Enum):
     BUFFER_PER_FSU = 0

@@ -3,9 +3,9 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from gpu.simulator.src.base_class import *
+from simulator.latch_forward_stage import *
 from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
-from gpu.simulator.src.execute.functional_sub_unit import FunctionalSubUnit
+from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class Ldst_Fu(FunctionalSubUnit):
                 print(f"[LSU] Received: HIT STALL")
         
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
-        return_instr = None
+        return_instr = False
         if issue_if and hasattr(issue_if, 'valid'):
             print(f"[DEBUG] Cycle Start: QueueLen={len(self.ldst_q)}, LatchValid={issue_if.valid}")
 
@@ -126,7 +126,7 @@ class Ldst_Fu(FunctionalSubUnit):
         #send instr to wb if ready
         if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
             return_instr = self.wb_buffer.pop(0)
-            self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
+            # self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
     
@@ -149,27 +149,27 @@ class pending_mem():
         self.size = "word"
 
         match self.instr.opcode:
-            case I_Op.LW.value:
+            case I_Op.LW:
                 self.write = False
                 self.size = "word"
-            case I_Op.LH.value:
+            case I_Op.LH:
                 self.write = False
                 self.size = "half"
-            case I_Op.LB.value:
+            case I_Op.LB:
                 self.write = False
                 self.size = "byte"
             
-            case S_Op.SW.value:
+            case S_Op.SW:
                 self.write = True
                 self.size = "word"
-            case S_Op.SH.value:
+            case S_Op.SH:
                 self.write = True
                 self.size = "half"
-            case S_Op.SB.value:
+            case S_Op.SB:
                 self.write = True
                 self.size = "byte"
             
-            case H_Op.HALT.value:
+            case H_Op.HALT:
                 self.write = False
                 self.size = "word"
                 self.halt = True
@@ -178,15 +178,14 @@ class pending_mem():
                 logger.error(f"Err: instr in ldst cannot be decoded")
                 print(f"\t{instr}")
         
+        offset = 0
+        if hasattr(self.instr, 'imm') and self.instr.imm is not None:
+            offset = self.instr.imm.int
+
         for i in range(32):
             self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
-            if self.write and self.instr.predicate[i].uint == 1:
-                offset = 0
-                if hasattr(self.instr, 'imm') and self.instr.imm is not None:
-                    offset = self.instr.imm.int
+            if self.instr.predicate[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + offset
-            elif not self.write and self.instr.predicate[i].uint == 1:
-                self.addrs[i] = self.instr.rdat1[i].int + self.instr.rdat2[i].int
 
     def readyWB(self):
         return all(self.finished_idx)
@@ -201,11 +200,13 @@ class pending_mem():
             )
         for i in range(32):
             if self.finished_idx[i] == 0 and self.mshr_idx[i] == 0:
+                st_val = self.instr.rdat2[i].int if self.write else 0
+
                 return dCacheRequest(
                     addr_val=self.addrs[i],
                     rw_mode='write' if self.write else 'read',
                     size=self.size,
-                    store_value=self.instr.rdat2[i].int
+                    store_value=st_val
                 )
         return None
     
@@ -213,6 +214,9 @@ class pending_mem():
         if self.halt == True:
             self.finished_idx = [1]
             return
+        
+        if self.write == False and not self.instr.wdat:
+            self.instr.wdat = [None for _ in range(32)]
         
         for i in range(32):
             if self.addrs[i] == payload.address:

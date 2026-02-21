@@ -2,10 +2,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
-from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import Instruction
-from simulator.mem.ld_st import Ldst_Fu
+from gpu.simulator.src.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
+from gpu.simulator.src.compact_queue import CompactQueue
+from gpu.simulator.src.latch_forward_stage import Instruction
+from gpu.simulator.src.mem.ld_st import Ldst_Fu
 
 @dataclass
 class MemBranchUnitConfig:

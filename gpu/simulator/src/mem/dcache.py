@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
-from gpu.simulator.src.base_class import *
+from simulator.latch_forward_stage import *
 
 
 class MSHRBuffer:

@@ -4,7 +4,7 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
-from gpu.simulator.src.base_class import LatchIF, Stage, Instruction, MemRequest
+from simulator.latch_forward_stage import LatchIF, Stage, Instruction, MemRequest
 from mem.Memory import Mem
 from typing import Any, Dict, Optional, Deque, Tuple
 from bitstring import Bits

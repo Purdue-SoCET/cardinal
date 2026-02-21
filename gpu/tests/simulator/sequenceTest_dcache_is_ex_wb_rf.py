@@ -19,9 +19,8 @@ from gpu.simulator.src.mem.mem_controller import MemController
 from gpu.simulator.src.mem.dcache import LockupFreeCacheStage
 from gpu.simulator.src.mem.ld_st import Ldst_Fu
 from gpu.simulator.src.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
-from gpu.simulator.src.latch_forward_stage import Instruction, LatchIF
+from gpu.simulator.src.latch_forward_stage import *
 from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op
-from gpu.simulator.src.base_class import *
 
 # CREATING ALL LATCHES
 # ---------------------------------------------------------
@@ -30,7 +29,233 @@ lsu_dcache_latch = LatchIF(name="lsu_dcache_latch")                    # Ldst - 
 dcache_lsu_forward = ForwardingIF(name="dcache_lsu_forward")           # Dcache - Ldst forwarding
 lsu_dcache_latch.forward_if = dcache_lsu_forward
 dcache_mem_latch = LatchIF(name="dcache_mem_latch")                    # Dcache - memory controller latch
-mem_dcache_latch = LatchIF(name="mem_dcache_lstch")                    # Demory controller - dcache latch
+mem_dcache_latch = LatchIF(name="mem_dcache_lstch")                    # Memory controller - dcache latch
+ic_req = LatchIF("ICacheMemReqIF")                                     # Icache - memory controller latch
+ic_resp = LatchIF("ICacheMemRespIF")                                   # Memory controller - icache latch
+
+def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
+    """
+    Compare two register files and return True if they match, False otherwise.
+    """
+    mismatches = []
+    bank = warp_id % pipeline_rf.banks
+    warp_idx = warp_id // 2
+    
+    # Determine which registers to check
+    if reg_list is None:
+        reg_range = range(pipeline_rf.regs_per_warp)
+    else:
+        reg_range = reg_list
+    
+    for reg_num in reg_range:
+        for thread_id in range(pipeline_rf.threads_per_warp):
+            pipeline_val = pipeline_rf.regs[bank][warp_idx][reg_num][thread_id]
+            golden_val = golden_rf.regs[bank][warp_idx][reg_num][thread_id]
+            
+            # For float registers (typically >= 10 in our test), allow small tolerance
+            is_float_reg = reg_num >= 50 or (reg_num >= 10 and reg_num < 20)
+            
+            # Special handling for trig/isqrt results which have higher error margins in CORDIC/FastApprox
+            is_approx_reg = reg_num in [54, 55, 56] # SIN, COS, ISQRT
+
+            if is_float_reg:
+                p_float = pipeline_val.float
+                g_float = golden_val.float
+                
+                # Dynamic tolerance based on operation type
+                if is_approx_reg:
+                     # 5% relative error for approx functions
+                    tolerance = abs(g_float * 0.05) + 1e-4
+                else:
+                    # 1% relative error + epsilon for standard float
+                    tolerance = abs(g_float * 0.01) + 1e-6
+
+                if abs(p_float - g_float) > tolerance:
+                    mismatches.append({
+                        'reg': reg_num,
+                        'thread': thread_id,
+                        'pipeline': pipeline_val,
+                        'golden': golden_val,
+                        'diff': abs(p_float - g_float)
+                    })
+            else:
+                if pipeline_val != golden_val:
+                    mismatches.append({
+                        'reg': reg_num,
+                        'thread': thread_id,
+                        'pipeline': pipeline_val,
+                        'golden': golden_val
+                    })
+    
+    if verbose and mismatches:
+        print(f"\n❌ Found {len(mismatches)} mismatches:")
+        for m in mismatches:  
+            if m['reg'] >= 50 or (m['reg'] >= 10 and m['reg'] < 20):
+                print(f"  Reg[{m['reg']}][{m['thread']}]: "
+                      f"Pipe={m['pipeline'].float:.6f} "
+                      f"Gold={m['golden'].float:.6f} "
+                      f"Diff={m.get('diff', 0):.6f}")
+            else:
+                print(f"  Reg[{m['reg']}][{m['thread']}]: "
+                      f"Pipe={m['pipeline'].int} "
+                      f"Gold={m['golden'].int}")
+
+    return len(mismatches) == 0
+
+
+def print_banks():
+    # --- 1. Calculate Bit Widths for Reconstruction ---
+    # Offset: 32 words * 4 bytes = 128 bytes -> 7 bits (usually)
+    offset_bits = int(math.log2(BLOCK_SIZE_WORDS * 4))
+    
+    # Bank Bits: log2(number of banks)
+    num_banks = len(dCache.banks)
+    bank_bits = int(math.log2(num_banks)) if num_banks > 1 else 0
+    
+    # Set Bits: log2(number of sets per bank)
+    num_sets = len(dCache.banks[0].sets)
+    set_bits = int(math.log2(num_sets))
+
+    # Calculate Shift Amounts (Assuming Addr Structure: [ Tag | Set | Bank | Offset ])
+    shift_bank = offset_bits
+    shift_set = offset_bits + bank_bits
+    shift_tag = offset_bits + bank_bits + set_bits
+    # --------------------------------------------------
+
+    for bank_id, bank in enumerate(dCache.banks):
+        print(f"\n======== Bank {bank_id} ========")
+        found_valid_line = False
+
+        for set_id, cache_set in enumerate(bank.sets):
+            set_has_valid_lines = any(frame.valid for frame in cache_set)
+
+            if set_has_valid_lines:
+                found_valid_line = True
+                print(f"  ---- Set {set_id} ----")
+
+                lru_list = bank.lru[set_id]
+                print(f"    LRU Order: {lru_list} (Front=MRU, Back=LRU)")
+
+                for way_id, frame in enumerate(cache_set):
+                    if frame.valid:
+                        tag_hex = f"0x{frame.tag:X}"
+                        dirty_str = "D" if frame.dirty else " "
+                        
+                        # --- 2. Reconstruct the Address ---
+                        # (Tag << shifts) | (Set << shifts) | (Bank << shifts)
+                        full_addr = (frame.tag << shift_tag) | (set_id << shift_set) | (bank_id << shift_bank)
+                        addr_hex = f"0x{full_addr:08X}" # Format as 8-digit Hex
+                        # ----------------------------------
+
+                        # Print Tag AND Address
+                        print(f"    [Way {way_id}] V:1 {dirty_str} Tag: {tag_hex:<6} (Addr: {addr_hex})")
+
+                        for i in range(0, BLOCK_SIZE_WORDS, 4):
+                            # FIX: Add '& 0xFFFFFFFF' to force unsigned 32-bit representation
+                            w0 = f"0x{(frame.block[i] & 0xFFFFFFFF):08X}"
+                            w1 = f"0x{(frame.block[i+1] & 0xFFFFFFFF):08X}"
+                            w2 = f"0x{(frame.block[i+2] & 0xFFFFFFFF):08X}"
+                            w3 = f"0x{(frame.block[i+3] & 0xFFFFFFFF):08X}"
+                            
+                            print(f"        Block[{i:02d}:{i+3:02d}]: {w0} {w1} {w2} {w3}")
+
+        if not found_valid_line:
+            print(f"  (Bank is empty)")
+
+def write_val_to_mem(filename: str, address: int, value: int):
+    '''
+    Writes a specified data to a specified address in the test.bin text file
+    '''
+    line_idx = address // 4
+
+    lines = []
+    if os.path.exists(filename):
+        with open(filename, 'r') as f:
+            # Strip newlines and empty lines
+            lines = [line.strip() for line in f if line.strip()]
+            
+    # If the address is beyond the end of the file, pad it with zero-words
+    while len(lines) <= line_idx:
+        lines.append("00000000000000000000000000000000")
+        
+    binary_string = format(value & 0xFFFFFFFF, '032b')
+    lines[line_idx] = binary_string
+    
+    # Write everything back to the file
+    with open(filename, 'w') as f:
+        for line in lines:
+            f.write(line + '\n')
+
+
+def print_latch_states(latches, forward_latches, cycle, before_after):
+    """Prints the content of all latches with Hex formatting."""
+    
+    # --- Helper: Convert values to Hex Strings ---
+    def to_hex(val):
+        """Recursively converts integers to hex strings."""
+        if isinstance(val, int):
+            return f"0x{val:X}"
+        elif isinstance(val, list):
+            return [f"0x{v:X}" if isinstance(v, int) else v for v in val]
+        return val
+
+    def format_payload(payload):
+        """Creates a readable Hex view of the payload."""
+        if payload is None:
+            return "None"
+
+        # Case 1: Payload is a Dictionary (e.g., Input Requests)
+        if isinstance(payload, dict):
+            # Copy dict so we don't modify the actual simulation object
+            p_view = payload.copy()
+            # Convert specific keys to hex
+            for key in ['addr_val', 'address', 'store_value', 'data', 'pc', 'addr']:
+                if key in p_view and p_view[key] is not None:
+                    p_view[key] = to_hex(p_view[key])
+            return p_view
+
+        # Case 2: Payload is an Object (e.g., dMemResponse)
+        # We assume the object has a __repr__, but we can force it if needed
+        return payload 
+    # ---------------------------------------------
+
+    if (before_after == "before"):
+        print(f"=== Latch State Before Cycle {cycle} ===")
+    else:
+        print(f"=== Latch State at End of Cycle {cycle} ===")
+    
+    for name, latch in latches.items():
+        payload = None
+
+        # Extract payload based on latch type
+        if hasattr(latch, 'valid') and latch.valid:
+            payload = latch.payload
+        elif hasattr(latch, 'payload') and latch.payload is not None:
+            payload = latch.payload
+            
+        if payload is not None:
+            # Print the formatted version
+            print(f"  [{name}] VALID: {format_payload(payload)}")
+        else:
+            # Optional: Comment out to hide empty latches
+            print(f"  [{name}] Empty")
+    
+    print(f"\nForward latches:")
+    for name, forward_latch in forward_latches.items():
+        payload = None
+
+        if hasattr(forward_latch, 'valid') and latch.valid:
+            payload = forward_latch.payload
+        elif hasattr(forward_latch, 'payload') and latch.payload is not None:
+            payload = forward_latch.payload
+            
+        if payload is not None:
+            # Print the formatted version
+            print(f"  [{name}] VALID: {format_payload(payload)}")
+        else:
+            # Optional: Comment out to hide empty latches
+            print(f"  [{name}] Empty")
+        
 
 def test_all_operations():
     # 1. Setup Pipeline Components
@@ -71,27 +296,64 @@ def test_all_operations():
         fsu_names=list(fust.keys())
     )
 
+    # Main memory
+    mem_backend = Mem(start_pc = 0x0000_0000,
+                      input_file = os.path.join(project_root, "gpu/tests/simulator/memory/dcache/test.bin"),
+                      fmt = "bin")
+    
+
+    # DCache
+    dCache = LockupFreeCacheStage(name = "dCache",
+                                  behind_latch = lsu_dcache_latch,    # Change this to dummy
+                                  forward_ifs_write = {"DCache_LSU_Resp": dcache_lsu_forward},   # Change this to dummy
+                                  mem_req_if = dcache_mem_latch,
+                                  mem_resp_if = mem_dcache_latch
+                                  )
+    
+    # Memory controller
+    memStage = MemController(name = "Memory",
+                             ic_req_latch = ic_req,
+                             dc_req_latch = dcache_mem_latch,
+                             ic_serve_latch = ic_resp,
+                             dc_serve_latch = mem_dcache_latch,
+                             mem_backend = mem_backend,
+                             latency = 5,
+                             policy = "rr"
+                            )
+    
+    # Load store Unit
+    ldst = ex_stage.functional_units['MemBranchUnit_0'].subunits['Ldst_Fu_0']
+    ldst.connect_interfaces(dcache_if = lsu_dcache_latch)
+
+    all_latches = {
+    "is_ex_latch": is_ex_latch,
+    "lsu_dcache_latch": lsu_dcache_latch,
+    "dcache_mem_latch": dcache_mem_latch,
+    "mem_dcache_latch": mem_dcache_latch,
+    "ic_req": ic_req,
+    "ic_resp": ic_resp,
+    "ldst_wb_latch": ldst.ex_wb_interface
+    }
+    all_forwarding = {
+        "dcache_lsu_forward": dcache_lsu_forward
+    }
+
+    for latch_name, latch in all_latches.items():
+        latch.clear_all()
+
 
     # 2. Initialize Register Data
     # ---------------------------------------------------------
     warp_id = 0
-    test_values = {
+    test_addresses = {
         # Integer registers
-        1: [10 + i for i in range(pipeline_rf.threads_per_warp)],                               # Reg 1: [10, 11, 12, 13, ..., 41]
-        2: [5 + i for i in range(pipeline_rf.threads_per_warp)],                                # Reg 2: [5, 6, 7, 8, ..., 36]
-        3: [3 for _ in range(pipeline_rf.threads_per_warp)],                                    # Reg 3: [3, 3, 3, 3, ..., 3]
-        4: [2 for _ in range(pipeline_rf.threads_per_warp)],                                    # Reg 4: [2, 2, 2, 2, ..., 2]
-        5: [-5 - i for i in range(pipeline_rf.threads_per_warp)],                               # Reg 5: [-5, -4, -3, -2, ..., -36]
-        # Floating point registers          
-        10: [10.5 + i*0.5 for i in range(pipeline_rf.threads_per_warp)],                        # Reg 10: [10.5, 11.0, 11.5, ..., 26.0]
-        11: [2.5 + i*0.25 for i in range(pipeline_rf.threads_per_warp)],                        # Reg 11: [2.5, 2.75, 3.0, ..., 10.5]
-        12: [1.57 for _ in range(pipeline_rf.threads_per_warp)],                                # Reg 12: [1.57, 1.57, ...., 1.57]
-        13: [4.0 for _ in range(pipeline_rf.threads_per_warp)],                                 # Reg 13: [4, 4, 4, ..., 4]
+        1: [i for i in range(0, 0x400, 32)],                                                                        # Reg 1: 0x0, 0x20, 0x40, ..., 0x3E0
+        2: [i for i in range(0x400, 0x800, 32)]                                                                     # Reg 2: 0x400, 0x420, 0x440, ..., 0x7E0
     }
 
-    imm_test_value = Bits(int=5, length=32)                                                     # Immediate value for I-type instructions
+    imm_test_value = Bits(int=0, length=32)                                                                         # Immediate value for I-type instructions
     
-    for reg_num, values in test_values.items():                                                 # Converting the values from int to bits object
+    for reg_num, values in test_addresses.items():                                                                  # Converting the values from int to bits object
         if reg_num >= 10:
             data = [Bits(float=v, length=32) for v in values]
         else:
@@ -99,12 +361,124 @@ def test_all_operations():
         
         pipeline_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)         # Writes the initialized values the test rf
         golden_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)           # Writes the initialized values to the golden rf
-    
 
-    # 3. Define Test Cases
+
+    # 3. Initialize Main Memory Data 
     # ---------------------------------------------------------
+    mem_file = os.path.join(project_root, "gpu/tests/simulator/memory/dcache/test.bin")
+    for address in test_addresses[1]:
+        address_offset = address + imm_test_value.int
+        write_val_to_mem(mem_file, address_offset, 1)                              # Initialize the addresses stored in register 1 + immediate to contain 1s (integer)
     
+    for address in test_addresses[2]:
+        address_offset = address + imm_test_value.int
+        write_val_to_mem(mem_file, address_offset, 2)                              # Initialize the addresses stored in register 2 + immediate to contain 2s (integer)
+
+
+    # 4. Define Test Cases
+    # ---------------------------------------------------------
+    # Format test: test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expected value
+    test_cases = [
+        ("LW_1", I_Op.LW, 1, 0, 20, "Ldst_Fu_0", 1),                            # Load from address in r1 to r20
+        ("LW_2", I_Op.LW, 2, 0, 22, "Ldst_Fu_0", 2)                             # Load from address in r2 to r21
+    ]
+
+    instruction_list = []
+    pc = 0x0
+    for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expected_value in test_cases:
+        if intended_fu not in fust:
+            print(f"  Warning: Skipping {test_name} (FU {intended_fu} not configured)")
+            continue
+        
+        bank = warp_id % golden_rf.banks
+        w_idx = warp_id // 2
+        golden_data = [Bits(uint = expected_value, length = 32) for _ in range(32)]
+        golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)            # Update the golden rf to contain the expected loaded values
+
+        instr = Instruction(
+            pc=Bits(uint=pc, length=32),
+            intended_FU=intended_fu,
+            warp_id=rd_reg % 2,
+            warp_group_id=0,
+            num_operands=1 if isinstance(opcode, I_Op) else 2,
+            rs1=Bits(uint=rs1_reg, length=32),
+            rs2=Bits(uint=rs2_reg, length=32),
+            rd=Bits(uint=rd_reg, length=32),
+            wdat=[Bits(uint=0, length=32) for _ in range(pipeline_rf.threads_per_warp)],
+            opcode=opcode,
+            predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
+            target_bank=rd_reg % 2,
+            imm=imm_test_value if isinstance(opcode, I_Op) else None
+        )
+        pc += 4
+
+        instruction_list.append(instr)
+
+
+    # 5. Run Simulation
+    # ---------------------------------------------------------
+    def run_sim(start, cycles, instr: None):
+        for cycle in range(start, start + cycles):
+            print(f"\n=== Cycle {cycle} ===")
+
+            wb_stage.tick()
+            memStage.compute()
+            dCache.compute()
+            ex_stage.tick()
+            ex_stage.compute()
+            issue_stage.compute(instr)
+
+            print_latch_states(all_latches, all_forwarding, cycle, "after")
+    
+    start_cycle = 0
+    original_stdout = sys.stdout
+    with open("seqTest_dcache_is_ex_wb_rf", "w") as f:
+        sys.stdout = f
+        # Feed instructions
+        for idx, instr in enumerate(instruction_list):
+            run_sim(start_cycle, 1, instr)
+            start_cycle += 1
+
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+
+        run_sim(start_cycle, 1, None)
+        start_cycle += 1
+
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+
+        run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+
+    # 6. Verify Results
+    # ---------------------------------------------------------
+    sys.stdout = original_stdout
+    regs_to_check = [20, 22]
+    passed = compare_register_files(
+        pipeline_rf=pipeline_rf,
+        golden_rf=golden_rf,
+        warp_id=warp_id,
+        reg_list=regs_to_check,
+        verbose=True
+    )
+
+    with open("rf_dump", "w") as f:
+        sys.stdout = f
+        print("\nVerifying Register File State...")
+        pipeline_rf.dump()
+        golden_rf.dump()
+
+    sys.stdout = original_stdout
+    if passed:
+        print("\n✅ SUCCESS: All register values match golden model.")
+        return len(instruction_list), 0
+    else:
+        print("\n❌ FAILURE: Mismatches detected in register file.")
+        return 0, 1
 
 
 if __name__ == "__main__":
-    test_all_operations()
+    passed, failed = test_all_operations()
+    exit(0 if failed == 0 else 1)
