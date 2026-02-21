@@ -1,19 +1,17 @@
-#include "graphics_lib.h"
-#include <vector>
+#ifndef RASTERIZER_H
+
+#include <array>
 #include <iostream>
 #include <queue>
 
 class Rasterizer {
 private:
-	std::queue<Triangle*> jobs;
+	std::queue<int> indices;
 public:
-	Rasterizer(std::vector<Triangle>* triangles = NULL
-		, int msaa = 0, int w = 1280, int h = 720, int near = 1, int far = 10)
-	{
-		if (&triangles != NULL) {
-			for (int i = 0; i < (*triangles).size(); i++) {
-				jobs.push(&(*triangles)[i]); //Holy type conversion
-			}
-		}
-	}
+
+	void addTriangle(std::array<int, 3> tri);
+
+	Rasterizer(int msaa = 0, int w = 1280, int h = 720, int nearPlane = 1, int farPlane = 10);
 };
+
+#endif

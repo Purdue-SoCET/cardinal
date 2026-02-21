@@ -1,4 +1,4 @@
-#ifndef graphics_lib.h
+#ifndef GRAPHICS_LIB_H
 
 #include <array>
 #include <iostream>
@@ -77,62 +77,16 @@ class Projector {
 private:
 	int width;
 	int height;
-	int near;
-	int far;
+	int nearPlane;
+	int farPlane;
 	float aspect;
 public:
-	void toNearPlane(Triangle* tri) {
-		std::array<Vertex*, 3> vertices = { &tri->A, &tri->B, &tri->C };
+	void toNearPlane(Triangle* tri);
+	void toNDC(Triangle* tri);
+	void depth(Triangle* tri);
+	void toScreenSpace(Triangle* tri);
 
-		for (int i = 0; i < 3; i++) {
-			float x = vertices[i]->point.x;
-			float y = vertices[i]->point.y;
-			float z = vertices[i]->point.z;
-
-			vertices[i]->point.x = (x * near) / (-z);
-			vertices[i]->point.y = (y * near) / (-z);
-		}
-	}
-	void toNDC(Triangle* tri) {
-		std::array<Vertex*, 3> vertices = { &tri->A, &tri->B, &tri->C };
-
-		for (int i = 0; i < 3; i++) {
-			float x = vertices[i]->point.x;
-			float y = vertices[i]->point.y;
-
-			vertices[i]->point.x = x / (near * aspect);
-			vertices[i]->point.y = y / near;
-		}
-	}
-	void depth(Triangle* tri) {
-		std::array<Vertex*, 3> vertices = { &tri->A, &tri->B, &tri->C };
-
-		for (int i = 0; i < 3; i++) {
-			float z = vertices[i]->point.z;
-
-			vertices[i]->point.z = (-(far + near) / ((far - near) * z)) - ((2 * near * far) / (near - far));
-		}
-	}
-	void toScreenSpace(Triangle* tri) {
-		std::array<Vertex*, 3> vertices = { &tri->A, &tri->B, &tri->C };
-
-		for (int i = 0; i < 3; i++) {
-			f16Vector2 ndc = vertices[i]->point.toVec2f16();
-
-			ndc.x = (ndc.x + 1) * 0.5 * width;
-			ndc.y = (ndc.y + 1) * 0.5 * height;
-
-			vertices[i]->setScreenSpacePoint(ndc);
-		}
-	}
-
-	Projector(int w = 1280, int h = 720, int near = 1, int far = 10) {
-		this->width = w;
-		this->near = near;
-		this->height = h;
-		this->far = far;
-		this->aspect = float(w) / float(h);
-	}
+	Projector(int w = 1280, int h = 720, int nearPlane = 1, int farPlane = 10);
 
 };
 
