@@ -129,7 +129,7 @@ After running above you can run rasterEngine.showScreen() and it will show you y
 
 rasterEngine = Rasterizer(
     vs, col1, col2, col3,
-    u = u, v = v, tex_id = tex_id
+    u = u, v = v, tex_id = tex_id, msaa=2
 )
  #defaults to 720p, msaa = 0, near = 1, far = 10
 
