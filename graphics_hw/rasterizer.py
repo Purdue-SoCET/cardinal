@@ -9,15 +9,16 @@ class Rasterizer():
     def getNDC(self, vertex : Vertex):
         near_point = self.projector.toNearPlane(vertex)
         ndc : Vertex = self.projector.toNDC(near_point)
-        ndc.z = self.projector.depth(ndc)
         return ndc
 
     def project(self, vert):
         #Convert to NDC
         ndc = self.getNDC(vert)
+        out = self.projector.toScreenSpace(ndc)
+        out.z = self.projector.depth(out)
 
         #Convert to screen space
-        return self.projector.toScreenSpace(ndc)
+        return out
 
     def edge(self, a, b, x, y):
         return (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x)
@@ -220,6 +221,7 @@ class Rasterizer():
                         
                         accumu = ss_tri.A.u * edge1 + ss_tri.B.u * edge2 + ss_tri.C.u * edge3
                         accumv = ss_tri.A.v * edge1 + ss_tri.B.v * edge2 + ss_tri.C.v * edge3
+                        w = ss_tri.A.w * edge1 + ss_tri.B.w * edge2 + ss_tri.C.w * edge3
 
                         if (pass0 and not pass1):
                             accum1 = ss_tri.A.R * e0_1 + ss_tri.B.R * e0_2 + ss_tri.C.R * e0_3
@@ -227,15 +229,17 @@ class Rasterizer():
                             accum3 = ss_tri.A.B * e0_1 + ss_tri.B.B * e0_2 + ss_tri.C.B * e0_3
                             accumu = ss_tri.A.u * e0_1 + ss_tri.B.u * e0_2 + ss_tri.C.u * e0_3
                             accumv = ss_tri.A.v * e0_1 + ss_tri.B.v * e0_2 + ss_tri.C.v * e0_3
+                            w = ss_tri.A.w * e0_1 + ss_tri.B.w * e0_2 + ss_tri.C.w * e0_3
                         elif (not pass0 and pass1):
                             accum1 = ss_tri.A.R * e1_1 + ss_tri.B.R * e1_2 + ss_tri.C.R * e1_3
                             accum2 = ss_tri.A.G * e1_1 + ss_tri.B.G * e1_2 + ss_tri.C.G * e1_3
                             accum3 = ss_tri.A.B * e1_1 + ss_tri.B.B * e1_2 + ss_tri.C.B * e1_3
                             accumu = ss_tri.A.u * e1_1 + ss_tri.B.u * e1_2 + ss_tri.C.u * e1_3
                             accumv = ss_tri.A.v * e1_1 + ss_tri.B.v * e1_2 + ss_tri.C.v * e1_3
+                            w = ss_tri.A.w * e1_1 + ss_tri.B.w * e1_2 + ss_tri.C.w * e1_3
 
-                        self.uv_buffer[y][j][0] = accumu
-                        self.uv_buffer[y][j][1] = accumv
+                        self.uv_buffer[y][j][0] = accumu / w
+                        self.uv_buffer[y][j][1] = accumv / w
 
                         if (pass0):
                             self.z_buffer[y][j][0] = z0
@@ -345,14 +349,15 @@ class Rasterizer():
                         continue
 
                     z = ss_tri.A.z * edge1 + ss_tri.B.z * edge2 + ss_tri.C.z * edge3
+                    w = ss_tri.A.w * edge1 + ss_tri.B.w * edge2 + ss_tri.C.w * edge3
 
                     if ((edge1 + check1 >= 0) and (edge2 + check2 >= 0) and (edge3 + check3 >= 0) and z <= self.z_buffer[y][j][0]):
                         self.screen[y][j][0] = ss_tri.A.R * edge1 + ss_tri.B.R * edge2 + ss_tri.C.R * edge3
                         self.screen[y][j][1] = ss_tri.A.G * edge1 + ss_tri.B.G * edge2 + ss_tri.C.G * edge3
                         self.screen[y][j][2] = ss_tri.A.B * edge1 + ss_tri.B.B * edge2 + ss_tri.C.B * edge3
                         self.sampleId_buffer[y][j] = self.tex_ids[i]
-                        self.uv_buffer[y][j][0] = ss_tri.A.u * edge1 + ss_tri.B.u * edge2 + ss_tri.C.u * edge3
-                        self.uv_buffer[y][j][1] = ss_tri.A.v * edge1 + ss_tri.B.v * edge2 + ss_tri.C.v * edge3
+                        self.uv_buffer[y][j][0] = (ss_tri.A.u * edge1 + ss_tri.B.u * edge2 + ss_tri.C.u * edge3) / w
+                        self.uv_buffer[y][j][1] = (ss_tri.A.v * edge1 + ss_tri.B.v * edge2 + ss_tri.C.v * edge3) / w
 
                         self.z_buffer[y][j][0] = z
 
