@@ -5,15 +5,51 @@
 #include <iostream>
 #include <queue>
 
-class Rasterizer {
+class Fetch {
 private:
 	std::queue<std::array<int, 3>> indices;
-	int msaa;
 public:
 
 	void addTriangle(std::array<int, 3> tri);
+	std::array<std::array<int, 3>, 2> forward(std::array<int, 3> tri);
 
-	Rasterizer(int msaa = 0);
+	Fetch();
+
+};
+
+class BoundingBox {
+private:
+	std::queue<std::array<int, 3>> indices;
+public:
+
+	BoundingBox();
+
+};
+
+class Dispatch {
+private:
+	std::queue<std::array<int, 3>> indices;
+public:
+
+	Dispatch();
+
+};
+
+class PreEdge {
+private:
+	std::queue<std::array<int, 3>> indices;
+public:
+
+	PreEdge();
+
+};
+
+class EdgeTest {
+private:
+	std::queue<std::array<int, 3>> indices;
+public:
+
+	EdgeTest();
 
 };
 
