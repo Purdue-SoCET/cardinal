@@ -35,29 +35,34 @@ col3 = [c3, c2]
 
 #I recommend sticking to this test case. It's relatively simple while also testing z and top left rule well enough.
 #The test above is extremely strict for msaa, even hardware is expected to fail it at lower resolutions with msaa. Use at your own discretion.
-# vs = [[[-0.8, -0.6, -2], [0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 1
-#       [[-1.4, -0.4, -2], [-0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 2
-#       [[0.8, -0.6, -2], [1.4, 0.4, -2], [0, 0.6, -2]]] #triangle 3
 
-# col1 = [[1,1,1], [1,1,1], [1,1,1]]
-# col2 = [[1,1,1], [1,1,1], [1,1,1]]
-# col3 = [[1,1,1], [1,1,1], [1,1,1]]
+vs = [[[-0.8, -0.6, -2], [0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 1
+      [[-1.4, -0.4, -2], [-0.8, -0.6, -2], [0.0, 0.6, -2]], #triangle 2
+      [[0.8, -0.6, -2], [1.4, 0.4, -2], [-0.4, 1, -3]]] #triangle 3
+
+col1 = [[1,0,0], [0,0,1], [1,1,1]]
+col2 = [[0,1,0], [0,1,0], [1,1,1]]
+col3 = [[0,0,1], [1,0,0], [1,1,1]]
+
+u = [[0,0,1],[0,1,0],[1,0,0]]
+v = [[0,1,1],[1,1,0],[1,0,1]]
+tex_id = [1,1,1]
 
 
 
 #Test case for texture mapping
 
-vs = [[[-1.5, 1, -7], [-1.5, -1, -2], [1.5, -1, -2]], #triangle 1
-        [[-1.5, 1, -7], [1.5, 1, -7], [1.5, -1, -2]]] #triangle 2
+# vs = [[[-1.5, 1, -7], [-1.5, -1, -2], [1.5, -1, -2]], #triangle 1
+#         [[-1.5, 1, -7], [1.5, 1, -7], [1.5, -1, -2]]] #triangle 2
 
-tex_id = [1,1,1]
+# tex_id = [1,1,1]
 
-u = [[0,0,1], [0,1,1]]
-v = [[0,1,1],[0,0,1]]
+# u = [[0,0,1], [0,1,1]]
+# v = [[0,1,1],[0,0,1]]
 
-col1 = [[1,1,1], [1,1,1]]
-col2 = [[1,1,1], [1,1,1]]
-col3 = [[1,1,1], [1,1,1]]
+# col1 = [[1,1,1], [1,1,1]]
+# col2 = [[1,1,1], [1,1,1]]
+# col3 = [[1,1,1], [1,1,1]]
 
 
 '''
@@ -129,7 +134,7 @@ After running above you can run rasterEngine.showScreen() and it will show you y
 
 rasterEngine = Rasterizer(
     vs, col1, col2, col3,
-    u = u, v = v, tex_id = tex_id, msaa=2
+    u = u, v = v, tex_id = tex_id, msaa=0
 )
  #defaults to 720p, msaa = 0, near = 1, far = 10
 
