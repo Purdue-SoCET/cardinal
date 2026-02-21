@@ -1,0 +1,2050 @@
+here /home/shay/a/sing1018/Desktop/SoCET_GPU_FuncSim/gpu/gpu
+
+Comprehensive Pipeline Test - Continuous Stream Mode
+------------------------------------------------------------
+Computing golden reference...
+
+Starting pipeline simulation...
+All instructions issued. Flushing pipeline...
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: None
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4096, 'size': 4, 'uuid': 1024, 'pc': 4096, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4096, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 40184080
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4096, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x80401840'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1000
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 0, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 1, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 2, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 3, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4096
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4096, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 4, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 40184080
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 3, 'warp_id': 5, 'pc': 4096}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4100, 'size': 4, 'uuid': 1025, 'pc': 4100, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4100, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4100, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1004
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4100
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4100, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4100}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4104, 'size': 4, 'uuid': 1026, 'pc': 4104, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4104, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4104, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1008
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4104
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4104, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4104}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4108, 'size': 4, 'uuid': 1027, 'pc': 4108, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4108, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4108, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x100C
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4108
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4108, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4108}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4112, 'size': 4, 'uuid': 1028, 'pc': 4112, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4112, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4112, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1010
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4112
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4112, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4112}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4116, 'size': 4, 'uuid': 1029, 'pc': 4116, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4116, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4116, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1014
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4116
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4116, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4116}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4120, 'size': 4, 'uuid': 1030, 'pc': 4120, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4120, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4120, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1018
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4120
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4120, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4120}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4124, 'size': 4, 'uuid': 1031, 'pc': 4124, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4124, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4124, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x101C
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4124
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4124, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4124}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4128, 'size': 4, 'uuid': 1032, 'pc': 4128, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4128, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4128, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1020
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4128
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4128, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback giControl: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4128}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4132, 'size': 4, 'uuid': 1033, 'pc': 4132, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4132, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4132, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1024
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4132
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4132, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=5, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  5 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[I$] Memrequest ACCEPTED by Memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 5, 'pc': 4132}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 0
+[MemController] Starting MemReq {'addr': 4136, 'size': 4, 'uuid': 1034, 'pc': 4136, 'warp': 0, 'warpGroup': 0, 'inst': Instruction(pc=4136, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None), 'src': 'icache', 'warp_id': 0, 'warp_group_id': 0}
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[ICache] Received request: None
+[I$] waiting on memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+[Scheduler] MISS in ICache, STALLING.
+[Decode] Received nothing valid yet!
+[MemController] compute: inflight = 1
+[Memory] Returning data: 00000000
+[ICache] Received request: None
+[I$] Recieved Response from Memory: Instruction(pc=4136, warp_id=0, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=Bits('0x00000000'), issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[ICache] FILL complete: pc=0x1028
+[I$] Returned value from memory
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 0}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 1, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=0, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  0 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=1, warp_group_id=0, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 0, 'pc': 4136}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 2, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=1, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  1 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=2, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 1, 'pc': 4136}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 1, 3, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=2, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  2 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=3, warp_group_id=1, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 2, 'pc': 4136}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 4, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=3, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  3 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=4, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 3, 'pc': 4136}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 2, 5, 4136
+[Scheduler] Pushing inst to ahead latch
+[Decode]: Received Raw Instruction Data: 00000000
+[Decode] Initiating PRF Read PredRequest(rd_en=1, rd_wrp_sel=4, rd_pred_sel=0, prf_neg=0, remaining=1)
+[PRF] Reading PRF:  4 0 0
+[PRF] Got: [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+[MemController] compute: inflight = 0
+[ICache] Received request: Instruction(pc=4136, warp_id=5, warp_group_id=2, intended_FU=None, rs1=None, rs2=None, rd=None, src_pred=None, dest_pred=None, predicate=None, opcode=None, imm=None, packet=None, issued_cycle=None, wb_cycle=None, target_bank=None, rdat1=[], rdat2=[], wdat=[], stage_entry={}, stage_exit={}, fu_entries=[], num_operands=None)
+[SchedulerStage] Warp Issue Check, Decode Control: {'type': 2, 'warp_id': 4, 'pc': 4136}
+[SchedulerStage] Warp Issue Check, Issue Control: [0, 0, 0]
+[SchedulerStage] Warp Issue Check, Branch Control: None
+[SchedulerStage] Warp Issue Check, Writeback Control: None
+3
+[Scheduler] Issuing an instruction for 0, 0, 4140
+[Scheduler] Pushing inst to ahead latch
+Pipeline flush complete.
+
+Verifying Register File State...
+
+❌ Found 32 mismatches:
+  Reg[1][0]: Pipe=0 Gold=10
+  Reg[1][1]: Pipe=0 Gold=10
+  Reg[1][2]: Pipe=0 Gold=10
+  Reg[1][3]: Pipe=0 Gold=10
+  Reg[1][4]: Pipe=0 Gold=10
+  Reg[1][5]: Pipe=0 Gold=10
+  Reg[1][6]: Pipe=0 Gold=10
+  Reg[1][7]: Pipe=0 Gold=10
+  Reg[1][8]: Pipe=0 Gold=10
+  Reg[1][9]: Pipe=0 Gold=10
+  Reg[1][10]: Pipe=0 Gold=10
+  Reg[1][11]: Pipe=0 Gold=10
+  Reg[1][12]: Pipe=0 Gold=10
+  Reg[1][13]: Pipe=0 Gold=10
+  Reg[1][14]: Pipe=0 Gold=10
+  Reg[1][15]: Pipe=0 Gold=10
+  Reg[1][16]: Pipe=0 Gold=10
+  Reg[1][17]: Pipe=0 Gold=10
+  Reg[1][18]: Pipe=0 Gold=10
+  Reg[1][19]: Pipe=0 Gold=10
+  Reg[1][20]: Pipe=0 Gold=10
+  Reg[1][21]: Pipe=0 Gold=10
+  Reg[1][22]: Pipe=0 Gold=10
+  Reg[1][23]: Pipe=0 Gold=10
+  Reg[1][24]: Pipe=0 Gold=10
+  Reg[1][25]: Pipe=0 Gold=10
+  Reg[1][26]: Pipe=0 Gold=10
+  Reg[1][27]: Pipe=0 Gold=10
+  Reg[1][28]: Pipe=0 Gold=10
+  Reg[1][29]: Pipe=0 Gold=10
+  Reg[1][30]: Pipe=0 Gold=10
+  Reg[1][31]: Pipe=0 Gold=10
+
+================================================================================
+                            REGISTER FILE FULL DUMP                             
+================================================================================
+
+[ Warp 0 ]
+--------------------------------------------------------------------------------
+  R0  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R1  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R2  (INT):
+    T00-T07:          5          5          5          5          5          5          5          5
+    T08-T15:          5          5          5          5          5          5          5          5
+    T16-T23:          5          5          5          5          5          5          5          5
+    T24-T31:          5          5          5          5          5          5          5          5
+
+  R3  (INT):
+    T00-T07:          5          5          5          5          5          5          5          5
+    T08-T15:          5          5          5          5          5          5          5          5
+    T16-T23:          5          5          5          5          5          5          5          5
+    T24-T31:          5          5          5          5          5          5          5          5
+
+  R4  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R5  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R6  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R7  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R8  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R9  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R10 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R11 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R12 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R13 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R14 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R15 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R16 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R17 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R18 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R19 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R20 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R21 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R22 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R23 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R24 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R25 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R26 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R27 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R28 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R29 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R30 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R31 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R32 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R33 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R34 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R35 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R36 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R37 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R38 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R39 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R40 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R41 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R42 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R43 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R44 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R45 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R46 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R47 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R48 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R49 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R50 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R51 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R52 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R53 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R54 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R55 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R56 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R57 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R58 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R59 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R60 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R61 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R62 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R63 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+================================================================================
+
+
+================================================================================
+                            REGISTER FILE FULL DUMP                             
+================================================================================
+
+[ Warp 0 ]
+--------------------------------------------------------------------------------
+  R0  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R1  (INT):
+    T00-T07:         10         10         10         10         10         10         10         10
+    T08-T15:         10         10         10         10         10         10         10         10
+    T16-T23:         10         10         10         10         10         10         10         10
+    T24-T31:         10         10         10         10         10         10         10         10
+
+  R2  (INT):
+    T00-T07:          5          5          5          5          5          5          5          5
+    T08-T15:          5          5          5          5          5          5          5          5
+    T16-T23:          5          5          5          5          5          5          5          5
+    T24-T31:          5          5          5          5          5          5          5          5
+
+  R3  (INT):
+    T00-T07:          5          5          5          5          5          5          5          5
+    T08-T15:          5          5          5          5          5          5          5          5
+    T16-T23:          5          5          5          5          5          5          5          5
+    T24-T31:          5          5          5          5          5          5          5          5
+
+  R4  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R5  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R6  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R7  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R8  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R9  (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R10 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R11 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R12 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R13 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R14 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R15 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R16 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R17 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R18 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R19 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R20 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R21 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R22 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R23 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R24 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R25 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R26 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R27 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R28 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R29 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R30 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R31 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R32 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R33 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R34 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R35 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R36 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R37 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R38 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R39 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R40 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R41 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R42 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R43 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R44 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R45 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R46 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R47 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R48 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R49 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R50 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R51 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R52 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R53 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R54 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R55 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R56 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R57 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R58 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R59 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R60 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R61 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R62 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+  R63 (INT):
+    T00-T07:          0          0          0          0          0          0          0          0
+    T08-T15:          0          0          0          0          0          0          0          0
+    T16-T23:          0          0          0          0          0          0          0          0
+    T24-T31:          0          0          0          0          0          0          0          0
+
+================================================================================
+
+
+❌ FAILURE: Mismatches detected in register file.
