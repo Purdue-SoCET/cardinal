@@ -1,4 +1,5 @@
 #ifndef RASTERIZER_H
+#define RASTERIZER_H
 
 #include <array>
 #include <iostream>
@@ -6,12 +7,14 @@
 
 class Rasterizer {
 private:
-	std::queue<int> indices;
+	std::queue<std::array<int, 3>> indices;
+	int msaa;
 public:
 
 	void addTriangle(std::array<int, 3> tri);
 
-	Rasterizer(int msaa = 0, int w = 1280, int h = 720, int nearPlane = 1, int farPlane = 10);
+	Rasterizer(int msaa = 0);
+
 };
 
 #endif

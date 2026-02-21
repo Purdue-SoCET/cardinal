@@ -1,4 +1,5 @@
 #ifndef GRAPHICS_LIB_H
+#define GRAPHICS_LIB_H
 
 #include <array>
 #include <iostream>
@@ -46,7 +47,7 @@ struct Vertex{
 	fVector3 point;
 	f16Vector2 screenSpacePoint;
 
-	Vertex(fVector3 point, float u = -1, float v = -1, std::array<int, 3> c = { -1,-1,-1 }) :
+	Vertex(fVector3 point = fVector3{}, float u = -1, float v = -1, std::array<int, 3> c = { -1,-1,-1 }) :
 		point(point), u(u), v(v), color(c) {}
 
 	Vertex* floor() {
@@ -69,8 +70,11 @@ struct Vertex{
 struct Triangle {
 	Vertex A, B, C;
 
-	Triangle(Vertex A, Vertex B, Vertex C) :
+	Triangle(Vertex A = Vertex{}, Vertex B = Vertex{}, Vertex C = Vertex{}) :
 		A(A), B(B), C(C) {}
+
+	Triangle(std::array<Vertex, 3> tri) :
+		A(tri[0]), B(tri[1]), C(tri[2]) {}
 };
 
 class Projector {
