@@ -171,6 +171,12 @@ def test_all_operations():
         num_preds_per_warp=16,
         num_warps=16
     )
+    
+    # Initialize all predicate registers to 1 (all threads active)
+    for warp in range(16):
+        for pred in range(16 * 2):  # num_preds_per_warp * 2
+            for neg in range(2):  # both positive and negative versions
+                prf.reg_file[warp][pred][neg] = [True] * 32  # all 32 threads active
 
     decode_stage = DecodeStage(
         name="Decode Stage",
