@@ -3,6 +3,7 @@ from time import perf_counter
 import numpy as np
 from PIL import Image
 from texture_unit import  texture_unit
+import matplotlib.pyplot as plt
 
 '''
 v0 = (-0.8, -0.8, -2)  # bottom left
@@ -52,8 +53,8 @@ col3 = [c3, c2]
 
 #Test case for texture mapping
 
-vs = [[[-1.5, 1, -7], [-1.5, -1, -2], [1.5, -1, -2]], #triangle 1
-        [[-1.5, 1, -7], [1.5, 1, -7], [1.5, -1, -2]]] #triangle 2
+vs = [[[-1.5, 1, -1], [-1.5, -1, -1], [1.5, -1, -1]], #triangle 1
+        [[-1.5, 1, -1], [1.5, 1, -1], [1.5, -1, -1]]] #triangle 2
 
 tex_id = [1,1,1]
 
@@ -155,7 +156,20 @@ rasterEngine.render()
 end = perf_counter()
 
 
-out = tex_unit.tex_map(rasterEngine.getUV(),rasterEngine.getSamples())
+out = tex_unit.tex_map(rasterEngine.getUV(),rasterEngine.getSamples(), mode = 1)
+
+
+# code for rendering teapot, comment out raster engine calls to use this
+# teapot_uv = np.load("teapot.npy")
+# condition = np.any(teapot_uv != 0, axis=-1)
+# mask_array = np.where(condition, 1, -1)
+#
+# out = tex_unit.tex_map(teapot_uv, mask_array, mode = 0)
+#
+# plt.imshow(out)
+# plt.axis("off")
+# plt.show()
+
 
 rasterEngine.applyTextures(out)
 
