@@ -214,7 +214,7 @@ class WarpGroup:
     last_issue_even: bool = False
     finished_packet: bool = False
     in_flight: int = 0
-    state: WarpState = WarpState.READY
+    state: WarpState = WarpState.HALT
 
 @dataclass
 class Instruction:

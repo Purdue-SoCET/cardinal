@@ -9,9 +9,10 @@ gpu_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_root))
 print("here", gpu_root)
 from simulator.base_class import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
+from csrtable import CsrTable
 
 class SchedulerStage(Stage):
-    def __init__(self, *args, start_pc, warp_count: int = 32, warp_size: int = 32, policy: str = "RR", **kwargs):
+    def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: int = 32, policy: str = "RR", **kwargs):
         super().__init__(*args, **kwargs)
 
         # static shit
@@ -20,9 +21,11 @@ class SchedulerStage(Stage):
         self.warp_size: int = warp_size
         self.at_barrier: int = 0
         self.policy: str = policy
+        self.csrtable: CsrTable = csrtable
 
         # warp table
-        self.warp_table: List[WarpGroup] = [WarpGroup(pc=start_pc, group_id=id) for id in range(self.num_groups)]
+        self.warp_table: List[WarpGroup] = [WarpGroup(pc=0, group_id=id) for id in range(self.num_groups)]
+        self.warp_init: int = 0
 
         # oldest queue
         self.oldest: List[WarpGroup] = []
@@ -30,6 +33,7 @@ class SchedulerStage(Stage):
         # scheduler bookkeeping
         self.rr_index: int = 0
         self.current_warp: int = 0
+        self.free_warp: int = 0
         # self.max_issues_per_cycle: int = 1
         # self.ready_queue = deque(range(warp_count))
 
@@ -38,7 +42,8 @@ class SchedulerStage(Stage):
 
         # could add perf counters
         self.stop_fetching = False
-    
+
+    ####### HELPER CLASSES
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
@@ -86,12 +91,12 @@ class SchedulerStage(Stage):
                 self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
                 self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
 
-    # might not need
+    # creating instruction class
     def make_instruction(self, group, warp, pc):
         inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group)
         return inst 
     
-    # might not need
+    # pushing to latch
     def push_instruction(self, inst):
         if self.ahead_latch.ready_for_push:
             print(f"[Scheduler] Pushing inst to ahead latch")
@@ -102,14 +107,21 @@ class SchedulerStage(Stage):
             return False 
 
     # might not need 
-    def dummy_tbs_pop(self):
+    def tbs_init(self):
         if not self.behind_latch.valid:
-            return None
-        req = self.behind_latch.pop()
-        print(f"[{self.name}] Popped from TBS latch: {req}")
-        return req
+            return
 
-    # RETURN INSTRUCTION OBJECT ALWAYS
+        # TODO: simulate (num warps + (2 or 1 depending on how tbs works) cycles to init)
+        tb_id, tb_size, start_pc = self.behind_latch.pop()
+        base_id = 0
+
+        for _ in range(tb_size % self.warp_size):
+            self.warp_table[self.free_warp].pc = start_pc
+            self.warp_table[self.free_warp].state = WarpState.READY
+            self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
+            base_id += self.warp_size
+
+    # round robin policy
     def round_robin(self):
         for tries in range(self.num_groups):
             print(len(self.warp_table))
@@ -149,8 +161,7 @@ class SchedulerStage(Stage):
         # nothing can fetch here
         return # NONE
 
-
-    ############### RETURN INSTRUCTION OBJECT ALWAYS WIP
+    ############### greedy policy WIP
     def greedy_oldest(self):
         # initialize instruction class
         instr = Instruction(None, None, None, None, None, None, None, None, None)
@@ -188,8 +199,15 @@ class SchedulerStage(Stage):
         # nothing
         return instr
     
-    # PURE ROUND ROBIN RIGHT NOW, NEED TO FIND THE RR_INDEX
+    # warp scheduler compute method
     def compute(self):
+        # nothing on the sm LOL
+        if not self.warp_table:
+            return
+        
+        # init from TBS if needed
+        self.tbs_init()
+
         # determining next states
         self.collision()
 

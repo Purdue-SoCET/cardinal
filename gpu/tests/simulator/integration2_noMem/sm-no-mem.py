@@ -447,8 +447,6 @@ def test_all_operations():
         return 0, 1
 
 
-
-
 if __name__ == "__main__":
     passed, failed = test_all_operations()
     exit(0 if failed == 0 else 1)
