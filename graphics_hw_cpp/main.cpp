@@ -65,8 +65,11 @@ int main()
 
 	for (int i = 0; i < numTri; i++) { //Triangle loop.
 		projector.toNearPlane(&tris[i]);
+		tris[i].update();
 		projector.toNDC(&tris[i]);
+		tris[i].update();
 		projector.toScreenSpace(&tris[i]);
+		tris[i].update();
 		projector.depth(&tris[i]);
 		tris[i].update(); //Make sure updated A B C vertices reflect everywhere in struct.
 
@@ -84,6 +87,7 @@ int main()
 	Status FE_BB = Status();
 	BoundingBox bounding_box = BoundingBox(&clk);
 	Status BB_DP = Status();
+
 	std::array<std::array<int, 3>, 2> batch;
 	batch[0] = { -1,-1,-1 };
 	batch[1] = { -1,-1,-1 };
@@ -108,8 +112,12 @@ int main()
 			bb_batch[0][0].print(); //From triangle 1 get min.
 			bb_batch[0][1].print(); //From triangle 1 get max.
 
+			std::cout << "\n";
+
 			bb_batch[1][0].print(); //From triangle 2 get min.
 			bb_batch[1][1].print(); //From triangle 2 get max.
+
+			std::cout << "\n";
 
 			offset++;
 			offset++;
@@ -117,6 +125,8 @@ int main()
 
 		clk.edge();
 	}
+
+	std::cout << "Cycles: " << clk.cycle << "\n";
 
 	return 0;
 }

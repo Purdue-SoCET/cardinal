@@ -80,7 +80,6 @@ std::array<std::array<int, 3>, 2> BoundingBox::forward(Status* BB_DP, Status* FE
 		BB_DP->valid = 1;
 		return out;
 	}
-	else if (BB_DP->ready && this->clk->isComb()) return out;
 
 	BB_DP->valid = 0;
 	return out;
