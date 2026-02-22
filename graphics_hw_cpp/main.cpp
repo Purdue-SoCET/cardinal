@@ -65,11 +65,8 @@ int main()
 
 	for (int i = 0; i < numTri; i++) { //Triangle loop.
 		projector.toNearPlane(&tris[i]);
-		tris[i].update();
 		projector.toNDC(&tris[i]);
-		tris[i].update();
 		projector.toScreenSpace(&tris[i]);
-		tris[i].update();
 		projector.depth(&tris[i]);
 		tris[i].update(); //Make sure updated A B C vertices reflect everywhere in struct.
 
@@ -116,7 +113,8 @@ int main()
 
 			bb_batch[1][0].print(); //From triangle 2 get min.
 			bb_batch[1][1].print(); //From triangle 2 get max.
-
+			
+			std::cout << "Cycles: " << clk.cycle << "\n";
 			std::cout << "\n";
 
 			offset++;
@@ -125,8 +123,6 @@ int main()
 
 		clk.edge();
 	}
-
-	std::cout << "Cycles: " << clk.cycle << "\n";
 
 	return 0;
 }
