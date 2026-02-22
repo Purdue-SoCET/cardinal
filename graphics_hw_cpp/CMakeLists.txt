@@ -15,6 +15,14 @@ include_directories("include")
 # Add source to this project's executable.
 add_executable (CMakeProject1 "main.cpp"  "include/graphics_lib.hpp" "include/rasterizer.hpp" "projector.cpp" "rasterizer.cpp" "include/vector_table.hpp" "vector_table.cpp")
 
+if(MSVC)
+    set_target_properties(CMakeProject1 PROPERTIES 
+        LINK_FLAGS "/SUBSYSTEM:CONSOLE /DEBUG:FULL /PROFILE"
+    )
+    # This ensures the compiler generates the actual data for the PDB
+    target_compile_options(CMakeProject1 PRIVATE /Zi)
+endif()
+
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET CMakeProject1 PROPERTY CXX_STANDARD 20)
 endif()

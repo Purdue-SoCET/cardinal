@@ -3,6 +3,7 @@
 #include "rasterizer.hpp"
 #include "hardware_lib.hpp"
 #include <vector>
+#include <chrono>
 
 using namespace std;
 
@@ -90,6 +91,8 @@ int main()
 	batch[1] = { -1,-1,-1 };
 	int offset = 0;
 
+	auto start = std::chrono::steady_clock::now();
+
 	for (int halfs = 0; halfs < MAX_CLK*2; halfs++) {
 		if (clk.cycle % 2 + offset >= indexBatches.size()) {
 			break;
@@ -123,6 +126,11 @@ int main()
 
 		clk.edge();
 	}
+
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> duration_seconds = end - start;
+	std::cout << "Time: " << duration_seconds << "\n";
+	//std::cin.get();
 
 	return 0;
 }
