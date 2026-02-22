@@ -6,8 +6,8 @@ Fetch::Fetch(Clock* clk) {
 	this->clk = clk;
 }
 
-std::array<std::array<int, 3>, 2> Fetch::forward(Status* FE_BB, std::array<std::array<int, 3>, 2> batch) {
-	std::array<std::array<int, 3>, 2> out;
+std::array<std::array<int16_t, 3>, 2> Fetch::forward(Status* FE_BB, std::array<std::array<int16_t, 3>, 2> batch) {
+	std::array<std::array<int16_t, 3>, 2> out;
 	out[0] = batch[0];
 	out[1] = batch[1];
 
@@ -41,7 +41,7 @@ std::array<std::array<int, 3>, 2> Fetch::forward(Status* FE_BB, std::array<std::
 	return out;
 }
 
-void Fetch::comb(Status* FE_BB, std::array<int, 3> tri) {
+void Fetch::comb(Status* FE_BB, std::array<int16_t, 3> tri) {
 	if (this->clk->isComb()) {
 		this->indices.push(tri);
 	}
@@ -52,8 +52,8 @@ BoundingBox::BoundingBox(Clock* clk) {
 	this->clk = clk;
 }
 
-std::array<std::array<int, 3>, 2> BoundingBox::forward(Status* BB_DP, Status* FE_BB, std::array<std::array<int, 3>, 2> batch) {
-	std::array<std::array<int, 3>, 2> out;
+std::array<std::array<int16_t, 3>, 2> BoundingBox::forward(Status* BB_DP, Status* FE_BB, std::array<std::array<int16_t, 3>, 2> batch) {
+	std::array<std::array<int16_t, 3>, 2> out;
 	out[0] = batch[0];
 	out[1] = batch[1];
 	FE_BB->ready = 1;
@@ -85,7 +85,7 @@ std::array<std::array<int, 3>, 2> BoundingBox::forward(Status* BB_DP, Status* FE
 	return out;
 }
 
-void BoundingBox::comb(Status* FE_BB, std::array<std::array<int, 3>, 2> tris, VectorTable* table) {
+void BoundingBox::comb(Status* FE_BB, std::array<std::array<int16_t, 3>, 2> tris, VectorTable* table) {
 	FE_BB->ready = 0;
 
 	if (FE_BB->valid && this->clk->isComb()) {

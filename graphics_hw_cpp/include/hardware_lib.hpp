@@ -1,12 +1,14 @@
 #ifndef HARDWARE_LIB_H
 #define HARDWARE_LIB_H
 
+#include <cstdint>
+
 class Clock {
 private:
-	int phase = 0; //0 is comb, 1 is push/latch
+	uint64_t phase = 0; //0 is comb, 1 is push/latch
 public:
-	int half = 0;
-	int cycle = 0;
+	uint64_t half = 0;
+	uint32_t cycle = 0;
 
 	void edge() {
 		(this->cycle) += isLatch();
@@ -26,8 +28,8 @@ public:
 };
 
 struct Status {
-	int valid = 0;
-	int ready = 1;
+	bool valid = 0;
+	bool ready = 1;
 };
 
 #endif // !HARDWARE_LIB_H

@@ -59,7 +59,7 @@ int main()
 	tris.push_back(t3);
 	tris.push_back(t4);
 
-	std::vector<std::array<int, 3>> indexBatches;
+	std::vector<std::array<int16_t, 3>> indexBatches;
 
 	Projector projector{};
 	VectorTable vector_table = VectorTable(48);
@@ -71,7 +71,7 @@ int main()
 		projector.depth(&tris[i]);
 		tris[i].update(); //Make sure updated A B C vertices reflect everywhere in struct.
 
-		std::array<int, 3> indices;
+		std::array<int16_t, 3> indices;
 		for (int j = 0; j < 3; j++) { //Vertices loop for table setup.
 			indices[j] = vector_table.addVertex(tris[i].vertices[j]);
 		}
@@ -80,13 +80,13 @@ int main()
 
 	//---------- CLOCK + STAGE GEN ----------
 	Clock clk = Clock{};
-	const int MAX_CLK = 100;
+	const uint32_t MAX_CLK = 100;
 	Fetch fetch = Fetch(&clk);
 	Status FE_BB = Status();
 	BoundingBox bounding_box = BoundingBox(&clk);
 	Status BB_DP = Status();
 
-	std::array<std::array<int, 3>, 2> batch;
+	std::array<std::array<int16_t, 3>, 2> batch;
 	batch[0] = { -1,-1,-1 };
 	batch[1] = { -1,-1,-1 };
 	int offset = 0;

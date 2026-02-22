@@ -25,7 +25,7 @@ void VectorTable::invalidateVertex(int handle) {
 	this->table[handle] = Vertex{};
 }
 
-Triangle VectorTable::getTriangle(std::array<int, 3> indices) {
+Triangle VectorTable::getTriangle(std::array<int16_t, 3> indices) {
 	std::array<Vertex, 3> tri;
 
 	for (int i = 0; i < 3; i++) {

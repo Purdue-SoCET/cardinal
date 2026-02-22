@@ -10,7 +10,7 @@ private:
 	Vertex* table = NULL;
 public:
 
-	Triangle getTriangle(std::array<int, 3> indices);
+	Triangle getTriangle(std::array<int16_t, 3> indices);
 	int addVertex(Vertex vertex);
 	void invalidateVertex(int handle);
 	Vertex* makeTable(int maxSize);
