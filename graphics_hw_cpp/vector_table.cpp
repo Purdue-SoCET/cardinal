@@ -1,5 +1,5 @@
-#include "vector_table.h"
-#include "graphics_lib.h"
+#include "vector_table.hpp"
+#include "graphics_lib.hpp"
 
 VectorTable::VectorTable(int maxSize) {
 	this->maxSize = maxSize;
@@ -18,7 +18,7 @@ int VectorTable::addVertex(Vertex vertex) {
 }
 
 Vertex* VectorTable::makeTable(int maxSize) {
-	return new Vertex[maxSize];
+	return new Vertex[maxSize]{};
 }
 
 void VectorTable::invalidateVertex(int handle) {
@@ -39,4 +39,8 @@ Triangle VectorTable::getTriangle(std::array<int, 3> indices) {
 	}
 
 	return Triangle(tri);
+}
+
+VectorTable::~VectorTable() {
+	delete[] this->table; // Free the memory when the class is destroyed
 }

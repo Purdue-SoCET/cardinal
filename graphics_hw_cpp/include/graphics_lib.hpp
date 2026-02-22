@@ -7,6 +7,9 @@
 using half_float::half;
 using namespace half_float::literal;
 
+const half HALF_MAX = std::numeric_limits<half_float::half>::max();
+const half HALF_MIN = std::numeric_limits<half_float::half>::lowest();
+
 struct f16Vector2 {
 	half x, y;
 
@@ -69,6 +72,39 @@ struct Vertex{
 
 struct Triangle {
 	Vertex A, B, C;
+	std::array<Vertex, 3> vertices = { this->A, this->B, this->C };
+
+	void update() {
+		this->vertices = { this->A, this->B, this->C };
+	}
+
+	f16Vector2 getMin() {
+		half minX = HALF_MAX;
+		half minY = HALF_MAX;
+		for (int i = 0; i < 3; i++) {
+			half currX = this->vertices[i].screenSpacePoint.x;
+			half currY = this->vertices[i].screenSpacePoint.y;
+
+			if (currX < minX) minX = currX;
+			if (currY < minY) minY = currY;
+		}
+
+		return f16Vector2(minX, minY);
+	}
+
+	f16Vector2 getMax() {
+		half maxX = HALF_MIN;
+		half maxY = HALF_MIN;
+		for (int i = 0; i < 3; i++) {
+			half currX = this->vertices[i].screenSpacePoint.x;
+			half currY = this->vertices[i].screenSpacePoint.y;
+
+			if (currX > maxX) maxX = currX;
+			if (currY > maxY) maxY = currY;
+		}
+
+		return f16Vector2(maxX, maxY);
+	}
 
 	Triangle(Vertex A = Vertex{}, Vertex B = Vertex{}, Vertex C = Vertex{}) :
 		A(A), B(B), C(C) {}

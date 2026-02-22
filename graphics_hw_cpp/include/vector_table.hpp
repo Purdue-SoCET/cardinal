@@ -2,7 +2,7 @@
 #define VECTOR_TABLE_H
 
 #include <array>
-#include "graphics_lib.h"
+#include "graphics_lib.hpp"
 
 class VectorTable {
 private:
@@ -16,7 +16,7 @@ public:
 	Vertex* makeTable(int maxSize);
 
 	VectorTable(int maxSize = 48);
-
+	~VectorTable();
 };
 
 #endif

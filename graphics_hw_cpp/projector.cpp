@@ -1,4 +1,4 @@
-#include "graphics_lib.h"
+#include "graphics_lib.hpp"
 
 void Projector::toNearPlane(Triangle* tri) {
 	std::array<Vertex*, 3> vertices = { &tri->A, &tri->B, &tri->C };
