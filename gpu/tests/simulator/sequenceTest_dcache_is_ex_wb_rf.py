@@ -13,7 +13,7 @@ from simulator.mem.dcache import LockupFreeCacheStage
 from simulator.mem.ld_st import Ldst_Fu
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
 from simulator.latch_forward_stage import *
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op
+from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op
 
 # CREATING ALL LATCHES
 # ---------------------------------------------------------
@@ -95,6 +95,64 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
 
     return len(mismatches) == 0
 
+def print_banks(dCache):
+    # --- 1. Calculate Bit Widths for Reconstruction ---
+    # Offset: 32 words * 4 bytes = 128 bytes -> 7 bits (usually)
+    offset_bits = int(math.log2(BLOCK_SIZE_WORDS * 4))
+    
+    # Bank Bits: log2(number of banks)
+    num_banks = len(dCache.banks)
+    bank_bits = int(math.log2(num_banks)) if num_banks > 1 else 0
+    
+    # Set Bits: log2(number of sets per bank)
+    num_sets = len(dCache.banks[0].sets)
+    set_bits = int(math.log2(num_sets))
+
+    # Calculate Shift Amounts (Assuming Addr Structure: [ Tag | Set | Bank | Offset ])
+    shift_bank = offset_bits
+    shift_set = offset_bits + bank_bits
+    shift_tag = offset_bits + bank_bits + set_bits
+    # --------------------------------------------------
+
+    for bank_id, bank in enumerate(dCache.banks):
+        print(f"\n======== Bank {bank_id} ========")
+        found_valid_line = False
+
+        for set_id, cache_set in enumerate(bank.sets):
+            set_has_valid_lines = any(frame.valid for frame in cache_set)
+
+            if set_has_valid_lines:
+                found_valid_line = True
+                print(f"  ---- Set {set_id} ----")
+
+                lru_list = bank.lru[set_id]
+                print(f"    LRU Order: {lru_list} (Front=MRU, Back=LRU)")
+
+                for way_id, frame in enumerate(cache_set):
+                    if frame.valid:
+                        tag_hex = f"0x{frame.tag:X}"
+                        dirty_str = "D" if frame.dirty else " "
+                        
+                        # --- 2. Reconstruct the Address ---
+                        # (Tag << shifts) | (Set << shifts) | (Bank << shifts)
+                        full_addr = (frame.tag << shift_tag) | (set_id << shift_set) | (bank_id << shift_bank)
+                        addr_hex = f"0x{full_addr:08X}" # Format as 8-digit Hex
+                        # ----------------------------------
+
+                        # Print Tag AND Address
+                        print(f"    [Way {way_id}] V:1 {dirty_str} Tag: {tag_hex:<6} (Addr: {addr_hex})")
+
+                        for i in range(0, BLOCK_SIZE_WORDS, 4):
+                            # FIX: Add '& 0xFFFFFFFF' to force unsigned 32-bit representation
+                            w0 = f"0x{(frame.block[i] & 0xFFFFFFFF):08X}"
+                            w1 = f"0x{(frame.block[i+1] & 0xFFFFFFFF):08X}"
+                            w2 = f"0x{(frame.block[i+2] & 0xFFFFFFFF):08X}"
+                            w3 = f"0x{(frame.block[i+3] & 0xFFFFFFFF):08X}"
+                            
+                            print(f"        Block[{i:02d}:{i+3:02d}]: {w0} {w1} {w2} {w3}")
+
+        if not found_valid_line:
+            print(f"  (Bank is empty)")
 
 def write_val_to_mem(filename: str, address: int, value: int):
     '''
@@ -287,7 +345,8 @@ def test_all_operations():
     test_addresses = {
         # Integer registers
         1: [i for i in range(0, 0x400, 32)],                                                                        # Reg 1: 0x0, 0x20, 0x40, ..., 0x3E0
-        2: [i for i in range(0x400, 0x800, 32)]                                                                     # Reg 2: 0x400, 0x420, 0x440, ..., 0x7E0
+        2: [i for i in range(0x400, 0x800, 32)],                                                                     # Reg 2: 0x400, 0x420, 0x440, ..., 0x7E0
+        3: [i for i in range(0x800, 0xC00, 32)]
     }
 
     imm_test_value = Bits(int=0, length=32)                                                                         # Immediate value for I-type instructions
@@ -300,7 +359,6 @@ def test_all_operations():
         
         pipeline_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)         # Writes the initialized values the test rf
         golden_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)           # Writes the initialized values to the golden rf
-
 
     # 3. Initialize Main Memory Data 
     # ---------------------------------------------------------
@@ -316,23 +374,73 @@ def test_all_operations():
 
     # 4. Define Test Cases
     # ---------------------------------------------------------
-    # Format test: test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expected value
+    # Format test: test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expected value/python operation
     test_cases = [
-        ("LW_1", I_Op.LW, 1, 0, 20, "Ldst_Fu_0", 1),                            # Load from address in r1 to r20
-        ("LW_2", I_Op.LW, 2, 0, 22, "Ldst_Fu_0", 2)                             # Load from address in r2 to r21
+        ("LW_1", I_Op.LW, 1, 0, 20, "Ldst_Fu_0", 1),                                            # Load from address in r1 to r20
+        ("LW_2", I_Op.LW, 2, 0, 22, "Ldst_Fu_0", 2),                                            # Load from address in r2 to r22
+        ("ADD", R_Op.ADD, 20, 22, 24, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),          # Use the data in r20 and r22 to perform an add and store the value back in r24
+        ("SW", S_Op.SW, 3, 24, 0, "Ldst_Fu_0", 0)
     ]
 
     instruction_list = []
     pc = 0x0
-    for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expected_value in test_cases:
+    for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, expval_operation in test_cases:
         if intended_fu not in fust:
             print(f"  Warning: Skipping {test_name} (FU {intended_fu} not configured)")
             continue
         
         bank = warp_id % golden_rf.banks
         w_idx = warp_id // 2
-        golden_data = [Bits(uint = expected_value, length = 32) for _ in range(32)]
-        golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)            # Update the golden rf to contain the expected loaded values
+        rs1_vals = golden_rf.regs[bank][w_idx][rs1_reg]
+        rs2_vals = golden_rf.regs[bank][w_idx][rs2_reg]
+        golden_res = []
+
+        if isinstance(opcode, I_Op): # if opcode is for an immediate type
+            imm_val = imm_test_value
+            rs2_vals = None
+
+        if test_name == "LW_1" or test_name == "LW_2":
+            golden_data = [Bits(uint = expval_operation, length = 32) for _ in range(32)]
+            golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)            # Update the golden rf to contain the expected loaded values
+        elif test_name == "SW":
+            golden_data = [Bits(uint = expval_operation, length = 32) for _ in range(32)]
+            golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)
+        else:
+            for i in range(golden_rf.threads_per_warp):
+                # 1. Special Functions
+                if test_name == "SIN":
+                    res = math.sin(rs1_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif test_name == "COS":
+                    res = math.cos(rs1_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif test_name == "ISQRT":
+                    val = rs1_vals[i].float
+                    res = 0.0 if val <= 0 else 1.0 / math.sqrt(val)
+                    golden_res.append(Bits(float=res, length=32))
+                # 2. Float Ops
+                elif rd_reg >= 50: 
+                    res = expval_operation(rs1_vals[i].float, rs2_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif isinstance(opcode, I_Op): # Immediate ops
+                    res = expval_operation(rs1_vals[i].int, imm_val.int)
+                    if res < 0:
+                        golden_res.append(Bits(int=res, length=32))
+                    else:
+                        golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
+                # 3. Int Ops
+                else:
+                    res = expval_operation(rs1_vals[i].int, rs2_vals[i].int)
+                    if res < 0:
+                        golden_res.append(Bits(int=res, length=32))
+                    else:
+                        golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
+                
+            golden_rf.write_warp_gran(
+            warp_id=rd_reg % 2,
+            dest_operand=Bits(uint=rd_reg, length=32),
+            data=golden_res
+            )
 
         instr = Instruction(
             pc=Bits(uint=pc, length=32),
@@ -347,10 +455,9 @@ def test_all_operations():
             opcode=opcode,
             predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
             target_bank=rd_reg % 2,
-            imm=imm_test_value if isinstance(opcode, I_Op) else None
+            imm=imm_val
         )
         pc += 4
-
         instruction_list.append(instr)
 
 
@@ -371,12 +478,14 @@ def test_all_operations():
     
     start_cycle = 0
     original_stdout = sys.stdout
-    with open("seqTest_dcache_is_ex_wb_rf", "w") as f:
+    with open("seqTest_dcache_is_ex_wb_rf.txt", "w") as f:
         sys.stdout = f
         # Feed instructions
-        for idx, instr in enumerate(instruction_list):
-            run_sim(start_cycle, 1, instr)
-            start_cycle += 1
+        run_sim(start_cycle, 1, instruction_list[0])                        # Send in LW_1
+        start_cycle += 1
+
+        run_sim(start_cycle, 1, instruction_list[1])                        # Send in LW_2
+        start_cycle += 1
 
         while (not ldst.ex_wb_interface.valid):
             run_sim(start_cycle, 1, None)
@@ -388,13 +497,27 @@ def test_all_operations():
         while (not ldst.ex_wb_interface.valid):
             run_sim(start_cycle, 1, None)
             start_cycle += 1
-
         run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+        start_cycle += 3
+
+        run_sim(start_cycle, 1, instruction_list[2])                        # Send in the add instruction
+        start_cycle += 1
+        run_sim(start_cycle, 8, None)
+        start_cycle += 8                                                    # Add finished. Data can be found in r24
+
+        run_sim(start_cycle, 1, instruction_list[3])                        # Send the sw instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1            
+        print_banks(dCache)                                                 # Finished the sw instruction
+
+        
 
     # 6. Verify Results
     # ---------------------------------------------------------
     sys.stdout = original_stdout
-    regs_to_check = [20, 22]
+    regs_to_check = [20, 22, 24]
     passed = compare_register_files(
         pipeline_rf=pipeline_rf,
         golden_rf=golden_rf,
@@ -403,10 +526,12 @@ def test_all_operations():
         verbose=True
     )
 
-    with open("rf_dump", "w") as f:
+    with open("pipeline_rf.txt", "w") as f:
         sys.stdout = f
-        print("\nVerifying Register File State...")
         pipeline_rf.dump()
+    
+    with open("golden_rf.txt", "w") as f:
+        sys.stdout = f
         golden_rf.dump()
 
     sys.stdout = original_stdout

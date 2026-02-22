@@ -228,24 +228,23 @@ class pending_mem():
 
     
     def parseMshrHit(self, payload):
-        if self.write:
-            self.parseHit(payload)
-        else:
-            num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
-            block_mask = ~(num_bytes_block - 1)
-            incoming_block_addr = payload.address & block_mask
+        num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+        block_mask = ~(num_bytes_block - 1)
+        incoming_block_addr = payload.address & block_mask
 
-            for i in range(32):
-                thread_addr = self.addrs[i]
-                thread_block_addr = thread_addr & block_mask
-                if (thread_block_addr == incoming_block_addr) and (self.mshr_idx[i] == 1):
+        for i in range(32):
+            thread_addr = self.addrs[i]
+            thread_block_addr = thread_addr & block_mask
+            if (thread_block_addr == incoming_block_addr) and (self.mshr_idx[i] == 1):
+                if self.write:
+                    self.mshr_idx[i] = 0
+                    self.finished_idx[i] = 1
+                else:
                     print(f"[LSU] Wakeup thread {i} (Addr {hex(thread_addr)}) due to Block Match")
                     self.mshr_idx[i] = 0
+                
     
     def parseMiss(self, payload: dMemResponse):
         for i in range(32):
             if self.addrs[i] == payload.address:
-                if self.write == False:
-                    self.mshr_idx[i] = 1
-                elif self.write == True:
-                    self.finished_idx[i] = 1
+                self.mshr_idx[i] = 1                                # The ldst needs to wait for the cache to retrieve the data from main memory
