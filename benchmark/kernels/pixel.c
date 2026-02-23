@@ -67,48 +67,101 @@ void kernel_pixel(void* arg) {
     l.y = bc10 + bc11 * point.x + bc12 * point.y;
     l.z = bc20 + bc21 * point.x + bc22 * point.y;
 
-    // Get new texture interpolation
-    float correction_factor = l.x * (pVs[0].coords.z) + l.y * (pVs[1].coords.z) + l.z * (pVs[2].coords.z);
+    // base color for material
+    vector_t albedo = args->albedo;
 
-    float s = l.x * (pVs[0].s * pVs[0].coords.z) + l.y * (pVs[1].s * pVs[1].coords.z) + l.z * (pVs[2].s * pVs[2].coords.z);
-    s = s / (correction_factor);
+    // map texture if provided
+    if(args->texture.color_arr != 0) {
+        // Get new texture interpolation
+        float correction_factor = l.x * (pVs[0].coords.z) + l.y * (pVs[1].coords.z) + l.z * (pVs[2].coords.z);
 
-    float t = l.x * (pVs[0].t * pVs[0].coords.z) + l.y * (pVs[1].t * pVs[1].coords.z) + l.z * (pVs[2].t * pVs[2].coords.z);
-    t = t / (correction_factor);
+        float s = l.x * (pVs[0].s * pVs[0].coords.z) + l.y * (pVs[1].s * pVs[1].coords.z) + l.z * (pVs[2].s * pVs[2].coords.z);
+        s = s / (correction_factor);
+
+        float t = l.x * (pVs[0].t * pVs[0].coords.z) + l.y * (pVs[1].t * pVs[1].coords.z) + l.z * (pVs[2].t * pVs[2].coords.z);
+        t = t / (correction_factor);
 
 
-    // args->color[threadIdx] = get_texture(args->texture, s, t);
-    // REPLACE WITH INLINED LOGIC:
-    
-    // 1. Abs function for s and t
-    float s_abs;
-    float t_abs;
+        // args->color[threadIdx] = get_texture(args->texture, s, t);
+        // REPLACE WITH INLINED LOGIC:
 
-    if(s>0.0){
-        s_abs = s;
-    } else{
-        s_abs = 0.0-s;
+        // 1. Abs function for s and t
+        float s_abs;
+        float t_abs;
+
+        if(s>0.0){
+            s_abs = s;
+        } else{
+            s_abs = 0.0-s;
+        }
+        if(t>0.0){
+            t_abs = t;
+        }
+        else{
+            t_abs = 0.0-t;
+        }
+
+        // 2. Calculate Texel Coordinates
+        // Note: Breaking down math to avoid tree coverage errors
+        float w_minus_1 = itof(args->texture.w - 1);
+        float h_minus_1 = itof(args->texture.h - 1);
+        
+        // (s - (int)s)
+        float s_fract = s_abs - itof(ftoi(s_abs));
+        float t_fract = t_abs - itof(ftoi(t_abs));
+        
+        int texel_x = ftoi(s_fract * w_minus_1 + 0.5);
+        int texel_y = ftoi(t_fract * h_minus_1 + 0.5);
+
+        int idx = texel_y * args->texture.w + texel_x;
+        albedo = args->texture.color_arr[idx];
     }
-    if(t>0.0){
-        t_abs = t;
-    }
-    else{
-        t_abs = 0.0-t;
+
+    // if we cant calculate the lighting just exit
+    if(args->threeDVertTrans == 0) {
+        args->color[threadIdx] = albedo;
+        return;
     }
 
-    // 2. Calculate Texel Coordinates
-    // Note: Breaking down math to avoid tree coverage errors
-    float w_minus_1 = itof(args->texture.w - 1);
-    float h_minus_1 = itof(args->texture.h - 1);
-    
-    // (s - (int)s)
-    float s_fract = s_abs - itof(ftoi(s_abs));
-    float t_fract = t_abs - itof(ftoi(t_abs));
-    
-    int texel_x = ftoi(s_fract * w_minus_1 + 0.5);
-    int texel_y = ftoi(t_fract * h_minus_1 + 0.5);
+    // phong lighting
 
-    // 3. Texture Lookup
-    int idx = texel_y * args->texture.w + texel_x;
-    args->color[threadIdx] = args->texture.color_arr[idx];
+    // interpolate between triangel for specific pixel location
+    vector_t w0 = args->threeDVertTrans[tri.v1].coords;
+    vector_t w1 = args->threeDVertTrans[tri.v2].coords;
+    vector_t w2 = args->threeDVertTrans[tri.v3].coords;
+    float wx = l.x*w0.x + l.y*w1.x + l.z*w2.x;
+    float wy = l.x*w0.y + l.y*w1.y + l.z*w2.y;
+    float wz = l.x*w0.z + l.y*w1.z + l.z*w2.z;
+
+    // normal vector
+    float nx = wx - args->sphere_center.x, ny = wy - args->sphere_center.y, nz = wz - args->sphere_center.z;
+    float ni = isqrt(nx*nx + ny*ny + nz*nz);
+    nx = nx*ni; ny = ny*ni; nz = nz*ni;
+
+    // light vector
+    float lx = args->light_pos.x - wx, ly = args->light_pos.y - wy, lz = args->light_pos.z - wz;
+    float li = isqrt(lx*lx + ly*ly + lz*lz);
+    lx = lx*li; ly = ly*li; lz = lz*li;
+
+    // view vector
+    float vx = args->camera.x - wx, vy = args->camera.y - wy, vz = args->camera.z - wz;
+    float vi = isqrt(vx*vx + vy*vy + vz*vz);
+    vx = vx*vi; vy = vy*vi; vz = vz*vi;
+
+    // diffuse
+    float diff = nx*lx + ny*ly + nz*lz;
+    if(diff < 0.0) diff = 0.0;
+
+    // specular approximation
+    float hx = lx+vx, hy = ly+vy, hz = lz+vz;
+    float hi = isqrt(hx*hx + hy*hy + hz*hz);
+    float ndoth = nx*hx*hi + ny*hy*hi + nz*hz*hi;
+    if(ndoth < 0.0) ndoth = 0.0;
+    // no hardware exp
+    float spec = ndoth*ndoth; spec = spec*spec; spec = spec*spec; spec = spec*spec; spec = spec*spec;
+
+    // combine color
+    args->color[threadIdx].x = args->ambient.x + args->kd * diff * albedo.x + args->ks * spec;
+    args->color[threadIdx].y = args->ambient.y + args->kd * diff * albedo.y + args->ks * spec;
+    args->color[threadIdx].z = args->ambient.z + args->kd * diff * albedo.z + args->ks * spec;
 }
