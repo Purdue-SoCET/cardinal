@@ -280,17 +280,29 @@ class CacheBank:
                 raw_bytes = self.incoming_mem_data.tobytes()    # Convert the incoming data to bytes
 
                 for i in range(BLOCK_SIZE_WORDS):
-                    if (self.active_mshr.write_status[i]):
-                        self.fill_buffer.block[i] = self.active_mshr.write_block[i]
+                    start = i * 4
+                    end = start + 4
+                    if (start < len(raw_bytes)):
+                        word_bytes = raw_bytes[start:end]
+                        ram_word = int.from_bytes(word_bytes, byteorder='little')
                     else:
-                        start = i * 4
-                        end = start + 4
-                        if (start < len(raw_bytes)):
-                            word_bytes = raw_bytes[start:end]
-                            self.fill_buffer.block[i] = int.from_bytes(word_bytes, byteorder='little')
-                        # The else block would be executed if the chunk of data returned from memory is smaller than the block size
-                        else:
-                            self.fill_buffer.block[i] = 0
+                        ram_word = 0
+
+                    if (self.active_mshr.write_status[i]):
+                        req = self.active_mshr.original_request
+                        data = self.active_mshr.write_block[i]
+                        
+                        size_masks = {'word': 0xFFFFFFFF, 'half': 0xFFFF, 'byte': 0xFF}
+                        base_mask = size_masks.get(req.size, 0xFFFFFFFF)
+                        
+                        shift = (req.addr_val & 0x3) * 8
+                        mask = base_mask << shift
+                        
+                        new_word = (ram_word & ~mask) | (data << shift)
+
+                        self.fill_buffer.block[i] = new_word & 0xFFFFFFFF
+                    else:
+                        self.fill_buffer.block[i] = ram_word
                 
                 self.incoming_mem_data = None
                 next_state = 'FINISH'
