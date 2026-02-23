@@ -1,12 +1,24 @@
 #include "include/kernel.h"
 #include "include/triangle.h"
 
-void kernel_triangle(void* arg) {
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_triangle(void* arg)
+#endif    
+{
+
+    #ifdef GPU_SIM
+    triangle_arg_t* args = (triangle_arg_t*) argPtr();
+    int ix = (((threadIdx())) - (args->bb_size[0])*(((threadIdx()))/(args->bb_size[0])));
+    int iy = (((threadIdx()) / args->bb_size[0]) - (args->bb_size[1])*(((threadIdx()) / args->bb_size[0])/(args->bb_size[1])));
+
+    #else
     triangle_arg_t* args = (triangle_arg_t*) arg;
-    // int ix = mod(threadIdx, args->bb_size[0]);
     int ix = (((threadIdx)) - (args->bb_size[0])*(((threadIdx))/(args->bb_size[0])));
-    // int iy = mod(threadIdx / args->bb_size[0], args->bb_size[1]);
     int iy = (((threadIdx) / args->bb_size[0]) - (args->bb_size[1])*(((threadIdx) / args->bb_size[0])/(args->bb_size[1])));
+
+    #endif
 
     int u = ix + args->bb_start[0];
     int v = iy + args->bb_start[1];
