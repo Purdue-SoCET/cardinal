@@ -147,17 +147,21 @@ class pending_mem():
         self.halt = False
         self.write = False
         self.size = "word"
+        self.is_signed = False
 
         match self.instr.opcode:
             case I_Op.LW:
                 self.write = False
                 self.size = "word"
+                self.is_signed = True
             case I_Op.LH:
                 self.write = False
                 self.size = "half"
+                self.is_signed = True
             case I_Op.LB:
                 self.write = False
                 self.size = "byte"
+                self.is_signed = True
             
             case S_Op.SW:
                 self.write = True
@@ -200,7 +204,16 @@ class pending_mem():
             )
         for i in range(32):
             if self.finished_idx[i] == 0 and self.mshr_idx[i] == 0:
-                st_val = self.instr.rdat2[i].int if self.write else 0
+                st_val = 0
+                if self.write:
+                    raw_val = self.instr.rdat2[i].int
+
+                    if self.size == "byte":
+                        st_val = raw_val & 0xFF
+                    elif self.size == "half":
+                        st_val = raw_val & 0xFFFF
+                    else:
+                        st_val = raw_val & 0xFFFFFFFF
 
                 return dCacheRequest(
                     addr_val=self.addrs[i],
@@ -224,7 +237,28 @@ class pending_mem():
 
                 #set wdat if instr is a read
                 if self.write == False:
-                    self.instr.wdat[i] = Bits(uint=payload.data, length=32)
+                    # Convert to signed if applicable
+                    raw_val = payload.data
+
+                    if self.size == "byte":
+                        raw_val = raw_val & 0xFF
+                        if self.is_signed and (raw_val & 0x80):
+                            raw_val = raw_val - 0x100
+
+                    elif self.size == "half":
+                        raw_val = raw_val & 0xFFFF
+                        if self.is_signed and (raw_val & 0x8000):
+                            raw_val = raw_val - 0x10000
+                    
+                    else:
+                        raw_val = raw_val & 0xFFFFFFFF
+                        if self.is_signed and (raw_val & 0x80000000):
+                            raw_val = raw_val - 0x10000000
+
+                    if raw_val < 0:
+                        self.instr.wdat[i] = Bits(int = raw_val, length=32)
+                    else:
+                        self.instr.wdat[i] = Bits(uint = raw_val, length=32)
 
     
     def parseMshrHit(self, payload):
