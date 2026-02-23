@@ -13,7 +13,7 @@ from simulator.mem.dcache import LockupFreeCacheStage
 from simulator.mem.ld_st import Ldst_Fu
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
 from simulator.latch_forward_stage import *
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op
+from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
 
 # CREATING ALL LATCHES
 # ---------------------------------------------------------
@@ -72,7 +72,7 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
                         'diff': abs(p_float - g_float)
                     })
             else:
-                if pipeline_val != golden_val:
+                if pipeline_val.bin != golden_val.bin:
                     mismatches.append({
                         'reg': reg_num,
                         'thread': thread_id,
@@ -345,11 +345,13 @@ def test_all_operations():
     test_addresses = {
         # Integer registers
         1: [i for i in range(0, 0x400, 32)],                                                                        # Reg 1: 0x0, 0x20, 0x40, ..., 0x3E0
-        2: [i for i in range(0x400, 0x800, 32)],                                                                     # Reg 2: 0x400, 0x420, 0x440, ..., 0x7E0
-        3: [i for i in range(0x800, 0xC00, 32)]
+        2: [i for i in range(0x400, 0x800, 32)],                                                                    # Reg 2: 0x400, 0x420, 0x440, ..., 0x7E0
+        3: [i for i in range(0x800, 0xC00, 32)],
+        4: [i for i in range(0xC00, 0x1000, 32)],
+        5: [i for i in range(0x1000, 0x1400, 32)]
     }
 
-    imm_test_value = Bits(int=0, length=32)                                                                         # Immediate value for I-type instructions
+    imm_test_value = Bits(int=2, length=32)                                                                         # Immediate value for I-type instructions
     
     for reg_num, values in test_addresses.items():                                                                  # Converting the values from int to bits object
         if reg_num >= 10:
@@ -364,13 +366,16 @@ def test_all_operations():
     # ---------------------------------------------------------
     mem_file = os.path.join(project_root, "gpu/tests/simulator/memory/dcache/test.bin")
     for address in test_addresses[1]:
-        address_offset = address + imm_test_value.int
+        address_offset = address + 0
         write_val_to_mem(mem_file, address_offset, 1)                              # Initialize the addresses stored in register 1 + immediate to contain 1s (integer)
     
     for address in test_addresses[2]:
-        address_offset = address + imm_test_value.int
+        address_offset = address + 0
         write_val_to_mem(mem_file, address_offset, 2)                              # Initialize the addresses stored in register 2 + immediate to contain 2s (integer)
-
+    
+    for address in test_addresses[4]:
+        address_offset = address + imm_test_value.int
+        write_val_to_mem(mem_file, address_offset, 0xCAFE_BABE)
 
     # 4. Define Test Cases
     # ---------------------------------------------------------
@@ -379,7 +384,12 @@ def test_all_operations():
         ("LW_1", I_Op.LW, 1, 0, 20, "Ldst_Fu_0", 1),                                            # Load from address in r1 to r20
         ("LW_2", I_Op.LW, 2, 0, 22, "Ldst_Fu_0", 2),                                            # Load from address in r2 to r22
         ("ADD", R_Op.ADD, 20, 22, 24, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),          # Use the data in r20 and r22 to perform an add and store the value back in r24
-        ("SW", S_Op.SW, 3, 24, 0, "Ldst_Fu_0", 0)
+        ("SW", S_Op.SW, 3, 24, 0, "Ldst_Fu_0", 0),                                              # Store the data in r24 to the address in r3
+        ("LH", I_Op.LH, 4, 0, 26, "Ldst_Fu_0", 0xffff_cafe),
+        ("LB", I_Op.LB, 4, 0, 28, "Ldst_Fu_0", 0xffff_fffe),
+        ("SH", S_Op.SH, 5, 28, 0, "Ldst_Fu_0", 0),
+        ("SB", S_Op.SB, 5, 24, 0, "Ldst_Fu_0", 0),
+        ("HALT", H_Op.HALT, 0, 0, 0, "Ldst_Fu_0", None)                                         # Send a halt to ldst to flush the cache
     ]
 
     instruction_list = []
@@ -399,12 +409,14 @@ def test_all_operations():
             imm_val = imm_test_value
             rs2_vals = None
 
-        if test_name == "LW_1" or test_name == "LW_2":
+        if test_name == "LW_1" or test_name == "LW_2" or test_name == "LH" or test_name == "LB":
             golden_data = [Bits(uint = expval_operation, length = 32) for _ in range(32)]
             golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)            # Update the golden rf to contain the expected loaded values
-        elif test_name == "SW":
+        elif test_name == "SW" or test_name == "SH" or test_name == "SB":
             golden_data = [Bits(uint = expval_operation, length = 32) for _ in range(32)]
             golden_rf.write_warp_gran(warp_id = rd_reg % 2, dest_operand = Bits(uint=rd_reg, length=32), data = golden_data)
+        elif test_name == "HALT":
+            pass
         else:
             for i in range(golden_rf.threads_per_warp):
                 # 1. Special Functions
@@ -481,6 +493,7 @@ def test_all_operations():
     with open("seqTest_dcache_is_ex_wb_rf.txt", "w") as f:
         sys.stdout = f
         # Feed instructions
+        print("\nTESTING LW")
         run_sim(start_cycle, 1, instruction_list[0])                        # Send in LW_1
         start_cycle += 1
 
@@ -500,11 +513,13 @@ def test_all_operations():
         run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
         start_cycle += 3
 
+        print("\nTESTING ADD")
         run_sim(start_cycle, 1, instruction_list[2])                        # Send in the add instruction
         start_cycle += 1
         run_sim(start_cycle, 8, None)
         start_cycle += 8                                                    # Add finished. Data can be found in r24
 
+        print("\nTESTING SW")
         run_sim(start_cycle, 1, instruction_list[3])                        # Send the sw instruction
         start_cycle += 1
         while (not ldst.ex_wb_interface.valid):
@@ -512,12 +527,53 @@ def test_all_operations():
             start_cycle += 1            
         print_banks(dCache)                                                 # Finished the sw instruction
 
+        print("\nTESTING LH")
+        run_sim(start_cycle, 1, instruction_list[4])                        # Send the LH instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+        start_cycle += 3
+
+        print("\nTESTING LB")
+        run_sim(start_cycle, 1, instruction_list[5])                        # Send the LB instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+        start_cycle += 3
+        
+        print("\nTESTING SH")                                               # Send the SH instruction
+        run_sim(start_cycle, 1, instruction_list[6])
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        print_banks(dCache)                                                 # Finished SH
+
+        print("\nTESTING SB")
+        run_sim(start_cycle, 1, instruction_list[7])                        # Send SB instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1                                                # Finished SB
+        print_banks(dCache)
+
+        print("\nTESTING HALT")                                             # Sending Halt
+        run_sim(start_cycle, 1, instruction_list[8])
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        print_banks(dCache)                                                 # Finished flushing
         
 
     # 6. Verify Results
     # ---------------------------------------------------------
     sys.stdout = original_stdout
-    regs_to_check = [20, 22, 24]
+    regs_to_check = [20, 22, 24, 26, 28]
     passed = compare_register_files(
         pipeline_rf=pipeline_rf,
         golden_rf=golden_rf,
