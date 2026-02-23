@@ -125,7 +125,7 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = True
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
-                    print(f"[Scheduler] Issuing an instruction for {warp_group.group_id}, {(warp_group.group_id * 2)}, {warp_group.pc}")
+                    print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return 
                 
@@ -138,7 +138,7 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = False
 
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, current_pc)
-                    print(f"[Scheduler] Issuing an instruction for {warp_group.group_id}, {(warp_group.group_id * 2) + 1}, {current_pc}")
+                    print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return
                 

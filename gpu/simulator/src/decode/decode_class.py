@@ -180,6 +180,8 @@ class DecodeStage(Stage):
             # pop whatever you need..
             inst = self.behind_latch.pop()
         
+
+        # THIS IS MOSTLY FOR DEBUGGIG, UNEEDED IN ACTUAL RTL.
         if self.forward_ifs_read["ICache_Decode_Ihit"].pop() is False:
             print("[Decode] Stalling Pipeline due to Icache Miss")
             return inst 
@@ -287,20 +289,21 @@ class DecodeStage(Stage):
 
         # imm extraction: keep your rules but fix Bits constructors
         if is_I:
-            inst.imm = Bits(uint=((raw >> 19) & 0x3F), length=6).int
+            inst.imm = Bits(uint=((raw >> 19) & 0x3F), length=6)
         elif is_S:
-            inst.imm = Bits(uint=((raw >> 7) & 0x3F), length=6).int
+            inst.imm = Bits(uint=((raw >> 7) & 0x3F), length=6)
         elif is_U:
-            inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12).int
+            inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
             imm = (raw >> 13) & 0xFFF
-            inst.imm = Bits(uint=imm, length=17).int
+            inst.imm = Bits(uint=imm, length=17)
         elif is_P:
-            inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11).int
+            inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
         elif is_H:
-            inst.imm = Bits(uint=0x7FFFFF, length=23).int
+            print(f"[Decode] Received HALT")
+            inst.imm = Bits(uint=0x7FFFFF, length=23)
         else:
-            inst.imm = None
+            inst.imm = Bits(uint=0x0, length=6)
 
         # Map opcode to actual functional unit name from fust
         inst.intended_FU = self.classify_fust_unit(inst.opcode)

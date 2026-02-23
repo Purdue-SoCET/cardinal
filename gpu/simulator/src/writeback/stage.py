@@ -171,6 +171,7 @@ class WritebackStage(Stage):
                 for i in range(32):
                     if instr.predicate[i].bin == 0b0:
                         continue
+                    print("[Writeback] Writing back to register file, warp_id:", instr.warp_id, "thread_id:", i, "dest_operand:", instr.rd, "data:", instr.wdat[i])
                     self.reg_file.write_thread_gran(
                         dest_operand=instr.rd,
                         data=instr.wdat[i],

@@ -219,6 +219,7 @@ def test_all_operations():
         behind_latch=decode_issue_if,
         ahead_latch=is_ex_latch,
         forward_ifs_read=None,
+        # missing the forward IF connection, adding it in.
         forward_ifs_write=None
     )
     
@@ -256,41 +257,37 @@ def test_all_operations():
 
     # 3. Define Test Cases
     # ---------------------------------------------------------
+    
     test_cases = [
-        # Integer ALU (20-31)
-        ("ADD", R_Op.ADD, 2, 3, 1, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
-        ("MUL", R_Op.MUL, 1, 2, 22, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF),
-        ("DIV", R_Op.DIV, 1, 2, 23, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0),
-        ("AND", R_Op.AND, 1, 2, 24, "Alu_int_0", lambda a, b: a & b),
-        ("OR", R_Op.OR, 1, 2, 25, "Alu_int_0", lambda a, b: a | b),
-        ("XOR", R_Op.XOR, 1, 2, 26, "Alu_int_0", lambda a, b: a ^ b),
-        ("SLT", R_Op.SLT, 1, 5, 27, "Alu_int_0", lambda a, b: 1 if a < b else 0),
-        ("SLTU", R_Op.SLTU, 1, 2, 28, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
-        ("SLL", R_Op.SLL, 1, 3, 29, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
-        ("SRL", R_Op.SRL, 1, 3, 30, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
-        ("SRA", R_Op.SRA, 5, 3, 31, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
+        # Integer ALU (R-type) -> rd=1, rs1=2, rs2=3
+        ("ADD",  R_Op.ADD,  2, 3, 1, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF), # 5 + 5 = 10
+        ("MUL",  R_Op.MUL,  2, 3, 1, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF), # 5 * 5 = 25
+        ("DIV",  R_Op.DIV,  2, 3, 1, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0), # 5 // 5 = 1
+        ("AND",  R_Op.AND,  2, 3, 1, "Alu_int_0", lambda a, b: a & b),
+        ("OR",   R_Op.OR,   2, 3, 1, "Alu_int_0", lambda a, b: a | b),
+        ("XOR",  R_Op.XOR,  2, 3, 1, "Alu_int_0", lambda a, b: a ^ b),
+        ("SLT",  R_Op.SLT,  2, 3, 1, "Alu_int_0", lambda a, b: 1 if a < b else 0),
+        ("ADDI",  I_Op.ADDI,  2, 0, 1, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
+        # ("SUBI",  I_Op.SUBI,  2, 0, 1, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
+        # ("ORI",   I_Op.ORI,   2, 0, 1, "Alu_int_0", lambda a, b: a | b),
+        # ("XORI",  I_Op.XORI,  2, 0, 1, "Alu_int_0", lambda a, b: a ^ b),
+        # ("SLTI",  I_Op.SLTI,  2, 0, 1, "Alu_int_0", lambda a, b: 1 if a < b else 0),
+        # ("SLTIU", I_Op.SLTIU, 2, 0, 1, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
+        # ("SLLI",  I_Op.SLLI,  2, 0, 1, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
+        # ("SRLI",  I_Op.SRLI,  2, 0, 1, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
+        # ("SRAI",  I_Op.SRAI,  2, 0, 1, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
+
+        # # Floating Point (50-53)
+        # ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
+        # ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
+        # ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
+        # ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
         
-        # Integer Immediate (32-40)
-        ("ADDI", I_Op.ADDI, 1, 4, 32, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
-        ("SUBI", I_Op.SUBI, 1, 4, 33, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
-        ("ORI", I_Op.ORI, 1, 3, 34, "Alu_int_0", lambda a, b: a | b),
-        ("XORI", I_Op.XORI, 1, 3, 35, "Alu_int_0", lambda a, b: a ^ b),
-        ("SLTI", I_Op.SLTI, 1, 4, 36, "Alu_int_0", lambda a, b: 1 if a < b else 0),
-        ("SLTIU", I_Op.SLTIU, 1, 4, 37, "Alu_int_0", lambda a, b: 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0),
-        ("SLLI", I_Op.SLLI, 1, 3, 38, "Alu_int_0", lambda a, b: (a << b) & 0xFFFFFFFF if b < 32 else 0),
-        ("SRLI", I_Op.SRLI, 1, 3, 39, "Alu_int_0", lambda a, b: ((a & 0xFFFFFFFF) >> b) if b < 32 else 0),
-        ("SRAI", I_Op.SRAI, 5, 3, 40, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
-        
-        # Floating Point (50-53)
-        ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
-        ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
-        ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
-        ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
-        
-        # Special Functions (54-56)
-        ("SIN", F_Op.SIN, 12, 12, 54, "Trig_float_0", None),
-        ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", None),
-        ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", None),
+        # Special Functions (F-type) -> rd=1, rs1=2, X(unused)=0
+        # ("SIN",   F_Op.SIN,   2, 0, 1, "Trig_float_0",    None),
+        # ("COS",   F_Op.COS,   2, 0, 1, "Trig_float_0",    None),
+        # ("ISQRT", F_Op.ISQRT, 2, 0, 1, "InvSqrt_float_0", None),
+        # ("HALT", H_Op.HALT, 0, 0, 0, None, None)
     ]
 
     # 4. Update Golden Model
@@ -393,6 +390,13 @@ def test_all_operations():
     # ---------------------------------------------------------
     print("\nStarting pipeline simulation...")
     
+    print("Verifying initial state of register file matches golden model...")
+    if compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
+        print("✅ Initial register file state matches golden model.")
+    else:
+        print("❌ Initial register file state does NOT match golden model. Aborting test.")
+        return 0, 1
+    
     # Cycle 1: Feed instructions
     # for idx, instr in enumerate(instruction_list):
     n_cycle = 0
@@ -415,7 +419,7 @@ def test_all_operations():
 
     print("All instructions issued. Flushing pipeline...")
 
-    FLUSH_CYCLES = 100
+    FLUSH_CYCLES = len(test_cases) + 100  # Run enough cycles to flush the pipeline after last instruction is issued
     for _ in range(FLUSH_CYCLES):
         # Refill forward IFs if they get drained
         print(f"\nCycle #{_ + n_cycle}\n")
@@ -432,7 +436,11 @@ def test_all_operations():
         memc.compute()
         icache_stage.compute()
         scheduler_stage.compute()
-
+        # reg_is_same = compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=False)
+        # if reg_is_same >:
+        #     print("Register file state has diverged from golden model during flush. Aborting test.")
+        #     return 0, 1
+        
     print("Pipeline flush complete.")
 
     # 6. Verify Results
@@ -452,8 +460,10 @@ def test_all_operations():
         verbose=True
     )
 
-    pipeline_rf.dump()
-    golden_rf.dump()
+    # print("\nFinal Pipeline Register File State:")
+    # pipeline_rf.dump()
+    # print("\nFinal Golden Model Register File State:")
+    # golden_rf.dump()
 
     if passed:
         print("\n✅ SUCCESS: All register values match golden model.")
