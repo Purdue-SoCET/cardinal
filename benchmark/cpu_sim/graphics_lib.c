@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "include/graphics_lib.h"
+
+#define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
 // Returns the barycentric interpolation of the given three

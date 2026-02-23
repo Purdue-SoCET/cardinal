@@ -20,8 +20,17 @@ typedef struct {
     // Texture Data
     texture_t texture;
 
-    // Added for debug
-    //texel_t* uv_buffer;
+    // Lighting Data
+    vertex_t* threeDVertTrans;
+    vector_t camera;
+    //because we dont store normals just pass in
+    vector_t sphere_center;
+    vector_t light_pos;
+    //overridden by texture
+    vector_t albedo;
+    vector_t ambient;
+    //diffuse / specular
+    float kd, ks;
 
 } pixel_arg_t;
 

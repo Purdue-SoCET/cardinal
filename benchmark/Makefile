@@ -76,5 +76,14 @@ $(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)
 	mv kernels/*.ir $(GPU_OUTPUT_DIR)
 	mv kernels/*.s $(GPU_OUTPUT_DIR)
 
-# Tell 'make' that 'all', 'run', and 'clean' are not files
-.PHONY: all run clean
+# Lighting workload
+LIGHTING_SRCS = cpu_sim/lighting_main.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c \
+       kernels/vertexShader.c kernels/triangle.c kernels/pixel.c
+
+lighting:
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR)
+	$(CPU_CC) $(CPU_CFLAGS) -o $(CPU_BUILD_DIR)lighting_sim.out $(LIGHTING_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)lighting_sim.out
+
+# Tell 'make' that 'all', 'run', 'clean', and 'lighting' are not files
+.PHONY: all run clean lighting
