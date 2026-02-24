@@ -89,18 +89,18 @@ class ICacheStage(Stage):
     def _fill_from_response(self, pc_int: int, data_bits):
         set_idx, tag, _ = self._addr_decode(pc_int)
         self._fill_cache_line(set_idx, tag, data_bits)
-        print(f"[ICache] FILL complete: pc=0x{pc_int:X}")
+        # print(f"[ICache] FILL complete: pc=0x{pc_int:X}")
 
     # ---------------- Main compute ----------------
     def compute(self, input_data=None):
-        print(f"[ICache] Received request: {self.behind_latch.snoop()}")
+        # print(f"[ICache] Received request: {self.behind_latch.snoop()}")
 
         # req in flight to memory
         if self.pending:
             # memory returs value
             if self.mem_resp_if.valid:
                 resp = self.mem_resp_if.pop()
-                print(f"[I$] Recieved Response from Memory: {resp}")
+                # print(f"[I$] Recieved Response from Memory: {resp}")
 
                 pc_int_resp = resp.pc.int if isinstance(resp.pc, Bits) else int(resp.pc)
                 data_bits = Bits(resp.packet)
@@ -110,7 +110,7 @@ class ICacheStage(Stage):
 
                 self._fill_from_response(pc_int_resp, data_bits)
 
-                print("[I$] Returned value from memory")
+                # print("[I$] Returned value from memory")
                 self._send_valid(True)
                 self.pending = False
                 if self.ahead_latch.ready_for_push():
@@ -118,12 +118,12 @@ class ICacheStage(Stage):
 
             # still pending
             else:
-                print(f"[I$] waiting on memory")
+                # print(f"[I$] waiting on memory")
                 self._send_valid(False)
 
                 if self.req_latched:
                     if self.mem_req_if.ready_for_push():
-                        print("[I$] Memrequest ACCEPTED by Memory")
+                        # print("[I$] Memrequest ACCEPTED by Memory")
                         self.mem_req_if.push(self.req)
                         self.req_latched = False
 
@@ -162,11 +162,11 @@ class ICacheStage(Stage):
                     }
 
                     if self.mem_req_if.ready_for_push():
-                        print("[I$] Memrequest ACCEPTED by Memory")
+                        # print("[I$] Memrequest ACCEPTED by Memory")
                         self.mem_req_if.push(self.req)
                         self.req_latched = False
                     else:
-                        print("[I$] Memrequest STALLED due tobusy memory")
+                        # print("[I$] Memrequest STALLED due tobusy memory")
                         self.req_latched = True
 
             # if scheduler isnt fetching and if theres no pending memory request

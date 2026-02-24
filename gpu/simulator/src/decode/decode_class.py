@@ -174,7 +174,7 @@ class DecodeStage(Stage):
         
         inst = None
         if not self.behind_latch.valid:
-                print("[Decode] Received nothing valid yet!")
+                # print("[Decode] Received nothing valid yet!")
                 return inst
         else:
             # pop whatever you need..
@@ -183,12 +183,12 @@ class DecodeStage(Stage):
 
         # THIS IS MOSTLY FOR DEBUGGIG, UNEEDED IN ACTUAL RTL.
         if self.forward_ifs_read["ICache_Decode_Ihit"].pop() is False:
-            print("[Decode] Stalling Pipeline due to Icache Miss")
+            # print("[Decode] Stalling Pipeline due to Icache Miss")
             return inst 
 
 
         raw_bits = inst.packet
-        print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
+        # print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
         # Make the bytes explicit (adapt depending on your Bits type)
         raw_bytes = raw_bits.bytes if hasattr(raw_bits, "bytes") else bytes(raw_bits)
 
@@ -300,7 +300,7 @@ class DecodeStage(Stage):
         elif is_P:
             inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
         elif is_H:
-            print(f"[Decode] Received HALT")
+            # print(f"[Decode] Received HALT")
             inst.imm = Bits(uint=0x7FFFFF, length=23)
         else:
             inst.imm = Bits(uint=0x0, length=6)
@@ -338,7 +338,7 @@ class DecodeStage(Stage):
                 remaining=1
             )
             
-            print(f"[Decode] Initiating PRF Read {pred_req}")
+            # print(f"[Decode] Initiating PRF Read {pred_req}")
 
             pred_mask = self.prf.read_predicate(
                 prf_rd_en=pred_req.rd_en,

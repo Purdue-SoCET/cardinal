@@ -7,7 +7,7 @@ from pathlib import Path
 from bitstring import Bits
 gpu_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_root))
-print("here", gpu_root)
+# print("here", gpu_root)
 from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
 
 class SchedulerStage(Stage):
@@ -47,10 +47,10 @@ class SchedulerStage(Stage):
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
         
-        print("[SchedulerStage] Warp Issue Check, Decode Control:", decode_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
-        print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
+        # print("[SchedulerStage] Warp Issue Check, Decode Control:", decode_ctrl)
+        # print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
+        # print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
+        # print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
 
         # if im getting my odd warp EOP out of my decode
         if decode_ctrl is not None and decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
@@ -94,11 +94,11 @@ class SchedulerStage(Stage):
     # might not need
     def push_instruction(self, inst):
         if self.ahead_latch.ready_for_push:
-            print(f"[Scheduler] Pushing inst to ahead latch")
+            # print(f"[Scheduler] Pushing inst to ahead latch")
             self.ahead_latch.push(inst)
             return True
         else:
-            print(f"[Scheduler] STALLED by ahead latch")
+            # print(f"[Scheduler] STALLED by ahead latch")
             return False 
 
     # might not need 
@@ -106,13 +106,13 @@ class SchedulerStage(Stage):
         if not self.behind_latch.valid:
             return None
         req = self.behind_latch.pop()
-        print(f"[{self.name}] Popped from TBS latch: {req}")
+        # print(f"[{self.name}] Popped from TBS latch: {req}")
         return req
 
     # RETURN INSTRUCTION OBJECT ALWAYS
     def round_robin(self):
         for tries in range(self.num_groups):
-            print(len(self.warp_table))
+            # print(len(self.warp_table))
             warp_group = self.warp_table[self.rr_index]
 
             # if we can issue this warp group
@@ -125,7 +125,7 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = True
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
-                    print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
+                    # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return 
                 
@@ -138,12 +138,12 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = False
 
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, current_pc)
-                    print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
+                    # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return
                 
             else:
-                print(f"[Scheduler] Round-robin skipping this warp group {tries} due to being stalled.")
+                # print(f"[Scheduler] Round-robin skipping this warp group {tries} due to being stalled.")
                 self.rr_index = (self.rr_index + 1) % self.num_groups
 
         # nothing can fetch here
@@ -195,7 +195,7 @@ class SchedulerStage(Stage):
 
         # wait for ihit
         if not self.forward_ifs_read["ICache_Scheduler"].pop():
-            print("[Scheduler] MISS in ICache, STALLING.")
+            # print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         match self.policy:

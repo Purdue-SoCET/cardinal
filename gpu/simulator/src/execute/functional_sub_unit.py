@@ -143,48 +143,48 @@ class Alu(ArithmeticSubUnit):
             match instr.opcode:
                 case R_Op.ADD | I_Op.ADDI:
                     result = a + b
-                    if (instr.opcode == I_Op):
-                        print(f"[EX: ADDI] {a} + {b} = ", result)
-                    print(f"[EX: ADD] {a} + {b} = ", result)
+                    # if (instr.opcode == I_Op):
+                        # print(f"[EX: ADDI] {a} + {b} = ", result)
+                    # print(f"[EX: ADD] {a} + {b} = ", result)
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
                 case R_Op.SUB | I_Op.SUBI:
                     result = a - b
-                    print(f"[EX: SUB] {a} - {b} = ", result)
+                    # print(f"[EX: SUB] {a} - {b} = ", result)
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
                 case R_Op.AND:
-                    print(f"[EX: AND] {a} & {b} = ", a & b)
+                    # print(f"[EX: AND] {a} & {b} = ", a & b)
                     result = a & b
                 case R_Op.OR | I_Op.ORI:
-                    print(f"[EX: OR] {a} | {b} = ", a | b)
+                    # print(f"[EX: OR] {a} | {b} = ", a | b)
                     result = a | b
                 case R_Op.XOR | I_Op.XORI:
-                    print(f"[EX: XOR] {a} ^ {b} = ", a ^ b)
+                    # print(f"[EX: XOR] {a} ^ {b} = ", a ^ b)
                     result = a ^ b
                 case R_Op.SLT | I_Op.SLTI:
-                    print(f"[EX: SLT] {a} < {b} = ", int(a < b))
+                    # print(f"[EX: SLT] {a} < {b} = ", int(a < b))
                     result = int(a < b)
                 case R_Op.SLTU | I_Op.SLTIU:
-                    print(f"[EX: SLTU] {a} < {b} (unsigned) = ", int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF)))
+                    # print(f"[EX: SLTU] {a} < {b} (unsigned) = ", int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF)))
                     result = int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))
                 case R_Op.SLL | I_Op.SLLI:
                     result = a << b
-                    print(f"[EX: SLL] {a} << {b} = ", result)
+                    # print(f"[EX: SLL] {a} << {b} = ", result)
                     # Check for shift overflow (shift amount >= 32)
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRL | I_Op.SRLI:
                     result = (a % 0x100000000) >> b
-                    print(f"[EX: SRL] {a} >> {b} (logical) = ", result)
+                    # print(f"[EX: SRL] {a} >> {b} (logical) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRA | I_Op.SRAI:
                     result = a >> b
-                    print(f"[EX: SRA] {a} >> {b} (arithmetic) = ", result)
+                    # print(f"[EX: SRA] {a} >> {b} (arithmetic) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
@@ -290,7 +290,7 @@ class Mul(ArithmeticSubUnit):
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
-                    print(f"[EX: MUL] {a} * {b} = ", result)
+                    # print(f"[EX: MUL] {a} * {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.MULF:
                     a = instr.rdat1[i].float
@@ -299,7 +299,7 @@ class Mul(ArithmeticSubUnit):
                     # Check for floating-point overflow
                     if math.isinf(result) or math.isnan(result):
                         overflow_detected = True
-                    print(f"[EX: MUL] {a} * {b} = ", result)
+                    # print(f"[EX: MUL] {a} * {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in MUL.")
@@ -350,7 +350,7 @@ class Div(ArithmeticSubUnit):
                         # Check for division overflow (MIN_INT / -1)
                         if a == -2147483648 and b == -1:
                             overflow_detected = True
-                    print(f"[EX: DIV] {a} / {b} = ", result)
+                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.DIVF:
                     a = instr.rdat1[i].float
@@ -363,7 +363,7 @@ class Div(ArithmeticSubUnit):
                         # Check for floating-point overflow
                         if math.isinf(result) or math.isnan(result):
                             overflow_detected = True
-                    print(f"[EX: DIV] {a} / {b} = ", result)
+                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in DIV.")

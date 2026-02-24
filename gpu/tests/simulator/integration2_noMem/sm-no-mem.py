@@ -31,7 +31,7 @@ from typing import Iterable, Any
 
 START_PC = 0x1000
 LAT = 2
-WARP_COUNT = 1
+WARP_COUNT = 32
 
 def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
     """
@@ -149,7 +149,9 @@ def test_all_operations():
         name="Scheduler_Stage",
         behind_latch=tbs_ws_if,
         ahead_latch=sched_icache_if,
-        forward_ifs_read= {"ICache_Scheduler" : icache_scheduler_fwif, "Decode_Scheduler": decode_scheduler_fwif, "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, "Writeback_Scheduler": writeback_scheduler_fwif},
+        forward_ifs_read= {"ICache_Scheduler" : icache_scheduler_fwif, "Decode_Scheduler": decode_scheduler_fwif, 
+                           "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, 
+                           "Writeback_Scheduler": writeback_scheduler_fwif},
         forward_ifs_write=None,
         start_pc=START_PC, 
         warp_count=WARP_COUNT
@@ -169,11 +171,11 @@ def test_all_operations():
 
     prf = PredicateRegFile(
         num_preds_per_warp=16,
-        num_warps=16
+        num_warps=WARP_COUNT
     )
     
     # Initialize all predicate registers to 1 (all threads active)
-    for warp in range(16):
+    for warp in range(WARP_COUNT):
         for pred in range(16 * 2):  # num_preds_per_warp * 2
             for neg in range(2):  # both positive and negative versions
                 prf.reg_file[warp][pred][neg] = [True] * 32  # all 32 threads active
@@ -211,6 +213,8 @@ def test_all_operations():
         fsu_names=list(fust.keys())
     )
     
+    decode_issue_fwif = ForwardingIF(name="Decode_issue_fwif")
+
     issue_stage = IssueStage(
         fust_latency_cycles=1,
         regfile=pipeline_rf,
@@ -220,7 +224,8 @@ def test_all_operations():
         ahead_latch=is_ex_latch,
         forward_ifs_read=None,
         # missing the forward IF connection, adding it in.
-        forward_ifs_write=None
+        forward_ifs_write= {"issue_scheduler_fwif" : issue_scheduler_fwif, 
+                            "decode_issue_fwif" : decode_issue_fwif},
     )
     
     # 2. Initialize Register Data
@@ -429,7 +434,7 @@ def test_all_operations():
     for cycle in range(len(test_cases)):
         # if instr.rd.uint == 1:
         #     abcHI = 1
-        print(f"\nCycle #{cycle}\n")
+        # print(f"\nCycle #{cycle}\n")
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
@@ -445,7 +450,7 @@ def test_all_operations():
 
     print("All instructions issued. Flushing pipeline...")
 
-    FLUSH_CYCLES = len(test_cases) + 500  # Run enough cycles to flush the pipeline after last instruction is issued
+    FLUSH_CYCLES = len(test_cases) + 950  # Run enough cycles to flush the pipeline after last instruction is issued
     for _ in range(FLUSH_CYCLES):
         # Refill forward IFs if they get drained
         print(f"\nCycle #{_ + n_cycle}\n")

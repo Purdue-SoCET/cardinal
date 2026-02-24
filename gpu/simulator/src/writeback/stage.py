@@ -151,7 +151,7 @@ class WritebackStage(Stage):
         self._write_to_reg_file()
         self.values_to_writeback = self.wb_buffer.tick()
         if self.values_to_writeback is not None and len(self.values_to_writeback) != self.num_banks:
-            print(f"Error: Expected {self.num_banks} banks, but got {len(self.values_to_writeback)}")
+            # print(f"Error: Expected {self.num_banks} banks, but got {len(self.values_to_writeback)}")
             raise ValueError("Number of banks in values_to_writeback does not match num_banks.")
 
 
@@ -171,7 +171,7 @@ class WritebackStage(Stage):
                 for i in range(32):
                     if instr.predicate[i].bin == 0b0:
                         continue
-                    print("[Writeback] Writing back to register file, warp_id:", instr.warp_id, "thread_id:", i, "dest_operand:", instr.rd, "data:", instr.wdat[i])
+                    # print("[Writeback] Writing back to register file, warp_id:", instr.warp_id, "thread_id:", i, "dest_operand:", instr.rd, "data:", instr.wdat[i])
                     self.reg_file.write_thread_gran(
                         dest_operand=instr.rd,
                         data=instr.wdat[i],
