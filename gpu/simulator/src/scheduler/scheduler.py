@@ -1,27 +1,24 @@
-import sys, os
 from collections import deque
 from dataclasses import dataclass, field
 from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
 from bitstring import Bits
-gpu_root = Path(__file__).resolve().parents[3]
-sys.path.append(str(gpu_root))
-print("here", gpu_root)
-from simulator.base_class import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
-from csrtable import CsrTable
+from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
+from simulator.scheduler.csrtable import CsrTable
+import math
 
 class SchedulerStage(Stage):
-    def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: int = 32, policy: str = "RR", **kwargs):
+    def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: float = 32, policy: str = "RR", **kwargs):
         super().__init__(*args, **kwargs)
 
         # static shit
         self.warp_count: int = warp_count
         self.num_groups: int = (warp_count + 1) // 2
-        self.warp_size: int = warp_size
+        self.warp_size: float = warp_size
         self.at_barrier: int = 0
         self.policy: str = policy
-        self.csrtable: CsrTable = csrtable
+        self.csrtable = csrtable
 
         # warp table
         self.warp_table: List[WarpGroup] = [WarpGroup(pc=0, group_id=id) for id in range(self.num_groups)]
@@ -42,6 +39,11 @@ class SchedulerStage(Stage):
 
         # could add perf counters
         self.stop_fetching = False
+
+    ####### DEBUGGING STUFF #######
+    def log_table(self):
+        for warp in self.warp_table:
+            print(f"\n{warp}\n")
 
     ####### HELPER CLASSES
     # figuring out which warps can/cant issue
@@ -113,13 +115,22 @@ class SchedulerStage(Stage):
 
         # TODO: simulate (num warps + (2 or 1 depending on how tbs works) cycles to init)
         tb_id, tb_size, start_pc = self.behind_latch.pop()
+
+        # print(f"\n FUCKING TBS SHIT:\n")
+        # print(f"{tb_id, tb_size, start_pc}\n\n")
         base_id = 0
 
-        for _ in range(tb_size % self.warp_size):
-            self.warp_table[self.free_warp].pc = start_pc
-            self.warp_table[self.free_warp].state = WarpState.READY
+        for _ in range(math.ceil(tb_size / self.warp_size)):
+            if not (self.free_warp % 2):
+                self.warp_table[self.free_warp // 2].pc = start_pc
+                self.warp_table[self.free_warp // 2].state = WarpState.READY
+            
             self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
             base_id += self.warp_size
+            self.free_warp += 1
+
+        self.log_table()
+
 
     # round robin policy
     def round_robin(self):

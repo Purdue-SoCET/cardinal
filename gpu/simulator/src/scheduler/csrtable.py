@@ -9,7 +9,7 @@ class CsrTable:
     table: List[List[Any]] = field(init=False)
 
     def __post_init__(self):
-        self.table = [[] for _ in range(self.warps)]
+        self.table = [[0, 0, 0] for _ in range(self.warps)]
 
     def write_data(self, warp_id, base_id, tb_id, tb_size) -> None:
         self.table[warp_id] = [base_id, tb_id, tb_size]
@@ -31,7 +31,7 @@ class CsrTable:
         print(f"Warp id: base_id | tb_id | tb_size")
 
         for w in range(self.warps):
-            print(f"Warp {w}: {self.table[w][0] | self.table[w][1] | self.table[w][2]}\n")
+            print(f"Warp {w}: {self.table[w][0]} | {self.table[w][1]} | {self.table[w][2]}\n")
 
         print(f"\n")
         
