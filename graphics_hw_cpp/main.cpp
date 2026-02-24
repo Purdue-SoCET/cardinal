@@ -59,7 +59,7 @@ int main()
 	tris.push_back(t3);
 	tris.push_back(t4);
 
-	std::queue<std::array<int16_t, 3>> indexBatches;
+	std::queue<primIndices> indexBatches;
 
 	Projector projector{};
 	VectorTable vector_table = VectorTable(48);
@@ -71,9 +71,9 @@ int main()
 		projector.depth(&tris[i]);
 		tris[i].update(); //Make sure updated A B C vertices reflect everywhere in struct.
 
-		std::array<int16_t, 3> indices;
+		primIndices indices;
 		for (int j = 0; j < 3; j++) { //Vertices loop for table setup.
-			indices[j] = vector_table.addVertex(tris[i].vertices[j]);
+			indices.primitive[j] = vector_table.addVertex(tris[i].vertices[j]);
 		}
 		indexBatches.push(indices);
 	}
@@ -86,8 +86,10 @@ int main()
 	Status FE_BB = Status();
 	BoundingBox bounding_box = BoundingBox(&clk);
 	Status BB_DP = Status();
+	Buffer buffer0 = Buffer<primIndices, 3>(&clk);
+	Buffer buffer1 = Buffer<primIndices, 3>(&clk);
 
-	std::array<primIndices, 2> batch;
+	std::array<primIndices, 2> batch = {primIndices(), primIndices()};
 
 	auto start = std::chrono::steady_clock::now();
 	primIndices input = primIndices();
@@ -99,7 +101,7 @@ int main()
 			break;
 		}
 		else if (!indexBatches.empty() && IN_FE.ready && clk.isComb()) {
-			input.primitive = indexBatches.front();
+			input = indexBatches.front();
 			indexBatches.pop();
 			IN_FE.valid = 1;
 		}
@@ -111,8 +113,31 @@ int main()
 		bounding_box.comb(&FE_BB, batch, &vector_table);
 		batch = bounding_box.forward(&BB_DP, &FE_BB, batch); //Forward bounding box stage.
 
+		//---------- DISPATCH ----------
+		if (BB_DP.valid) { //BUFFER DEBUG
+			buffer0._en();
+			buffer1._en();
+			stop = indexBatches.empty();
+		}
+		else {
+			buffer0.n_en();
+			buffer1.n_en();
+		}
+
+		buffer0.comb(batch[0]);
+		buffer1.comb(batch[1]);
+
+		primIndices* val0 = buffer0.latch();
+		primIndices* val1 = buffer1.latch();
+
+		if (val0 != nullptr) val0->print();
+		if (val1 != nullptr) val1->print();
+
+		batch[0] = val0 != nullptr ? *val0 : batch[0];
+		batch[1] = val1 != nullptr ? *val1 : batch[1];
+
 		//---------- DEBUG ----------
-		if (BB_DP.valid) {
+		/*if (BB_DP.valid) {
 			std::array<std::array<f16Vector2, 2>, 2> bb_batch = bounding_box.getBB();
 
 			bb_batch[0][0].print(); //From triangle 1 get min.
@@ -127,7 +152,7 @@ int main()
 			std::cout << "\n";
 
 			stop = indexBatches.empty();
-		}
+		}*/
 
 		clk.edge();
 	}

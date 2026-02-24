@@ -9,7 +9,7 @@
 
 class Fetch {
 private:
-	std::queue<std::array<int16_t, 3>> indices;
+	std::queue<primIndices> indices;
 	Clock* clk;
 public:
 
@@ -22,7 +22,7 @@ public:
 
 class BoundingBox {
 private:
-	std::queue<std::array<int16_t, 3>> indices;
+	std::queue<primIndices> indices;
 	std::queue<std::array<std::array<f16Vector2, 2>, 2>> bounding_box;
 	Clock* clk;
 public:

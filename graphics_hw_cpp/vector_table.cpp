@@ -1,5 +1,6 @@
 #include "vector_table.hpp"
 #include "graphics_lib.hpp"
+#include "hardware_lib.hpp"
 
 VectorTable::VectorTable(int maxSize) {
 	this->maxSize = maxSize;
@@ -25,15 +26,15 @@ void VectorTable::invalidateVertex(int handle) {
 	this->table[handle] = Vertex{};
 }
 
-Triangle VectorTable::getTriangle(std::array<int16_t, 3> indices) {
+Triangle VectorTable::getTriangle(primIndices indices) {
 	std::array<Vertex, 3> tri;
 
 	for (int i = 0; i < 3; i++) {
-		if (this->table[indices[i]].color[0] == -1) {
+		if (this->table[indices.primitive[i]].color[0] == -1) {
 			return Triangle{};
 		}
 		else {
-			tri[i] = this->table[indices[i]];
+			tri[i] = this->table[indices.primitive[i]];
 		}
 		
 	}

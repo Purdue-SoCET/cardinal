@@ -13,7 +13,7 @@ std::array<primIndices, 2> Fetch::forward(Status* FE_BB, Status* IN_FE, std::arr
 
 	if (FE_BB->ready && this->clk->isLatch()) {
 		if (!this->indices.empty()) {
-			out[0].primitive = this->indices.front();
+			out[0] = this->indices.front();
 			this->indices.pop();
 		}
 		else {
@@ -23,13 +23,13 @@ std::array<primIndices, 2> Fetch::forward(Status* FE_BB, Status* IN_FE, std::arr
 		}
 
 		if (!this->indices.empty()) {
-			out[1].primitive = this->indices.front();
+			out[1] = this->indices.front();
 			this->indices.pop();
 		}
 		else {
 			FE_BB->valid = 0;
 			IN_FE->ready = 1;
-			this->indices.push(out[0].primitive);
+			this->indices.push(out[0]);
 			return out;
 		}
 		FE_BB->valid = 1;
@@ -48,7 +48,7 @@ std::array<primIndices, 2> Fetch::forward(Status* FE_BB, Status* IN_FE, std::arr
 
 void Fetch::comb(Status* FE_BB, Status* IN_FE, primIndices tri) {
 	if (this->clk->isComb() && IN_FE->valid) {
-		this->indices.push(tri.primitive);
+		this->indices.push(tri);
 	}
 }
 
@@ -71,7 +71,7 @@ std::array<primIndices, 2> BoundingBox::forward(Status* BB_DP, Status* FE_BB, st
 
 		if (BB_DP->ready && this->clk->isLatch()) {
 			if (!this->indices.empty()) {
-				out[0].primitive = this->indices.front();
+				out[0] = this->indices.front();
 				this->indices.pop();
 			}
 			else {
@@ -80,12 +80,12 @@ std::array<primIndices, 2> BoundingBox::forward(Status* BB_DP, Status* FE_BB, st
 			}
 
 			if (!this->indices.empty()) {
-				out[1].primitive = this->indices.front();
+				out[1] = this->indices.front();
 				this->indices.pop();
 			}
 			else {
 				BB_DP->valid = 0;
-				this->indices.push(out[0].primitive);
+				this->indices.push(out[0]);
 				return out;
 			}
 			BB_DP->valid = 1;
@@ -101,11 +101,11 @@ void BoundingBox::comb(Status* FE_BB, std::array<primIndices, 2> tris, VectorTab
 	FE_BB->ready = 0;
 
 	if (FE_BB->valid && this->clk->isComb()) {
-		this->indices.push(tris[0].primitive);
-		this->indices.push(tris[1].primitive);
+		this->indices.push(tris[0]);
+		this->indices.push(tris[1]);
 
-		Triangle tri0 = table->getTriangle(tris[0].primitive);
-		Triangle tri1 = table->getTriangle(tris[1].primitive);
+		Triangle tri0 = table->getTriangle(tris[0]);
+		Triangle tri1 = table->getTriangle(tris[1]);
 
 		f16Vector2 min0 = tri0.getMin();
 		f16Vector2 max0 = tri0.getMax();
