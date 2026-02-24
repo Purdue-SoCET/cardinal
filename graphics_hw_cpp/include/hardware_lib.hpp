@@ -32,4 +32,13 @@ struct Status {
 	bool ready = 1;
 };
 
+struct primIndices {
+	std::array<int16_t, 3> primitive = {-1,-1,-1};
+};
+
+class Buffer {
+private:
+	uint16_t size = 0;
+};
+
 #endif // !HARDWARE_LIB_H

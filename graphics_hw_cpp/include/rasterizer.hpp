@@ -13,8 +13,8 @@ private:
 	Clock* clk;
 public:
 
-	std::array<std::array<int16_t, 3>, 2> forward(Status* FE_BB, std::array<std::array<int16_t, 3>, 2> batch);
-	void comb(Status* FE_BB, std::array<int16_t, 3> tri);
+	std::array<primIndices, 2> forward(Status* FE_BB, Status* IN_FE, std::array<primIndices, 2> batch);
+	void comb(Status* FE_BB, Status* IN_FE, primIndices tri);
 
 	Fetch(Clock* clk);
 
@@ -27,8 +27,8 @@ private:
 	Clock* clk;
 public:
 
-	std::array<std::array<int16_t, 3>, 2> forward(Status* BB_DP, Status* FE_BB, std::array<std::array<int16_t, 3>, 2> batch);
-	void comb(Status* FE_BB, std::array<std::array<int16_t, 3>, 2> tris, VectorTable* table);
+	std::array<primIndices, 2> forward(Status* BB_DP, Status* FE_BB, std::array<primIndices, 2> batch);
+	void comb(Status* FE_BB, std::array<primIndices, 2> tris, VectorTable* table);
 	std::array<std::array<f16Vector2, 2>, 2> getBB();
 
 	BoundingBox(Clock* clk);

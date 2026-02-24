@@ -13,11 +13,11 @@ int main()
 	fVector3 point1{ -0.8f, 0.6f, -2.0f };
 	fVector3 point2{ 0.8f, 0.6f, -2.0f };
 	fVector3 point3{ 0.0f, -0.6f, -5.0f };
-	fVector3 point4{ -0.8f, 0.6f, -2.0f };
+	fVector3 point4{ -1.0f, 0.4f, -3.0f };
 	fVector3 point5{ 0.8f, 0.6f, -2.0f };
-	fVector3 point6{ 0.0f, -0.6f, -5.0f };
+	fVector3 point6{ 1.0f, -0.6f, -5.0f };
 	fVector3 point7{ -0.8f, 0.6f, -2.0f };
-	fVector3 point8{ 0.8f, 0.6f, -2.0f };
+	fVector3 point8{ -0.1f, 0.5f, -2.0f };
 	fVector3 point9{ 0.0f, -0.6f, -5.0f };
 	fVector3 point10{ -0.8f, 0.6f, -2.0f };
 	fVector3 point11{ 0.8f, 0.6f, -2.0f };
@@ -59,7 +59,7 @@ int main()
 	tris.push_back(t3);
 	tris.push_back(t4);
 
-	std::vector<std::array<int16_t, 3>> indexBatches;
+	std::queue<std::array<int16_t, 3>> indexBatches;
 
 	Projector projector{};
 	VectorTable vector_table = VectorTable(48);
@@ -75,31 +75,37 @@ int main()
 		for (int j = 0; j < 3; j++) { //Vertices loop for table setup.
 			indices[j] = vector_table.addVertex(tris[i].vertices[j]);
 		}
-		indexBatches.push_back(indices);
+		indexBatches.push(indices);
 	}
 
 	//---------- CLOCK + STAGE GEN ----------
 	Clock clk = Clock{};
 	const uint32_t MAX_CLK = 100;
+	Status IN_FE = Status();
 	Fetch fetch = Fetch(&clk);
 	Status FE_BB = Status();
 	BoundingBox bounding_box = BoundingBox(&clk);
 	Status BB_DP = Status();
 
-	std::array<std::array<int16_t, 3>, 2> batch;
-	batch[0] = { -1,-1,-1 };
-	batch[1] = { -1,-1,-1 };
-	int offset = 0;
+	std::array<primIndices, 2> batch;
 
 	auto start = std::chrono::steady_clock::now();
+	primIndices input = primIndices();
+	bool stop = false;
 
 	for (int halfs = 0; halfs < MAX_CLK*2; halfs++) {
-		if (clk.cycle % 2 + offset >= indexBatches.size()) {
+		IN_FE.valid = 0;
+		if (stop) {
 			break;
 		}
+		else if (!indexBatches.empty() && IN_FE.ready && clk.isComb()) {
+			input.primitive = indexBatches.front();
+			indexBatches.pop();
+			IN_FE.valid = 1;
+		}
 		//---------- FETCH ----------
-		fetch.comb(&FE_BB, indexBatches[clk.cycle % 2 + offset]);
-		batch = fetch.forward(&FE_BB, batch); //Forward stage.
+		fetch.comb(&FE_BB, &IN_FE, input);
+		batch = fetch.forward(&FE_BB, &IN_FE, batch); //Forward stage.
 
 		//---------- BOUNDING BOX ----------
 		bounding_box.comb(&FE_BB, batch, &vector_table);
@@ -120,8 +126,7 @@ int main()
 			std::cout << "Cycles: " << clk.cycle << "\n";
 			std::cout << "\n";
 
-			offset++;
-			offset++;
+			stop = indexBatches.empty();
 		}
 
 		clk.edge();
