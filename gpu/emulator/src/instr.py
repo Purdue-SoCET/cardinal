@@ -137,9 +137,9 @@ class Instr(ABC):
                 ret_instr = J_Instr(op=op, rd=rd, imm=imm, pc=pc)
             case Instr_Type.C_TYPE:
                 op = C_Op(funct3)
-                rs1 = rs1[0:5]
-                print(f"ctype, funct={op}, rs1={rs1.uint}, rd={rd.uint}")
-                ret_instr = C_Instr(op=op, csr1=rs1, rd=rd) # TODO: Check up on werid csrr in teal card
+                # CSR uses 6 bits [18:13]
+                print(f"ctype, funct={op}, csr={rs1.uint}, rd={rd.uint}")
+                ret_instr = C_Instr(op=op, csr1=rs1, rd=rd)
             case Instr_Type.F_TYPE:
                 op = F_Op(funct3)
                 print(f"ftype, funct={op},imm={imm.int}")
@@ -641,8 +641,8 @@ class J_Instr(Instr):
         return_addr = self.pc.int + 4
         state.rfile.write(self.rd, Bits(int=return_addr, length=32))
 
-        # Update PC
-        target_addr = self.pc.int + self.imm.int
+        # Update PC (immediate is in halfword units, multiply by 2 for byte offset)
+        target_addr = self.pc.int + (self.imm.int * 2)
         return target_addr & 0xFFFFFFFE  # Ensure LSB is zero (word-aligned)
 
 class P_Instr(Instr):

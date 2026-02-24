@@ -64,7 +64,7 @@ class CsrRegFile(RegFile):
         "arg_ptr": 0x003,
     }
 
-    def __init__(self, thread_id: int, block_id: int, arg_ptr: int) -> None:
+    def __init__(self, thread_id: int, block_id: int, block_dim: int, arg_ptr: int) -> None:
         super().__init__(num_regs=64, num_bits_per_reg=32, init_value=0)
 
         print("* Setting thread ID as " + str(thread_id))
@@ -72,6 +72,7 @@ class CsrRegFile(RegFile):
         self.write(Bits(uint=self.csr_map["thread_id"], length=6), Bits(uint=thread_id, length=32))
         print("* Thread ID set to " + str(self.get_thread_id()))
         self.write(Bits(uint=self.csr_map["block_id"], length=6), Bits(uint=block_id, length=32))
+        self.write(Bits(uint=self.csr_map["block_dim"], length=6), Bits(uint=block_dim, length=32))
         self.write(Bits(uint=self.csr_map["arg_ptr"], length=6), Bits(uint=arg_ptr, length=32))
 
     def read(self, rd: Bits) -> Bits:
