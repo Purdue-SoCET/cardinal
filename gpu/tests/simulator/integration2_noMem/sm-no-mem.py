@@ -453,11 +453,11 @@ def test_all_operations():
     FLUSH_CYCLES = len(test_cases) + 950  # Run enough cycles to flush the pipeline after last instruction is issued
     for _ in range(FLUSH_CYCLES):
         # Refill forward IFs if they get drained
-        print(f"\nCycle #{_ + n_cycle}\n")
-        if issue_scheduler_fwif.payload is None:
-            issue_scheduler_fwif.push(filler_issue_scheduler)
-        if decode_scheduler_fwif.payload is None:
-            decode_scheduler_fwif.push(filler_decode_scheduler)
+        # print(f"\nCycle #{_ + n_cycle}\n")
+        # if issue_scheduler_fwif.payload is None:
+        #     issue_scheduler_fwif.push(filler_issue_scheduler)
+        # if decode_scheduler_fwif.payload is None:
+        #     decode_scheduler_fwif.push(filler_decode_scheduler)
         
         wb_stage.tick()
         ex_stage.tick()
