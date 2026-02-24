@@ -225,35 +225,42 @@ def test_all_operations():
     
     # 2. Initialize Register Data
     # ---------------------------------------------------------
-    warp_id = 0
-    test_values = {
-        # Integer registers
-        1: [0 + i for i in range(pipeline_rf.threads_per_warp)],
-        2: [5 + i for i in range(pipeline_rf.threads_per_warp)],
-        3: [3 for _ in range(pipeline_rf.threads_per_warp)],
-        4: [2 for _ in range(pipeline_rf.threads_per_warp)],
-        5: [-5 - i for i in range(pipeline_rf.threads_per_warp)],
-        # Floating point registers
-        10: [10.5 + i*0.5 for i in range(pipeline_rf.threads_per_warp)],
-        11: [2.5 + i*0.25 for i in range(pipeline_rf.threads_per_warp)],
-        12: [1.57 for _ in range(pipeline_rf.threads_per_warp)],
-        13: [4.0 for _ in range(pipeline_rf.threads_per_warp)],
+    # Define list of warp IDs to test
+    # warp_ids = [0, 1, 2, 3]  # Test multiple warps
+    warp_ids = []
+    for i in range(WARP_COUNT + 1 if(WARP_COUNT % 2 == 1) else WARP_COUNT):
+        warp_ids.append(i)
 
-        # # integration2 test
-        # 2: [5 for i in range(pipeline_rf.threads_per_warp)],
-        # 3: [5 for i in range(pipeline_rf.threads_per_warp)]
-    }
+    def get_test_values(warp_id, threads_per_warp):
+        """Generate test values that are unique per warp_id"""
+        return {
+            # Integer registers
+            1: [0 + i + warp_id for i in range(threads_per_warp)],
+            2: [5 + i + warp_id for i in range(threads_per_warp)],
+            3: [3 for _ in range(threads_per_warp)],
+            4: [2 for _ in range(threads_per_warp)],
+            5: [-5 - i + warp_id for i in range(threads_per_warp)],
+            # Floating point registers
+            10: [10.5 + i*0.5 + warp_id for i in range(threads_per_warp)],
+            11: [2.5 + i*0.25 + warp_id for i in range(threads_per_warp)],
+            12: [1.57 for _ in range(threads_per_warp)],
+            13: [4.0 for _ in range(threads_per_warp)],
+        }
 
     imm_test_value = Bits(int=5, length=32)  # Immediate value for I-type instructions
     
-    for reg_num, values in test_values.items():
-        if reg_num >= 10:
-            data = [Bits(float=v, length=32) for v in values]
-        else:
-            data = [Bits(int=v, length=32) for v in values]
+    # Initialize register values for all warps
+    for warp_id in warp_ids:
+        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
         
-        pipeline_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)
-        golden_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)
+        for reg_num, values in test_values.items():
+            if reg_num >= 10:
+                data = [Bits(float=v, length=32) for v in values]
+            else:
+                data = [Bits(int=v, length=32) for v in values]
+            
+            pipeline_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)
+            golden_rf.write_warp_gran(warp_id=warp_id, dest_operand=Bits(uint=reg_num, length=32), data=data)
 
     # 3. Define Test Cases
     # ---------------------------------------------------------
@@ -304,58 +311,62 @@ def test_all_operations():
     
     print("Computing golden reference...")
     
-    for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, python_op in test_cases:
-        if intended_fu not in fust:
-            print(f"  Warning: Skipping {test_name} (FU {intended_fu} not configured)")
-            continue
+    # Iterate over all warps for golden model computation
+    for warp_id in warp_ids:
+        print(f"  Computing golden model for warp {warp_id}...")
         
-        # --- A. Update Golden Model ---
-        bank = warp_id % golden_rf.banks
-        w_idx = warp_id // 2
-        rs1_vals = golden_rf.regs[bank][w_idx][rs1_reg]
-        rs2_vals = golden_rf.regs[bank][w_idx][rs2_reg]
-        golden_res = []
+        for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, python_op in test_cases:
+            if intended_fu not in fust:
+                print(f"    Warning: Skipping {test_name} (FU {intended_fu} not configured)")
+                continue
+            
+            # --- A. Update Golden Model ---
+            bank = warp_id % golden_rf.banks
+            w_idx = warp_id // 2
+            rs1_vals = golden_rf.regs[bank][w_idx][rs1_reg]
+            rs2_vals = golden_rf.regs[bank][w_idx][rs2_reg]
+            golden_res = []
 
-        if isinstance(opcode, I_Op): # if opcode is for an immediate type
-            imm_val = imm_test_value
-            rs2_vals = None
+            if isinstance(opcode, I_Op): # if opcode is for an immediate type
+                imm_val = imm_test_value
+                rs2_vals = None
 
-        for i in range(golden_rf.threads_per_warp):
-            # 1. Special Functions
-            if test_name == "SIN":
-                res = math.sin(rs1_vals[i].float)
-                golden_res.append(Bits(float=res, length=32))
-            elif test_name == "COS":
-                res = math.cos(rs1_vals[i].float)
-                golden_res.append(Bits(float=res, length=32))
-            elif test_name == "ISQRT":
-                val = rs1_vals[i].float
-                res = 0.0 if val <= 0 else 1.0 / math.sqrt(val)
-                golden_res.append(Bits(float=res, length=32))
-            # 2. Float Ops
-            elif rd_reg >= 50: 
-                res = python_op(rs1_vals[i].float, rs2_vals[i].float)
-                golden_res.append(Bits(float=res, length=32))
-            elif isinstance(opcode, I_Op): # Immediate ops
-                res = python_op(rs1_vals[i].int, imm_val.int)
-                if res < 0:
-                    golden_res.append(Bits(int=res, length=32))
+            for i in range(golden_rf.threads_per_warp):
+                # 1. Special Functions
+                if test_name == "SIN":
+                    res = math.sin(rs1_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif test_name == "COS":
+                    res = math.cos(rs1_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif test_name == "ISQRT":
+                    val = rs1_vals[i].float
+                    res = 0.0 if val <= 0 else 1.0 / math.sqrt(val)
+                    golden_res.append(Bits(float=res, length=32))
+                # 2. Float Ops
+                elif rd_reg >= 50: 
+                    res = python_op(rs1_vals[i].float, rs2_vals[i].float)
+                    golden_res.append(Bits(float=res, length=32))
+                elif isinstance(opcode, I_Op): # Immediate ops
+                    res = python_op(rs1_vals[i].int, imm_val.int)
+                    if res < 0:
+                        golden_res.append(Bits(int=res, length=32))
+                    else:
+                        golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
+                # 3. Int Ops
                 else:
-                    golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
-            # 3. Int Ops
-            else:
-                res = python_op(rs1_vals[i].int, rs2_vals[i].int)
-                if res < 0:
-                    golden_res.append(Bits(int=res, length=32))
-                else:
-                    golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
+                    res = python_op(rs1_vals[i].int, rs2_vals[i].int)
+                    if res < 0:
+                        golden_res.append(Bits(int=res, length=32))
+                    else:
+                        golden_res.append(Bits(uint=res & 0xFFFFFFFF, length=32))
 
-        golden_rf.write_warp_gran(
-            # warp_id=rd_reg % 2,
-            warp_id=warp_id,
-            dest_operand=Bits(uint=rd_reg, length=32),
-            data=golden_res
-        )
+            golden_rf.write_warp_gran(
+                # warp_id=rd_reg % 2,
+                warp_id=warp_id,
+                dest_operand=Bits(uint=rd_reg, length=32),
+                data=golden_res
+            )
 
         # # --- B. Create Pipeline Instruction ---
         # instr = Instruction(
@@ -399,8 +410,15 @@ def test_all_operations():
     print("\nStarting pipeline simulation...")
     
     print("Verifying initial state of register file matches golden model...")
-    if compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
-        print("✅ Initial register file state matches golden model.")
+    all_warps_match = True
+    for warp_id in warp_ids:
+        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
+        if not compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
+            all_warps_match = False
+            print(f"❌ Initial register file state for warp {warp_id} does NOT match.")
+    
+    if all_warps_match:
+        print("✅ Initial register file state matches golden model for all warps.")
     else:
         print("❌ Initial register file state does NOT match golden model. Aborting test.")
         return 0, 1
@@ -457,24 +475,31 @@ def test_all_operations():
     
     # We check all destination registers that were written to
     # Int Ops: 20-40, Float Ops: 50-56
-    # regs_to_check = list(range(20, 41)) + list(range(50, 57))
     regs_to_check = list(range(0, 63))
     
-    passed = compare_register_files(
-        pipeline_rf=pipeline_rf,
-        golden_rf=golden_rf,
-        warp_id=warp_id,
-        reg_list=regs_to_check,
-        verbose=True
-    )
+    all_warps_passed = True
+    for warp_id in warp_ids:
+        print(f"\n  Checking warp {warp_id}...")
+        passed = compare_register_files(
+            pipeline_rf=pipeline_rf,
+            golden_rf=golden_rf,
+            warp_id=warp_id,
+            reg_list=regs_to_check,
+            verbose=True
+        )
+        if not passed:
+            all_warps_passed = False
+            print(f"  ❌ Warp {warp_id} FAILED")
+        else:
+            print(f"  ✅ Warp {warp_id} PASSED")
 
     print("\nFinal Pipeline Register File State:")
     pipeline_rf.dump()
     print("\nFinal Golden Model Register File State:")
     golden_rf.dump()
 
-    if passed:
-        print("\n✅ SUCCESS: All register values match golden model.")
+    if all_warps_passed:
+        print(f"\n✅ SUCCESS: All register values match golden model for all {len(warp_ids)} warps.")
         return len(instruction_list), 0
     else:
         print("\n❌ FAILURE: Mismatches detected in register file.")
