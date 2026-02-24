@@ -35,7 +35,7 @@ class IssueStage(Stage):
         self.fust = fust
 
         self.num_iBuffer = 16
-        self.num_entries = 100
+        self.num_entries = 4
         # --- iBuffer: 16 warpGroups × 4-deep FIFO each ---
         self.iBuffer: List[List[Optional[Instruction]]] = [
             [None for _ in range(self.num_entries)] for _ in range(self.num_iBuffer)
