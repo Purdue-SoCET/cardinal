@@ -44,13 +44,15 @@ class Buffer {
 private:
 	Clock* clk;
 	uint16_t size = len;
-	std::array<T, len> buffer;
+	std::vector<T> buffer;
 	bool en = 0;
 	bool readyOut = 0;
 	T nextOut;
 	uint8_t currSize = 0;
+	bool filled = 0;
 public:
 	T out;
+	bool readyIn = 1;
 
 	uint8_t getSize() {
 		return this->currSize;
@@ -66,18 +68,21 @@ public:
 
 	void comb(T in) {
 		if (this->clk->isComb() && this->en) {
-			this->currSize++;
-			this->buffer[size-1] = in;
 
-			if (currSize == size - 1) {
-				this->nextOut = this->buffer[0];
-				this->currSize--;
-				this->readyOut = 1;
+			filled = this->buffer[0] == T() || this->buffer.size() == 0 ? 0 : 1;
+
+			if (currSize < this->buffer.size()) {
+				this->buffer.push_back(in);
+				currSize++;
+			}
+			else if (currSize == this->buffer.size()) {
+				nextOut = this->buffer[0];
+				readyOut = 1;
+				this->buffer.erase(this->buffer.begin());
+				currSize--;
 			}
 
-			for (int i = size-1; i > 0; i--) {
-				this->buffer[i - 1] = this->buffer[i];
-			}
+			readyIn = currSize < this->buffer.size() ? 1 : 0;
 		}
 	}
 	
@@ -90,7 +95,9 @@ public:
 		return nullptr;
 	}
 
-	Buffer(Clock* clk) : clk(clk) {}
+	Buffer(Clock* clk) : clk(clk) {
+		this->buffer = this->buffer(this->len);
+	}
 };
 
 #endif // !HARDWARE_LIB_H
