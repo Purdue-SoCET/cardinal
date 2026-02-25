@@ -46,6 +46,30 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ==========================================
+# Get first data-region address from hex file (addr >= DATA_START)
+# Used as default argptr when -a not specified.
+# ==========================================
+get_first_data_addr() {
+    local file="$1"
+    "$PYTHON" -c "
+import sys
+data_start = 0x20000000
+with open(sys.argv[1]) as f:
+    for line in f:
+        line = line.split('//')[0].split('#')[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) >= 1 and parts[0].startswith('0x'):
+            addr = int(parts[0], 16)
+            if addr >= data_start:
+                print(f'0x{addr:08X}')
+                sys.exit(0)
+print('0x20000000')
+" "$file"
+}
+
+# ==========================================
 # Run emulator (replaces: make run INPUT=... THREADS=... BLOCKS=...)
 # ==========================================
 run_emulator() {
@@ -67,7 +91,7 @@ cd "$SCRIPT_DIR" || exit 1
 # Parse arguments: -t/--threads (1-1024), -a/--argptr, -l/--log-thread
 # ==========================================
 THREADS_OVERRIDE=""
-ARGPTR="0x20000000"
+ARGPTR=""  # default: first data-region addr in input file
 LOG_THREAD=""
 
 while [[ $# -gt 0 ]]; do
@@ -87,7 +111,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: $0 [-t N] [-a ADDR] [-l TID] <path/to/file.hex>"
             echo "  -t, --threads N    Number of threads (1-1024)"
-            echo "  -a, --argptr ADDR  Argument pointer address (default: 0x20000000)"
+            echo "  -a, --argptr ADDR  Argument pointer address (default: first data addr in input)"
             echo "  -l, --log-thread TID  Only log trace for this thread (0-31)"
             exit 0
             ;;
@@ -126,13 +150,6 @@ mkdir -p "$DIFF_DIR"
 rm -f "$MEMINIT" "$EMU_OUTPUT" "$FINAL_EXPECTED" "$TEMP_CMD_LOG" "$INSTR_PART"
 # Note: we never delete the user's input file
 
-echo "========================================"
-echo "      GPU Emulator - Hex Input Test"
-echo "      Input:   $HEX_FILE"
-echo "      Base:    $base_name"
-echo "      Argptr:  $ARGPTR"
-echo "========================================"
-
 # ==========================================
 # 1. Prepare MEMINIT
 # ==========================================
@@ -155,6 +172,18 @@ fi
 
 # Use MEMINIT for emulator (we created it from user's file)
 INPUT_TO_USE="$MEMINIT"
+
+# Set default argptr from first data address if not overridden by -a
+if [ -z "$ARGPTR" ]; then
+    ARGPTR=$(get_first_data_addr "$INPUT_TO_USE")
+fi
+
+echo "========================================"
+echo "      GPU Emulator - Hex Input Test"
+echo "      Input:   $HEX_FILE"
+echo "      Base:    $base_name"
+echo "      Argptr:  $ARGPTR"
+echo "========================================"
 
 # ==========================================
 # 2. Extract instruction part for comparison (addr < 0x20000000)
