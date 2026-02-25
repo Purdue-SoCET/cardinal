@@ -6,8 +6,9 @@ from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, Reg
 from simulator.issue.regfile import RegisterFile
 from simulator.latch_forward_stage import Instruction, LatchIF
 from simulator.issue.stage import IssueStage
+from simulator.csr_table import CsrTable
+from simulator.kernel_base_pointers import KernelBasePointers
 from bitstring import Bits
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op
 import math
 
 #Yash and Dan
@@ -17,7 +18,7 @@ FILE_ROOT = Path(__file__).resolve().parent
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
 from common.custom_enums import Op
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
@@ -173,6 +174,16 @@ def test_all_operations():
         num_preds_per_warp=16,
         num_warps=WARP_COUNT
     )
+
+    csr_table = CsrTable()
+    for warp_id in range(WARP_COUNT):
+        if warp_id < (WARP_COUNT//2):
+            csr_table.write_data(warp_id, 32*warp_id, 10, 512)
+        else:
+            csr_table.write_data(warp_id, 32*(warp_id%(WARP_COUNT//2)), 11, 512)
+
+    kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
+    kernel_base_ptrs.write(0, Bits(uint=9203930, length=32)) # random address for testing
     
     # Initialize all predicate registers to 1 (all threads active)
     for warp in range(WARP_COUNT):
@@ -186,6 +197,8 @@ def test_all_operations():
         ahead_latch=decode_issue_if,
         prf=prf,
         fust=fust,
+        csr_table=csr_table,
+        kernel_base_ptrs=kernel_base_ptrs,
         forward_ifs_read={"ICache_Decode_Ihit": icache_scheduler_fwif},
         forward_ifs_write={"Decode_Scheduler_Pckt": decode_scheduler_fwif}
     )
@@ -308,6 +321,9 @@ def test_all_operations():
         ("SIN", F_Op.SIN, 12, 12, 54, "Trig_float_0", lambda a, b: None),  # Special handling
         ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", lambda a, b: None),  # Special handling
         ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", lambda a, b: None),  # Special handling
+
+        # TODO: NEED TO ADD CSRR INSTRUCTION HERE, BUT NOT SURE HOW TO COMPUTE PREDETERMINED VALUE
+
     ]
 
     # 4. Update Golden Model
@@ -450,7 +466,7 @@ def test_all_operations():
 
     print("All instructions issued. Flushing pipeline...")
 
-    FLUSH_CYCLES = len(test_cases) + 950  # Run enough cycles to flush the pipeline after last instruction is issued
+    FLUSH_CYCLES = len(test_cases) + 1100  # Run enough cycles to flush the pipeline after last instruction is issued
     for _ in range(FLUSH_CYCLES):
         # Refill forward IFs if they get drained
         # print(f"\nCycle #{_ + n_cycle}\n")

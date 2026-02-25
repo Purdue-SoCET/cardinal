@@ -45,6 +45,8 @@ class DecodeStage(Stage):
         ahead_latch: Optional[LatchIF],
         prf,
         fust,
+        csr_table,
+        kernel_base_ptrs,
         forward_ifs_read: Optional[Dict[str, ForwardingIF]] = None,
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
     ):
@@ -57,6 +59,8 @@ class DecodeStage(Stage):
         )
         self.prf = prf  # predicate register file reference
         self.fust = fust
+        self.csr_table = csr_table
+        self.kernel_base_ptrs = kernel_base_ptrs
     
     def classify_fust_unit(self, op) -> Optional[str]:
         """
@@ -153,8 +157,14 @@ class DecodeStage(Stage):
             for fu_name in self.fust.keys():
                 if "Branch" in fu_name or "branch" in fu_name:
                     return fu_name
+                
+        # csrr instruction
+        if isinstance(op, C_Op):
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
         
-        # Fallback: return first available Alu if nothing else matches
+        # Fallback: return first available Alu if nothing else matches        
         for fu_name in self.fust.keys():
             if fu_name.startswith("Alu_int_"):
                 return fu_name
@@ -245,7 +255,8 @@ class DecodeStage(Stage):
         is_H = (decoded_family is H_Op)
 
         # rd present for R/I/F/U/J/P (per your intent)
-        if is_R or is_I or is_F or is_U or is_J or is_P:
+        # if is_R or is_I or is_F or is_U or is_J or is_P:
+        if is_R or is_I or is_F or is_U or is_J or is_P or is_C:
             inst.rd = Bits(uint=((raw >> 7) & 0x3F), length=6)
 
             # Your special P-type rule using LOWER 3 bits of opcode7
@@ -257,7 +268,8 @@ class DecodeStage(Stage):
 
         # rs1 present for R/I/F/S/B/P
         if is_R or is_I or is_F or is_S or is_B or is_P:
-            inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
+            # inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
+            inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=6)
 
             opcode_lower = opcode7 & 0x7
             if is_P and opcode_lower not in (0x4, 0x5):
@@ -269,14 +281,20 @@ class DecodeStage(Stage):
 
         # rs2 present for R/S/B
         if is_R or is_S or is_B:
-            inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=5)
+            # inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=5)
+            inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=6)
             inst.num_operands = 2 ### ADDED ###
         else:
             inst.rs2 = None
             inst.num_operands = 1 ### ADDED ###
+        
+        # no operands for csrr instruction
+        if is_C:
+            inst.num_operands = 0
 
         # src_pred present for R/I/F/S/U/B (your original intent)
-        if is_R or is_I or is_F or is_S or is_U or is_B:
+        # if is_R or is_I or is_F or is_S or is_U or is_B:
+        if is_R or is_I or is_F or is_S or is_U or is_B or is_C:
             inst.src_pred = (raw >> 25) & 0x1F
         else:
             inst.src_pred = None
@@ -304,6 +322,18 @@ class DecodeStage(Stage):
             inst.imm = Bits(uint=0x7FFFFF, length=23)
         else:
             inst.imm = Bits(uint=0x0, length=6)
+
+        # csr_value and csr_param field population (may need to add more values here later)
+        if is_C:
+            inst.csr_param = Bits(uint=(raw >> 13) & 0x3F, length=6).uint
+            if inst.csr_param == 0:
+                inst.csr_value = self.csr_table.read_base_id(inst.warp_id)
+            elif inst.csr_param == 1:
+                inst.csr_value = self.csr_table.read_tb_id(inst.warp_id)
+            elif inst.csr_param == 2:
+                inst.csr_value = self.csr_table.read_tb_size(inst.warp_id)
+            elif inst.csr_param == 3:
+                inst.csr_value = self.kernel_base_ptrs.read(0) # hard-coded to 0 for now since assuming only one kernel per SM
 
         # Map opcode to actual functional unit name from fust
         inst.intended_FU = self.classify_fust_unit(inst.opcode)

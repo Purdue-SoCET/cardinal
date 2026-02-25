@@ -236,6 +236,8 @@ class Instruction:
     predicate:Optional[Bits] = None
     opcode: Optional[Op]= None
     imm: Optional[Bits]= None
+    csr_value: Optional[Any] = None
+    csr_param: Optional[Any] = None
     
     packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None

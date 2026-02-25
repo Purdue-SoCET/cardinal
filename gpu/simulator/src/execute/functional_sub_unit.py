@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, C_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import LatchIF, Instruction
@@ -100,7 +100,7 @@ class Alu(ArithmeticSubUnit):
             R_Op.XOR, R_Op.SLT, R_Op.SLTU, R_Op.SLL, 
             R_Op.SRL, R_Op.SRA, I_Op.SUBI, I_Op.ADDI,
             I_Op.ORI, I_Op.XORI, I_Op.SLTI, I_Op.SLTIU,
-            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI,
+            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI, C_Op.CSRR      # added C_Op.CSRR here
         ],
         float: [
             # No floating-point operations supported in ALU
@@ -133,15 +133,21 @@ class Alu(ArithmeticSubUnit):
             if self.type_ != int: 
                 raise ValueError("ALU only supports integer operations.")
 
-            a = instr.rdat1[i].int
+            if isinstance(instr.opcode, C_Op):
+                a = instr.csr_value if instr.csr_param != 3 else instr.csr_value.uint
+            else:
+                a = instr.rdat1[i].int
             
             if isinstance(instr.opcode, I_Op):
                 b = instr.imm.int
+            elif isinstance(instr.opcode, C_Op):
+                b = 0 if instr.csr_param != 0 else i
             else:
                 b = instr.rdat2[i].int
 
             match instr.opcode:
-                case R_Op.ADD | I_Op.ADDI:
+                # case R_Op.ADD | I_Op.ADDI:
+                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR:
                     result = a + b
                     # if (instr.opcode == I_Op):
                         # print(f"[EX: ADDI] {a} + {b} = ", result)
