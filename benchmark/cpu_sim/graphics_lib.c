@@ -11,11 +11,11 @@ void barycentric_coordinates(vector_t* l, vector_t point, vector_t pVs[3]) {
     };
     float bc_im[3][3];
 
-    double det = (double)m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) -
-                (double)m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
-                (double)m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+    float det = (float)m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) -
+                (float)m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+                (float)m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 
-    double invDet = 1.0 / det;
+    float invDet = 1.0 / det;
 
     bc_im[0][0] = (m[1][1] * m[2][2] - m[2][1] * m[1][2]) * invDet;
     bc_im[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * invDet;

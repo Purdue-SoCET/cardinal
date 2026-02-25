@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
+#include "include/shader_memdump.h"
 
 // Include all needed kernels
 #include "../kernels/include/vertexShader.h"
@@ -21,6 +22,9 @@ uint8_t* memory_ptr;
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
+
+#define INPUT_ARGS_DEBUG 0
+#define OUTPUT_ARGS_DEBUG 0
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -54,8 +58,6 @@ uint8_t* memory_ptr;
         arr[DFAx] = def; \
     } \
 }
-
-
 
 int main(int argc, char** argv) {
     int frame = 0;
@@ -186,10 +188,18 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(pVerts, vertex_t, num_verts);
         vertex_args->twoDVert = pVerts;
     
+        if(INPUT_ARGS_DEBUG){
+            print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
+        }
+    
     // Running the Kernel
     {
         int grid_dim = 1; int block_dim = num_verts;
         run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
+    }
+
+    if(OUTPUT_ARGS_DEBUG){
+        print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
     }
 
     // Checking Vertex Output
@@ -198,11 +208,11 @@ int main(int argc, char** argv) {
         for(int i = 0; i < num_verts; i++) {
             printf(" --- Vertex %d --- \n", i);
             printf("3D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVert[i].coords.x, vertex_args->threeDVert[i].coords.y, vertex_args->threeDVert[i].coords.z, vertex_args->threeDVert[i].s, vertex_args->threeDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVert[i].coords.x, (double)vertex_args->threeDVert[i].coords.y, (double)vertex_args->threeDVert[i].coords.z, (double)vertex_args->threeDVert[i].s, (double)vertex_args->threeDVert[i].t);
             printf("3Dt:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVertTrans[i].coords.x, vertex_args->threeDVertTrans[i].coords.y, vertex_args->threeDVertTrans[i].coords.z, vertex_args->threeDVertTrans[i].s, vertex_args->threeDVertTrans[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVertTrans[i].coords.x, (double)vertex_args->threeDVertTrans[i].coords.y, (double)vertex_args->threeDVertTrans[i].coords.z, (double)vertex_args->threeDVertTrans[i].s, (double)vertex_args->threeDVertTrans[i].t);
             printf("2D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->twoDVert[i].coords.x, vertex_args->twoDVert[i].coords.y, vertex_args->twoDVert[i].coords.z, vertex_args->twoDVert[i].s, vertex_args->twoDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->twoDVert[i].coords.x, (double)vertex_args->twoDVert[i].coords.y, (double)vertex_args->twoDVert[i].coords.z, (double)vertex_args->twoDVert[i].s, (double)vertex_args->twoDVert[i].t);
         }
         printf(" --- Vertex end --- \n");
     }
@@ -258,9 +268,21 @@ int main(int argc, char** argv) {
         };
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
+        if(INPUT_ARGS_DEBUG){
+            char filename[30];
+            sprintf(filename, "build/triangleInput%d.txt", tri); 
+            print_triangle_args(filename, triangle_args);
+        }
+
         // Running the Kernel
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
+
+        if(OUTPUT_ARGS_DEBUG){
+            char filename[30];
+            sprintf(filename, "build/triangleOutput%d.txt", tri); 
+            print_triangle_args(filename, triangle_args);
+        }
     }
 
     // Checking TRIANGLE Output
@@ -269,7 +291,7 @@ int main(int argc, char** argv) {
         printf(" --- Post Triangle Depths --- \n");
         printf("\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
-            printf("%+06.2f", zbuff[i]);
+            printf("%+06.2f", (double) zbuff[i]);
             if(((i+1) % frame_w)) {
                 printf(", ");
             } else if (i+1 != frame_w*frame_h) {
@@ -317,10 +339,17 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
+    if(INPUT_ARGS_DEBUG){
+        print_pixel_args("build/pixelInput.txt", pixel_args); 
+    }
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
+    }
+
+    if(OUTPUT_ARGS_DEBUG){
+        print_pixel_args("build/pixelOutput.txt", pixel_args); 
     }
 
     // --- Create Image from Data ---
