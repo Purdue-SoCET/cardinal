@@ -22,9 +22,9 @@ scheduler_stage = SchedulerStage(
     forward_ifs_write = None
 )
 
-def test_startup():
+def test_init(tb_id, tb_size, start_pc):
     # pushing to sm
-    tbs_latch.push([0, 256, 0x1000])
+    tbs_latch.push([tb_id, tb_size, start_pc])
 
     # setting foward interfaces
     icache_scheduler.push(False)
@@ -38,7 +38,9 @@ def test_startup():
     return
 
 def main():
-    test_startup()
+    test_init(0, 256, 0x1000)
+    csrtable.dump()
+    test_init(1, 256, 0x1000)
     csrtable.dump()
 
 if __name__ == "__main__":

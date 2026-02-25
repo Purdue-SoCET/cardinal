@@ -24,26 +24,22 @@ class SchedulerStage(Stage):
         self.warp_table: List[WarpGroup] = [WarpGroup(pc=0, group_id=id) for id in range(self.num_groups)]
         self.warp_init: int = 0
 
+        # initialization
+        self.free_warp: int = 0
+
         # oldest queue
-        self.oldest: List[WarpGroup] = []
+        self.oldest: List[int] = []
+        self.unissued: List[int] = [warp for warp in range(self.num_groups)]
 
         # scheduler bookkeeping
         self.rr_index: int = 0
-        self.current_warp: int = 0
-        self.free_warp: int = 0
-        # self.max_issues_per_cycle: int = 1
-        # self.ready_queue = deque(range(warp_count))
+        self.gto_index: int = 0
 
         # debug
         self.issued_warp_last_cycle: Optional[int] = None
 
         # could add perf counters
         self.stop_fetching = False
-
-    ####### DEBUGGING STUFF #######
-    def log_table(self):
-        for warp in self.warp_table:
-            print(f"\n{warp}\n")
 
     ####### HELPER CLASSES
     # figuring out which warps can/cant issue
@@ -108,7 +104,7 @@ class SchedulerStage(Stage):
             print(f"[Scheduler] STALLED by ahead latch")
             return False 
 
-    # might not need 
+    # SEND HALT BACK TO TBS SOMEWHERE 
     def tbs_init(self):
         if not self.behind_latch.valid:
             return
@@ -128,9 +124,6 @@ class SchedulerStage(Stage):
             self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
             base_id += self.warp_size
             self.free_warp += 1
-
-        self.log_table()
-
 
     # round robin policy
     def round_robin(self):
@@ -174,42 +167,86 @@ class SchedulerStage(Stage):
 
     ############### greedy policy WIP
     def greedy_oldest(self):
-        # initialize instruction class
-        instr = Instruction(None, None, None, None, None, None, None, None, None)
+        # current warp group is good for issue
+        if self.warp_table[self.gto_index].state == WarpState.READY:
+            group = self.warp_table[self.gto_index]
 
-        # current group
-        curr_group = self.warp_table[self.current_warp]
+            # issue even
+            if not group.last_issue_even:
+                group.last_issue_even = True
 
-        # if current group is able to issue
-        if curr_group.state == WarpState.READY:
-            # odd group
-            if not curr_group.last_issue_even:
-                curr_group.last_issue_even = True
+                instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
+                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                self.push_instruction(instr)
+                return
 
-                instr.pc = curr_group.pc
-                instr.warp_id = curr_group.group_id * 2
-                instr.warp_group_id = curr_group.group_id
-                return instr
-
-            # even group
+            # issue odd
             else:
-                curr_group.last_issue_even = False
-                current_pc = curr_group.pc
-                curr_group.pc += 4
+                current_pc = group.pc
+                group.pc += 4
+                group.last_issue_even = False
 
-                instr.pc = current_pc
-                instr.warp_id = (curr_group.group_id * 2) + 1
-                instr.warp_group_id = curr_group.group_id
-                return instr
-            
-        # current group not able to issue
+                instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
+                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                self.push_instruction(instr)
+                return
+
+        
+        # need to find next potential warp group
         else:
+            # look through oldest queue
+            for group_id in self.oldest:
+                if self.warp_table[group_id].state == WarpState.READY:
+                    group = self.warp_table[group_id]
 
-            return instr
+                    # issue even
+                    if not group.last_issue_even:
+                        group.last_issue_even = True
 
-        # nothing
-        return instr
-    
+                        instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                        self.push_instruction(instr)
+                        return
+
+                    # issue odd
+                    else:
+                        current_pc = group.pc
+                        group.pc += 4
+                        group.last_issue_even = False
+
+                        instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                        self.push_instruction(instr)
+                        return
+
+            # look through unstarted warps
+            for group_id in self.unissued:
+                if self.warp_table[group_id].state == WarpState.READY:
+                    group = self.warp_table[group_id]
+
+                    # issue even
+                    if not group.last_issue_even:
+                        group.last_issue_even = True
+
+                        instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                        self.push_instruction(instr)
+                        return
+
+                    # issue odd
+                    else:
+                        current_pc = group.pc
+                        group.pc += 4
+                        group.last_issue_even = False
+
+                        instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                        self.push_instruction(instr)
+                        return
+                    
+        # nothing can fetch here
+        return
+
     # warp scheduler compute method
     def compute(self):
         # nothing on the sm LOL
