@@ -7,6 +7,7 @@ from bitstring import Bits
 class Mem: 
     def __init__(self, start_pc: int, input_file: str, mem_format: str) -> None:
         self.memory: dict[int, int] = {}
+        self.meminit_bases: set[int] = set()  # word-aligned addrs from init (include zeros on dump)
         self.endianness = "little"
         addr = start_pc
 
@@ -43,6 +44,9 @@ class Mem:
                     if len(bits) != 32 or any(c not in "01" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
+
+                # Track word-aligned base for meminit (so we include zeros on dump)
+                self.meminit_bases.add(addr & ~0x3)
 
                 # Write to Memory (Endianness Handling)
                 if self.endianness == "little":
@@ -94,9 +98,11 @@ class Mem:
         """
         Dump memory one 32-bit word per line.
         Groups consecutive bytes [addr, addr+1, addr+2, addr+3] into one word.
-        Skips words that are entirely zero (uninitialized).
+        Skips words that are entirely zero (uninitialized), except for addresses
+        present in meminit, which are always included. Output is uppercase hex.
         """
-        word_bases = {addr & ~0x3 for addr in self.memory.keys()}
+        # Include all word bases from memory; also include meminit bases (even if zero)
+        word_bases = {addr & ~0x3 for addr in self.memory.keys()} | self.meminit_bases
 
         with open(path, "w", encoding="utf-8") as f:
             for base in sorted(word_bases):
@@ -105,8 +111,8 @@ class Mem:
                 b1 = self.memory.get(base + 1, 0) & 0xFF
                 b2 = self.memory.get(base + 2, 0) & 0xFF
                 b3 = self.memory.get(base + 3, 0) & 0xFF
-                if (b0 | b1 | b2 | b3) == 0:
-                    continue  # skip all-zero words
+                if (b0 | b1 | b2 | b3) == 0 and base not in self.meminit_bases:
+                    continue  # skip all-zero words (unless address was in meminit)
 
                 if self.endianness == 'little':
                     # Little Endian: Addr+0 is LSB
