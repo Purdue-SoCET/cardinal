@@ -32,8 +32,8 @@ int main() {
     arg.n = ARR_SIZE;
     arg.a = 2.0f;
 
-    dim_t grid; grid.x = 1; grid.y = 1; grid.z = 1;
-    dim_t block; block.x = ARR_SIZE; block.y = 1; block.z = 1;
+    int grid = 1;
+    int block = ARR_SIZE;
     run_kernel(kernel_saxpy, grid, block, (void*)&arg);
 
     for (int i = 0; i < ARR_SIZE; i++) {
