@@ -8,6 +8,9 @@ from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, Wa
 from simulator.scheduler.csrtable import CsrTable
 import math
 
+# comment/uncomment for printing out debug info
+print = lambda *args, **kwargs: None
+
 class SchedulerStage(Stage):
     def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: float = 32, policy: str = "RR", **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,7 +36,7 @@ class SchedulerStage(Stage):
 
         # scheduler bookkeeping
         self.rr_index: int = 0
-        self.gto_index: int = 0
+        self.gto_index: int = -1
 
         # debug
         self.issued_warp_last_cycle: Optional[int] = None
@@ -63,7 +66,7 @@ class SchedulerStage(Stage):
                 self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
 
         # if im getting my odd warp halt out of my decode
-        elif decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
+        elif decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
             self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
 
         # change pc for branch
@@ -96,13 +99,9 @@ class SchedulerStage(Stage):
     
     # pushing to latch
     def push_instruction(self, inst):
-        if self.ahead_latch.ready_for_push:
-            print(f"[Scheduler] Pushing inst to ahead latch")
-            self.ahead_latch.push(inst)
-            return True
-        else:
-            print(f"[Scheduler] STALLED by ahead latch")
-            return False 
+        print(f"[Scheduler] Pushing inst to ahead latch")
+        self.ahead_latch.push(inst)
+        return
 
     # SEND HALT BACK TO TBS SOMEWHERE 
     def tbs_init(self):
@@ -170,6 +169,7 @@ class SchedulerStage(Stage):
         # current warp group is good for issue
         if self.warp_table[self.gto_index].state == WarpState.READY:
             group = self.warp_table[self.gto_index]
+            group.in_flight += 1
 
             # issue even
             if not group.last_issue_even:
@@ -191,13 +191,16 @@ class SchedulerStage(Stage):
                 self.push_instruction(instr)
                 return
 
-        
         # need to find next potential warp group
         else:
             # look through oldest queue
             for group_id in self.oldest:
                 if self.warp_table[group_id].state == WarpState.READY:
+                    # update gto trackers
+                    self.gto_index = group_id
+
                     group = self.warp_table[group_id]
+                    group.in_flight += 1
 
                     # issue even
                     if not group.last_issue_even:
@@ -220,9 +223,15 @@ class SchedulerStage(Stage):
                         return
 
             # look through unstarted warps
-            for group_id in self.unissued:
+            for idx, group_id in enumerate(self.unissued):
                 if self.warp_table[group_id].state == WarpState.READY:
+                    # update gto trackers
+                    self.gto_index = group_id
+                    self.oldest.append(group_id)
+                    self.unissued.pop(idx)
+
                     group = self.warp_table[group_id]
+                    group.in_flight += 1
 
                     # issue even
                     if not group.last_issue_even:
@@ -252,9 +261,6 @@ class SchedulerStage(Stage):
         # nothing on the sm LOL
         if not self.warp_table:
             return
-        
-        # init from TBS if needed
-        self.tbs_init()
 
         # determining next states
         self.collision()
@@ -269,5 +275,8 @@ class SchedulerStage(Stage):
                 self.round_robin()
             case "GTO":
                 self.greedy_oldest()
+
+        # init from TBS if needed
+        self.tbs_init()
 
         # self.ahead_latch.push(instr)
