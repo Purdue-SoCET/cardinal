@@ -189,13 +189,6 @@ class DecodeStage(Stage):
         else:
             # pop whatever you need..
             inst = self.behind_latch.pop()
-        
-
-        # THIS IS MOSTLY FOR DEBUGGIG, UNEEDED IN ACTUAL RTL.
-        if self.forward_ifs_read["ICache_Decode_Ihit"].pop() is False:
-            # print("[Decode] Stalling Pipeline due to Icache Miss")
-            return inst 
-
 
         raw_bits = inst.packet
         # print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")

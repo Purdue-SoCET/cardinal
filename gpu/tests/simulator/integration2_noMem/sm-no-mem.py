@@ -199,7 +199,7 @@ def test_all_operations():
         fust=fust,
         csr_table=csr_table,
         kernel_base_ptrs=kernel_base_ptrs,
-        forward_ifs_read={"ICache_Decode_Ihit": icache_scheduler_fwif},
+        forward_ifs_read=None,
         forward_ifs_write={"Decode_Scheduler_Pckt": decode_scheduler_fwif}
     )
     
