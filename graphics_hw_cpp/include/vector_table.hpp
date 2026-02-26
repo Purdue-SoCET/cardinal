@@ -3,6 +3,7 @@
 
 #include <array>
 #include "graphics_lib.hpp"
+#include "hardware_lib.hpp"
 
 class VectorTable {
 private:
@@ -10,7 +11,7 @@ private:
 	Vertex* table = NULL;
 public:
 
-	Triangle getTriangle(std::array<int16_t, 3> indices);
+	Triangle getTriangle(primIndices indices);
 	int addVertex(Vertex vertex);
 	void invalidateVertex(int handle);
 	Vertex* makeTable(int maxSize);
