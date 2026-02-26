@@ -18,8 +18,8 @@ FILE_ROOT = Path(__file__).resolve().parent
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
-from common.custom_enums import Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from gpu.common.custom_enums import Op
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
 from simulator.mem.mem_controller import MemController
@@ -213,6 +213,7 @@ def test_all_operations():
         fust=fust
     )
     ex_stage.behind_latch = is_ex_latch
+    ex_stage.functional_units['MemBranchJumpUnit_0'].subunits['Jump_0'].schedule_if = branch_scheduler_fwif
     
     wb_buffer_config = WritebackBufferConfig.get_default_config()
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))

@@ -2,27 +2,26 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt
+from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt, Branch, Jump
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import Instruction
 from simulator.mem.ld_st import Ldst_Fu
 
 @dataclass
-class MemBranchUnitConfig:
+class MemBranchJumpUnitConfig:
     ldst_count: int
     branch_count: int
-
-    branch_latency: int
-
+    jump_count: int
+    
     ldst_buffer_size: int
     ldst_queue_size: int
 
     @classmethod
-    def get_default_config(cls) -> MemBranchUnitConfig:
+    def get_default_config(cls) -> MemBranchJumpUnitConfig:
         return cls(
             ldst_count=1,
             branch_count=1,
-            branch_latency=1,
+            jump_count=1,
             ldst_buffer_size=1,
             ldst_queue_size=4
         )
@@ -117,10 +116,12 @@ class FunctionalUnit(ABC):
 
         return out_data
 
-class MemBranchUnit(FunctionalUnit):
-    def __init__(self, config: MemBranchUnitConfig, num: int):
+class MemBranchJumpUnit(FunctionalUnit):
+    def __init__(self, config: MemBranchJumpUnitConfig, num: int):
         subunits = []
         for i in range(config.ldst_count):
+            subunits.append(Branch(num=i * (num + 1)))
+            subunits.append(Jump(num=i * (num + 1)))
             subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
     

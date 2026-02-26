@@ -247,6 +247,7 @@ class Instruction:
     rdat1: list[Bits] = field(default_factory=list)
     rdat2: list[Bits] = field(default_factory=list)
     wdat: list[Bits] = field(default_factory=list)
+    wdat_pred: list[Bits] = field(default_factory=list)
 
 
     # ----- optional / with defaults (must come after ALL non-defaults) -----

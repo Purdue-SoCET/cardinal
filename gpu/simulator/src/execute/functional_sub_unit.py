@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, C_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import LatchIF, Instruction
+from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF
 
 class FunctionalUnitPipeline(CompactQueue):
     def __init__(self, latency: int):
@@ -27,6 +27,148 @@ class FunctionalSubUnit(ABC):
     def compute(self):
         pass
 
+class Branch(FunctionalSubUnit):
+    SUPPORTED_OPS = [
+        B_Op.BEQ, B_Op.BNE
+    ]
+    def __init__(self, num: int):
+        super().__init__(num=num)
+        self.data = None
+    
+    def compute(self):
+        instr = self.data
+
+        if instr is None or not isinstance(instr, Instruction):
+            return
+        
+        if instr.opcode not in self.SUPPORTED_OPS:
+            raise ValueError(f"Branch does not support operation {instr.opcode}")
+        
+        for i in range(32):
+            if instr.predicate[i].bin == 0b0:
+                continue
+
+            match instr.opcode:
+                case B_Op.BEQ:
+                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
+                case B_Op.BNE:
+                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
+                case _:
+                    raise ValueError(f"Unsupported operation {instr.opcode} in Branch.")
+                
+        self.data = instr
+        
+    def tick(self, behind_latch: LatchIF) -> Instruction:
+        # Branch unit is assumed to have single-cycle latency for simplicity
+        if isinstance(behind_latch, LatchIF):
+            in_data = behind_latch.snoop()
+        else:
+            in_data = None
+
+        if self.ex_wb_interface.ready_for_push():
+            if isinstance(in_data, Instruction):
+                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
+
+            out_data = self.data
+            self.data = in_data
+
+            if isinstance(out_data, Instruction):
+                out_data.mark_fu_exit(self.name, self.perf_count.total_cycles)
+
+            if isinstance(behind_latch, LatchIF):
+                behind_latch.pop()
+
+            self.ready_out = True
+        else:
+            out_data = False
+            self.ready_out = False            
+
+        self.perf_count.increment(
+            instr=in_data, 
+            ready_out=self.ready_out, 
+            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
+        )
+
+        return out_data
+
+class Jump(FunctionalSubUnit):
+    SUPPORTED_OPS = [
+        P_Op.JPNZ, J_Op.JAL, I_Op.JALR
+    ]
+    def __init__(self, num: int, schedule_if: ForwardingIF = None):
+        super().__init__(num=num)
+
+        self.schedule_if = schedule_if
+        self.data = None
+    
+    def compute(self):
+        if self.schedule_if is None:
+            raise ValueError("Jump unit requires a forwarding interface to the Schedule stage for correct operation.")
+        instr = self.data
+        schedule_if_value = None # defaults to PC + 4, this is signified by pusing None to Schedule Stage Forwarding Interface
+
+        if instr is None or not isinstance(instr, Instruction):
+            return
+        
+        if instr.opcode not in self.SUPPORTED_OPS:
+            raise ValueError(f"Jump does not support operation {instr.opcode}")
+        
+
+        match instr.opcode:
+            case J_Op.JAL:
+                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
+                instr.wdat = None
+            case I_Op.JALR:
+                if not all(data == instr.rdat1[0] for data in instr.rdat1):
+                      raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")
+                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
+                instr.wdat = None
+            case P_Op.JPNZ:
+                if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
+                    raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.")
+                if instr.predicate[0] == Bits(length=1, uint=1):
+                    schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.pc + instr.imm}
+                instr.wdat = None
+            case _:
+                raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")
+            
+        self.schedule_if.push(schedule_if_value)
+        self.data = instr
+        
+    def tick(self, behind_latch: LatchIF) -> Instruction:
+        if self.schedule_if is None:
+            raise ValueError("Jump unit requires a forwarding interface to the Schedule stage for correct operation.")
+        # Jump unit is assumed to have single-cycle latency for simplicity
+        if isinstance(behind_latch, LatchIF):
+            in_data = behind_latch.snoop()
+        else:
+            in_data = None
+
+        if self.ex_wb_interface.ready_for_push():
+            if isinstance(in_data, Instruction):
+                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
+
+            out_data = self.data
+            self.data = in_data
+            if isinstance(out_data, Instruction):
+                out_data.mark_fu_exit(self.name, self.perf_count.total_cycles)
+
+            if isinstance(behind_latch, LatchIF):
+                behind_latch.pop()
+
+            self.ready_out = True
+        else:
+            out_data = False
+            self.ready_out = False            
+
+        self.perf_count.increment(
+            instr=in_data, 
+            ready_out=self.ready_out, 
+            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
+        )
+
+        return out_data
+        
 class ArithmeticSubUnit(FunctionalSubUnit):
     def __init__(self, latency: int, num: int, type_: type):
         super().__init__(num=num)
@@ -123,6 +265,9 @@ class Alu(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
+            print(instr.opcode)
+            print(self.type_)
+            print(self.SUPPORTED_OPS[self.type_])
             raise ValueError(f"ALU does not support operation {instr.opcode}")
 
         overflow_detected = False
