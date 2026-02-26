@@ -2,24 +2,6 @@ from dataclasses import dataclass, field
 from typing import Optional, Any
 
 @dataclass
-class Feedback_IF:
-    payload: Optional[Any] = None
-    valid: int = 0
-    name: str = field(default=None, repr=False)
-
-    def push(self, data: Any) -> None:
-        self.payload = data
-        self.valid = 1
-    
-    def pop(self) -> Optional[Any]:
-        data = self.payload
-        self.payload = None
-        self.valid = 0
-        return data
-
-
-
-@dataclass
 class Latch_IF:
     payload: Optional[Any] = None
     valid: int = 0
@@ -46,7 +28,25 @@ class Latch_IF:
         self.payload = None
         self.valid = 0
         return data
+
+
+
+@dataclass
+class Feedback_IF:
+    payload: Optional[Any] = None
+    valid: int = 0
+    name: str = field(default=None, repr=False)
+
+    def push(self, data: Any) -> None:
+        self.payload = data
+        self.valid = 1
     
+    def pop(self) -> Optional[Any]:
+        data = self.payload
+        self.payload = None
+        self.valid = 0
+        return data
+
 
 
 @dataclass
