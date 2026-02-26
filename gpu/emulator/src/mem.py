@@ -71,6 +71,7 @@ class Mem:
         atexit.register(self.dump_on_exit)
 
     def read(self, addr: int, bytes: int) -> Bits:
+        addr = addr & 0xFFFFFFFF  # Normalize to 32-bit unsigned (handles sign-extension from .int)
         val = 0
 
         for i in range(bytes): #reads LSB first
@@ -81,6 +82,7 @@ class Mem:
         return Bits(uint=val, length=8 * bytes)
 
     def write(self, addr: Bits, data: Bits, bytes_t: int) -> None:
+        addr = addr & 0xFFFFFFFF  # Normalize to 32-bit unsigned
         print(f"\tWrite to address {addr:#010x} for {bytes_t} bytes: {data.uint:#010x}")
         for i in range(bytes_t):
             self.memory[addr + i] =  (data.uint >> (8 * i)) & 0xFF
