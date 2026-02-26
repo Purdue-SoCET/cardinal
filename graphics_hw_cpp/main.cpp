@@ -47,17 +47,21 @@ int main()
 	v10.color = { 255,0,0 };
 	v11.color = { 255,0,0 };
 
-	int numTri = 4;
+	int numTri = 6;
 	Triangle t1{ v1, v2, v3 };
 	Triangle t2{ v4, v5, v3 };
 	Triangle t3{ v6, v7, v8 };
 	Triangle t4{ v10, v9, v11 };
+	Triangle t5{ v5, v9, v6 };
+	Triangle t6{ v3, v11, v4 };
 
 	std::vector<Triangle> tris;
 	tris.push_back(t1);
 	tris.push_back(t2);
 	tris.push_back(t3);
 	tris.push_back(t4);
+	tris.push_back(t5);
+	tris.push_back(t6);
 
 	std::queue<primIndices> indexBatches;
 
@@ -86,10 +90,11 @@ int main()
 	Status FE_BB = Status();
 	BoundingBox bounding_box = BoundingBox(&clk);
 	Status BB_DP = Status();
-	Buffer buffer0 = Buffer<primIndices, 3>(&clk);
-	Buffer buffer1 = Buffer<primIndices, 3>(&clk);
+	Buffer buffer0 = Buffer<primIndices, 2>(&clk);
+	Buffer buffer1 = Buffer<primIndices, 2>(&clk);
 
 	std::array<primIndices, 2> batch = {primIndices(), primIndices()};
+	std::array<primIndices, 2> post_buffBatch = { primIndices(), primIndices() };
 
 	auto start = std::chrono::steady_clock::now();
 	primIndices input = primIndices();
@@ -105,6 +110,9 @@ int main()
 			indexBatches.pop();
 			IN_FE.valid = 1;
 		}
+		else if (clk.isComb()) {
+			IN_FE.valid = 0;
+		}
 		//---------- FETCH ----------
 		fetch.comb(&FE_BB, &IN_FE, input);
 		batch = fetch.forward(&FE_BB, &IN_FE, batch); //Forward stage.
@@ -114,12 +122,27 @@ int main()
 		batch = bounding_box.forward(&BB_DP, &FE_BB, batch); //Forward bounding box stage.
 
 		//---------- DISPATCH ----------
-		if (BB_DP.valid) { //BUFFER DEBUG
+		//The logic cases here need to be expanded to work with either buffer. Filled just means it has data it wants to latch.
+		if (BB_DP.valid && (buffer0.isFilled() || buffer1.isFilled()) && clk.isComb()) {
+			if (buffer0.isFilled()) buffer0._en();
+			if (buffer1.isFilled()) buffer1._en();
+			buffer0.noIn = 0;
+			buffer1.noIn = 0;
+		}
+		else if ((buffer0.isFilled() || buffer1.isFilled()) && clk.isComb()) { //BUFFER DEBUG
+			if (buffer0.isFilled()) buffer0._en();
+			if (buffer1.isFilled()) buffer1._en();
+			buffer0.noIn = 1;
+			buffer1.noIn = 1;
+			//stop = indexBatches.empty();
+		}
+		else if (BB_DP.valid && clk.isComb()) {
 			buffer0._en();
 			buffer1._en();
-			stop = indexBatches.empty();
+			buffer0.noIn = 0;
+			buffer1.noIn = 0;
 		}
-		else {
+		else if (clk.isComb()) { //This is the problem. It comes and makes it n_en on the comb that it should write the final values. Buffer drain problem.
 			buffer0.n_en();
 			buffer1.n_en();
 		}
@@ -127,14 +150,25 @@ int main()
 		buffer0.comb(batch[0]);
 		buffer1.comb(batch[1]);
 
-		primIndices* val0 = buffer0.latch();
-		primIndices* val1 = buffer1.latch();
+		primIndices* out0 = buffer0.latch();
+		primIndices* out1 = buffer1.latch();
 
-		if (val0 != nullptr) val0->print();
-		if (val1 != nullptr) val1->print();
+		post_buffBatch[0] = out0 != nullptr ? *out0 : primIndices();
+		post_buffBatch[1] = out1 != nullptr ? *out1 : primIndices();
 
-		batch[0] = val0 != nullptr ? *val0 : batch[0];
-		batch[1] = val1 != nullptr ? *val1 : batch[1];
+		if (out0 != nullptr && out1 != nullptr) {
+			post_buffBatch[0].print();
+			post_buffBatch[1].print();
+			std::cout << "Cycles: " << clk.cycle << "\n";
+			std::cout << "\n";
+		}
+
+		if (clk.isComb() && !buffer0.readyIn && !buffer1.readyIn) {
+			BB_DP.ready = 0;
+		}
+		else if (clk.isComb() && buffer0.readyIn && buffer1.readyIn) {
+			BB_DP.ready = 1;
+		}
 
 		//---------- DEBUG ----------
 		/*if (BB_DP.valid) {

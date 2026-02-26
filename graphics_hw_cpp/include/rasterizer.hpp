@@ -11,6 +11,7 @@ class Fetch {
 private:
 	std::queue<primIndices> indices;
 	Clock* clk;
+	bool dataReady = 0;
 public:
 
 	std::array<primIndices, 2> forward(Status* FE_BB, Status* IN_FE, std::array<primIndices, 2> batch);

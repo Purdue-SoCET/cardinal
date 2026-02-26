@@ -35,7 +35,7 @@ struct Status {
 struct primIndices {
 	std::array<int8_t, 3> primitive = {-1,-1,-1}; 
 	void print() {
-		std::cout << "(" << primitive[0] << ", " << primitive[1] << ", " << primitive[2] << ")\n";
+		std::cout << "(" << (int) primitive[0] << ", " << (int) primitive[1] << ", " << (int) primitive[2] << ")\n";
 	}
 };
 
@@ -50,12 +50,18 @@ private:
 	T nextOut;
 	uint8_t currSize = 0;
 	bool filled = 0;
+	uint32_t clkPassed = 0;
 public:
 	T out;
 	bool readyIn = 1;
+	bool noIn = 0;
 
 	uint8_t getSize() {
 		return this->currSize;
+	}
+
+	bool isFilled() {
+		return this->filled;
 	}
 
 	void _en() {
@@ -69,25 +75,43 @@ public:
 	void comb(T in) {
 		if (this->clk->isComb() && this->en) {
 
-			filled = this->buffer[0] == T() || this->buffer.size() == 0 ? 0 : 1;
+			if (this->buffer.size() == 0) {
+				filled = 0;
+				this->clkPassed = 1;
+			}
+			else {
+				this->clkPassed++;
+			}
 
-			if (currSize < this->buffer.size()) {
+			if (currSize == 0 && !this->noIn) {
 				this->buffer.push_back(in);
 				currSize++;
 			}
-			else if (currSize == this->buffer.size()) {
+			else if (currSize < this->size && !this->noIn) {
+				this->buffer.push_back(in);
+				currSize++;
+			}
+			
+			if (this->clkPassed == this->size && !this->noIn) {
+				filled = 1;
+			}
+
+			if (filled) {
 				nextOut = this->buffer[0];
 				readyOut = 1;
 				this->buffer.erase(this->buffer.begin());
 				currSize--;
 			}
+			else {
+				readyOut = 0;
+			}
 
-			readyIn = currSize < this->buffer.size() ? 1 : 0;
+			readyIn = currSize < this->size ? 1 : 0;
 		}
 	}
 	
 	T* latch() {
-		if (this->clk->isLatch() && this->en && this->readyOut) {
+		if (this->clk->isLatch() && this->readyOut) {
 			this->out = this->nextOut;
 			this->readyOut = 0;
 			return &(this->out);
@@ -96,7 +120,7 @@ public:
 	}
 
 	Buffer(Clock* clk) : clk(clk) {
-		this->buffer = this->buffer(this->len);
+		this->buffer.reserve(this->size);
 	}
 };
 
