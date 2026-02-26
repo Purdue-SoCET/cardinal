@@ -70,6 +70,35 @@ print('0x20000000')
 }
 
 # ==========================================
+# Sort hex file by address (ascending) for stable diff comparison
+# Format: 0xADDR 0xDATA per line
+# ==========================================
+sort_hex_by_addr() {
+    local file="$1"
+    [ ! -f "$file" ] && return 0
+    "$PYTHON" -c "
+import sys
+import re
+path = sys.argv[1]
+pattern = re.compile(r'^\s*(0x[0-9a-fA-F]+)\s+(0x[0-9a-fA-F]+)\s*')
+lines = []
+with open(path) as f:
+    for line in f:
+        line = line.rstrip('\n\r')
+        m = pattern.match(line.split('//')[0].split('#')[0].strip())
+        if m:
+            addr = int(m.group(1), 16)
+            lines.append((addr, line))
+        else:
+            lines.append((-1, line))  # non-addr lines sort first
+lines.sort(key=lambda x: (0 if x[0] < 0 else 1, x[0] if x[0] >= 0 else 0))
+with open(path, 'w') as f:
+    for _, ln in lines:
+        f.write(ln + '\n')
+" "$file"
+}
+
+# ==========================================
 # Run emulator (replaces: make run INPUT=... THREADS=... BLOCKS=...)
 # ==========================================
 run_emulator() {
@@ -214,6 +243,7 @@ if [ -n "$THREADS_OVERRIDE" ]; then
         ((FAIL_COUNT++))
     elif [ -z "$exp_file" ]; then
         echo -e "${YELLOW}[NO REF]${NC}   $base_name (t=$THREADS, b=$BLOCKS) - Output saved"
+        sort_hex_by_addr "$EMU_OUTPUT"
         cp "$EMU_OUTPUT" "$DIFF_DIR/${base_name}_gen.hex"
         cp "$INPUT_TO_USE" "$DIFF_DIR/${base_name}_meminit.hex"
         ((MISSING_COUNT++))
@@ -221,6 +251,8 @@ if [ -n "$THREADS_OVERRIDE" ]; then
         test_id="${base_name}_t${THREADS}_b${BLOCKS}"
         error_log="$DIFF_DIR/${test_id}_error.log"
         cat "$INSTR_PART" "$exp_file" > "$FINAL_EXPECTED"
+        sort_hex_by_addr "$EMU_OUTPUT"
+        sort_hex_by_addr "$FINAL_EXPECTED"
         diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
@@ -248,6 +280,7 @@ elif [ -z "$expected_files" ]; then
         ((FAIL_COUNT++))
     else
         echo -e "${YELLOW}[NO REF]${NC}   $base_name (t=$THREADS) - Output saved"
+        sort_hex_by_addr "$EMU_OUTPUT"
         cp "$EMU_OUTPUT" "$DIFF_DIR/${base_name}_gen.hex"
         cp "$INPUT_TO_USE" "$DIFF_DIR/${base_name}_meminit.hex"
         ((MISSING_COUNT++))
@@ -275,6 +308,8 @@ else
 
         # Build FINAL_EXPECTED = instruction part + expected output
         cat "$INSTR_PART" "$exp_file" > "$FINAL_EXPECTED"
+        sort_hex_by_addr "$EMU_OUTPUT"
+        sort_hex_by_addr "$FINAL_EXPECTED"
 
         diff -u -w -i "$EMU_OUTPUT" "$FINAL_EXPECTED" > "$error_log"
 

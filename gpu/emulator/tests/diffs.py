@@ -2,13 +2,15 @@
 Compare hex files in test_diffs by memory address.
 
 For each prefix that has all three files (_gen.hex, _exp.hex, _meminit.hex):
-  - [prefix]_actual_diff.txt: gen vs meminit (DATA1=gen, DATA2=meminit)
-  - [prefix]_expected_diff.txt: exp vs meminit (DATA1=exp, DATA2=meminit)
+  - [output_base]_diff.txt: gen vs exp (DATA1=gen, DATA2=exp)
+  - [output_base]_actual_diff.txt: gen vs meminit (DATA1=gen, DATA2=meminit)
+  - [output_base]_expected_diff.txt: exp vs meminit (DATA1=exp, DATA2=meminit)
 
 Output format per differing address:
   [ADDRESS] [DATA1] [DATA2]
-  - DATA2 is always from meminit.hex
-  - DATA1 is from gen.hex or exp.hex
+  - For _diff.txt: DATA1=gen, DATA2=exp
+  - For _actual_diff.txt: DATA1=gen, DATA2=meminit
+  - For _expected_diff.txt: DATA1=exp, DATA2=meminit
   - N/A if address does not exist in that file
 """
 
@@ -106,6 +108,14 @@ def main() -> None:
         meminit_data = load_hex(meminit_path)
 
         output_base = prefix.split("_", 1)[0]  # cut at first underscore
+        # gen vs exp
+        gen_exp_diffs = diff_addrs(gen_data, exp_data)
+        gen_exp_out = diff_dir / f"{output_base}_diff.txt"
+        with open(gen_exp_out, "w", encoding="utf-8") as f:
+            for addr, d1, d2 in gen_exp_diffs:
+                f.write(f"0x{addr:08X} {d1} {d2}\n")
+        print(f"Wrote {gen_exp_out.name} ({len(gen_exp_diffs)} diffs)")
+
         # actual: gen vs meminit
         actual_diffs = diff_addrs(gen_data, meminit_data)
         actual_out = diff_dir / f"{output_base}_actual_diff.txt"
