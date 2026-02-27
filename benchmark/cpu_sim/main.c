@@ -163,6 +163,8 @@ int main(int argc, char** argv) {
 
     // --- Vertex Kernel ---
     ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
+
+    vertex_args->num_verts = num_verts;
     
     // Setup Transformation
         ALLOCATE_MEM(Oa, vector_t, 1);
@@ -191,6 +193,8 @@ int main(int argc, char** argv) {
         if(INPUT_ARGS_DEBUG){
             print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
         }
+
+        printf("args size: %lu\n", sizeof(vertexShader_arg_t));
     
     // Running the Kernel
     {
