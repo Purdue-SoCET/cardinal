@@ -1,3 +1,5 @@
+import sys
+
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.scheduler.csrtable import CsrTable
 from simulator.latch_forward_stage import DecodeType, LatchIF, ForwardingIF
@@ -47,7 +49,7 @@ def init():
     label("INITIALIZATION")
     
     tbs_latch.push([0, TBS_SIZE, 0x1000])
-    icache_scheduler.push(True)
+    icache_scheduler.push({"fetch": True, "eop": False, "warp_id": 0})
     decode_scheduler.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0x1000})
     issue_scheduler.push([0] * scheduler_stage.num_groups)
     branch_scheduler.push(None)
@@ -61,7 +63,7 @@ def normal_cycle():
     label("CYCLING")
 
     for _ in range(2 * TBS_SIZE // scheduler_stage.warp_size):
-        icache_scheduler.push(True)
+        icache_scheduler.push({"fetch": True, "eop": False, "warp_id": 0})
         decode_scheduler.push({"type": DecodeType.MOP, "warp_id": 0, "pc": 0x1000})
         issue_scheduler.push([0] * scheduler_stage.num_groups)
         cycle()
@@ -70,13 +72,13 @@ def normal_cycle():
 def eop():
     label("EOP")
 
-    icache_scheduler.push(True)
-    decode_scheduler.push({"type": DecodeType.EOP, "warp_id": 1, "pc": 0x1018})
+    icache_scheduler.push({"fetch": True, "eop": True, "warp_id": 1})
+    decode_scheduler.push({"type": DecodeType.MOP, "warp_id": 1, "pc": 0x1018})
     issue_scheduler.push([0] * scheduler_stage.num_groups)
     cycle()
 
     for _ in range((TBS_SIZE // scheduler_stage.warp_size) - 1):
-        icache_scheduler.push(True)
+        icache_scheduler.push({"fetch": True, "eop": False, "warp_id": 2})
         issue_scheduler.push([0] * scheduler_stage.num_groups)
         cycle()
     log()
@@ -108,13 +110,13 @@ def swap():
 
 def main():
     original_stdout = sys.stdout
-    with open("output.txt", "w") as f:
+    with open("gto.txt", "w") as f:
         sys.stdout = f
         init()
         normal_cycle()
         eop()
-        wb()
-        swap()
+        # wb()
+        # swap()
 
     sys.stdout = original_stdout
     return
