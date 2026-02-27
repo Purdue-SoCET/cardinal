@@ -8,11 +8,15 @@ from simulator.mem.mem_controller import MemController
 from simulator.mem.Memory import Mem
 from simulator.decode.decode_class import DecodeStage
 from simulator.decode.predicate_reg_file import PredicateRegFile
+from simulator.execute.stage import FunctionalUnitConfig
+from simulator.kernel_base_pointers import KernelBasePointers
+from bitstring import Bits
 
 FILE_ROOT = Path(__file__).resolve().parent
 START_PC = 0x1000
 LAT = 2
 WARP_COUNT = 32
+
 
 # latches
 tbs_ws_if = LatchIF("Thread Block Scheudler - Warp Scheduler Latch")
@@ -38,6 +42,12 @@ prf = PredicateRegFile(
 )
 
 csrtable = CsrTable()
+
+functional_unit_config = FunctionalUnitConfig.get_default_config()
+fust = functional_unit_config.generate_fust_dict()
+
+kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM = 1)
+kernel_base_ptrs.write(0, Bits(uint=9203920, length=32))
 
 # units
 mem = Mem(
@@ -70,7 +80,6 @@ scheduler_stage = SchedulerStage(
     policy = "GTO"
 )
 
-
 icache_stage = ICacheStage(
     name="ICache_Stage",
     behind_latch=ws_icache_if,
@@ -88,9 +97,9 @@ decode_stage = DecodeStage(
     behind_latch=icache_decode_if,
     ahead_latch=decode_issue_if,
     prf=prf,
-    # fust=fust,
-    # csr_table=csrtable,
-    # kernel_base_ptrs=kernel_base_ptrs,
+    fust=fust,
+    csr_table=csrtable,
+    kernel_base_ptrs=kernel_base_ptrs,
     forward_ifs_read=None,
     forward_ifs_write={"Decode_Scheduler_Pckt": decode_scheduler_fwif}
 )
@@ -106,7 +115,8 @@ def tbs_init():
 
 # cycling all stages
 def cycle(cycles: int = 1):
-    for _ in range(cycles):
+    for cycle in range(cycles):
+        print(f"\n------------cycle {cycle + 1}------------\n")
         # dummy push from issue
         issue_scheduler_fwif.push([0] * scheduler_stage.num_groups)
 
@@ -127,7 +137,7 @@ def cycle(cycles: int = 1):
 # keep fetching test
 def main():
     tbs_init()
-    cycle(8)
+    cycle(20)
     return
 
 if __name__ == "__main__":
