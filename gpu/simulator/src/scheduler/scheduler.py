@@ -9,7 +9,7 @@ from simulator.scheduler.csrtable import CsrTable
 import math
 
 # comment/uncomment for printing out debug info
-print = lambda *args, **kwargs: None
+# print = lambda *args, **kwargs: None
 
 class SchedulerStage(Stage):
     def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: float = 32, policy: str = "RR", **kwargs):

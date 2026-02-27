@@ -1,5 +1,3 @@
-import sys
-
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.scheduler.csrtable import CsrTable
 from simulator.latch_forward_stage import DecodeType, LatchIF, ForwardingIF
