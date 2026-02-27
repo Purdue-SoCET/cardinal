@@ -83,6 +83,7 @@ class Ldst_Fu(FunctionalSubUnit):
         
         #handle dcache packet
         payload: dMemResponse = self.dcache_if.forward_if.pop()
+        
         if payload:
             self.dcache_if.forward_if.payload = None
             if len(self.ldst_q) == 0:

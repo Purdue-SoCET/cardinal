@@ -1,4 +1,5 @@
 from __future__ import annotations
+from builtins import print
 from unicodedata import name
 
 from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
@@ -191,6 +192,8 @@ def test_all_operations():
     decode_issue_if = LatchIF("Decode-Issue Latch")
     # issue execute connections setup below 
     lsu_dcache_if = LatchIF("LSU-DCache Latch")
+    # patch to make it compatible for working with the dcache and ldst
+    lsu_dcache_if.forward_if = ForwardingIF(name="LSU_DCache_Forward_IF")  # Add forwarding IF to coordinate LSU and DCache during memory ops
     dcache_mem_resp_if = LatchIF("Mem-DCache Latch")
     icache_scheduler_fwif = ForwardingIF(name = "icache_forward_if")
     decode_scheduler_fwif = ForwardingIF(name = "decode_forward_if")
@@ -371,7 +374,7 @@ def test_all_operations():
     # 3. Define Test Cases
     # ---------------------------------------------------------
     
-    test_cases = [
+    non_mem_test_cases = [
         # Integer ALU operations (Alu_int_0)
         ("ADD", R_Op.ADD, 1, 2, 20, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
         ("SUB", R_Op.SUB, 1, 2, 21, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
@@ -414,15 +417,18 @@ def test_all_operations():
 
     ]
 
+    mem_test_cases = [
+
+    ]
     # 4. Update Golden Model
     # ---------------------------------------------------------
     instruction_list = []
     
-    print("Computing golden reference...")
-    
+    test_cases = non_mem_test_cases # + mem_test_cases (to be defined later once we have memory operations working) 
+
     # Iterate over all warps for golden model computation
     for warp_id in warp_ids:
-        print(f"  Computing golden model for warp {warp_id}...")
+        print(f"  Computing reg file golden model for warp {warp_id}...")
         
         for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, python_op in test_cases:
             if intended_fu not in fust:
@@ -497,14 +503,10 @@ def test_all_operations():
         # instruction_list.append(instr)
         # print(instr.target_bank)
 
-    # print(f"Generated {len(instruction_list)} instructions.")
+    print("Computing memory golden reference...")
 
 
-    # (TALK TO DAN AND YASH abt this)
-    # 4.5 Initialize Forward IFs with Filler Payloads
-    # ---------------------------------------------------------
-    # Bootstrap the scheduler by providing neutral control packets
-    # so collision() never sees None on the first cycle
+
     filler_decode_scheduler = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}
     filler_issue_scheduler = [0] * scheduler_stage.num_groups
     # Initialize all forward interfaces
@@ -566,6 +568,9 @@ def test_all_operations():
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
+        # print the faulting instruction in the issue stage
+        if issue_stage.behind_latch.payload is not None:
+            print(f"Instruction in Issue Stage: {issue_stage.behind_latch.payload}")
         issue_stage.compute()
         decode_stage.compute()
         memc.compute()
