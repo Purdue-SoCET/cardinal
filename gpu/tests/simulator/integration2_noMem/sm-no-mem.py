@@ -18,7 +18,7 @@ FILE_ROOT = Path(__file__).resolve().parent
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
 from gpu.common.custom_enums import Op
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
@@ -39,8 +39,12 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
     Compare two register files and return True if they match, False otherwise.
     """
     mismatches = []
-    bank = warp_id % pipeline_rf.banks
-    warp_idx = warp_id // 2
+    if warp_id < 0:
+        raise ValueError(f"warp_id must be >= 0, got {warp_id}")
+    if warp_id >= pipeline_rf.warps:
+        raise ValueError(f"warp_id {warp_id} out of range for pipeline_rf.warps={pipeline_rf.warps}")
+    if warp_id >= golden_rf.warps:
+        raise ValueError(f"warp_id {warp_id} out of range for golden_rf.warps={golden_rf.warps}")
     
     # Determine which registers to check
     if reg_list is None:
@@ -49,12 +53,25 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
         reg_range = reg_list
     
     for reg_num in reg_range:
+        if reg_num < 0 or reg_num >= pipeline_rf.regs_per_warp:
+            raise ValueError(
+                f"reg_num {reg_num} out of range for pipeline_rf.regs_per_warp={pipeline_rf.regs_per_warp}"
+            )
         for thread_id in range(pipeline_rf.threads_per_warp):
-            pipeline_val = pipeline_rf.regs[bank][warp_idx][reg_num][thread_id]
-            golden_val = golden_rf.regs[bank][warp_idx][reg_num][thread_id]
+            pipeline_val = pipeline_rf.read_thread_gran(
+                warp_id=warp_id,
+                src_operand=Bits(uint=reg_num, length=32),
+                thread_id=thread_id,
+            )
+            golden_val = golden_rf.read_thread_gran(
+                warp_id=warp_id,
+                src_operand=Bits(uint=reg_num, length=32),
+                thread_id=thread_id,
+            )
             
             # For float registers (typically >= 10 in our test), allow small tolerance
-            is_float_reg = reg_num >= 50 or (reg_num >= 10 and reg_num < 20)
+            # Regs 57-60 hold integer CSR values even though they are > 50
+            is_float_reg = (reg_num >= 50 and reg_num <= 56) or (reg_num >= 10 and reg_num < 20)
             
             # Special handling for trig/isqrt results which have higher error margins in CORDIC/FastApprox
             is_approx_reg = reg_num in [54, 55, 56] # SIN, COS, ISQRT
@@ -62,6 +79,10 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
             if is_float_reg:
                 p_float = pipeline_val.float
                 g_float = golden_val.float
+
+                # Treat NaN == NaN for comparison purposes
+                if math.isnan(p_float) and math.isnan(g_float):
+                    continue
                 
                 # Dynamic tolerance based on operation type
                 if is_approx_reg:
@@ -90,16 +111,17 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
     
     if verbose and mismatches:
         print(f"\n❌ Found {len(mismatches)} mismatches:")
-        for m in mismatches:  
-            if m['reg'] >= 50 or (m['reg'] >= 10 and m['reg'] < 20):
+        for m in mismatches:
+            is_float_display = (m['reg'] >= 50 and m['reg'] <= 56) or (m['reg'] >= 10 and m['reg'] < 20)
+            if is_float_display:
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
                       f"Pipe={m['pipeline'].float:.6f} "
                       f"Gold={m['golden'].float:.6f} "
                       f"Diff={m.get('diff', 0):.6f}")
             else:
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
-                      f"Pipe={m['pipeline'].int} "
-                      f"Gold={m['golden'].int}")
+                      f"Pipe={m['pipeline'].uint} "
+                      f"Gold={m['golden'].uint}")
 
     return len(mismatches) == 0
 
@@ -323,7 +345,11 @@ def test_all_operations():
         ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", lambda a, b: None),  # Special handling
         ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", lambda a, b: None),  # Special handling
 
-        # TODO: NEED TO ADD CSRR INSTRUCTION HERE, BUT NOT SURE HOW TO COMPUTE PREDETERMINED VALUE
+        # CSRR instructions: rs1_reg field holds the csr_param (0=base_id, 1=tb_id, 2=tb_size, 3=kernel_base_ptr)
+        ("CSRR", C_Op.CSRR, 0, 0, 57, "Alu_int_0", lambda a, b: None),  # rd=57, csr_param=0 -> base_id
+        ("CSRR", C_Op.CSRR, 1, 0, 58, "Alu_int_0", lambda a, b: None),  # rd=58, csr_param=1 -> tb_id
+        ("CSRR", C_Op.CSRR, 2, 0, 59, "Alu_int_0", lambda a, b: None),  # rd=59, csr_param=2 -> tb_size
+        ("CSRR", C_Op.CSRR, 3, 0, 60, "Alu_int_0", lambda a, b: None),  # rd=60, csr_param=3 -> kernel_base_ptr
 
     ]
 
@@ -365,6 +391,20 @@ def test_all_operations():
                     val = rs1_vals[i].float
                     res = 0.0 if val <= 0 else 1.0 / math.sqrt(val)
                     golden_res.append(Bits(float=res, length=32))
+                elif test_name == "CSRR":
+                    # base_id (param=0): each thread gets base_id + thread_index
+                    # all others are scalar, broadcast to all threads
+                    if rs1_reg == 0:
+                        csr_val = int(csr_table.read_base_id(warp_id)) + i
+                    elif rs1_reg == 1:
+                        csr_val = int(csr_table.read_tb_id(warp_id))
+                    elif rs1_reg == 2:
+                        csr_val = int(csr_table.read_tb_size(warp_id))
+                    elif rs1_reg == 3:
+                        csr_val = kernel_base_ptrs.read(0).uint
+                    else:
+                        csr_val = 0
+                    golden_res.append(Bits(uint=csr_val, length=32))
                 # 2. Float Ops
                 elif rd_reg >= 50: 
                     res = python_op(rs1_vals[i].float, rs2_vals[i].float)
@@ -497,7 +537,7 @@ def test_all_operations():
     
     # We check all destination registers that were written to
     # Int Ops: 20-40, Float Ops: 50-56
-    regs_to_check = list(range(0, 63))
+    regs_to_check = list(range(pipeline_rf.regs_per_warp))
     
     all_warps_passed = True
     for warp_id in warp_ids:

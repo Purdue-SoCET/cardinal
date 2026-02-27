@@ -28,18 +28,28 @@ class RegisterFile:
     def read_thread_gran(self, warp_id: int, src_operand: Bits, thread_id: int) -> Any:
         return self.regs[warp_id % self.banks][warp_id // 2][src_operand.uint][thread_id]
 
-    def dump(self, float_regs=None):
+    def dump(self, float_regs=None, file=None):
         """
         Prints the full register file content for any active warp.
         If a warp has ANY data, all registers (0-63) are printed.
         If a warp is completely empty, it is skipped.
+
+        Parameters
+        ----------
+        float_regs : list[int], optional
+            Register indices to display as floating-point values.
+        file : file-like object, optional
+            Output destination. Defaults to sys.stdout when None.
         """
+        import sys as _sys
+        out = file if file is not None else _sys.stdout
+
         if float_regs is None:
             float_regs = []
 
-        print(f"\n{'='*80}")
-        print(f"{'REGISTER FILE FULL DUMP':^80}")
-        print(f"{'='*80}")
+        print(f"\n{'='*80}", file=out)
+        print(f"{'REGISTER FILE FULL DUMP':^80}", file=out)
+        print(f"{'='*80}", file=out)
 
         active_warps_found = False
 
@@ -57,8 +67,8 @@ class RegisterFile:
                 continue
 
             active_warps_found = True
-            print(f"\n[ Warp {w} ]")
-            print("-" * 80)
+            print(f"\n[ Warp {w} ]", file=out)
+            print("-" * 80, file=out)
 
             # 2. Print EVERY register for this warp, even if it's 0
             for r in range(self.regs_per_warp):
@@ -68,7 +78,7 @@ class RegisterFile:
                 is_float = r in float_regs
                 label = "FLOAT" if is_float else "INT"
                 
-                print(f"  R{r:<2} ({label}):")
+                print(f"  R{r:<2} ({label}):", file=out)
 
                 # Print 32 threads in a 4x8 grid for readability
                 # Change range(0, 32, 8) if threads_per_warp changes
@@ -83,15 +93,15 @@ class RegisterFile:
                         formatted = [f"{v.int:>10}" for v in chunk]
                     
                     # Print the row of 8 threads
-                    print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}")
+                    print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
                 
                 # Add a small separator between registers for clarity
-                print("") 
+                print("", file=out)
 
         if not active_warps_found:
-            print("\n  (Register File is entirely empty)")
+            print("\n  (Register File is entirely empty)", file=out)
             
-        print(f"{'='*80}\n")
+        print(f"{'='*80}\n", file=out)
     
 ### TESTING ###
 
