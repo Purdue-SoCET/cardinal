@@ -425,7 +425,7 @@ class CacheBank:
 
 # --- Main Cache Stage ---
 
-class LockupFreeCacheStage(Stage):
+class LockupFreeDCacheStage(Stage):
     """
     The main cache simulator
     """
