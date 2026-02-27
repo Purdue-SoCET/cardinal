@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF
@@ -29,7 +29,7 @@ class FunctionalSubUnit(ABC):
 
 class Branch(FunctionalSubUnit):
     SUPPORTED_OPS = [
-        B_Op.BEQ, B_Op.BNE
+        B_Op.BEQ, B_Op.BNE, H_Op.HALT
     ]
     def __init__(self, num: int):
         super().__init__(num=num)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from gpu.common.custom_enums import H_Op
 from simulator.latch_forward_stage import Stage, LatchIF, Instruction
 from simulator.execute.functional_unit import MemBranchJumpUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchJumpUnit
 from typing import Dict, Optional
@@ -112,8 +113,9 @@ class ExecuteStage(Stage):
             in_data = self.behind_latch.snoop()
 
             if isinstance(in_data, Instruction):
-                if in_data.rd.int == 53:
-                    abcHI = 1
+                if in_data.rd is not None:
+                    if in_data.rd.int == 53:
+                        abcHI = 1
                 in_data.mark_stage_enter(self.name, self.cycle)
             
             fu_out_data = fu.tick(self.behind_latch, fust=self.fust)

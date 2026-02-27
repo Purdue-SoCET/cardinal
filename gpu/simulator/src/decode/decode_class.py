@@ -1,4 +1,5 @@
 
+from builtins import isinstance
 import sys
 from pathlib import Path
 
@@ -147,7 +148,7 @@ class DecodeStage(Stage):
                     return fu_name
         
         # Branch operations
-        if isinstance(op, B_Op):
+        if isinstance(op, B_Op) or isinstance(op, H_Op): # MODIFICATION FOR HALT: sending to branch
             for fu_name in self.fust.keys():
                 if "Branch" in fu_name or "branch" in fu_name:
                     return fu_name
@@ -259,13 +260,13 @@ class DecodeStage(Stage):
         else:
             inst.rd = None
 
-        # rs1 present for R/I/F/S/B/P
+        # rs1 present for R/I/F/S/B/P/H
         if is_R or is_I or is_F or is_S or is_B or is_P:
             # inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
             inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=6)
 
             opcode_lower = opcode7 & 0x7
-            if is_P and opcode_lower not in (0x4, 0x5):
+            if (is_P and opcode_lower not in (0x4, 0x5)):
                 inst.rs1 = None
                 inst.num_operands = 0 ### ADDED ###
         else:
@@ -284,6 +285,10 @@ class DecodeStage(Stage):
         # no operands for csrr instruction
         if is_C:
             inst.num_operands = 0
+        
+        # hard coding it to a constant 1 with no registers assigned 
+        if is_H:
+            inst.num_operands = 1
 
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
@@ -343,7 +348,8 @@ class DecodeStage(Stage):
         else:
             packet_marker = DecodeType.MOP
 
-        # the  forwarding happens immediately
+        # the  forwarding happens immediately, sends halt signal to scheduler with the PC
+        # to know when to pause the flow and wait for the halted warp to drain and then flush the pipeline.
         push_pkt = {"type": packet_marker, "warp_id": inst.warp_id, "pc": inst.pc}
         self.forward_ifs_write["Decode_Scheduler_Pckt"].push(push_pkt)
 

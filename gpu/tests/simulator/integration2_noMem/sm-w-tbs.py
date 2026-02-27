@@ -569,8 +569,6 @@ def test_all_operations():
         ex_stage.tick()
         ex_stage.compute()
         # print the faulting instruction in the issue stage
-        if issue_stage.behind_latch.payload is not None:
-            print(f"Instruction in Issue Stage: {issue_stage.behind_latch.payload}")
         issue_stage.compute()
         decode_stage.compute()
         memc.compute()

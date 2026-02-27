@@ -23,6 +23,8 @@ class RegisterFile:
             self.regs[warp_id % self.banks][warp_id // 2][dest_operand.uint][thread_id] = data
 
     def read_warp_gran(self, warp_id: int, src_operand: Bits) -> Any:
+        if src_operand is None:
+            return None
         return self.regs[warp_id % self.banks][warp_id // 2][src_operand.uint]
     
     def read_thread_gran(self, warp_id: int, src_operand: Bits, thread_id: int) -> Any:

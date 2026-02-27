@@ -1,4 +1,6 @@
+from builtins import isinstance, print
 from dataclasses import dataclass, field
+from gpu.common.custom_enums import H_Op
 from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
 from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
@@ -101,8 +103,11 @@ class IssueStage(Stage):
         if FU_stall_issue == False:
         
             # 2) RF reads for instructions in register/staged
-            self._issue_register_file_reads()
-
+            # don't need any RF reads for halt instruction, so this will be skipped for halt and the instruction will be dispatched immediately in the next cycle
+            if isinstance(inst_in, Instruction):
+                if inst_in.opcode != H_Op.HALT:
+                    self._issue_register_file_reads()
+        
             # 3) Pop from iBuffer to hold in front of RF for read
             self._stage_from_ibuffer_for_next_cycle()
 
@@ -128,7 +133,8 @@ class IssueStage(Stage):
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
             if self.fust[self.dispatched[0].intended_FU] == 0:
-                if self.dispatched[0].rd.int == 53:
+                # adding a check here for the rd int for the halt case where it would be none...
+                if self.dispatched[0].rd is not None and self.dispatched[0].rd.int == 53:
                     abcHI = 1
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
@@ -203,6 +209,7 @@ class IssueStage(Stage):
         if self.staged_even is not None and self.even_read_progress < 2:
             if self.even_read_progress == 0:
                 if self.staged_even.num_operands >= 1:
+                    # where shouldI handle this to pass through for HALT into branch fu?
                     val = self.regfile.read_warp_gran(self.staged_even.warp_id, self.staged_even.rs1)
                     self.staged_even.rdat1 = val
                 self.even_read_progress = 1
