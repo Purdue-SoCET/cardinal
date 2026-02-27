@@ -22,6 +22,7 @@ from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_
 from gpu.common.custom_enums import Op
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
+from simulator.mem.dcache_stage import LockupFreeDCacheStage
 from simulator.mem.mem_controller import MemController
 from simulator.mem.Memory import Mem
 from simulator.decode.decode_class import DecodeStage
@@ -115,11 +116,14 @@ def test_all_operations():
     tbs_ws_if = LatchIF("Thread Block Scheduler - Warp Scheduler Latch")
     sched_icache_if = LatchIF("Sched-ICache Latch")
     icache_mem_req_if = LatchIF("ICache-Mem Latch")
-    dummy_dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
+    dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
     mem_icache_resp_if = LatchIF("Mem-ICache Latch")
     dummy_dcache_mem_resp_if = LatchIF("Mem-Dummy DCache Latch")
     icache_decode_if = LatchIF("ICache-Decode Latch")
     decode_issue_if = LatchIF("Decode-Issue Latch")
+    # issue execute connections setup below 
+    lsu_dcache_if = LatchIF("LSU-DCache Latch")
+    dcache_mem_resp_if = LatchIF("Mem-DCache Latch")
     icache_scheduler_fwif = ForwardingIF(name = "icache_forward_if")
     decode_scheduler_fwif = ForwardingIF(name = "decode_forward_if")
     issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
@@ -135,9 +139,9 @@ def test_all_operations():
     memc = MemController(
         name="Mem_Controller",
         ic_req_latch=icache_mem_req_if,
-        dc_req_latch=dummy_dcache_mem_req_if,
+        dc_req_latch=dcache_mem_req_if,
         ic_serve_latch=mem_icache_resp_if,
-        dc_serve_latch=dummy_dcache_mem_resp_if,
+        dc_serve_latch=dcache_mem_resp_if,
         mem_backend=mem, 
         latency=LAT,
         policy="rr"
@@ -241,7 +245,22 @@ def test_all_operations():
         forward_ifs_write= {"issue_scheduler_fwif" : issue_scheduler_fwif, 
                             "decode_issue_fwif" : decode_issue_fwif},
     )
-    
+
+    #dcache
+    dcache_stage = LockupFreeDCacheStage(
+        name="DCache_Stage",
+        behind_latch=lsu_dcache_if,
+        ahead_latch=None,  # No stage after DCache in this test
+        mem_req_if=dcache_mem_req_if,
+        mem_resp_if=dcache_mem_resp_if,
+        forward_ifs_write=None # TBD: Implement halt and stall mechanisms in the forwarding IFs and connect them here to coordinate with the scheduler during memory operations
+    )
+
+    #load store unit
+    ldst = ex_stage.functional_units['MemBranchUnit_0'].subunits['Ldst_Fu_0']
+    ldst.connect_interfaces(dcache_if = lsu_dcache_if)
+
+
     # 2. Initialize Register Data
     # ---------------------------------------------------------
     # Define list of warp IDs to test
