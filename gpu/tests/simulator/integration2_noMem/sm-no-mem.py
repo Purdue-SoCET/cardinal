@@ -243,7 +243,7 @@ def test_all_operations():
         rf_config=reg_file_config,
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
-        fsu_names=list(fust.keys())
+        fsu_names=list(fust.keys()),
     )
 
     decode_issue_fwif = ForwardingIF(name="Decode_issue_fwif")
