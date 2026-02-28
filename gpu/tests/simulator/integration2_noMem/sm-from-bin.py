@@ -379,18 +379,29 @@ def compute_golden_result(
 #  Register-file comparison
 # ==============================================================================
 
-def compare_register_files(
-    pipeline_rf,
-    golden_rf,
-    warp_id:  int = 0,
-    reg_list: Optional[list] = None,
-    verbose:  bool = False,
-) -> bool:
+def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
+    """
+    Compare two register files and return True if they match, False otherwise.
+    """
     mismatches = []
-
-    reg_range = range(pipeline_rf.regs_per_warp) if reg_list is None else reg_list
-
+    if warp_id < 0:
+        raise ValueError(f"warp_id must be >= 0, got {warp_id}")
+    if warp_id >= pipeline_rf.warps:
+        raise ValueError(f"warp_id {warp_id} out of range for pipeline_rf.warps={pipeline_rf.warps}")
+    if warp_id >= golden_rf.warps:
+        raise ValueError(f"warp_id {warp_id} out of range for golden_rf.warps={golden_rf.warps}")
+    
+    # Determine which registers to check
+    if reg_list is None:
+        reg_range = range(pipeline_rf.regs_per_warp)
+    else:
+        reg_range = reg_list
+    
     for reg_num in reg_range:
+        if reg_num < 0 or reg_num >= pipeline_rf.regs_per_warp:
+            raise ValueError(
+                f"reg_num {reg_num} out of range for pipeline_rf.regs_per_warp={pipeline_rf.regs_per_warp}"
+            )
         for thread_id in range(pipeline_rf.threads_per_warp):
             pipeline_val = pipeline_rf.read_thread_gran(
                 warp_id=warp_id,
@@ -402,41 +413,62 @@ def compare_register_files(
                 src_operand=Bits(uint=reg_num, length=32),
                 thread_id=thread_id,
             )
-
-            is_float_reg  = (50 <= reg_num <= 56) or (10 <= reg_num < 20)
-            is_approx_reg = reg_num in (54, 55, 56)
+            
+            # For float registers (typically >= 10 in our test), allow small tolerance
+            # Regs 57-60 hold integer CSR values even though they are > 50
+            is_float_reg = (reg_num >= 50 and reg_num <= 56) or (reg_num >= 10 and reg_num < 20)
+            
+            # Special handling for trig/isqrt results which have higher error margins in CORDIC/FastApprox
+            is_approx_reg = reg_num in [54, 55, 56] # SIN, COS, ISQRT
 
             if is_float_reg:
-                pf = pipeline_val.float
-                gf = golden_val.float
-                if math.isnan(pf) and math.isnan(gf):
+                p_float = pipeline_val.float
+                g_float = golden_val.float
+
+                # Treat NaN == NaN for comparison purposes
+                if math.isnan(p_float) and math.isnan(g_float):
                     continue
-                tol = (abs(gf * 0.05) + 1e-4) if is_approx_reg else (abs(gf * 0.01) + 1e-6)
-                if abs(pf - gf) > tol:
-                    mismatches.append({"reg": reg_num, "thread": thread_id,
-                                       "pipeline": pipeline_val, "golden": golden_val,
-                                       "diff": abs(pf - gf)})
+                
+                # Dynamic tolerance based on operation type
+                if is_approx_reg:
+                     # 5% relative error for approx functions
+                    tolerance = abs(g_float * 0.05) + 1e-4
+                else:
+                    # 1% relative error + epsilon for standard float
+                    tolerance = abs(g_float * 0.01) + 1e-6
+
+                if abs(p_float - g_float) > tolerance:
+                    mismatches.append({
+                        'reg': reg_num,
+                        'thread': thread_id,
+                        'pipeline': pipeline_val,
+                        'golden': golden_val,
+                        'diff': abs(p_float - g_float)
+                    })
             else:
                 if pipeline_val != golden_val:
-                    mismatches.append({"reg": reg_num, "thread": thread_id,
-                                       "pipeline": pipeline_val, "golden": golden_val})
-
+                    mismatches.append({
+                        'reg': reg_num,
+                        'thread': thread_id,
+                        'pipeline': pipeline_val,
+                        'golden': golden_val
+                    })
+    
     if verbose and mismatches:
         print(f"\n❌ Found {len(mismatches)} mismatches:")
         for m in mismatches:
-            is_float_display = (50 <= m["reg"] <= 56) or (10 <= m["reg"] < 20)
+            is_float_display = (m['reg'] >= 50 and m['reg'] <= 56) or (m['reg'] >= 10 and m['reg'] < 20)
             if is_float_display:
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
-                      f"Pipe={m['pipeline'].float:.6f}  "
-                      f"Gold={m['golden'].float:.6f}  "
+                      f"Pipe={m['pipeline'].float:.6f} "
+                      f"Gold={m['golden'].float:.6f} "
                       f"Diff={m.get('diff', 0):.6f}")
             else:
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
-                      f"Pipe={m['pipeline'].uint}  "
+                      f"Pipe={m['pipeline'].uint} "
                       f"Gold={m['golden'].uint}")
 
     return len(mismatches) == 0
-
 
 # ==============================================================================
 #  Pipeline setup
@@ -741,9 +773,9 @@ def run_test(
     golden_out   = FILE_ROOT / "golden_regfile_dump.txt"
 
     with open(pipeline_out, "w", encoding="utf-8") as f:
-        pipeline_rf.dump(float_regs=_REGS, file=f)
+            pipeline_rf.dump(file=f)
     with open(golden_out, "w", encoding="utf-8") as f:
-        golden_rf.dump(float_regs=_REGS, file=f)
+        golden_rf.dump(file=f)
 
     print(f"\nRegister file dumps written:")
     print(f"  Pipeline -> {pipeline_out}")
