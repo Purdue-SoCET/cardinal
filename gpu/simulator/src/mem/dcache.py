@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
 from simulator.latch_forward_stage import *
+from collections import deque
 
 
 class MSHRBuffer:
@@ -152,6 +153,10 @@ class CacheBank:
         # Flush state
         self.flush_set_idx = 0
         self.flush_way_idx = 0
+
+        # Hit Pipeline for every single bank
+        self.hit_pipeline = deque([None] * HIT_LATENCY, maxlen=HIT_LATENCY)
+        self.hit_pipeline_busy = False
     
     def start_flush(self):
         """Transitions the bank to FLUSH mode."""
@@ -244,9 +249,16 @@ class CacheBank:
         """
         Advances the cache bank FSM by one cycle.
         """
+        completed_hit = self.hit_pipeline.popleft()
+        self.hit_pipeline.append(None)
+
+        if completed_hit:
+            self.hit_pipeline_busy = False
+
         # Default outputs (RAM ports are no longer used) --> Sent to the lockupFreeCacheStage
         outputs = {
-            'uuid_ready': False, 'uuid_out': 0, 'busy': self.busy
+            'uuid_ready': False, 'uuid_out': 0, 'busy': self.busy,
+            'completed_hit': completed_hit
         }
         
         next_state = self.state     # Default next state (needed for START state)
@@ -462,13 +474,6 @@ class LockupFreeCacheStage(Stage):
         self.pending_request: Optional[dCacheRequest] = None   # The current request
         # Map of in-flight misses, keyed by UUID
         self.active_misses: Dict[int, dCacheRequest] = {}
-
-        # NEW: Create a pipeline for hit latency.
-        # An item takes HIT_LATENCY cycles to pass through.
-        # It is initialized with HIT_LATENCY number of 'None's.
-        self.hit_pipeline = deque([None] * HIT_LATENCY, maxlen=HIT_LATENCY)
-        self.hit_pipeline_busy = False  # A flag to block new hits while one is in flight.
-        self.hit_stall = False
         
         self.cycle_count = 0
         self.output_buffer = deque()
@@ -513,28 +518,29 @@ class LockupFreeCacheStage(Stage):
                 if (target_bank_id is not None) and (target_bank_id >= 0 and target_bank_id < NUM_BANKS):
                     self.banks[target_bank_id].complete_mem_access(data)
         
-        # --- 2. Process Hit Pipeline (Output Stage) ---
-        # Pop the item that entered the pipeline HIT_LATENCY cycles ago
-        completed_hit_info = self.hit_pipeline.popleft() 
-        this_cycle_lookup_result = None # Default to pushing a bubble
-        
         # --- 3. Advance all internal components (Miss Handling) ---
-        # MOVED UP: This logic must run first to generate bank_busy_signals
-        # This (miss logic) can run in parallel with the hit pipeline
-
-        # Cycle all MSHR buffers (to decrement timers)
-        for mshr in self.mshrs:
-            mshr.cycle()
-        
-        # 3a. Cycle all cache banks (FSMs)
         bank_busy_signals = []  # A list of busy signal from each bank
         for i in range(NUM_BANKS):  # Iterating throguh all the banks
             bank = self.banks[i]
+            mshr = self.mshrs[i]
+            mshr.cycle()
             
             # Cycle the bank (no longer pass ram_resp)
             bank_out = bank.cycle() # Run the cycle method on ith bank
             bank_busy_signals.append(bank_out['busy'])  # Append the busy signal to the bank_busy_signals list
             
+            if bank_out['completed_hit']:
+                hit_info = bank_out['completed_hit']
+                req = hit_info['req']
+
+                self.output_buffer.append(dMemResponse(
+                    type = 'HIT_COMPLETE',
+                    hit = True,
+                    req = req,
+                    address = req.addr_val,
+                    data = hit_info['data']
+                ))
+
             # 3b. Check for completed misses & update outputs
             if bank_out['uuid_ready']:  # If the bank has finished serving a miss request
                 uuid = bank_out['uuid_out'] # Get the UUID for the finished miss request
@@ -603,101 +609,66 @@ class LockupFreeCacheStage(Stage):
                 self.output_buffer.append(response)
                 self.flushing = False # Stop checking
 
-        # --- 4. Handle Hit Completion & New Inputs ---
-        
-        if completed_hit_info: # This is the final cycle of the hit. The cache is busy outputting.
-            req = completed_hit_info['req']
-            logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}")
-            self.hit_pipeline_busy = False # The hit is complete, so unlock the pipeline.
-            self.hit_stall = False
-            self.behind_latch.forward_if.set_wait(0)
+        # --- 4. Handle new inputs ---
+        if self.pending_request is None and not self.flushing:    # if not handling any request
+            if (input_data):  
+                print(f"Cache: Received new request: {input_data}")
+                self.pending_request = dCacheRequest(
+                    addr_val = getattr(input_data, 'addr_val', 0),
+                    rw_mode = getattr(input_data, 'rw_mode', 'read'),
+                    size = getattr(input_data, 'size', 'word'),  # Data size (word, half, byte)
+                    store_value=getattr(input_data, 'store_value', 0),
+                    halt = getattr(input_data, 'halt', False)
+                )
 
-            self.output_buffer.append(dMemResponse(
-                type = 'HIT_COMPLETE',
-                hit = True,
-                req = req,
-                address = req.addr_val,
-                data = completed_hit_info['data']
-            ))
-
+        if self.pending_request:    # If currently handling a request
+            req = self.pending_request  # The request
+            addr = req.addr # The address
+            bank_id = addr.bank_id  # The bank ID
+            target_bank = self.banks[bank_id]  # The specific bank
+            mshr = self.mshrs[bank_id]  # The mshr buffer for that bank
             
-        else:
-            # --- Handle the pipeline interface (Input Stage) ---
-            # This block ONLY runs if the output stage is NOT busy
-            if self.pending_request is None and not self.flushing:    # if not handling any request
-                if (input_data):  
-                    print(f"Cache: Received new request: {input_data}")
-                    self.pending_request = dCacheRequest(
-                        addr_val = getattr(input_data, 'addr_val', 0),
-                        rw_mode = getattr(input_data, 'rw_mode', 'read'),
-                        size = getattr(input_data, 'size', 'word'),  # Data size (word, half, byte)
-                        store_value=getattr(input_data, 'store_value', 0),
-                        halt = getattr(input_data, 'halt', False)
-                    )
-                else:   # If the cache doesn't receive a valid request
-                    logging.debug("No request sent to dcache")
+            if not target_bank.hit_pipeline_busy:
+                hit, data = target_bank.check_hit(req.addr, req.rw_mode, req.store_value, req.size, req.addr_val)
+            
+                if hit:
+                    # This is Cycle 1 of the hit
+                    logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}. Pipelining.")
+                    formatted_data = self.calc_data_size(data, req.addr_val, req.size)
 
-            if not self.hit_pipeline_busy: # If there's no in-flight hit requests
-                if self.pending_request:    # If currently handling a request
-                    req = self.pending_request  # The request
-                    addr = req.addr # The address
-                    bank_id = addr.bank_id  # The bank ID
-                    bank = self.banks[bank_id]  # The specific bank
-                    mshr = self.mshrs[bank_id]  # The mshr buffer for that bank
-                    
-                    self.mem_out_uuid = mshr.last_issued_uuid   # The default of mem_out_UUID is just last issued UUID
-                    
-                    hit, data = bank.check_hit(
-                        addr, 
-                        req.rw_mode, 
-                        req.store_value, 
-                        req.size,
-                        req.addr_val
-                    )  # Check if the reqeust is a hit or miss
-                    
-                    if hit:
-                        # This is Cycle 1 of the hit
-                        logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}. Pipelining.")
-                        formatted_data = self.calc_data_size(data, req.addr_val, req.size)
+                    target_bank.hit_pipeline[-1] = {'data': formatted_data, 'req': req}
+                    target_bank.hit_pipeline_busy = True # Lock ONLY this bank
 
-                        # Prepare to push the hit result into the pipeline
-                        this_cycle_lookup_result = {'data': formatted_data, 'req': req}
-                        
-                        self.hit_pipeline_busy = True # Lock the pipeline, it's now busy.
-                        
-                        self.pending_request = None # Consume the request
-                        self.hit_stall = True
+                    self.pending_request = None # Consume the request
+                    self.hit_stall = False
+                    self.behind_latch.forward_if.set_wait(0)
+                else:
+                    # This is a MISS
+                    logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
+
+                    # This now works because bank_busy_signals was populated in Step 3
+                    bank_empty = not bank_busy_signals[bank_id] 
+
+                    if mshr.check_stall(bank_empty):
+                        print(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
+                        self.stall = True
                         self.behind_latch.forward_if.set_wait(1)
                     else:
-                        # This is a MISS
-                        logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
-            
-                        # This now works because bank_busy_signals was populated in Step 3
-                        bank_empty = not bank_busy_signals[bank_id] 
-                        
-                        if mshr.check_stall(bank_empty):
-                            print(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
-                            self.stall = True
-                            self.behind_latch.forward_if.set_wait(1)
-                        else:
-                            # It was an accepted miss
-                            uuid, is_new = mshr.add_miss(req) # No longer pass new_uuid
-                            req.uuid = uuid
-                            
-                            if is_new: # Only track new primary misses
-                                self.active_misses[uuid] = req
+                        # It was an accepted miss
+                        uuid, is_new = mshr.add_miss(req) # No longer pass new_uuid
+                        if is_new: # Only track new primary misses
+                            self.active_misses[uuid] = req
+                        self.output_buffer.append(dMemResponse(
+                            type = 'MISS_ACCEPTED',
+                            miss = True,
+                            uuid = uuid,
+                            req = req,
+                            address = req.addr_val,
+                            is_secondary = not is_new
+                        ))
 
-                            self.output_buffer.append(dMemResponse(
-                                type = 'MISS_ACCEPTED',
-                                miss = True,
-                                uuid = uuid,
-                                req = req,
-                                address = req.addr_val,
-                                is_secondary = not is_new
-                            ))
-                            
-                            self.pending_request = None
-            
+                        self.pending_request = None
+        
             else: # else for 'if not self.hit_pipeline_busy'
                 logging.debug(f"Cache: Input stage stalled, hit pipeline is busy.")
                 self.stall = True
@@ -717,10 +688,6 @@ class LockupFreeCacheStage(Stage):
         if self.pending_request is not None:
             self.stall = True
             self.behind_latch.forward_if.set_wait(1)
-
-        # --- 5. Push this cycle's lookup result into the hit pipeline ---
-        # This pushes either the hit info (Cycle 1) or None (a bubble)
-        self.hit_pipeline.append(this_cycle_lookup_result)
 
         # Pushing the top of the output buffer to the ahead latch (LSU)
         if self.DCACHE_LSU_IF_NAME in self.forward_ifs_write:
