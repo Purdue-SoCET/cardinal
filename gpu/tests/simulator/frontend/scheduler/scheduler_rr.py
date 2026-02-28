@@ -1,3 +1,8 @@
+############
+"""
+OUTDATED AS FUCKKKKKKKKK NEED TO UPDATE FOR CSR STUFF AND UPDATE
+"""
+############
 import sys, os
 
 here = os.path.dirname(os.path.abspath(__file__))
