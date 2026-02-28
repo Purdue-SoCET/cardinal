@@ -5,55 +5,15 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 
 sys.path.append(str(parent_dir))
-from simulator.base_class import ForwardingIF, LatchIF, Stage, PredRequest, DecodeType
+from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, PredRequest, DecodeType
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from bitstring import Bits 
 
-from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
-from common.custom_enums import Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
+from gpu.common.custom_enums import Op
 
 global_cycle = 0
-
-
-# at top of the file, after imports / decode_opcode
-FUST_CLASSES = {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"}
-
-def classify_fust_unit(op) -> Optional[str]:
-    """
-    Map an Op (or R_Op/I_Op/F_Op/...) to a FUST class:
-    one of {"ADD", "SUB", "MUL", "DIV", "SQRT", "LDST", "BRANCH"} or None.
-    Adjust the name checks to match your actual enum names.
-    """
-    if op is None:
-        return None
-
-    name = getattr(op, "name", str(op))
-
-    # Branch unit
-    if isinstance(op, B_Op) or "BRANCH" in name or name.startswith("B"):
-        return "BRANCH"
-
-    # Load / Store
-    if isinstance(op, S_Op) or name.startswith("LD") or name.startswith("ST"):
-        return "LDST"
-
-    # Mul / Div / Sqrt (could be integer or FP)
-    if "MUL" in name:
-        return "MUL"
-    if "DIV" in name:
-        return "DIV"
-    if "SQRT" in name:
-        return "SQRT"
-
-    # Generic ALU: ADD/SUB or “everything else” mapped to ADD lane
-    if "SUB" in name:
-        return "SUB"
-    if "ADD" in name:
-        return "ADD"
-
-    # Fallback: treat as ADD-lane ALU
-    return "ADD"
 
 def decode_opcode(bits7: Bits):
     """
@@ -84,6 +44,9 @@ class DecodeStage(Stage):
         behind_latch: Optional[LatchIF],
         ahead_latch: Optional[LatchIF],
         prf,
+        fust,
+        csr_table,
+        kernel_base_ptrs,
         forward_ifs_read: Optional[Dict[str, ForwardingIF]] = None,
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
     ):
@@ -95,6 +58,119 @@ class DecodeStage(Stage):
             forward_ifs_write=forward_ifs_write or {},
         )
         self.prf = prf  # predicate register file reference
+        self.fust = fust
+        self.csr_table = csr_table
+        self.kernel_base_ptrs = kernel_base_ptrs
+    
+    def classify_fust_unit(self, op) -> Optional[str]:
+        """
+        Map an opcode to an actual functional unit name from self.fust.
+        Returns the name of an available functional unit that can execute this operation,
+        or None if no suitable unit is found.
+        """
+        if op is None or not self.fust:
+            return None
+
+        # Get the opcode name for matching
+        op_name = getattr(op, "name", str(op))
+        
+        # Determine operation type and look for matching functional units
+        
+        # Integer ALU operations (ADD, SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA, etc.)
+        if isinstance(op, R_Op) and op in [R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, R_Op.XOR, 
+                                            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Integer immediate operations (ADDI, SUBI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI)
+        if isinstance(op, I_Op) and op in [I_Op.ADDI, I_Op.SUBI, I_Op.ORI, I_Op.XORI, 
+                                            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, I_Op.SRAI]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Integer multiplication
+        if isinstance(op, R_Op) and op == R_Op.MUL:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Mul_int_"):
+                    return fu_name
+        
+        # Integer division
+        if isinstance(op, R_Op) and op == R_Op.DIV:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Div_int_"):
+                    return fu_name
+        
+        # Floating-point add/sub
+        if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("AddSub_float_"):
+                    return fu_name
+        
+        # Floating-point multiplication
+        if isinstance(op, R_Op) and op == R_Op.MULF:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Mul_float_"):
+                    return fu_name
+        
+        # Floating-point division
+        if isinstance(op, R_Op) and op == R_Op.DIVF:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Div_float_"):
+                    return fu_name
+        
+        # Square root
+        if isinstance(op, F_Op) and op == F_Op.ISQRT:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("InvSqrt_float_"):
+                    return fu_name
+        
+        # Trigonometric functions (SIN, COS)
+        if isinstance(op, F_Op) and op in [F_Op.SIN, F_Op.COS]:
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Trig_float_"):
+                    return fu_name
+        
+        # Type conversion (ITOF, FTOI) - typically handled by ALU or special unit
+        if isinstance(op, F_Op) and op in [F_Op.ITOF, F_Op.FTOI]:
+            # Try Alu first, then any available unit
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Load/Store operations
+        if isinstance(op, (S_Op, I_Op)) and (op in [S_Op.SW, S_Op.SH, S_Op.SB] or 
+                                              op in [I_Op.LW, I_Op.LH, I_Op.LB]):
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Ldst_Fu_"):
+                    return fu_name
+        
+        # Branch operations
+        if isinstance(op, B_Op):
+            for fu_name in self.fust.keys():
+                if "Branch" in fu_name or "branch" in fu_name:
+                    return fu_name
+        
+        # Jump operations
+        if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
+            for fu_name in self.fust.keys():
+                if "Branch" in fu_name or "branch" in fu_name:
+                    return fu_name
+                
+        # csrr instruction
+        if isinstance(op, C_Op):
+            for fu_name in self.fust.keys():
+                if fu_name.startswith("Alu_int_"):
+                    return fu_name
+        
+        # Fallback: return first available Alu if nothing else matches        
+        for fu_name in self.fust.keys():
+            if fu_name.startswith("Alu_int_"):
+                return fu_name
+        
+        # Final fallback: return first available unit
+        return next(iter(self.fust.keys()), None)
     
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
@@ -108,19 +184,14 @@ class DecodeStage(Stage):
         
         inst = None
         if not self.behind_latch.valid:
-                print("[Decode] Received nothing valid yet!")
+                # print("[Decode] Received nothing valid yet!")
                 return inst
         else:
             # pop whatever you need..
             inst = self.behind_latch.pop()
-        
-        if self.forward_ifs_read["ICache_Decode_Ihit"].pop() is False:
-            print("[Decode] Stalling Pipeline due to Icache Miss")
-            return inst 
-
 
         raw_bits = inst.packet
-        print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
+        # print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
         # Make the bytes explicit (adapt depending on your Bits type)
         raw_bytes = raw_bits.bytes if hasattr(raw_bits, "bytes") else bytes(raw_bits)
 
@@ -177,7 +248,8 @@ class DecodeStage(Stage):
         is_H = (decoded_family is H_Op)
 
         # rd present for R/I/F/U/J/P (per your intent)
-        if is_R or is_I or is_F or is_U or is_J or is_P:
+        # if is_R or is_I or is_F or is_U or is_J or is_P:
+        if is_R or is_I or is_F or is_U or is_J or is_P or is_C:
             inst.rd = Bits(uint=((raw >> 7) & 0x3F), length=6)
 
             # Your special P-type rule using LOWER 3 bits of opcode7
@@ -189,22 +261,33 @@ class DecodeStage(Stage):
 
         # rs1 present for R/I/F/S/B/P
         if is_R or is_I or is_F or is_S or is_B or is_P:
-            inst.rs1 = (raw >> 13) & 0x3F
+            # inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
+            inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=6)
 
             opcode_lower = opcode7 & 0x7
             if is_P and opcode_lower not in (0x4, 0x5):
                 inst.rs1 = None
+                inst.num_operands = 0 ### ADDED ###
         else:
             inst.rs1 = None
+            inst.num_operands = 0 ### ADDED ###
 
         # rs2 present for R/S/B
         if is_R or is_S or is_B:
-            inst.rs2 = (raw >> 19) & 0x3F
+            # inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=5)
+            inst.rs2 = Bits(uint=(raw >> 19) & 0x3F, length=6)
+            inst.num_operands = 2 ### ADDED ###
         else:
             inst.rs2 = None
+            inst.num_operands = 1 ### ADDED ###
+        
+        # no operands for csrr instruction
+        if is_C:
+            inst.num_operands = 0
 
         # src_pred present for R/I/F/S/U/B (your original intent)
-        if is_R or is_I or is_F or is_S or is_U or is_B:
+        # if is_R or is_I or is_F or is_S or is_U or is_B:
+        if is_R or is_I or is_F or is_S or is_U or is_B or is_C:
             inst.src_pred = (raw >> 25) & 0x1F
         else:
             inst.src_pred = None
@@ -217,23 +300,36 @@ class DecodeStage(Stage):
 
         # imm extraction: keep your rules but fix Bits constructors
         if is_I:
-            inst.imm = Bits(uint=((raw >> 19) & 0x3F), length=6).int
+            inst.imm = Bits(uint=((raw >> 19) & 0x3F), length=6)
         elif is_S:
-            inst.imm = Bits(uint=((raw >> 7) & 0x3F), length=6).int
+            inst.imm = Bits(uint=((raw >> 7) & 0x3F), length=6)
         elif is_U:
-            inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12).int
+            inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
             imm = (raw >> 13) & 0xFFF
-            inst.imm = Bits(uint=imm, length=17).int
+            inst.imm = Bits(uint=imm, length=17)
         elif is_P:
-            inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11).int
+            inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
         elif is_H:
-            inst.imm = Bits(uint=0x7FFFFF, length=23).int
+            # print(f"[Decode] Received HALT")
+            inst.imm = Bits(uint=0x7FFFFF, length=23)
         else:
-            inst.imm = None
+            inst.imm = Bits(uint=0x0, length=6)
 
-        # change this according to what we 
-        inst.intended_FU = classify_fust_unit(inst.opcode)
+        # csr_value and csr_param field population (may need to add more values here later)
+        if is_C:
+            inst.csr_param = Bits(uint=(raw >> 13) & 0x3F, length=6).uint
+            if inst.csr_param == 0:
+                inst.csr_value = self.csr_table.read_base_id(inst.warp_id)
+            elif inst.csr_param == 1:
+                inst.csr_value = self.csr_table.read_tb_id(inst.warp_id)
+            elif inst.csr_param == 2:
+                inst.csr_value = self.csr_table.read_tb_size(inst.warp_id)
+            elif inst.csr_param == 3:
+                inst.csr_value = self.kernel_base_ptrs.read(0) # hard-coded to 0 for now since assuming only one kernel per SM
+
+        # Map opcode to actual functional unit name from fust
+        inst.intended_FU = self.classify_fust_unit(inst.opcode)
 
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
@@ -265,7 +361,7 @@ class DecodeStage(Stage):
                 remaining=1
             )
             
-            print(f"[Decode] Initiating PRF Read {pred_req}")
+            # print(f"[Decode] Initiating PRF Read {pred_req}")
 
             pred_mask = self.prf.read_predicate(
                 prf_rd_en=pred_req.rd_en,
@@ -277,7 +373,12 @@ class DecodeStage(Stage):
             if pred_mask is None:
                 pred_mask = [True] * 32
 
-            inst.predicate = pred_mask
+            # Convert boolean list to Bits objects for pipeline compatibility
+            inst.predicate = [Bits(uint=1 if p else 0, length=1) for p in pred_mask]
+        
+        # Initialize wdat list for result storage (32 threads per warp)
+        if not inst.wdat or len(inst.wdat) == 0:
+            inst.wdat = [Bits(uint=0, length=32) for _ in range(32)]
         
         if inst.warp_id % 2 == 0:
             inst.target_bank = 0
@@ -297,4 +398,3 @@ class DecodeStage(Stage):
        
         
         
-

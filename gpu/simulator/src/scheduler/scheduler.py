@@ -38,13 +38,16 @@ class SchedulerStage(Stage):
         self.rr_index: int = 0
         self.gto_index: int = -1
 
+        # eop stuff
+        self.eop: bool = False
+        self.warp_id: int = 0
+
         # debug
         self.issued_warp_last_cycle: Optional[int] = None
 
         # could add perf counters
         self.stop_fetching = False
 
-    ####### HELPER CLASSES
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
@@ -58,15 +61,13 @@ class SchedulerStage(Stage):
         print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
         print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
 
-        # if im getting my odd warp EOP out of my decode
-        if decode_ctrl is not None and decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
-            if decode_ctrl["type"] == DecodeType.EOP and decode_ctrl["warp_id"] % 2:
-                self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.STALL
-                self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
-                self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
+        # if im getting my odd warp EOP out of my i$
+        if self.eop and self.warp_id % 2:
+            self.warp_table[self.warp_id // 2].state = WarpState.STALL
+            self.warp_table[self.warp_id // 2].finished_packet = True
 
         # if im getting my odd warp halt out of my decode
-        elif decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
+        if decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
             self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
 
         # change pc for branch
@@ -88,9 +89,13 @@ class SchedulerStage(Stage):
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
             self.warp_table[writeback_ctrl["warp_group"]].in_flight -= 1
-            if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0 and self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.BARRIER and self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.HALT:
-                self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
-                self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
+            if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
+                if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
+                    self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
+                    self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
+                
+                else:
+                    self.warp_table[writeback_ctrl["warp_group"]].halt = 1
 
     # creating instruction class
     def make_instruction(self, group, warp, pc):
@@ -103,7 +108,7 @@ class SchedulerStage(Stage):
         self.ahead_latch.push(inst)
         return
 
-    # SEND HALT BACK TO TBS SOMEWHERE 
+    # init blocks onto sm 
     def tbs_init(self):
         if not self.behind_latch.valid:
             return
@@ -119,10 +124,17 @@ class SchedulerStage(Stage):
             if not (self.free_warp % 2):
                 self.warp_table[self.free_warp // 2].pc = start_pc
                 self.warp_table[self.free_warp // 2].state = WarpState.READY
+                self.warp_table[self.free_warp // 2].halt = 0
             
             self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
             base_id += self.warp_size
             self.free_warp += 1
+
+    def halt(self):
+        if all(group.halt == 1 for group in self.warp_table):
+            self.forward_ifs_write["ld/st"]
+
+        return
 
     # round robin policy
     def round_robin(self):
@@ -164,7 +176,7 @@ class SchedulerStage(Stage):
         # nothing can fetch here
         return # NONE
 
-    ############### greedy policy WIP
+    # greedy policy 
     def greedy_oldest(self):
         # current warp group is good for issue
         if self.warp_table[self.gto_index].state == WarpState.READY:
@@ -187,7 +199,7 @@ class SchedulerStage(Stage):
                 group.last_issue_even = False
 
                 instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                 self.push_instruction(instr)
                 return
 
@@ -218,7 +230,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = False
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                         self.push_instruction(instr)
                         return
 
@@ -249,7 +261,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = False
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {group.pc}")
+                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                         self.push_instruction(instr)
                         return
                     
@@ -262,13 +274,20 @@ class SchedulerStage(Stage):
         if not self.warp_table:
             return
 
-        # determining next states
-        self.collision()
-
         # wait for ihit
-        if not self.forward_ifs_read["ICache_Scheduler"].pop():
+        icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
+        print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
+
+
+        if not icache_ctrl["fetch"]:
             print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
+
+        self.eop = icache_ctrl["eop"]
+        self.warp_id = icache_ctrl["warp_id"]
+
+        # determining next states
+        self.collision()
 
         match self.policy:
             case "RR":

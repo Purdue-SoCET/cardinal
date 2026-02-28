@@ -211,6 +211,7 @@ class WarpState(Enum):
 class WarpGroup:
     pc: int
     group_id: int
+    halt: int = 1
     last_issue_even: bool = False
     finished_packet: bool = False
     in_flight: int = 0
