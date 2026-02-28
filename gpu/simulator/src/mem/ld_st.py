@@ -19,18 +19,24 @@ class Ldst_Fu(FunctionalSubUnit):
 
         self.outstanding = False #Whether we have an outstanding dcache request
 
+        # Trackers for halt instruction
+        self.halting = False
+        self.waiting_for_flush = False
+
         super().__init__(num)
 
         #Manually instantiate interfaces while doing integration
         self.dcache_if = LatchIF()
         self.dcache_if.forward_if = ForwardingIF()
-        self.sched_if = ForwardingIF()
+        self.sched_ldst_if = ForwardingIF()
+        self.ldst_sched_if = ForwardingIF()
 
-    def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
+    def connect_interfaces(self, dcache_if: LatchIF, sched_ldst_if = ForwardingIF, ldst_sched_if = ForwardingIF):
         self.dcache_if: LatchIF = dcache_if
         # self.issue_if: LatchIF = issue_if
         # self.wb_if: LatchIF = wb_if replaced with self.ex_wb_interface
-        self.sched_if = sched_if
+        self.sched_ldst_if: ForwardingIF = sched_ldst_if
+        self.ldst_sched_if: ForwardingIF = ldst_sched_if
     
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
@@ -71,6 +77,13 @@ class Ldst_Fu(FunctionalSubUnit):
             if instr != None:
                 print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
                 self.ldst_q.append(pending_mem(instr))
+        
+        # Accept halt signal from the scheduler
+        if self.sched_ldst_if.payload != None:
+            sched_payload = self.sched_ldst_if.pop()
+            if sched_payload.get('halt', False):
+                print("[LSU] Received HALT command from Scheduler.")
+                self.halting = True
 
         #apply backpressure if ldst_q full
         if len(self.ldst_q) == self.ldst_q_size:
@@ -86,7 +99,7 @@ class Ldst_Fu(FunctionalSubUnit):
         
         if payload:
             self.dcache_if.forward_if.payload = None
-            if len(self.ldst_q) == 0:
+            if len(self.ldst_q) == 0 and payload.type != 'FLUSH_COMPLETE':
                 print(f"LSQ is length 0 and recieved a dcache response. Should never happen!")
 
             mem_req = self.ldst_q[0]
@@ -102,9 +115,9 @@ class Ldst_Fu(FunctionalSubUnit):
                     # logger.info("Handling dcache MISS_COMPLETE")
                     mem_req.parseMshrHit(payload)
                 case 'FLUSH_COMPLETE':
-                    mem_req.parseHit(payload)
-                    mem_req.finished_idx = [1] * 32 
                     self.outstanding = False
+                    self.waiting_for_flush = False
+                    self.ldst_sched_if.push({'flush_complete': True})
                 case 'HIT_COMPLETE':
                     # logger.info("Handling dcache HIT_COMPLETE")
                     mem_req.parseHit(payload)
@@ -116,13 +129,19 @@ class Ldst_Fu(FunctionalSubUnit):
             self.wb_buffer.append(self.ldst_q.pop(0).instr)
         
         #send req to cache if not waiting for response
-        if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
-            req = self.ldst_q[0].genReq()
-            if req:
-                self.dcache_if.push(
-                    self.ldst_q[0].genReq()
-                )
+        if self.outstanding == False and self.dcache_if.ready_for_push():
+            if self.halting and len(self.ldst_q) == 0:
+                halt_req = dCacheRequest(addr_val=0, rw_mode='read', size='word', halt=True)
+                self.dcache_if.push(halt_req)
                 self.outstanding = True
+                self.halting = False
+                self.waiting_for_flush = True
+            
+            elif len(self.ldst_q) > 0:
+                req = self.ldst_q[0].genReq()
+                if req:
+                    self.dcache_if.push(req)
+                    self.outstanding = True
 
         #send instr to wb if ready
         if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
@@ -145,7 +164,6 @@ class pending_mem():
         self.mshr_idx: List[int] = [0 for i in range(32)]
         self.addrs = [0 for i in range(32)]
         
-        self.halt = False
         self.write = False
         self.size = "word"
         self.is_signed = False
@@ -174,11 +192,6 @@ class pending_mem():
                 self.write = True
                 self.size = "byte"
             
-            case H_Op.HALT:
-                self.write = False
-                self.size = "word"
-                self.halt = True
-            
             case _:
                 logger.error(f"Err: instr in ldst cannot be decoded")
                 print(f"\t{instr}")
@@ -196,13 +209,6 @@ class pending_mem():
         return all(self.finished_idx)
     
     def genReq(self):
-        if self.halt == True:
-            return dCacheRequest(
-                addr_val=0,
-                rw_mode='read',
-                size='word',
-                halt = True
-            )
         for i in range(32):
             if self.finished_idx[i] == 0 and self.mshr_idx[i] == 0:
                 st_val = 0
@@ -225,10 +231,6 @@ class pending_mem():
         return None
     
     def parseHit(self, payload):
-        if self.halt == True:
-            self.finished_idx = [1]
-            return
-        
         if self.write == False and not self.instr.wdat:
             self.instr.wdat = [None for _ in range(32)]
         
