@@ -1,8 +1,10 @@
 from __future__ import annotations
+from bitstring import Bits
 from dataclasses import dataclass
 from typing import Dict
+from gpu.common.custom_enums import H_Op
 from simulator.issue.regfile import RegisterFile
-from simulator.latch_forward_stage import Instruction, Stage, LatchIF
+from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF
 from simulator.writeback.writeback_buffer import WritebackBuffer, WritebackBufferCount, WritebackBufferSize, WritebackBufferStructure, WritebackBufferPolicy
 from typing import Union, Optional, Tuple, List
 
@@ -119,13 +121,14 @@ class WritebackStage(Stage):
         rf_config: RegisterFileConfig, 
         behind_latches: Dict[str, LatchIF], 
         reg_file: RegisterFile,
+        forward_ifs_write: Optional[Dict[str, LatchIF]] = None,
         fsu_names: list[str] = None
     ):
         super().__init__(name="Writeback_Stage")
         self.behind_latches = behind_latches
         self.ahead_latch = None
         self.forward_ifs_read = None
-        self.forward_ifs_write = None
+        self.forward_ifs_write = forward_ifs_write
         self.values_to_writeback = {}
         self.num_banks = rf_config.num_banks
         self.reg_file = reg_file
@@ -169,16 +172,28 @@ class WritebackStage(Stage):
         for _, instr in self.values_to_writeback.items():
             if instr is not None:
                 for i in range(32):
-                    if instr.predicate[i].bin == 0b0:
+                    if instr.predicate[i].bin == 0b0 or instr.halt_mask[i] == 0:
                         continue
                     # print("[Writeback] Writing back to register file, warp_id:", instr.warp_id, "thread_id:", i, "dest_operand:", instr.rd, "data:", instr.wdat[i])
-                    self.reg_file.write_thread_gran(
-                        dest_operand=instr.rd,
-                        data=instr.wdat[i],
-                        thread_id=i,
-                        warp_id=instr.warp_id
-                    )
-
+                    if instr.opcode is not H_Op.HALT:
+                        self.reg_file.write_thread_gran(
+                            dest_operand=instr.rd,
+                            data=instr.wdat[i],
+                            thread_id=i,
+                            warp_id=instr.warp_id
+                        )
+                        # print(f"[Writeback] Sending forwarding info to scheduler for warp_group_id: {instr.warp_group_id}")   
+                    if instr.opcode == H_Op.HALT:
+                        # build predicate mask as Bits
+                        pred_bits = Bits(bin=''.join(p.bin for p in instr.predicate))
+                        # kill only lanes where predicate == 1
+                        new_mask = instr.halt_mask & ~pred_bits
+                    else:
+                        new_mask = instr.halt_mask
+                    
+                    if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
+                        self.forward_ifs_write["Writeback_Scheduler"].push({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask}) 
+    
     @classmethod
-    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, fsu_names: list[str]) -> WritebackStage:
-        return cls(wb_config=wb_config, rf_config=rf_config, behind_latches=ex_stage_ahead_latches, reg_file=reg_file, fsu_names=fsu_names)
+    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, fsu_names: list[str], forward_ifs_write: ForwardingIF) -> WritebackStage:
+        return cls(wb_config=wb_config, rf_config=rf_config, behind_latches=ex_stage_ahead_latches, reg_file=reg_file, fsu_names=fsu_names, forward_ifs_write=forward_ifs_write)

@@ -292,7 +292,7 @@ class DecodeStage(Stage):
 
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
-        if is_R or is_I or is_F or is_S or is_U or is_B or is_C:
+        if is_R or is_I or is_F or is_S or is_U or is_B or is_C or is_H:
             inst.src_pred = (raw >> 25) & 0x1F
         else:
             inst.src_pred = None
@@ -339,9 +339,7 @@ class DecodeStage(Stage):
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
 
-        if decoded_opcode == H_Op.HALT:
-            packet_marker = DecodeType.halt
-        elif EOP_bit == 1:
+        if EOP_bit == 1:
             packet_marker = DecodeType.EOP
         elif EOS_bit == 1:
             packet_marker = DecodeType.EOS
@@ -359,6 +357,7 @@ class DecodeStage(Stage):
         # indexed by thread id in the teal card?
         pred_req = None
         if inst.src_pred is not None:
+
             pred_req = PredRequest(
                 rd_en=1,
                 rd_wrp_sel=inst.warp_id,
@@ -366,7 +365,7 @@ class DecodeStage(Stage):
                 prf_neg=0,
                 remaining=1
             )
-            
+        
             # print(f"[Decode] Initiating PRF Read {pred_req}")
 
             pred_mask = self.prf.read_predicate(

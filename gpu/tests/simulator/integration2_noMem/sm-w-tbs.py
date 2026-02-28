@@ -299,6 +299,7 @@ def test_all_operations():
         rf_config=reg_file_config,
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
+        forward_ifs_write={"Writeback_Scheduler": writeback_scheduler_fwif},
         fsu_names=list(fust.keys())
     )
     

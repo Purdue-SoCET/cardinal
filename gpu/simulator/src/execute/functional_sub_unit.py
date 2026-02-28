@@ -44,6 +44,11 @@ class Branch(FunctionalSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS:
             raise ValueError(f"Branch does not support operation {instr.opcode}")
         
+        if instr.opcode == H_Op.HALT:
+            # let this pass through
+            return
+            # procedure for handling HALT: the WS will maintain a table of the threads that have executed the halt
+            # if theres a predication mask on the halt, then we need to 
         for i in range(32):
             if instr.predicate[i].bin == 0b0:
                 continue

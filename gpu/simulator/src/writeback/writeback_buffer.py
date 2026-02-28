@@ -1,4 +1,5 @@
 from __future__ import annotations
+from builtins import print
 from simulator.circular_buffer import CircularBuffer
 from simulator.compact_queue import CompactQueue
 from simulator.stack import Stack
@@ -184,10 +185,14 @@ class WritebackBuffer:
         for bank, buffer in buffers_to_writeback.items():
             if buffer is not None:
                 values_to_writeback[bank] = buffer.pop()
-                if values_to_writeback[bank].rd.int == 53:
-                    abcHI = 1
+                if values_to_writeback[bank].rd is not None:
+                    if values_to_writeback[bank].rd.int == 53:
+                        abcHI = 1
+
                 for i in range(32):
-                    values_to_writeback[bank].wdat[i] = None if values_to_writeback[bank].predicate[i].bin == '0' else values_to_writeback[bank].wdat[i]
+                    if values_to_writeback[bank].predicate[i].bin == '0' or values_to_writeback[bank].halt_mask[i] == 0:
+                        values_to_writeback[bank].wdat[i] = None
+
                 # Track writeback for the source buffer
                 for buf_name, buf in self.buffers.items():
                     if buf is buffer:
@@ -199,15 +204,17 @@ class WritebackBuffer:
             in_data = latch.snoop()
             active_threads = 0
             for i in range(32):
-                if in_data is not None and in_data.predicate[i].bin == '1':
+                if in_data is not None and in_data.predicate[i].bin == '1' and in_data.halt_mask[i] == 1:
                     active_threads += 1
             if active_threads == 0:
                 # No active threads, just pop to clear latch
                 latch.pop()
                 continue
             if in_data is not None:
-                if in_data.rd.int == 53:
-                    abcHI = 1
+                if in_data.rd is not None:
+                    if in_data.rd.int == 53:
+                        abcHI = 1
+
                 match self.count_scheme:
                     case WritebackBufferCount.BUFFER_PER_FSU:
                         target_buffer = in_data.intended_FU

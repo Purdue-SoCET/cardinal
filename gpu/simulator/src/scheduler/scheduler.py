@@ -20,7 +20,7 @@ class SchedulerStage(Stage):
         self.warp_size: int = warp_size
         self.at_barrier: int = 0
         self.policy: str = policy
-
+       
         # warp table
         self.warp_table: List[WarpGroup] = [WarpGroup(pc=start_pc, group_id=id) for id in range(self.num_groups)]
 
@@ -59,9 +59,22 @@ class SchedulerStage(Stage):
                 self.warp_table[decode_ctrl["warp_id"] // 2].pc = decode_ctrl["pc"]
                 self.warp_table[decode_ctrl["warp_id"] // 2].finished_packet = True
 
-        # if im getting my odd warp halt out of my decode
-        elif decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
+        # if im getting my odd warp halt out of my decode, but I should only set the halt when I have confirmed all 32 threads have sent a halt
+        # elif decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
+        #     group = decode_ctrl["warp_id"] // 2
+        #     thread_id = decode_ctrl["thread_id"]
+
+        #     curr_mask = self.warp_table[group].halt_mask_odd
+
+        #     bit_position = 31 - thread_id
+        #     clear_bit = Bits(uint=1 << bit_position, length=32)
+
+        #     new_mask = curr_mask & ~clear_bit
+
+        #     self.warp_table[group].halt_mask_odd = new_mask
+        
+        # if self.warp_table[group].halt_mask_odd.uint == 0:
+        #     self.warp_table[group].state = WarpState.HALT
 
         # change pc for branch
         if branch_ctrl is not None:
@@ -80,15 +93,41 @@ class SchedulerStage(Stage):
                             self.warp_table[ibuffer].state = WarpState.READY
 
         # decrement my in flight counter and go back to ready
+        # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
-            self.warp_table[writeback_ctrl["warp_group"]].in_flight -= 1
-            if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0 and self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.BARRIER and self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.HALT:
-                self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
-                self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
+
+            group = writeback_ctrl["warp_group_id"]
+            warp_id = writeback_ctrl["warp_id"]
+            new_mask = writeback_ctrl["new_mask"]
+
+            self.warp_table[group].in_flight -= 1
+
+            if new_mask is not None:
+                if warp_id % 2 == 0:
+                    self.warp_table[group].halt_mask_even = new_mask
+                else:
+                    self.warp_table[group].halt_mask_odd = new_mask
+
+            even_dead = self.warp_table[group].halt_mask_even.uint == 0
+            odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
+
+            if even_dead and odd_dead:
+                self.warp_table[group].state = WarpState.HALT
+                return
+
+            if self.warp_table[group].in_flight == 0 and self.warp_table[group].state != WarpState.BARRIER and self.warp_table[group].state != WarpState.HALT:
+                self.warp_table[group].state = WarpState.READY
+                self.warp_table[group].finished_packet = False
 
     # might not need
     def make_instruction(self, group, warp, pc):
-        inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group)
+
+        if warp % 2 == 0:
+            halt_mask = self.warp_table[group].halt_mask_even
+        else:            
+            halt_mask = self.warp_table[group].halt_mask_odd 
+
+        inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group, halt_mask=halt_mask)
         return inst 
     
     # might not need
@@ -123,6 +162,7 @@ class SchedulerStage(Stage):
                 # if the last issue for the group was odd DONT INCREATE RR_INDEX
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
+
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
                     # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
