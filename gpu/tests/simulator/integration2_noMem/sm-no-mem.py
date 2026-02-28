@@ -149,7 +149,7 @@ def test_all_operations():
     writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
 
     mem = Mem(
-        start_pc=0x1000,
+        start_pc=START_PC,
         input_file = FILE_ROOT / "test.bin",
         fmt="bin",
     )
@@ -350,7 +350,73 @@ def test_all_operations():
 
     ]
 
-    # 4. Update Golden Model
+    # print(f"Generated {len(instruction_list)} instructions.")
+
+    # 4. Run Pipeline Simulation
+    # ---------------------------------------------------------
+    print("\nStarting pipeline simulation...")
+    
+    print("Verifying initial state of register file matches golden model...")
+    all_warps_match = True
+    for warp_id in warp_ids:
+        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
+        if not compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
+            all_warps_match = False
+            print(f"❌ Initial register file state for warp {warp_id} does NOT match.")
+    
+    if all_warps_match:
+        print("✅ Initial register file state matches golden model for all warps.")
+    else:
+        print("❌ Initial register file state does NOT match golden model. Aborting test.")
+        return 0, 1
+    
+    # Cycle 1: Feed instructions
+    # for idx, instr in enumerate(instruction_list):
+    n_cycle = 0
+    for cycle in range(len(test_cases)):
+        # if instr.rd.uint == 1:
+        #     abcHI = 1
+        # print(f"\nCycle #{cycle}\n")
+        wb_stage.tick()
+        ex_stage.tick()
+        ex_stage.compute()
+        issue_stage.compute()
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
+
+        if (cycle == (len(test_cases) - 1)):
+            n_cycle = cycle
+
+
+    print("All instructions issued. Flushing pipeline...")
+
+    FLUSH_CYCLES = len(test_cases) + 1100  # Run enough cycles to flush the pipeline after last instruction is issued
+    for _ in range(FLUSH_CYCLES):
+        # Refill forward IFs if they get drained
+        # print(f"\nCycle #{_ + n_cycle}\n")
+        # if issue_scheduler_fwif.payload is None:
+        #     issue_scheduler_fwif.push(filler_issue_scheduler)
+        # if decode_scheduler_fwif.payload is None:
+        #     decode_scheduler_fwif.push(filler_decode_scheduler)
+        
+        wb_stage.tick()
+        ex_stage.tick()
+        ex_stage.compute()
+        issue_stage.compute()
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
+        # reg_is_same = compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=False)
+        # if reg_is_same >:
+        #     print("Register file state has diverged from golden model during flush. Aborting test.")
+        #     return 0, 1
+        
+    print("Pipeline flush complete.")
+
+    # 5. Update Golden Model
     # ---------------------------------------------------------
     instruction_list = []
     
@@ -446,87 +512,6 @@ def test_all_operations():
 
         # instruction_list.append(instr)
         # print(instr.target_bank)
-
-    # print(f"Generated {len(instruction_list)} instructions.")
-
-
-    # (TALK TO DAN AND YASH abt this)
-    # 4.5 Initialize Forward IFs with Filler Payloads
-    # ---------------------------------------------------------
-    # Bootstrap the scheduler by providing neutral control packets
-    # so collision() never sees None on the first cycle
-    filler_decode_scheduler = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}
-    filler_issue_scheduler = [0] * scheduler_stage.num_groups
-    # Initialize all forward interfaces
-    icache_scheduler_fwif.payload = None
-    decode_scheduler_fwif.push(filler_decode_scheduler)
-    issue_scheduler_fwif.push(filler_issue_scheduler)
-    branch_scheduler_fwif.payload = None
-    writeback_scheduler_fwif.payload = None
-
-    # 5. Run Pipeline Simulation
-    # ---------------------------------------------------------
-    print("\nStarting pipeline simulation...")
-    
-    print("Verifying initial state of register file matches golden model...")
-    all_warps_match = True
-    for warp_id in warp_ids:
-        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
-        if not compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
-            all_warps_match = False
-            print(f"❌ Initial register file state for warp {warp_id} does NOT match.")
-    
-    if all_warps_match:
-        print("✅ Initial register file state matches golden model for all warps.")
-    else:
-        print("❌ Initial register file state does NOT match golden model. Aborting test.")
-        return 0, 1
-    
-    # Cycle 1: Feed instructions
-    # for idx, instr in enumerate(instruction_list):
-    n_cycle = 0
-    for cycle in range(len(test_cases)):
-        # if instr.rd.uint == 1:
-        #     abcHI = 1
-        # print(f"\nCycle #{cycle}\n")
-        wb_stage.tick()
-        ex_stage.tick()
-        ex_stage.compute()
-        issue_stage.compute()
-        decode_stage.compute()
-        memc.compute()
-        icache_stage.compute()
-        scheduler_stage.compute()
-
-        if (cycle == (len(test_cases) - 1)):
-            n_cycle = cycle
-
-
-    print("All instructions issued. Flushing pipeline...")
-
-    FLUSH_CYCLES = len(test_cases) + 1100  # Run enough cycles to flush the pipeline after last instruction is issued
-    for _ in range(FLUSH_CYCLES):
-        # Refill forward IFs if they get drained
-        # print(f"\nCycle #{_ + n_cycle}\n")
-        # if issue_scheduler_fwif.payload is None:
-        #     issue_scheduler_fwif.push(filler_issue_scheduler)
-        # if decode_scheduler_fwif.payload is None:
-        #     decode_scheduler_fwif.push(filler_decode_scheduler)
-        
-        wb_stage.tick()
-        ex_stage.tick()
-        ex_stage.compute()
-        issue_stage.compute()
-        decode_stage.compute()
-        memc.compute()
-        icache_stage.compute()
-        scheduler_stage.compute()
-        # reg_is_same = compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=False)
-        # if reg_is_same >:
-        #     print("Register file state has diverged from golden model during flush. Aborting test.")
-        #     return 0, 1
-        
-    print("Pipeline flush complete.")
 
     # 6. Verify Results
     # ---------------------------------------------------------
