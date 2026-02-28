@@ -216,6 +216,8 @@ class WarpGroup:
     in_flight: int = 0
     state: WarpState = WarpState.READY
 
+
+
 @dataclass
 class Instruction:
     # ----- required (no defaults) -----
@@ -330,6 +332,8 @@ class LatchIF:
     def clear_all(self) -> None:
         self.payload = None
         self.valid = False
+        if self.forward_if: #Also clear any attatched forwarding IF
+            self.forward_if.push(None)
     
     def __repr__(self) -> str: # idk if we need this or not
         return (f"<{self.name} valid={self.valid} wait={self.wait} "
@@ -338,7 +342,7 @@ class LatchIF:
 @dataclass
 class Stage:
     name: str
-    behind_latch: Optional[LatchIF] = None
+    behind_latch: Optional[LatchIF] = None 
     ahead_latch: Optional[LatchIF] = None
     # forward_if_read: Optional[ForwardingIF] = None
     forward_ifs_read: Dict[str, ForwardingIF] = field(default_factory=dict)
