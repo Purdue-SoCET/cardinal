@@ -6,18 +6,12 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
 import math
-
-# Adding path to the current directory to import files from another directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, "../../../../../"))
-if project_root not in sys.path:
-    sys.path.append(project_root)
-
-from gpu.simulator.src.mem.dcache import LockupFreeCacheStage
-from gpu.simulator.src.base_class import *
-from gpu.simulator.src.mem.Memory import Mem
-from gpu.simulator.src.mem.mem_controller import MemController
-from gpu.simulator.src.mem.ld_st import Ldst_Fu
+from simulator.mem.dcache import LockupFreeCacheStage
+from simulator.latch_forward_stage import *
+from simulator.mem.Memory import Mem
+from simulator.mem.mem_controller import MemController
+from simulator.mem.ld_st import Ldst_Fu
+from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
 
 BLOCK_SIZE_WORDS = 32       # 32 words per cache block
 
@@ -43,6 +37,12 @@ def make_test_pipeline():
     """
     This function connects creates the memory and dcache objects and connects the interfaces between them. It returns the objects and the interfaces (including the latches and "forwarding")
     """
+    # Adding path to the current directory to import files from another directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(current_dir, "../../../../../"))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+
     print(f"Initializing mem_backend with input file: {os.path.join(project_root, "gpu/tests/simulator/memory/dcache/test.bin")}")
     mem_backend = Mem(start_pc = 0x0000_0000,
                       input_file = os.path.join(project_root, "gpu/tests/simulator/memory/dcache/test.bin"),
@@ -169,7 +169,9 @@ def run_sim (start, cycles):
 
         mem.compute(input_data = None)
         dCache.compute()
-        lsu.tick(issue_if = issue_lsu_IF)
+        instr = lsu.tick(issue_if = issue_lsu_IF)
+        if instr:
+            lsu.ex_wb_interface.push(instr)
         
         if ic_resp.valid:
             i_response = ic_resp.pop()
@@ -178,7 +180,7 @@ def run_sim (start, cycles):
 
         print_latch_states(all_interfaces, all_forward, cycle, "after")
         
-        dcache_lsu_resp_IF.pop()
+        #dcache_lsu_resp_IF.pop()
     print(f"=== Test ended ===")
     return (cycles)
 
@@ -301,7 +303,7 @@ def test_lw():
     with open("1.lw", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -316,7 +318,7 @@ def test_lh():
     with open("2.lh", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100001'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
+        instr = test.genLoad(pc=0, opcode=I_Op.LH, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -331,7 +333,7 @@ def test_lb():
     with open("3.lb", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100010'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
+        instr = test.genLoad(pc=0, opcode=I_Op.LB, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -346,7 +348,7 @@ def test_sw():
     with open("4.sw", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xDEAD0000, length=32) for _ in range(32)])
+        instr = test.genStore(pc=0, opcode=S_Op.SW, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xDEAD0000, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -363,7 +365,7 @@ def test_sh():
     with open("5.store_half", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110001'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBEEF, length=32) for _ in range(32)])
+        instr = test.genStore(pc=0, opcode=S_Op.SH, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBEEF, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -380,7 +382,7 @@ def test_sb():
     with open("6.sb", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genStore(pc=0, opcode=Bits(bin='0b0110010'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBE, length=32) for _ in range(32)])
+        instr = test.genStore(pc=0, opcode=S_Op.SB, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], rdat2 = [Bits(uint=0xBE, length=32) for _ in range(32)])
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -399,7 +401,7 @@ def test_pred():
         test = TestLoadStoreUnit()
         pred = [Bits(bin='0b0') for i in range(32)]
         pred[0] = Bits(bin='0b1')
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], pred = pred)
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)], pred = pred)
         issue_lsu_IF.push(instr)
         current = 0
         while (not lsu.ex_wb_interface.valid):
@@ -420,27 +422,27 @@ def test_backpressure():
             return [Bits(int=addr, length=32) for addr in range(start, start + (32*32), 32)]
                                                                 
         # Instr. 1
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x0))
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = gen_addrs(0x0))
         issue_lsu_IF.push(instr)
         run_sim(0, 1)
 
         # Instr. 2
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x20))
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = gen_addrs(0x20))
         issue_lsu_IF.push(instr)
         run_sim(1, 1)
 
         # Instr. 3
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x40))
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = gen_addrs(0x40))
         issue_lsu_IF.push(instr)
         run_sim(2, 1)
 
         # Instr. 4
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x60))
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = gen_addrs(0x60))
         issue_lsu_IF.push(instr)
         run_sim(3, 1)
 
         # Instr. 5: Causes backpressure
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b0100000'), rd=0, rdat1 = gen_addrs(0x80))
+        instr = test.genLoad(pc=0, opcode=I_Op.LW, rd=0, rdat1 = gen_addrs(0x80))
         issue_lsu_IF.push(instr)
         run_sim(4, 1)
         current_cycle = 5
@@ -487,7 +489,7 @@ def test_halt():
     with open("9.test_halt", "w") as f:
         sys.stdout = f
         test = TestLoadStoreUnit()
-        instr = test.genLoad(pc=0, opcode=Bits(bin='0b1111111'), rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
+        instr = test.genLoad(pc=0, opcode=H_Op.HALT, rd=0, rdat1 = [Bits(int=i, length=32) for i in range(0, 0x400, 32)])
         issue_lsu_IF.push(instr)
 
         current = 0
