@@ -168,6 +168,8 @@ def test_all_operations():
     functional_unit_config = FunctionalUnitConfig.get_default_config()
     fust = functional_unit_config.generate_fust_dict()
 
+    csr_table = CsrTable()
+
     scheduler_stage = SchedulerStage(
         name="Scheduler_Stage",
         behind_latch=tbs_ws_if,
@@ -176,9 +178,11 @@ def test_all_operations():
                            "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, 
                            "Writeback_Scheduler": writeback_scheduler_fwif},
         forward_ifs_write=None,
-        start_pc=START_PC, 
+        csrtable = csr_table,
         warp_count=WARP_COUNT
     )
+
+    tbs_ws_if.push([0, 1024, START_PC])
 
     icache_stage = ICacheStage(
         name="ICache_Stage",
@@ -196,13 +200,6 @@ def test_all_operations():
         num_preds_per_warp=16,
         num_warps=WARP_COUNT
     )
-
-    csr_table = CsrTable()
-    for warp_id in range(WARP_COUNT):
-        if warp_id < (WARP_COUNT//2):
-            csr_table.write_data(warp_id, 32*warp_id, 10, 512)
-        else:
-            csr_table.write_data(warp_id, 32*(warp_id%(WARP_COUNT//2)), 11, 512)
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     kernel_base_ptrs.write(0, Bits(uint=9203930, length=32)) # random address for testing
@@ -248,7 +245,7 @@ def test_all_operations():
         reg_file=pipeline_rf,
         fsu_names=list(fust.keys())
     )
-    
+
     decode_issue_fwif = ForwardingIF(name="Decode_issue_fwif")
 
     issue_stage = IssueStage(

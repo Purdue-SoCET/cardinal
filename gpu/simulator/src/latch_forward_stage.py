@@ -169,7 +169,6 @@ class MSHREntry:
     original_request: dCacheRequest = None # CHECK THIS
     cycles_to_ready: int = 0    # Internal timer for each entry in the buffer
 
-
 @dataclass
 class DecodeType:
     halt: int = 0
@@ -177,8 +176,6 @@ class DecodeType:
     MOP: int = 2 # the set default value
     EOS: int = 3
     empty: int = 4 # start up junk value..
-
-
 
 ###TEST CODE BELOW###
 @dataclass
