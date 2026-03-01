@@ -380,10 +380,13 @@ class DecodeStage(Stage):
         if not inst.wdat or len(inst.wdat) == 0:
             inst.wdat = [Bits(uint=0, length=32) for _ in range(32)]
         
+        # TODO: ADD LOGIC HERE TO SET inst.target_regfile TO "pred_regfile" IF THE INSTRUCTION WRITES TO PRED REG FILE
         if inst.warp_id % 2 == 0:
             inst.target_bank = 0
+            inst.target_regfile = "regfile"
         else:
             inst.target_bank = 1
+            inst.target_regfile = "regfile"
 
         self._push_instruction_to_next_stage(inst)
         return 

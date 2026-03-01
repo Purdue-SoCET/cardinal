@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
-from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
+from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
 from simulator.issue.regfile import RegisterFile
 from simulator.latch_forward_stage import Instruction, LatchIF
 from simulator.issue.stage import IssueStage
@@ -206,7 +206,7 @@ def test_all_operations():
     
     # Initialize all predicate registers to 1 (all threads active)
     for warp in range(WARP_COUNT):
-        for pred in range(16 * 2):  # num_preds_per_warp * 2
+        for pred in range(16):  # num_preds_per_warp * 2
             for neg in range(2):  # both positive and negative versions
                 prf.reg_file[warp][pred][neg] = [True] * 32  # all 32 threads active
 
@@ -236,14 +236,17 @@ def test_all_operations():
     
     wb_buffer_config = WritebackBufferConfig.get_default_config()
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-    reg_file_config = RegisterFileConfig.get_config_from_reg_File(reg_file=pipeline_rf)
+    reg_file_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
+    pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf) # each predicate has a positive and negative bank
     
     wb_stage = WritebackStage.create_pipeline_stage(
         wb_config=wb_buffer_config,
         rf_config=reg_file_config,
+        pred_rf_config=pred_reg_file_config,
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
-        fsu_names=list(fust.keys()),
+        pred_reg_file=prf,
+        fsu_names=list(fust.keys())
     )
 
     decode_issue_fwif = ForwardingIF(name="Decode_issue_fwif")

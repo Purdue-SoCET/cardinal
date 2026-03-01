@@ -18,13 +18,15 @@ from common.custom_enums import Op
 
 class PredicateRegFile():
     def __init__(self, num_preds_per_warp: int, num_warps: int):
-        num_cols = num_preds_per_warp *2 # the number of 
+        self.num_preds_per_warp = num_preds_per_warp # the number of 
         self.num_threads = 32
+        self.banks = 1 # used in creation of writeback buffer (signifies number of physical banks in hardware)
+        # ^^^ idk if this will ever be more than 1 but just leave this for now
 
         # 2D structure: warp -> predicate -> [bits per thread]
         self.reg_file = [
-            [[[False] * self.num_threads, [False] * self.num_threads]
-              for _ in range(num_cols)]
+            [[[False] * self.num_threads, [True] * self.num_threads]
+              for _ in range(self.num_preds_per_warp)]
             for _ in range(num_warps)
         ]
     
@@ -40,6 +42,7 @@ class PredicateRegFile():
             return None
     
     def write_predicate(self, prf_wr_en: int, prf_wr_wsel: int, prf_wr_psel: int, prf_wr_data):
+        # Warp granularity (prf_wr_data must be a list of 32 bools representing the predicate value for each thread in the warp)
         # the write will autopopulate the negated version in the table)
         if (prf_wr_en):
                 # Convert int to bit array if needed
@@ -52,4 +55,19 @@ class PredicateRegFile():
             self.reg_file[prf_wr_wsel][prf_wr_psel][0] = bits
             # Store negated version
             self.reg_file[prf_wr_wsel][prf_wr_psel][1] = [not b for b in bits]
+
+    def write_predicate_thread_gran(self, prf_wr_en: int, prf_wr_wsel: int, prf_wr_psel: int, prf_wr_tsel, prf_wr_data):
+        # Thread granularity (prf_wr_data must be a single bool representing the predicate value for a single thread)
+        # the write will autopopulate the negated version in the table)
+        if (prf_wr_en):
+                # Convert int to bit array if needed
+            if isinstance(prf_wr_data, int):
+                bits = [(prf_wr_data >> i) & 1 == 1 for i in range(self.num_threads)]
+            else:
+                bits = prf_wr_data  # assume already a list of bools
+
+            # Store positive version
+            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bits[prf_wr_tsel]
+            # Store negated version
+            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bits[prf_wr_tsel]
 

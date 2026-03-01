@@ -241,7 +241,8 @@ class Instruction:
     packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None
     wb_cycle: Optional[int] = None
-    target_bank: Optional[int] = None 
+    target_bank: int = None 
+    target_regfile: Optional[str] = None
 
     rdat1: list[Bits] = field(default_factory=list)
     rdat2: list[Bits] = field(default_factory=list)

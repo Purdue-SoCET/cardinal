@@ -131,7 +131,7 @@ def test_all_operations():
     
     wb_buffer_config = WritebackBufferConfig.get_default_config()
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-    reg_file_config = RegisterFileConfig.get_config_from_reg_File(reg_file=pipeline_rf)
+    reg_file_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
     
     wb_stage = WritebackStage.create_pipeline_stage(
         wb_config=wb_buffer_config,

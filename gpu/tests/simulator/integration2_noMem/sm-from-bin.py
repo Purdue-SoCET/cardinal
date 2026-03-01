@@ -53,7 +53,7 @@ from simulator.latch_forward_stage import (
     LatchIF, ForwardingIF, Instruction, DecodeType
 )
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
-from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
+from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
 from simulator.issue.regfile import RegisterFile
 from simulator.issue.stage import IssueStage
 from simulator.csr_table import CsrTable
@@ -540,7 +540,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
 
     prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
     for warp in range(WARP_COUNT):
-        for pred in range(16 * 2):
+        for pred in range(16):
             for neg in range(2):
                 prf.reg_file[warp][pred][neg] = [True] * 32
 
@@ -580,13 +580,16 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
 
     wb_buffer_config = WritebackBufferConfig.get_default_config()
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-    rf_config = RegisterFileConfig.get_config_from_reg_File(reg_file=pipeline_rf)
+    rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
+    pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf)
 
     wb_stage = WritebackStage.create_pipeline_stage(
         wb_config=wb_buffer_config,
         rf_config=rf_config,
+        pred_rf_config=pred_reg_file_config,
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
+        pred_reg_file=prf,
         fsu_names=list(fust.keys()),
     )
 

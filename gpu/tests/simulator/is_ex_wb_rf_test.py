@@ -54,7 +54,7 @@ ex_stage.behind_latch = is_ex_latch
 # Step 3: Create buffer sizes and priorities for Writeback Buffer Config
 wb_buffer_config = WritebackBufferConfig.get_default_config()
 wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-reg_file_config = RegisterFileConfig.get_config_from_reg_File(reg_file=reg_file)
+reg_file_config = RegisterFileConfig.get_config_from_reg_file(reg_file=reg_file)
 
 # Make sure ExecuteStage is created first before WritebackStage since it needs the ahead_latches from ExecuteStage
 # wb_stage = WritebackStage.create_pipeline_stage(wb_buffer_config=wb_buffer_config, rf_config=reg_file_config, ex_stage_ahead_latches=ex_stage.ahead_latches)
