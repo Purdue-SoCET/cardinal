@@ -15,17 +15,6 @@ from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, Reg
 from simulator.latch_forward_stage import *
 from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
 
-# CREATING ALL LATCHES
-# ---------------------------------------------------------
-is_ex_latch = LatchIF(name="IS_EX_Latch")                              # Issue - Execute latch
-lsu_dcache_latch = LatchIF(name="lsu_dcache_latch")                    # Ldst - dcache latch
-dcache_lsu_forward = ForwardingIF(name="dcache_lsu_forward")           # Dcache - Ldst forwarding
-lsu_dcache_latch.forward_if = dcache_lsu_forward
-dcache_mem_latch = LatchIF(name="dcache_mem_latch")                    # Dcache - memory controller latch
-mem_dcache_latch = LatchIF(name="mem_dcache_lstch")                    # Memory controller - dcache latch
-ic_req = LatchIF("ICacheMemReqIF")                                     # Icache - memory controller latch
-ic_resp = LatchIF("ICacheMemRespIF")                                   # Memory controller - icache latch
-
 def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
     """
     Compare two register files and return True if they match, False otherwise.
@@ -236,9 +225,7 @@ def print_latch_states(latches, forward_latches, cycle, before_after):
     for name, forward_latch in forward_latches.items():
         payload = None
 
-        if hasattr(forward_latch, 'valid') and latch.valid:
-            payload = forward_latch.payload
-        elif hasattr(forward_latch, 'payload') and latch.payload is not None:
+        if hasattr(forward_latch, 'payload'):
             payload = forward_latch.payload
             
         if payload is not None:
@@ -253,6 +240,19 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../../"))
 if project_root not in sys.path:
     sys.path.append(project_root)
+
+# CREATING ALL LATCHES
+# ---------------------------------------------------------
+is_ex_latch = LatchIF(name="IS_EX_Latch")                              # Issue - Execute latch
+lsu_dcache_latch = LatchIF(name="lsu_dcache_latch")                    # Ldst - dcache latch
+dcache_lsu_forward = ForwardingIF(name="dcache_lsu_forward")           # Dcache - Ldst forwarding
+lsu_dcache_latch.forward_if = dcache_lsu_forward
+dcache_mem_latch = LatchIF(name="dcache_mem_latch")                    # Dcache - memory controller latch
+mem_dcache_latch = LatchIF(name="mem_dcache_lstch")                    # Memory controller - dcache latch
+ic_req = LatchIF("ICacheMemReqIF")                                     # Icache - memory controller latch
+ic_resp = LatchIF("ICacheMemRespIF")                                   # Memory controller - icache latch
+scheduler_ldst_forward = ForwardingIF(name="Scheduler - Load/Store Unit Forwarding")
+ldst_scheduler_forward = ForwardingIF(name="Load/Store Unit - Scheduler Forwarding")
 
 def test_all_operations():
     # 1. Setup Pipeline Components
@@ -320,7 +320,7 @@ def test_all_operations():
     
     # Load store Unit
     ldst = ex_stage.functional_units['MemBranchUnit_0'].subunits['Ldst_Fu_0']
-    ldst.connect_interfaces(dcache_if = lsu_dcache_latch)
+    ldst.connect_interfaces(dcache_if = lsu_dcache_latch, sched_ldst_if = scheduler_ldst_forward, ldst_sched_if = ldst_scheduler_forward)
 
     all_latches = {
     "is_ex_latch": is_ex_latch,
@@ -332,7 +332,9 @@ def test_all_operations():
     "ldst_wb_latch": ldst.ex_wb_interface
     }
     all_forwarding = {
-        "dcache_lsu_forward": dcache_lsu_forward
+        "dcache_lsu_forward": dcache_lsu_forward,
+        "Scheduler - Load/Store Unit Forwarding": scheduler_ldst_forward,
+        "Load/Store Unit - Scheduler Forwarding": ldst_scheduler_forward
     }
 
     for latch_name, latch in all_latches.items():
@@ -388,8 +390,8 @@ def test_all_operations():
         ("LH", I_Op.LH, 4, 0, 26, "Ldst_Fu_0", 0xffff_cafe),
         ("LB", I_Op.LB, 4, 0, 28, "Ldst_Fu_0", 0xffff_fffe),
         ("SH", S_Op.SH, 5, 28, 0, "Ldst_Fu_0", 0),
-        ("SB", S_Op.SB, 5, 24, 0, "Ldst_Fu_0", 0),
-        ("HALT", H_Op.HALT, 0, 0, 0, "Ldst_Fu_0", None)                                         # Send a halt to ldst to flush the cache
+        ("SB", S_Op.SB, 5, 24, 0, "Ldst_Fu_0", 0)
+        #("HALT", H_Op.HALT, 0, 0, 0, "Ldst_Fu_0", None)                                         # Send a halt to ldst to flush the cache
     ]
 
     instruction_list = []
@@ -562,9 +564,8 @@ def test_all_operations():
         print_banks(dCache)
 
         print("\nTESTING HALT")                                             # Sending Halt
-        run_sim(start_cycle, 1, instruction_list[8])
-        start_cycle += 1
-        while (not ldst.ex_wb_interface.valid):
+        scheduler_ldst_forward.push({"halt": True})
+        while (ldst_scheduler_forward.payload == None):
             run_sim(start_cycle, 1, None)
             start_cycle += 1
         print_banks(dCache)                                                 # Finished flushing
