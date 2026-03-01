@@ -214,6 +214,9 @@ class WarpGroup:
     in_flight: int = 0
     state: WarpState = WarpState.HALT
 
+    halt_mask_even: Bits = field(default_factory=lambda: Bits(uint=(1 << 32) - 1, length=32))
+    halt_mask_odd: Bits = field(default_factory=lambda: Bits(uint=(1 << 32) - 1, length=32))
+
 @dataclass
 class Instruction:
     # ----- required (no defaults) -----
@@ -233,6 +236,7 @@ class Instruction:
     src_pred: Optional[Bits]= None
     dest_pred: Optional[Bits]= None
     predicate:Optional[Bits] = None
+    active_mask: Optional[Bits] = None
     opcode: Optional[Op]= None
     imm: Optional[Bits]= None
     csr_value: Optional[Any] = None

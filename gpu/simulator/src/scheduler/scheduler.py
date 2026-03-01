@@ -66,10 +66,6 @@ class SchedulerStage(Stage):
             self.warp_table[self.warp_id // 2].state = WarpState.STALL
             self.warp_table[self.warp_id // 2].finished_packet = True
 
-        # if im getting my odd warp halt out of my decode
-        if decode_ctrl is not None and decode_ctrl["type"] == DecodeType.halt and decode_ctrl["warp_id"] % 2:
-            self.warp_table[decode_ctrl["warp_id"] // 2].state = WarpState.HALT
-
         # change pc for branch
         if branch_ctrl is not None:
             self.warp_table[branch_ctrl["warp_group"]].pc = branch_ctrl["dest"]
@@ -88,7 +84,26 @@ class SchedulerStage(Stage):
 
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
-            self.warp_table[writeback_ctrl["warp_group"]].in_flight -= 1
+            group = writeback_ctrl["warp_group_id"]
+            warp_id = writeback_ctrl["warp_id"]
+            new_mask = writeback_ctrl["new_mask"]
+
+            # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
+            self.warp_table[group].in_flight -= 1
+
+            if new_mask is not None:
+                if warp_id % 2 == 0:
+                    self.warp_table[group].halt_mask_even = new_mask
+                else:
+                    self.warp_table[group].halt_mask_odd = new_mask
+
+            even_dead = self.warp_table[group].halt_mask_even.uint == 0
+            odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
+
+            if even_dead and odd_dead:
+                self.warp_table[group].state = WarpState.HALT
+                return
+
             if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
                 if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
                     self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
@@ -96,10 +111,17 @@ class SchedulerStage(Stage):
                 
                 else:
                     self.warp_table[writeback_ctrl["warp_group"]].halt = 1
+        
+        # set group to halt
 
     # creating instruction class
     def make_instruction(self, group, warp, pc):
-        inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group)
+        if warp % 2 == 0:
+            active_mask = self.warp_table[group].halt_mask_even
+        else:            
+            active_mask = self.warp_table[group].halt_mask_odd 
+
+        inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group, active_mask=active_mask)
         return inst 
     
     # pushing to latch

@@ -1,4 +1,5 @@
 
+from builtins import zip
 import sys
 from pathlib import Path
 
@@ -154,6 +155,11 @@ class DecodeStage(Stage):
         
         # Jump operations
         if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
+            for fu_name in self.fust.keys():
+                if "Branch" in fu_name or "branch" in fu_name:
+                    return fu_name
+                
+        if isinstance(op, H_Op) and op == H_Op.HALT:
             for fu_name in self.fust.keys():
                 if "Branch" in fu_name or "branch" in fu_name:
                     return fu_name
@@ -334,9 +340,7 @@ class DecodeStage(Stage):
         EOP_bit     = (raw >> 31) & 0x1
         EOS_bit     = (raw >> 30) & 0x1
 
-        if decoded_opcode == H_Op.HALT:
-            packet_marker = DecodeType.halt
-        elif EOP_bit == 1:
+        if EOP_bit == 1:
             packet_marker = DecodeType.EOP
         elif EOS_bit == 1:
             packet_marker = DecodeType.EOS
@@ -375,18 +379,30 @@ class DecodeStage(Stage):
 
             # Convert boolean list to Bits objects for pipeline compatibility
             inst.predicate = [Bits(uint=1 if p else 0, length=1) for p in pred_mask]
-        
+
+            #And the active mask with the predicate mask to get the final active mask for the instruction
+            inst.predicate = [
+                Bits(uint=(p.uint if a else 0), length=1)
+                for a, p in zip(inst.active_mask, inst.predicate)
+            ]
+            # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
+            # without having to modify other stages to check for both an active mask and a predicate mask separately
+
         # Initialize wdat list for result storage (32 threads per warp)
         if not inst.wdat or len(inst.wdat) == 0:
             inst.wdat = [Bits(uint=0, length=32) for _ in range(32)]
         
         # TODO: ADD LOGIC HERE TO SET inst.target_regfile TO "pred_regfile" IF THE INSTRUCTION WRITES TO PRED REG FILE
-        if inst.warp_id % 2 == 0:
-            inst.target_bank = 0
-            inst.target_regfile = "regfile"
+        if inst.opcode is B_Op.BEQ or inst.opcode is B_Op.BNE:
+            inst.target_regfile = "pred_regfile"
+            inst.target_bank = 1 # for now, just hardcoding all pred reg file writes to go to bank 1 and all int/float reg file writes to go to bank 0, but this can be changed later if we want more flexible mapping of logical register files to physical banks
         else:
-            inst.target_bank = 1
-            inst.target_regfile = "regfile"
+            if inst.warp_id % 2 == 0:
+                inst.target_bank = 0
+                inst.target_regfile = "regfile"
+            else:
+                inst.target_bank = 1
+                inst.target_regfile = "regfile"
 
         self._push_instruction_to_next_stage(inst)
         return 

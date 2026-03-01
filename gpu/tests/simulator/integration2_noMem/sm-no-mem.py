@@ -547,6 +547,7 @@ def test_all_operations():
 
     if all_warps_passed:
         print(f"\n✅ SUCCESS: All register values match golden model for all {len(warp_ids)} warps.")
+        prf.dump()
         return len(instruction_list), 0
     else:
         print("\n❌ FAILURE: Mismatches detected in register file.")

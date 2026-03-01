@@ -71,3 +71,62 @@ class PredicateRegFile():
             # Store negated version
             self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bits[prf_wr_tsel]
 
+    def dump(self, file=None):
+        """
+        Dumps full predicate register file.
+        Skips warps that are completely default (all True for positive, all False for neg).
+        """
+
+        import sys as _sys
+        out = file if file is not None else _sys.stdout
+
+        print(f"\n{'='*80}", file=out)
+        print(f"{'PREDICATE REGISTER FILE DUMP':^80}", file=out)
+        print(f"{'='*80}", file=out)
+
+        active_warps_found = False
+
+        for w in range(len(self.reg_file)):
+
+            warp_is_default = True
+
+            # Check if warp is default state
+            for p in range(self.num_preds_per_warp):
+                pos = self.reg_file[w][p][0]
+                neg = self.reg_file[w][p][1]
+
+                if not (all(pos) and not any(neg)):
+                    warp_is_default = False
+                    break
+
+            if warp_is_default:
+                continue
+
+            active_warps_found = True
+
+            print(f"\n[ Warp {w} ]", file=out)
+            print("-" * 80, file=out)
+
+            for p in range(self.num_preds_per_warp):
+
+                pos = self.reg_file[w][p][0]
+                neg = self.reg_file[w][p][1]
+
+                print(f"  P{p:<2} (POS):", file=out)
+                for i in range(0, self.num_threads, 8):
+                    chunk = pos[i:i+8]
+                    formatted = [f"{int(b):>3}" for b in chunk]
+                    print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
+
+                print(f"  P{p:<2} (NEG):", file=out)
+                for i in range(0, self.num_threads, 8):
+                    chunk = neg[i:i+8]
+                    formatted = [f"{int(b):>3}" for b in chunk]
+                    print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
+
+                print("", file=out)
+
+        if not active_warps_found:
+            print("\n  (Predicate Register File is entirely default)", file=out)
+
+        print(f"{'='*80}\n", file=out)

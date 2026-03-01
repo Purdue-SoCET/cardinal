@@ -4,6 +4,7 @@ from typing import Dict
 
 from aenum import Enum
 from bitstring import Bits
+from gpu.common.custom_enums import H_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.latch_forward_stage import Instruction, Stage, LatchIF
@@ -83,16 +84,19 @@ class WritebackStage(Stage):
                         continue
                     
                     if isinstance(instr.target_bank, int):
-                        if instr.target_regfile is not None and "pred" in instr.target_regfile:
+                        if instr.target_regfile is not None and "pred" in instr.target_regfile and instr.opcode is not H_Op.HALT:
                             # write to predicate reg file
+                            print("i",i)
+                            print("instr.wdat_pred", instr.wdat_pred)
+                            print(instr)
                             self.pred_reg_file.write_predicate_thread_gran(
                                 prf_wr_en=1,
                                 prf_wr_wsel=instr.warp_id,
-                                prf_wr_psel=instr.pred_dest,
+                                prf_wr_psel=instr.dest_pred,
                                 prf_wr_tsel=i,
                                 prf_wr_data=bool(instr.wdat_pred[i].uint)
                             )
-                        elif instr.target_regfile is not None:
+                        elif instr.target_regfile is not None and instr.opcode is not H_Op.HALT:
                             # write to normal reg file
                             self.reg_file.write_thread_gran(
                                 dest_operand=instr.rd,
@@ -104,7 +108,7 @@ class WritebackStage(Stage):
                             raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")
                         
                     elif isinstance(instr.target_bank, str):
-                        if "pred" in instr.target_bank:
+                        if "pred" in instr.target_bank and instr.opcode is not H_Op.HALT:
                             # write to pred reg file
                             self.pred_reg_file.write_predicate_thread_gran(
                                 prf_wr_en=1,
@@ -113,7 +117,7 @@ class WritebackStage(Stage):
                                 prf_wr_tsel=i,
                                 prf_wr_data=bool(instr.wdat_pred[i].uint)
                             )
-                        else:
+                        elif instr.opcode is not H_Op.HALT:
                             # write to normal reg file
                             self.reg_file.write_thread_gran(
                                 dest_operand=instr.rd,
@@ -124,6 +128,16 @@ class WritebackStage(Stage):
                     else:
                         raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")
                     
+                    if instr.opcode == H_Op.HALT:
+
+                        #check if the instruction is predicated, if it is then we only want to update the halt mask for the threads that are active based on the predicate bits, if it is not predicated then we want to update the halt mask for all threads in the warp
+                        pred_bits = Bits(bin=''.join(p.bin for p in instr.predicate))
+                        new_mask = instr.active_mask & ~pred_bits
+                    else:
+                        new_mask = instr.active_mask
+                    
+                    if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
+                        self.forward_ifs_write["Writeback_Scheduler"].push({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask}) 
 
     @classmethod
     def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, pred_rf_config: PredicateRegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, pred_reg_file: PredicateRegFile, fsu_names: list[str]) -> WritebackStage:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF
@@ -29,7 +29,7 @@ class FunctionalSubUnit(ABC):
 
 class Branch(FunctionalSubUnit):
     SUPPORTED_OPS = [
-        B_Op.BEQ, B_Op.BNE
+        B_Op.BEQ, B_Op.BNE, J_Op.JAL, I_Op.JALR, P_Op.JPNZ, H_Op.HALT
     ]
     def __init__(self, num: int):
         super().__init__(num=num)
@@ -44,6 +44,7 @@ class Branch(FunctionalSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS:
             raise ValueError(f"Branch does not support operation {instr.opcode}")
         
+
         for i in range(32):
             if instr.predicate[i].bin == 0b0:
                 continue
@@ -53,6 +54,11 @@ class Branch(FunctionalSubUnit):
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
                 case B_Op.BNE:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
+                case J_Op.JAL | I_Op.JALR | P_Op.JPNZ:
+                    instr.wdat_pred[i] = Bits(uint=1, length=1) # for jump instructions, the predicate value is always true since they are only controlling whether the jump is taken or not, and the jump condition is determined by other fields in the instruction (e.g. immediate value for J_Op.JAL, rdat1 value for I_Op.JALR, predicate value for P_Op.JPNZ)
+                case H_Op.HALT:
+                    print("HALT instruction encountered. Setting predicate to true for all active threads to ensure they all enter the halt state together.")
+                    continue
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Branch.")
                 
