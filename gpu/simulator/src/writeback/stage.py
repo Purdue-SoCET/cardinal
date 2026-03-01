@@ -1,4 +1,5 @@
 from __future__ import annotations
+from fileinput import input
 from dataclasses import dataclass
 from typing import Dict
 
@@ -76,7 +77,6 @@ class WritebackStage(Stage):
     def _write_to_reg_file(self):
         if self.values_to_writeback is None:
             return
-        
         for bank_name, instr in self.values_to_writeback.items():
             if instr is not None:
                 for i in range(32):
@@ -86,9 +86,6 @@ class WritebackStage(Stage):
                     if isinstance(instr.target_bank, int):
                         if instr.target_regfile is not None and "pred" in instr.target_regfile and instr.opcode is not H_Op.HALT:
                             # write to predicate reg file
-                            print("i",i)
-                            print("instr.wdat_pred", instr.wdat_pred)
-                            print(instr)
                             self.pred_reg_file.write_predicate_thread_gran(
                                 prf_wr_en=1,
                                 prf_wr_wsel=instr.warp_id,

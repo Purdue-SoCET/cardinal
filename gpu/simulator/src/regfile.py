@@ -14,6 +14,9 @@ class RegisterFile:
         self.regs = [[[[0 for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
 
     def write_warp_gran(self, warp_id: int, dest_operand: int, data: int) -> None:
+        if data is None:
+            print(f"Warning: Attempting to write None to register file at warp {warp_id}, operand {dest_operand}. This will be treated as 0.")
+            input()
         self.regs[warp_id % self.banks][warp_id // 2][dest_operand] = data
 
     def write_thread_gran(self, warp_id: int, dest_operand: int, thread_id: int, data: int) -> None:

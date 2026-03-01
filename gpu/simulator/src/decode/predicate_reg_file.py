@@ -1,4 +1,5 @@
 
+from builtins import print
 import sys
 from pathlib import Path
 
@@ -44,6 +45,8 @@ class PredicateRegFile():
     def write_predicate(self, prf_wr_en: int, prf_wr_wsel: int, prf_wr_psel: int, prf_wr_data):
         # Warp granularity (prf_wr_data must be a list of 32 bools representing the predicate value for each thread in the warp)
         # the write will autopopulate the negated version in the table)
+        print("dest_pred =", prf_wr_psel)
+        print("num_preds_per_warp =", self.num_preds_per_warp)
         if (prf_wr_en):
                 # Convert int to bit array if needed
             if isinstance(prf_wr_data, int):

@@ -26,8 +26,8 @@ Golden model
 Each decoded instruction is examined and the matching Python computation is
 applied to the golden RegisterFile on the fly – no hard-coded lambdas needed.
 """
-
 from __future__ import annotations
+from builtins import float
 
 import argparse
 import io
@@ -422,8 +422,12 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
             is_approx_reg = reg_num in [54, 55, 56] # SIN, COS, ISQRT
 
             if is_float_reg:
-                p_float = pipeline_val.float
-                g_float = golden_val.float
+                if pipeline_val is not None:
+                    p_float = pipeline_val.float
+                else:                    p_float = float('nan')  # Treat None as NaN for comparison
+                if golden_val is not None:  
+                    g_float = golden_val.float
+                else:                    g_float = float('nan')  # Treat None as NaN for comparison
 
                 # Treat NaN == NaN for comparison purposes
                 if math.isnan(p_float) and math.isnan(g_float):
@@ -628,6 +632,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
         "csr_table":   csr_table,
         "kbp":         kernel_base_ptrs,
         "fust":        fust,
+        "prf":         prf,
     }
 
 
@@ -642,6 +647,24 @@ def tick_all(p: dict):
     p["icache"].compute()
     p["scheduler"].compute()
 
+
+def initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads_per_warp, default=True):
+
+    if (default):
+        # ── initialise register files ─────────────────────────────────────────────
+        for warp_id in warp_ids:
+            test_vals = get_test_values(warp_id, threads_per_warp)
+            for reg_num, values in test_vals.items():
+                if reg_num >= 10:
+                    data = [Bits(float=v, length=32) for v in values]
+                else:
+                    data = [Bits(int=v,   length=32) for v in values]
+                pipeline_rf.write_warp_gran(warp_id=warp_id,
+                                            dest_operand=Bits(uint=reg_num, length=32),
+                                            data=data)
+                golden_rf.write_warp_gran(warp_id=warp_id,
+                                        dest_operand=Bits(uint=reg_num, length=32),
+                                        data=data)
 
 # ==============================================================================
 #  Test driver
@@ -686,27 +709,15 @@ def run_test(
     golden_rf    = p["golden_rf"]
     csr_table    = p["csr_table"]
     kbp          = p["kbp"]
+    prf = p["prf"]
 
     threads = pipeline_rf.threads_per_warp
 
     # ── warp IDs under test ───────────────────────────────────────────────────
     warp_ids = list(range(WARP_COUNT + (1 if WARP_COUNT % 2 else 0)))
 
-    # ── initialise register files ─────────────────────────────────────────────
-    for warp_id in warp_ids:
-        test_vals = get_test_values(warp_id, threads)
-        for reg_num, values in test_vals.items():
-            if reg_num >= 10:
-                data = [Bits(float=v, length=32) for v in values]
-            else:
-                data = [Bits(int=v,   length=32) for v in values]
-            pipeline_rf.write_warp_gran(warp_id=warp_id,
-                                        dest_operand=Bits(uint=reg_num, length=32),
-                                        data=data)
-            golden_rf.write_warp_gran(warp_id=warp_id,
-                                      dest_operand=Bits(uint=reg_num, length=32),
-                                      data=data)
-
+    # these must be initialized differenly based on the test case 
+    initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads, default=True)
 
     # ── sanity-check: initial RF matches ─────────────────────────────────────
     print("\nVerifying initial register file state against golden model...")
@@ -774,15 +785,19 @@ def run_test(
 
     pipeline_out = FILE_ROOT / "pipeline_regfile_dump.txt"
     golden_out   = FILE_ROOT / "golden_regfile_dump.txt"
+    prf_out     = FILE_ROOT / "predicate_regfile_dump.txt"
 
     with open(pipeline_out, "w", encoding="utf-8") as f:
             pipeline_rf.dump(file=f)
     with open(golden_out, "w", encoding="utf-8") as f:
         golden_rf.dump(file=f)
+    with open(prf_out, "w", encoding="utf-8") as f:
+        prf.dump(file=f)
 
     print(f"\nRegister file dumps written:")
     print(f"  Pipeline -> {pipeline_out}")
     print(f"  Golden   -> {golden_out}")
+    print(f"  Predicate RF -> {prf_out}")
 
     # ── result verification ───────────────────────────────────────────────────
     # Collect the set of destination registers written by the program
@@ -845,7 +860,6 @@ def _parse_args():
         help="Suppress per-warp progress output.",
     )
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     args    = _parse_args()

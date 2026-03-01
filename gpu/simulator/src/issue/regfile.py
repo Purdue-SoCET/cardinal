@@ -90,6 +90,8 @@ class RegisterFile:
                         formatted = [f"{v.float:>10.4f}" for v in chunk]
                     else:
                         # Format as integer (e.g., 123)
+
+                        # TODO: what is breaking for branch here?
                         formatted = [f"{v.int:>10}" for v in chunk]
                     
                     # Print the row of 8 threads

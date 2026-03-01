@@ -1,3 +1,4 @@
+from builtins import range
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
@@ -29,7 +30,7 @@ class FunctionalSubUnit(ABC):
 
 class Branch(FunctionalSubUnit):
     SUPPORTED_OPS = [
-        B_Op.BEQ, B_Op.BNE, J_Op.JAL, I_Op.JALR, P_Op.JPNZ, H_Op.HALT
+        B_Op.BEQ, B_Op.BNE, H_Op.HALT
     ]
     def __init__(self, num: int):
         super().__init__(num=num)
@@ -44,24 +45,21 @@ class Branch(FunctionalSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS:
             raise ValueError(f"Branch does not support operation {instr.opcode}")
         
-
+        # FIX: initializng w-dat predicabtee becaue it yelling
+        instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
         for i in range(32):
             if instr.predicate[i].bin == 0b0:
                 continue
-
             match instr.opcode:
                 case B_Op.BEQ:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
                 case B_Op.BNE:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
-                case J_Op.JAL | I_Op.JALR | P_Op.JPNZ:
-                    instr.wdat_pred[i] = Bits(uint=1, length=1) # for jump instructions, the predicate value is always true since they are only controlling whether the jump is taken or not, and the jump condition is determined by other fields in the instruction (e.g. immediate value for J_Op.JAL, rdat1 value for I_Op.JALR, predicate value for P_Op.JPNZ)
                 case H_Op.HALT:
                     print("HALT instruction encountered. Setting predicate to true for all active threads to ensure they all enter the halt state together.")
                     continue
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Branch.")
-                
         self.data = instr
         
     def tick(self, behind_latch: LatchIF) -> Instruction:
@@ -200,8 +198,6 @@ class ArithmeticSubUnit(FunctionalSubUnit):
     def tick(self, behind_latch: LatchIF) -> Instruction:
         if isinstance(behind_latch, LatchIF):
             in_data = behind_latch.snoop()
-            if in_data.rd.int == 53:
-                abcHI = 1
         else:
             in_data = None
 

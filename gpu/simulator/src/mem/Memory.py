@@ -55,7 +55,6 @@ class Mem:
                 self.memory[addr + 2] = b2
                 self.memory[addr + 3] = b3
                 addr += 4
-
         atexit.register(self.dump_on_exit)
 
     def read(self, addr: int, size: int = 4) -> Bits:

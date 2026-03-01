@@ -128,8 +128,6 @@ class IssueStage(Stage):
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
             if self.fust[self.dispatched[0].intended_FU] == 0:
-                if self.dispatched[0].rd.int == 53:
-                    abcHI = 1
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
 
