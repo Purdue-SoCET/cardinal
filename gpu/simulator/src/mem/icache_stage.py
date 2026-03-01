@@ -93,7 +93,7 @@ class ICacheStage(Stage):
 
     # ---------------- Main compute ----------------
     def compute(self):
-        print(f"[ICache] Received request: {self.behind_latch.snoop()}")
+        # print(f"[ICache] Received request: {self.behind_latch.snoop()}")
 
         # req in flight to memory
         if self.pending:
@@ -105,20 +105,20 @@ class ICacheStage(Stage):
                 pc_int_resp = resp.pc.int if isinstance(resp.pc, Bits) else int(resp.pc)
                 data_bits = Bits(resp.packet)
 
-                if data_bits is None:
-                    print("[I$] WARNING: MemResp has no data_bits")
+                # if data_bits is None:
+                    # print("[I$] WARNING: MemResp has no data_bits")
 
                 self._fill_from_response(pc_int_resp, data_bits)
 
-                print("[I$] Returned value from memory")
-                self._send_valid(True, data_bits[0], resp.warp_id)
+                # print("[I$] Returned value from memory")
+                self._send_valid(True, data_bits[31], resp.warp_id)
                 self.pending = False
                 if self.ahead_latch.ready_for_push():
                     self.ahead_latch.push(resp)
 
             # still pending
             else:
-                print(f"[I$] waiting on memory")
+                # print(f"[I$] waiting on memory")
                 self._send_valid(False, False, 0)
 
                 if self.req_latched:
@@ -137,7 +137,7 @@ class ICacheStage(Stage):
                 
                 # in the cache
                 if line_lookup:
-                    self._send_valid(True, line_lookup.data[0], fetch.warp_id)
+                    self._send_valid(True, line_lookup.data[31], fetch.warp_id)
                     fetch.packet = line_lookup.data
 
                     # push

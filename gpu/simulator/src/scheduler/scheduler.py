@@ -104,7 +104,7 @@ class SchedulerStage(Stage):
     
     # pushing to latch
     def push_instruction(self, inst):
-        print(f"[Scheduler] Pushing inst to ahead latch")
+        # print(f"[Scheduler] Pushing inst to ahead latch")
         self.ahead_latch.push(inst)
         return
 
@@ -188,7 +188,7 @@ class SchedulerStage(Stage):
                 group.last_issue_even = True
 
                 instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
-                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
                 self.push_instruction(instr)
                 return
 
@@ -199,7 +199,7 @@ class SchedulerStage(Stage):
                 group.last_issue_even = False
 
                 instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
+                # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                 self.push_instruction(instr)
                 return
 
@@ -219,7 +219,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = True
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                        # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
                         self.push_instruction(instr)
                         return
 
@@ -230,7 +230,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = False
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
+                        # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                         self.push_instruction(instr)
                         return
 
@@ -250,7 +250,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = True
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2), group.pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
+                        # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2)}, {group.pc}")
                         self.push_instruction(instr)
                         return
 
@@ -261,7 +261,7 @@ class SchedulerStage(Stage):
                         group.last_issue_even = False
 
                         instr = self.make_instruction(group.group_id, (group.group_id * 2) + 1, current_pc)
-                        print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
+                        # print(f"[Scheduler] Issuing an instruction for {group.group_id}, {(group.group_id * 2) + 1}, {current_pc}")
                         self.push_instruction(instr)
                         return
                     
@@ -276,11 +276,11 @@ class SchedulerStage(Stage):
 
         # wait for ihit
         icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
-        print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
+        # print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
 
 
         if not icache_ctrl["fetch"]:
-            print("[Scheduler] MISS in ICache, STALLING.")
+            # print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         self.eop = icache_ctrl["eop"]

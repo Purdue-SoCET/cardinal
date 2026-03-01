@@ -175,8 +175,8 @@ class DecodeStage(Stage):
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
             self.ahead_latch.push(inst)
-        else:
-            print("[Decode] Stalling due to ahead latch not being ready.")
+        # else:
+        #     print("[Decode] Stalling due to ahead latch not being ready.")
         
         return
     
