@@ -114,6 +114,10 @@ class Rasterizer():
 
             ss_min = ss_tri.min().floor()
             ss_max = ss_tri.max().ceil()
+            ss_min.x = max(0, min(self.w - 1, int(ss_min.x)))
+            ss_max.x = max(0, min(self.w - 1, int(ss_max.x)))
+            ss_min.y = max(0, min(self.h - 1, int(ss_min.y)))
+            ss_max.y = max(0, min(self.h - 1, int(ss_max.y)))
 
             #Check winding.
             area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2 #Edge equation is cross product, so divide by 2 to get area of triangle instead of parallelogram.
@@ -310,6 +314,10 @@ class Rasterizer():
 
             ss_min = ss_tri.min().floor()
             ss_max = ss_tri.max().ceil()
+            ss_min.x = max(0, min(self.w - 1, int(ss_min.x)))
+            ss_max.x = max(0, min(self.w - 1, int(ss_max.x)))
+            ss_min.y = max(0, min(self.h - 1, int(ss_min.y)))
+            ss_max.y = max(0, min(self.h - 1, int(ss_max.y)))
 
             #Check winding.
             area = self.edge(ss_tri.A, ss_tri.B, ss_tri.C.x, ss_tri.C.y) / 2 #Edge equation is cross product, so divide by 2 to get area of triangle instead of parallelogram.

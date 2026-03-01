@@ -3,6 +3,7 @@ from time import perf_counter
 import numpy as np
 from PIL import Image
 from texture_unit import  texture_unit
+from calculate_gradients import process_tmu_quads
 import matplotlib.pyplot as plt
 
 '''
@@ -53,10 +54,10 @@ col3 = [c3, c2]
 
 #Test case for texture mapping
 
-vs = [[[-1.5, 1, -1], [-1.5, -1, -1], [1.5, -1, -1]], #triangle 1
-        [[-1.5, 1, -1], [1.5, 1, -1], [1.5, -1, -1]]] #triangle 2
+vs = [[[-8.5, 1, -20], [-8.5, -1, -1], [8.5, -1, -1]], #triangle 1
+        [[-8.5, 1, -20], [8.5, 1, -20], [8.5, -1, -1]]] #triangle 2
 
-tex_id = [1,1,1]
+tex_id = [0,0,0]
 
 u = [[0,0,1], [0,1,1]]
 v = [[0,1,1],[0,0,1]]
@@ -141,11 +142,16 @@ rasterEngine = Rasterizer(
 
 
 
-image = Image.open('missing.png')
-image_array = np.array(image)[:, :, :3]
-image_array = image_array/255.0
+# image = Image.open('missing.png')
+# image_array = np.array(image)[:, :, :3]
+# image_array = image_array/255.0
 
-tex_unit = texture_unit([image_array])
+#must be saved as PNGs
+tex_names = ["debug_colors"]
+
+
+tex_unit = texture_unit(tex_names)
+
 
 
 
@@ -156,25 +162,29 @@ rasterEngine.render()
 end = perf_counter()
 
 
-out = tex_unit.tex_map(rasterEngine.getUV(),rasterEngine.getSamples(), mode = 1)
+partials = process_tmu_quads(rasterEngine.getSamples(),rasterEngine.getUV())
 
 
-# code for rendering teapot, comment out raster engine calls to use this
-# teapot_uv = np.load("teapot.npy")
-# condition = np.any(teapot_uv != 0, axis=-1)
-# mask_array = np.where(condition, 1, -1)
+
+out = tex_unit.tex_map(rasterEngine.getUV(),rasterEngine.getSamples(), partials, filtering = 2, mipmap=True)
+
+
+# # code for rendering teapot, comment out raster engine calls to use this
+# # teapot_uv = np.load("teapot.npy")
+# # condition = np.any(teapot_uv != 0, axis=-1)
+# # mask_array = np.where(condition, 1, -1)
+# #
+# # out = tex_unit.tex_map(teapot_uv, mask_array, mode = 0)
+# #
+# # plt.imshow(out)
+# # plt.axis("off")
+# # plt.show()
 #
-# out = tex_unit.tex_map(teapot_uv, mask_array, mode = 0)
 #
-# plt.imshow(out)
-# plt.axis("off")
-# plt.show()
-
-
 rasterEngine.applyTextures(out)
-
-
-
+#
+#
+#
 print("Time to render:", end - start)
-
+#
 rasterEngine.showScreen()
