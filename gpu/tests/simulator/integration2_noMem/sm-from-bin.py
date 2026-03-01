@@ -476,6 +476,7 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
 
 def build_pipeline(input_file: Path, fmt: str = "bin"):
     """Instantiate all pipeline stages and return them as a dict."""
+    
 
     # Latches
     tbs_ws_if               = LatchIF("TBS-WS Latch")
@@ -512,6 +513,8 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
     fu_config = FunctionalUnitConfig.get_default_config()
     fust      = fu_config.generate_fust_dict()
 
+    csr_table = CsrTable()
+    
     scheduler_stage = SchedulerStage(
         name="Scheduler_Stage",
         behind_latch=tbs_ws_if,
@@ -524,9 +527,12 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
             "Writeback_Scheduler": writeback_scheduler_fwif,
         },
         forward_ifs_write=None,
-        start_pc=START_PC,
+        csrtable = csr_table,
         warp_count=WARP_COUNT,
     )
+
+    # NOTE Kai Ze: Remove after we bring in TBS
+    tbs_ws_if.push([0, 1024, START_PC])
 
     icache_stage = ICacheStage(
         name="ICache_Stage",
@@ -543,13 +549,6 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
         for pred in range(16):
             for neg in range(2):
                 prf.reg_file[warp][pred][neg] = [True] * 32
-
-    csr_table = CsrTable()
-    for warp_id in range(WARP_COUNT):
-        if warp_id < (WARP_COUNT // 2):
-            csr_table.write_data(warp_id, 32 * warp_id, 10, 512)
-        else:
-            csr_table.write_data(warp_id, 32 * (warp_id % (WARP_COUNT // 2)), 11, 512)
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     kernel_base_ptrs.write(0, Bits(uint=9203930, length=32))
@@ -708,6 +707,31 @@ def run_test(
                                       dest_operand=Bits(uint=reg_num, length=32),
                                       data=data)
 
+
+    # ── sanity-check: initial RF matches ─────────────────────────────────────
+    print("\nVerifying initial register file state against golden model...")
+    for warp_id in warp_ids:
+        test_vals = get_test_values(warp_id, threads)
+        if not compare_register_files(
+            pipeline_rf, golden_rf,
+            warp_id=warp_id, reg_list=list(test_vals.keys()), verbose=True
+        ):
+            print(f"❌ Initial mismatch for warp {warp_id}. Aborting.")
+            return 0, 1
+    print("✅ Initial register file state matches golden model.")
+
+    # ── pipeline simulation ───────────────────────────────────────────────────
+    n_instr = len(decoded_instrs)
+    print(f"\nRunning pipeline: {n_instr} issue cycles ...")
+    for cycle in range(n_instr):
+        tick_all(p)
+
+    FLUSH_CYCLES = n_instr + 1100
+    print(f"Flushing pipeline ({FLUSH_CYCLES} cycles)...")
+    for _ in range(FLUSH_CYCLES):
+        tick_all(p)
+    print("Flush complete.")
+    
     # ── golden model: compute expected results from decoded instructions ───────
     print("\nComputing golden reference from decoded instruction stream...")
     for warp_id in warp_ids:
@@ -744,30 +768,6 @@ def run_test(
                     dest_operand=Bits(uint=rd, length=32),
                     data=result,
                 )
-
-    # ── sanity-check: initial RF matches ─────────────────────────────────────
-    print("\nVerifying initial register file state against golden model...")
-    for warp_id in warp_ids:
-        test_vals = get_test_values(warp_id, threads)
-        if not compare_register_files(
-            pipeline_rf, golden_rf,
-            warp_id=warp_id, reg_list=list(test_vals.keys()), verbose=True
-        ):
-            print(f"❌ Initial mismatch for warp {warp_id}. Aborting.")
-            return 0, 1
-    print("✅ Initial register file state matches golden model.")
-
-    # ── pipeline simulation ───────────────────────────────────────────────────
-    n_instr = len(decoded_instrs)
-    print(f"\nRunning pipeline: {n_instr} issue cycles ...")
-    for cycle in range(n_instr):
-        tick_all(p)
-
-    FLUSH_CYCLES = n_instr + 1100
-    print(f"Flushing pipeline ({FLUSH_CYCLES} cycles)...")
-    for _ in range(FLUSH_CYCLES):
-        tick_all(p)
-    print("Flush complete.")
 
     # ── dump register files to disk ───────────────────────────────────────────
     _REGS = list(range(0, 63))
