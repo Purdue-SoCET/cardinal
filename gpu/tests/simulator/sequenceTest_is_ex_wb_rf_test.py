@@ -94,7 +94,6 @@ def test_all_operations():
     fust = functional_unit_config.generate_fust_dict()
     
     is_ex_latch = LatchIF(name="IS_EX_Latch")
-    decode_issue_if = LatchIF("Decode-Issue Latch")
     
     ex_stage = ExecuteStage.create_pipeline_stage(
         functional_unit_config=functional_unit_config, 
@@ -119,7 +118,7 @@ def test_all_operations():
         regfile=pipeline_rf,
         fust=fust,
         name="IssueStage",
-        behind_latch=decode_issue_if,
+        behind_latch=None,
         ahead_latch=is_ex_latch,
         forward_ifs_read=None,
         forward_ifs_write=None
@@ -285,8 +284,7 @@ def test_all_operations():
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
-        issue_stage.compute()
-        decode_issue_if.push(instr)
+        issue_stage.compute(instr)
 
     
     print("All instructions issued. Flushing pipeline...")
@@ -298,7 +296,7 @@ def test_all_operations():
         wb_stage.tick()
         ex_stage.tick()
         ex_stage.compute()
-        issue_stage.compute()
+        issue_stage.compute(None)
 
     print("Pipeline flush complete.")
 

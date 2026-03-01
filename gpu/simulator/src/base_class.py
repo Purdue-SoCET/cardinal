@@ -12,7 +12,7 @@ from bitstring import Bits
 from enum import Enum
 from pathlib import Path
 import sys
-parent = Path(__file__).resolve().parents[2]
+parent = Path(__file__).resolve().parent
 sys.path.append(str(parent))
 from gpu.common.custom_enums_multi import Op
 
@@ -138,15 +138,7 @@ class MemRequest:
     data: int 
     rw_mode: str
     remaining: int = 0
-
-@dataclass 
-class PredRequest:
-    rd_en: int
-    rd_wrp_sel: int
-    rd_pred_sel: int
-    prf_neg: int
-    remaining: int
-
+    
 @dataclass
 class dCacheFrame:
     """Simulates one cache line (frame)."""
@@ -174,11 +166,8 @@ class MSHREntry:
 class DecodeType:
     halt: int = 0
     EOP: int = 1
-    MOP: int = 2 # the set default value
-    EOS: int = 3
-    empty: int = 4 # start up junk value..
-
-
+    MOP: int = 2
+    Barrier: int = 3
 
 ###TEST CODE BELOW###
 @dataclass
@@ -193,7 +182,7 @@ class FetchRequest:
     pc: int
     warp_id: int
     uuid: Optional[int] = None
-    
+
 @dataclass
 class Warp:
     pc: int
@@ -220,38 +209,25 @@ class WarpGroup:
 
 @dataclass
 class Instruction:
-    # ----- required (no defaults) -----
-    # STRUCTURAL HAZARD WITH PRED REG FILE WRITE AND READ LATER ON
-    # INSTRUCTION JUST CONTAINS THE OPCODE INFORMATION
-    # discusss more later about this..
-    pc: Optional[Bits] = None
-    warp_id: Optional[int] = None
-    warp_group_id: Optional[int] = None
-
-    # ----- fields populated by decode ----
-    intended_FU: Optional[str] = None 
-    rs1: Optional[Bits] = None
-    rs2: Optional[Bits] = None
-    rd: Optional[Bits]= None
-    src_pred: Optional[Bits]= None
-    dest_pred: Optional[Bits]= None
-    predicate:Optional[Bits] = None
-    opcode: Optional[Op]= None
-    imm: Optional[Bits]= None
-
-    rdat1: list[Bits] = field(default_factory=list)
-    rdat2: list[Bits] = field(default_factory=list)
-    wdat: list[Bits] = field(default_factory=list)
-
-    # ----- optional / with defaults (must come after ALL non-defaults) -----
-    # this is for instruction data memory responses, populated by the MemController
-    packet: Optional[Bits] = None
-    stage_entry: Dict[str, int] = field(default_factory=dict)
-    stage_exit:  Dict[str, int] = field(default_factory=dict)
-    fu_entries:  List[Dict]     = field(default_factory=list)
+    pc: Bits
+    intended_FU: str 
+    warp_id: int
+    warp_group_id: int
+    rs1: Bits
+    rs2: Bits
+    rd: Bits
+    opcode: Op
+    predicate: list[Bits] # list of Bits instances, each of length 1
+    issued_cycle: Optional[int] = None
+    stage_entry: Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> first cycle seen
+    stage_exit:  Optional[Dict[str, int]] = field(default_factory=dict)   # stage -> last cycle completed
+    fu_entries:  Optional[List[Dict]]     = field(default_factory=list)   # [{fu:"ALU", enter: c, exit: c}, ...]
     wb_cycle: Optional[int] = None
-    target_bank: int = None 
-    
+    target_bank: int = None
+    rdat1: list[Bits] = None
+    rdat2: list[Bits] = None
+    wdat: list[Bits] = None
+
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)
 
@@ -269,7 +245,7 @@ class Instruction:
 
     def mark_writeback(self, cycle: int):
         self.wb_cycle = cycle
-
+        
 @dataclass
 class ForwardingIF:
     payload: Optional[Any] = None
@@ -281,15 +257,13 @@ class ForwardingIF:
         self.wait = False
     
     def pop(self) -> Optional[Any]:
-        data = self.payload
-        self.payload = None
-        return data
+        return self.payload
     
     def set_wait(self, flag: bool) -> None:
         self.wait = bool(flag)
 
     def __repr__(self) -> str:
-        return (f"<{self.name} wait={self.wait} "
+        return (f"<{self.name} valid={self.valid} wait={self.wait} "
             f"payload={self.payload!r}>")
 
 @dataclass

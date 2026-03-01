@@ -60,12 +60,37 @@ class Mem:
         atexit.register(self.dump_on_exit)
 
     def read(self, addr: int, size: int = 4) -> Bits:
-        byte_addr = int(addr)
-        data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
-        word = int.from_bytes(data, "little")
-        # print(f"[Memory] Returning data: {word:08x}")
-        return Bits(bytes=data)
+        """
+        Reads `size` bytes starting at `addr`.
 
+        If addr < start_pc:
+            treat addr as a BLOCK INDEX (ICache requests)
+        else:
+            treat addr as a raw byte address (normal memory reads)
+        """
+
+        # Convert block index → byte address
+        if addr < self.start_pc:
+            byte_addr = addr * self.block_size
+
+            # Debug
+            # print(f"[Mem] Treating addr={addr} as block index → byte_addr={hex(byte_addr)}")
+        else:
+            byte_addr = addr
+
+        data_bytes = []
+        for offs in range(size):
+            val = self.memory.get(byte_addr + offs, 0)
+            if val > 0xFF:
+                shift = (offs % 4) * 8
+                val = (val >> shift) & 0xFF
+            data_bytes.append(val)
+
+        return Bits(bytes=bytes(data_bytes))
+
+    # ------------------------------------------------------------
+    # Byte-level write
+    # ------------------------------------------------------------
     def write(self, addr: int, data: Bits, bytes_t: int):
         byte_addr = int(addr)
         b = data.tobytes()[:int(bytes_t)]

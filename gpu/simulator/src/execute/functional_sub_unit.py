@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF
+from simulator.latch_forward_stage import LatchIF, Instruction
 
 class FunctionalUnitPipeline(CompactQueue):
     def __init__(self, latency: int):
@@ -27,148 +27,6 @@ class FunctionalSubUnit(ABC):
     def compute(self):
         pass
 
-class Branch(FunctionalSubUnit):
-    SUPPORTED_OPS = [
-        B_Op.BEQ, B_Op.BNE, H_Op.HALT
-    ]
-    def __init__(self, num: int):
-        super().__init__(num=num)
-        self.data = None
-    
-    def compute(self):
-        instr = self.data
-
-        if instr is None or not isinstance(instr, Instruction):
-            return
-        
-        if instr.opcode not in self.SUPPORTED_OPS:
-            raise ValueError(f"Branch does not support operation {instr.opcode}")
-        
-        for i in range(32):
-            if instr.predicate[i].bin == 0b0:
-                continue
-
-            match instr.opcode:
-                case B_Op.BEQ:
-                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
-                case B_Op.BNE:
-                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
-                case _:
-                    raise ValueError(f"Unsupported operation {instr.opcode} in Branch.")
-                
-        self.data = instr
-        
-    def tick(self, behind_latch: LatchIF) -> Instruction:
-        # Branch unit is assumed to have single-cycle latency for simplicity
-        if isinstance(behind_latch, LatchIF):
-            in_data = behind_latch.snoop()
-        else:
-            in_data = None
-
-        if self.ex_wb_interface.ready_for_push():
-            if isinstance(in_data, Instruction):
-                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
-
-            out_data = self.data
-            self.data = in_data
-
-            if isinstance(out_data, Instruction):
-                out_data.mark_fu_exit(self.name, self.perf_count.total_cycles)
-
-            if isinstance(behind_latch, LatchIF):
-                behind_latch.pop()
-
-            self.ready_out = True
-        else:
-            out_data = False
-            self.ready_out = False            
-
-        self.perf_count.increment(
-            instr=in_data, 
-            ready_out=self.ready_out, 
-            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
-        )
-
-        return out_data
-
-class Jump(FunctionalSubUnit):
-    SUPPORTED_OPS = [
-        P_Op.JPNZ, J_Op.JAL, I_Op.JALR
-    ]
-    def __init__(self, num: int, schedule_if: ForwardingIF = None):
-        super().__init__(num=num)
-
-        self.schedule_if = schedule_if
-        self.data = None
-    
-    def compute(self):
-        if self.schedule_if is None:
-            raise ValueError("Jump unit requires a forwarding interface to the Schedule stage for correct operation.")
-        instr = self.data
-        schedule_if_value = None # defaults to PC + 4, this is signified by pusing None to Schedule Stage Forwarding Interface
-
-        if instr is None or not isinstance(instr, Instruction):
-            return
-        
-        if instr.opcode not in self.SUPPORTED_OPS:
-            raise ValueError(f"Jump does not support operation {instr.opcode}")
-        
-
-        match instr.opcode:
-            case J_Op.JAL:
-                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
-                instr.wdat = None
-            case I_Op.JALR:
-                if not all(data == instr.rdat1[0] for data in instr.rdat1):
-                      raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")
-                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
-                instr.wdat = None
-            case P_Op.JPNZ:
-                if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
-                    raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.")
-                if instr.predicate[0] == Bits(length=1, uint=1):
-                    schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.pc + instr.imm}
-                instr.wdat = None
-            case _:
-                raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")
-            
-        self.schedule_if.push(schedule_if_value)
-        self.data = instr
-        
-    def tick(self, behind_latch: LatchIF) -> Instruction:
-        if self.schedule_if is None:
-            raise ValueError("Jump unit requires a forwarding interface to the Schedule stage for correct operation.")
-        # Jump unit is assumed to have single-cycle latency for simplicity
-        if isinstance(behind_latch, LatchIF):
-            in_data = behind_latch.snoop()
-        else:
-            in_data = None
-
-        if self.ex_wb_interface.ready_for_push():
-            if isinstance(in_data, Instruction):
-                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
-
-            out_data = self.data
-            self.data = in_data
-            if isinstance(out_data, Instruction):
-                out_data.mark_fu_exit(self.name, self.perf_count.total_cycles)
-
-            if isinstance(behind_latch, LatchIF):
-                behind_latch.pop()
-
-            self.ready_out = True
-        else:
-            out_data = False
-            self.ready_out = False            
-
-        self.perf_count.increment(
-            instr=in_data, 
-            ready_out=self.ready_out, 
-            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
-        )
-
-        return out_data
-        
 class ArithmeticSubUnit(FunctionalSubUnit):
     def __init__(self, latency: int, num: int, type_: type):
         super().__init__(num=num)
@@ -242,7 +100,7 @@ class Alu(ArithmeticSubUnit):
             R_Op.XOR, R_Op.SLT, R_Op.SLTU, R_Op.SLL, 
             R_Op.SRL, R_Op.SRA, I_Op.SUBI, I_Op.ADDI,
             I_Op.ORI, I_Op.XORI, I_Op.SLTI, I_Op.SLTIU,
-            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI, C_Op.CSRR      # added C_Op.CSRR here
+            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI,
         ],
         float: [
             # No floating-point operations supported in ALU
@@ -265,9 +123,6 @@ class Alu(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            print(instr.opcode)
-            print(self.type_)
-            print(self.SUPPORTED_OPS[self.type_])
             raise ValueError(f"ALU does not support operation {instr.opcode}")
 
         overflow_detected = False
@@ -278,64 +133,46 @@ class Alu(ArithmeticSubUnit):
             if self.type_ != int: 
                 raise ValueError("ALU only supports integer operations.")
 
-            if isinstance(instr.opcode, C_Op):
-                a = instr.csr_value if instr.csr_param != 3 else instr.csr_value.uint
-            else:
-                a = instr.rdat1[i].int
+            a = instr.rdat1[i].int
             
             if isinstance(instr.opcode, I_Op):
                 b = instr.imm.int
-            elif isinstance(instr.opcode, C_Op):
-                b = 0 if instr.csr_param != 0 else i
             else:
                 b = instr.rdat2[i].int
 
             match instr.opcode:
-                # case R_Op.ADD | I_Op.ADDI:
-                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR:
+                case R_Op.ADD | I_Op.ADDI:
                     result = a + b
-                    # if (instr.opcode == I_Op):
-                        # print(f"[EX: ADDI] {a} + {b} = ", result)
-                    # print(f"[EX: ADD] {a} + {b} = ", result)
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
                 case R_Op.SUB | I_Op.SUBI:
                     result = a - b
-                    # print(f"[EX: SUB] {a} - {b} = ", result)
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
                 case R_Op.AND:
-                    # print(f"[EX: AND] {a} & {b} = ", a & b)
                     result = a & b
                 case R_Op.OR | I_Op.ORI:
-                    # print(f"[EX: OR] {a} | {b} = ", a | b)
                     result = a | b
                 case R_Op.XOR | I_Op.XORI:
-                    # print(f"[EX: XOR] {a} ^ {b} = ", a ^ b)
                     result = a ^ b
                 case R_Op.SLT | I_Op.SLTI:
-                    # print(f"[EX: SLT] {a} < {b} = ", int(a < b))
                     result = int(a < b)
                 case R_Op.SLTU | I_Op.SLTIU:
-                    # print(f"[EX: SLTU] {a} < {b} (unsigned) = ", int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF)))
                     result = int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))
                 case R_Op.SLL | I_Op.SLLI:
                     result = a << b
-                    # print(f"[EX: SLL] {a} << {b} = ", result)
                     # Check for shift overflow (shift amount >= 32)
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRL | I_Op.SRLI:
                     result = (a % 0x100000000) >> b
-                    # print(f"[EX: SRL] {a} >> {b} (logical) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRA | I_Op.SRAI:
                     result = a >> b
-                    # print(f"[EX: SRA] {a} >> {b} (arithmetic) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
@@ -441,7 +278,6 @@ class Mul(ArithmeticSubUnit):
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
-                    # print(f"[EX: MUL] {a} * {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.MULF:
                     a = instr.rdat1[i].float
@@ -450,7 +286,6 @@ class Mul(ArithmeticSubUnit):
                     # Check for floating-point overflow
                     if math.isinf(result) or math.isnan(result):
                         overflow_detected = True
-                    # print(f"[EX: MUL] {a} * {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in MUL.")
@@ -501,7 +336,6 @@ class Div(ArithmeticSubUnit):
                         # Check for division overflow (MIN_INT / -1)
                         if a == -2147483648 and b == -1:
                             overflow_detected = True
-                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.DIVF:
                     a = instr.rdat1[i].float
@@ -514,7 +348,6 @@ class Div(ArithmeticSubUnit):
                         # Check for floating-point overflow
                         if math.isinf(result) or math.isnan(result):
                             overflow_detected = True
-                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in DIV.")

@@ -1,4 +1,4 @@
-from simulator.execute.functional_unit import MemBranchJumpUnitConfig
+from simulator.execute.functional_unit import MemBranchUnitConfig
 from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
 from simulator.execute.stage import ExecuteStage
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
@@ -39,7 +39,7 @@ fust = functional_unit_config.generate_fust_dict()
 int_config = IntUnitConfig.get_default_config()
 fp_config = FpUnitConfig.get_default_config()
 special_config = SpecialUnitConfig.get_default_config()
-membranch_config = MemBranchJumpUnitConfig.get_default_config()
+membranch_config = MemBranchUnitConfig.get_default_config()
 functional_unit_config = FunctionalUnitConfig.get_config(
     int_config=int_config, fp_config=fp_config, special_config=special_config, membranch_config=membranch_config,
     int_unit_count=1, fp_unit_count=1, special_unit_count=1, membranch_unit_count=1

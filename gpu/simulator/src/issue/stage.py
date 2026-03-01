@@ -1,12 +1,29 @@
-from builtins import isinstance, print
 from dataclasses import dataclass, field
-from gpu.common.custom_enums import H_Op
 from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
 from simulator.issue.regfile import RegisterFile
-from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
+from typing import Any, Optional, Callable, List, Deque, Tuple
 from collections import deque
 
 class IssueStage(Stage):
+    # configuration
+    # num_iBuffer = 16
+    # num_entries = 4
+    # regfile: RegisterFile
+    # fust_latency_cycles: int = 1
+
+    # def __init__(
+    #     self,
+    #     name: str = "Issue",
+    #     evenRF_fn: Optional[Callable[[int, Optional[int], str], Any]] = None,
+    #     oddRF_fn: Optional[Callable[[int, Optional[int], str], Any]] = None,
+    #     fust_latency_cycles: int = 1,
+    # ):
+    
+    # regfile: RegisterFile = register_file
+
+    # def __post_init__(self):
+    # def __init__(self, register_file: RegisterFile, fust_latency_cycles: int = 1, stage_name: str = "Issue"):
+    # def __init__(self, fust_latency_cycles: int = 1, stage_name: str = "Issue"):
     def __init__(
         self,
         regfile,                # RegisterFile instance
@@ -15,8 +32,8 @@ class IssueStage(Stage):
         name: str = "IssueStage",
         behind_latch=None,
         ahead_latch=None,
-        forward_ifs_read: Optional[Dict[str, ForwardingIF]] = None,
-        forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
+        forward_ifs_read=None,
+        forward_ifs_write=None
     ):
         super().__init__(
             name=name,
@@ -37,7 +54,7 @@ class IssueStage(Stage):
         self.fust = fust
 
         self.num_iBuffer = 16
-        self.num_entries = 4
+        self.num_entries = 100
         # --- iBuffer: 16 warpGroups × 4-deep FIFO each ---
         self.iBuffer: List[List[Optional[Instruction]]] = [
             [None for _ in range(self.num_entries)] for _ in range(self.num_iBuffer)
@@ -67,10 +84,17 @@ class IssueStage(Stage):
 
         self.cycle = 0
 
+        # --- Register files (banks) ---
+        # self._evenRF_fn = evenRF_fn
+        # self._oddRF_fn = oddRF_fn
+        # # Simple internal stubs if nothing provided:
+        # self._even_regs = {}
+        # self._odd_regs = {}
+
     # ---------------------------
     # Public entry point (1→4)
     # ---------------------------
-    def compute(self):
+    def compute(self, input_data: Instruction) -> List[Instruction]:
         """
         Executes the Issue stage in this exact order every cycle:
           1) Try to dispatch ready instructions via FUST (start from EVEN).
@@ -84,8 +108,6 @@ class IssueStage(Stage):
                                (order: EVEN-first if both dispatched).
         """
         inst_in: Optional[Instruction] = None
-        input_data = self.behind_latch.pop()
-        # print(f"[Issue] Received instruction: {input_data}")
         # dispatched_inst: Optional[Instruction] = None
         FU_stall_issue: bool = False
         # if input_data is not None and getattr(input_data, "instruction", None) is not None:
@@ -103,11 +125,8 @@ class IssueStage(Stage):
         if FU_stall_issue == False:
         
             # 2) RF reads for instructions in register/staged
-            # don't need any RF reads for halt instruction, so this will be skipped for halt and the instruction will be dispatched immediately in the next cycle
-            if isinstance(inst_in, Instruction):
-                if inst_in.opcode != H_Op.HALT:
-                    self._issue_register_file_reads()
-        
+            self._issue_register_file_reads()
+
             # 3) Pop from iBuffer to hold in front of RF for read
             self._stage_from_ibuffer_for_next_cycle()
 
@@ -133,20 +152,12 @@ class IssueStage(Stage):
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
             if self.fust[self.dispatched[0].intended_FU] == 0:
-                # adding a check here for the rd int for the halt case where it would be none...
-                if self.dispatched[0].rd is not None and self.dispatched[0].rd.int == 53:
+                if self.dispatched[0].rd.int == 53:
                     abcHI = 1
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
 
-        self.cycle += 1
-
-        if all(self.iBuff_Full_Flags):
-            self.forward_ifs_write["decode_issue_fwif"].set_wait(True)
-        else:
-            self.forward_ifs_write["decode_issue_fwif"].set_wait(False)
-
-        self.forward_ifs_write["issue_scheduler_fwif"].push(self.iBuff_Full_Flags)
+        self.cycle += 1        
 
         return self.dispatched
 
@@ -209,7 +220,6 @@ class IssueStage(Stage):
         if self.staged_even is not None and self.even_read_progress < 2:
             if self.even_read_progress == 0:
                 if self.staged_even.num_operands >= 1:
-                    # where shouldI handle this to pass through for HALT into branch fu?
                     val = self.regfile.read_warp_gran(self.staged_even.warp_id, self.staged_even.rs1)
                     self.staged_even.rdat1 = val
                 self.even_read_progress = 1
@@ -240,6 +250,10 @@ class IssueStage(Stage):
 
     def _push_ready(self, inst: "Instruction") -> None:
         """Place a fully-read instruction into the EVEN/ODD ready queue by warp parity."""
+        # if (inst.warp_id % 2) == 0:
+        #     self.ready_even.append(inst)
+        # else:
+        #     self.ready_odd.append(inst)
         self.ready_to_dispatch.append(inst)
 
     # -----------------------------------------------------------
@@ -271,6 +285,21 @@ class IssueStage(Stage):
         """
         Issue logic follows the warp group being serviced by the warp scheduler.
         """
+        ### PREVIOUS WORKING IBUFFER POPPING ###
+        # wg = self.curr_wg
+        # if self.iBufferCapacity[wg] == 0:
+        #     return None
+        # head_idx = self.iBufferHead[wg]
+        # inst = self.iBuffer[wg][head_idx]
+        # if inst is None:
+        #     return None
+        # if pred(inst):
+        #     # Pop from FIFO
+        #     self.iBuffer[wg][head_idx] = None
+        #     self.iBufferHead[wg] = (head_idx + 1) % self.num_entries
+        #     self.iBufferCapacity[wg] -= 1
+        #     return inst
+        # return None
         start_wg = self.curr_wg
         for offset in range(self.num_iBuffer):
             wg = (start_wg + offset) % self.num_iBuffer
@@ -299,3 +328,67 @@ class IssueStage(Stage):
             self.iBufferCapacity[given] += 1
         # else: upstream should stall/retry
 
+
+    # -----------------------------------------
+    # Original helper kept for compatibility
+    # -----------------------------------------
+    def select_from_ibuffer(self, curr_wg: int) -> Tuple[Optional["Instruction"], int]:
+        """
+        (Kept for API compatibility, unused by the new pipeline.)
+        Try curr_wg first, then round-robin across all groups.
+        Return (instruction, wg). Instruction is the head entry; not removed.
+        """
+        for step in range(self.num_iBuffer):
+            wg = (curr_wg + step) % self.num_iBuffer
+            if self.iBufferCapacity[wg] > 0:
+                head_idx = self.iBufferHead[wg]
+                return self.iBuffer[wg][head_idx], wg
+        return None, curr_wg
+
+    # --------------------------
+    # Operand collection (noop)
+    # --------------------------
+    def collect_operand(self, inst: "Instruction") -> None:
+        """Placeholder — operands are latched directly by RF reads here."""
+        return
+
+    # --------------------------
+    # Register file interfaces
+    # --------------------------
+    # def evenRF(self, rs: int, rd: Optional[int], op: str) -> Any:
+    #     if self._evenRF_fn is not None:
+    #         return self._evenRF_fn(rs, rd, op)
+    #     # stub: only 'R' supported; returns 0 if unseen
+    #     if op.upper() == 'R':
+    #         return self._even_regs.get(rs, 0)
+    #     raise NotImplementedError("Stub evenRF supports only reads (R) without external RF.")
+
+    # def oddRF(self, rs: int, rd: Optional[int], op: str) -> Any:
+    #     if self._oddRF_fn is not None:
+    #         return self._oddRF_fn(rs, rd, op)
+    #     # stub: only 'R' supported; returns 0 if unseen
+    #     if op.upper() == 'R':
+    #         return self._odd_regs.get(rs, 0)
+    #     raise NotImplementedError("Stub oddRF supports only reads (R) without external RF.")
+
+    # --------------------------
+    # FUST time advancement
+    # --------------------------
+    def _tick_fust(self) -> None:
+        """
+        Decrement busy countdowns once per cycle. Zero means 'free to dispatch'.
+        """
+        for i in range(self.num_iBuffer):
+            if self.fust_busy_countdown[i] > 0:
+                self.fust_busy_countdown[i] -= 1
+
+### TESTING ###
+
+# if __name__ == "__main__":
+    # simple register file for testing
+    # regfile = RegisterFile(
+    #     banks = 2,
+    #     warps = 4,
+    #     regs_per_warp = 4,
+    #     threads_per_warp = 2
+    # )

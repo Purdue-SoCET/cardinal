@@ -1,20 +1,12 @@
-
-import sys
-from pathlib import Path
-
-parent_dir = Path(__file__).resolve().parents[3]
-
-sys.path.append(str(parent_dir))
-from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
-from simulator.mem.Memory import Mem
+from base import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
+from Memory import Mem
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
+from isa_packets import ISA_PACKETS
 from bitstring import Bits 
-
-from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
-from common.custom_enums import Op
+global_cycle = 0
 
 class PredicateRegFile():
     def __init__(self, num_preds_per_warp: int, num_warps: int):
@@ -33,8 +25,8 @@ class PredicateRegFile():
         " and whether it wants the inverted version or not..."
 
         if (prf_rd_en):
-            # print("[PRF] Reading PRF: ", prf_rd_wsel, prf_rd_psel, prf_neg)
-            # print(f"[PRF] Got: {self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]}")
+            print("Reading PRF: ", prf_rd_wsel, prf_rd_psel, prf_neg)
+            print("Max indices: ", len(self.reg_file), len(self.reg_file[0]), len(self.reg_file[0][0]))
             return self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]
         else: 
             return None

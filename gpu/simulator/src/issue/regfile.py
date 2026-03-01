@@ -15,20 +15,16 @@ class RegisterFile:
         self.regs = [[[[Bits(uint=0, length=32) for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
 
     def write_warp_gran(self, warp_id: int, dest_operand: Bits, data: Bits) -> None:
-        if dest_operand.uint > 0:
-            self.regs[warp_id % self.banks][warp_id // 2][dest_operand.uint] = data
+        self.regs[warp_id % self.banks][warp_id // 2][dest_operand.int] = data
 
     def write_thread_gran(self, warp_id: int, dest_operand: Bits, thread_id: int, data: Bits) -> None:
-        if dest_operand.uint > 0:
-            self.regs[warp_id % self.banks][warp_id // 2][dest_operand.uint][thread_id] = data
+        self.regs[warp_id % self.banks][warp_id // 2][dest_operand.int][thread_id] = data
 
     def read_warp_gran(self, warp_id: int, src_operand: Bits) -> Any:
-        if src_operand is None:
-            return None
-        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.uint]
+        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.int]
     
     def read_thread_gran(self, warp_id: int, src_operand: Bits, thread_id: int) -> Any:
-        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.uint][thread_id]
+        return self.regs[warp_id % self.banks][warp_id // 2][src_operand.int][thread_id]
 
     def dump(self, float_regs=None):
         """
