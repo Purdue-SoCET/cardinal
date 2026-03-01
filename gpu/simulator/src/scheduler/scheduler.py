@@ -121,7 +121,6 @@ class SchedulerStage(Stage):
 
     # might not need
     def make_instruction(self, group, warp, pc):
-
         if warp % 2 == 0:
             halt_mask = self.warp_table[group].halt_mask_even
         else:            
