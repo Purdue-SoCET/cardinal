@@ -1,4 +1,6 @@
+from builtins import isinstance, print
 from dataclasses import dataclass, field
+from gpu.simulator.drafts.custom_enums_multi import H_Op
 from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
 from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
@@ -101,6 +103,7 @@ class IssueStage(Stage):
         if FU_stall_issue == False:
         
             # 2) RF reads for instructions in register/staged
+            # allow HALTS to go through as well
             self._issue_register_file_reads()
 
             # 3) Pop from iBuffer to hold in front of RF for read

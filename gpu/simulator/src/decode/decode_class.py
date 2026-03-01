@@ -334,6 +334,8 @@ class DecodeStage(Stage):
             elif inst.csr_param == 3:
                 inst.csr_value = self.kernel_base_ptrs.read(0) # hard-coded to 0 for now since assuming only one kernel per SM
 
+        if is_H:
+            inst.num_operands = 0 
         # Map opcode to actual functional unit name from fust
         inst.intended_FU = self.classify_fust_unit(inst.opcode)
 
@@ -387,6 +389,8 @@ class DecodeStage(Stage):
             ]
             # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
             # without having to modify other stages to check for both an active mask and a predicate mask separately
+        if is_H:
+            inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
 
         # Initialize wdat list for result storage (32 threads per warp)
         if not inst.wdat or len(inst.wdat) == 0:

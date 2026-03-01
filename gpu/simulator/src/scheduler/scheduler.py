@@ -1,3 +1,4 @@
+from builtins import all, print
 from collections import deque
 from dataclasses import dataclass, field
 from typing import List, Any, Optional, Dict
@@ -22,6 +23,7 @@ class SchedulerStage(Stage):
         self.at_barrier: int = 0
         self.policy: str = policy
         self.csrtable = csrtable
+        self.start_flush: bool = False
 
         # warp table
         self.warp_table: List[WarpGroup] = [WarpGroup(pc=0, group_id=id) for id in range(self.num_groups)]
@@ -102,6 +104,7 @@ class SchedulerStage(Stage):
 
             if even_dead and odd_dead:
                 self.warp_table[group].state = WarpState.HALT
+                self.warp_table[group].halt = 1
                 return
 
             if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
@@ -153,9 +156,11 @@ class SchedulerStage(Stage):
             self.free_warp += 1
 
     def halt(self):
-        if all(group.halt == 1 for group in self.warp_table):
-            self.forward_ifs_write["ld/st"]
-
+        if self.start_flush is False:
+            if all(group.halt == 1 for group in self.warp_table):
+                print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
+                self.start_flush = True
+                self.forward_ifs_write["Scheduler_LDST"].push({"flush_start": 1})
         return
 
     # round robin policy
@@ -300,14 +305,15 @@ class SchedulerStage(Stage):
         icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
         # print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
 
-
         if not icache_ctrl["fetch"]:
             # print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         self.eop = icache_ctrl["eop"]
         self.warp_id = icache_ctrl["warp_id"]
-
+        
+        # check halt condition before we do any work
+        self.halt()
         # determining next states
         self.collision()
 

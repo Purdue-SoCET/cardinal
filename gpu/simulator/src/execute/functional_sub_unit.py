@@ -56,7 +56,6 @@ class Branch(FunctionalSubUnit):
                 case B_Op.BNE:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
                 case H_Op.HALT:
-                    print("HALT instruction encountered. Setting predicate to true for all active threads to ensure they all enter the halt state together.")
                     continue
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Branch.")
