@@ -64,15 +64,16 @@ class PredicateRegFile():
         # the write will autopopulate the negated version in the table)
         if (prf_wr_en):
                 # Convert int to bit array if needed
-            if isinstance(prf_wr_data, int):
-                bits = [(prf_wr_data >> i) & 1 == 1 for i in range(self.num_threads)]
-            else:
-                bits = prf_wr_data  # assume already a list of bools
+            # if isinstance(prf_wr_data, int):
+            #     # bits = [(prf_wr_data >> i) & 1 == 1 for i in range(self.num_threads)]
+            #     bits = [(prf_wr_data >> i) & 1 for i in range(self.num_threads)]
+            # else:
+            #     bits = prf_wr_data  # assume already a list of bools
 
             # Store positive version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bool(bits[prf_wr_tsel])
+            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bool(prf_wr_data.uint)
             # Store negated version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bool(bits[prf_wr_tsel])
+            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bool(prf_wr_data.uint)
 
     def dump(self, file=None):
         """

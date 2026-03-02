@@ -53,12 +53,12 @@ class Branch(FunctionalSubUnit):
             match instr.opcode:
                 case B_Op.BEQ:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
-                    # if instr.warp_id == 0 and i == 31:
-                    #     print(instr)
+                    if instr.warp_id == 0 and i == 31:
+                        print(instr.wdat_pred)
                 case B_Op.BNE:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
-                    # if instr.warp_id == 0 and i == 31:
-                    #     print(instr)
+                    if instr.warp_id == 0 and i == 31:
+                        print(instr.wdat_pred)
                 case H_Op.HALT:
                     continue
                 case _:

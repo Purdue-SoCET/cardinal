@@ -105,18 +105,14 @@ class WritebackStage(Stage):
                 if isinstance(instr.target_bank, int):
                     if instr.target_regfile is not None and "pred" in instr.target_regfile:
                         # write to predicate reg file
-                        # if instr.warp_id == 0 and i == 31:
-                            # print(self.pred_reg_file.reg_file[0][2])
+                
                         self.pred_reg_file.write_predicate_thread_gran(
                             prf_wr_en=1,
                             prf_wr_wsel=instr.warp_id,
                             prf_wr_psel=instr.dest_pred,
                             prf_wr_tsel=i,
-                            # prf_wr_data=bool(instr.wdat_pred[i].uint)
-                            prf_wr_data=(instr.wdat_pred)
+                            prf_wr_data=(instr.wdat_pred[i])
                         )
-                        if instr.warp_id == 0 and i == 31:
-                            print(self.pred_reg_file.reg_file[0][2])
                     elif instr.target_regfile is not None:
                         # write to normal reg file
                         self.reg_file.write_thread_gran(
@@ -131,18 +127,13 @@ class WritebackStage(Stage):
                 elif isinstance(instr.target_bank, str):
                     if "pred" in instr.target_bank:
                         # write to pred reg file
-                        # if instr.warp_id == 0 and i == 31:
-                        #     print(self.pred_reg_file.reg_file[0][2])
                         self.pred_reg_file.write_predicate_thread_gran(
                             prf_wr_en=1,
                             prf_wr_wsel=instr.warp_id,
                             prf_wr_psel=instr.pred_dest,
                             prf_wr_tsel=i,
-                            # prf_wr_data=bool(instr.wdat_pred[i].uint)
                             prf_wr_data=(instr.wdat_pred)
                         )
-                        if instr.warp_id == 0 and i == 31:
-                            print(self.pred_reg_file.reg_file[0][2])
                     else:
                         # write to normal reg file
                         self.reg_file.write_thread_gran(
