@@ -70,9 +70,9 @@ class PredicateRegFile():
                 bits = prf_wr_data  # assume already a list of bools
 
             # Store positive version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bits[prf_wr_tsel]
+            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bool(bits[prf_wr_tsel])
             # Store negated version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bits[prf_wr_tsel]
+            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bool(bits[prf_wr_tsel])
 
     def dump(self, file=None):
         """

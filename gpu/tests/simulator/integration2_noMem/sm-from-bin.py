@@ -499,6 +499,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
     branch_scheduler_fwif   = ForwardingIF(name="branch_forward_if")
     writeback_scheduler_fwif = ForwardingIF(name="Writeback_forward_if")
     decode_issue_fwif       = ForwardingIF(name="Decode_issue_fwif")
+    scheduler_ldst_fwif     = ForwardingIF(name="scheduler_ldst_fwif")
 
     mem = Mem(start_pc=START_PC, input_file=str(input_file), fmt=fmt)
 
@@ -529,7 +530,8 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
             "Branch_Scheduler":    branch_scheduler_fwif,
             "Writeback_Scheduler": writeback_scheduler_fwif,
         },
-        forward_ifs_write=None,
+        # forward_ifs_write=None,
+        forward_ifs_write={"Scheduler_LDST": scheduler_ldst_fwif},
         csrtable = csr_table,
         warp_count=WARP_COUNT,
     )
@@ -685,7 +687,8 @@ def get_test_values(warp_id: int, threads_per_warp: int) -> dict:
 
 
 def run_test(
-    program_file: Path = FILE_ROOT / "test.bin",
+    # program_file: Path = FILE_ROOT / "test.bin",
+    program_file: Path = FILE_ROOT / "test_binaries/b_type.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -844,7 +847,8 @@ def _parse_args():
     parser.add_argument(
         "program",
         nargs="?",
-        default=str(FILE_ROOT / "test.bin"),
+        # default=str(FILE_ROOT / "test.bin"),
+        default=str(FILE_ROOT / "test_binaries/b_type.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

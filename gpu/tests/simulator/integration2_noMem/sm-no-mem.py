@@ -396,7 +396,7 @@ def test_all_operations():
 
     print("All instructions issued. Flushing pipeline...")
 
-    FLUSH_CYCLES = len(test_cases) + 1100  # Run enough cycles to flush the pipeline after last instruction is issued
+    FLUSH_CYCLES = len(test_cases) + 1500  # Run enough cycles to flush the pipeline after last instruction is issued
     for _ in range(FLUSH_CYCLES):
         # Refill forward IFs if they get drained
         # print(f"\nCycle #{_ + n_cycle}\n")
