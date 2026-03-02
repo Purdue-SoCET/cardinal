@@ -147,6 +147,7 @@ def test_all_operations():
     issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
     branch_scheduler_fwif = ForwardingIF(name = "branch_forward_if")
     writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
+    scheduler_ldst_fwif = ForwardingIF(name="scheduler_ldst_fwif")
 
     mem = Mem(
         start_pc=START_PC,
@@ -177,7 +178,8 @@ def test_all_operations():
         forward_ifs_read= {"ICache_Scheduler" : icache_scheduler_fwif, "Decode_Scheduler": decode_scheduler_fwif, 
                            "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, 
                            "Writeback_Scheduler": writeback_scheduler_fwif},
-        forward_ifs_write=None,
+        # forward_ifs_write=None,
+        forward_ifs_write={"Scheduler_LDST": scheduler_ldst_fwif},
         csrtable = csr_table,
         warp_count=WARP_COUNT
     )

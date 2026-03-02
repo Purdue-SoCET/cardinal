@@ -408,6 +408,9 @@ class DecodeStage(Stage):
                 inst.target_bank = 1
                 inst.target_regfile = "regfile"
 
+        # if is_H:
+        #     print(inst)
+
         self._push_instruction_to_next_stage(inst)
         return 
     

@@ -5,7 +5,8 @@ from typing import Dict
 
 from aenum import Enum
 from bitstring import Bits
-from gpu.common.custom_enums import H_Op
+# from gpu.common.custom_enums import H_Op
+from gpu.common.custom_enums_multi import H_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.latch_forward_stage import Instruction, Stage, LatchIF
@@ -101,6 +102,8 @@ class WritebackStage(Stage):
                                 thread_id=i,
                                 warp_id=instr.warp_id
                             )
+                        elif instr.opcode == H_Op.HALT:
+                            continue
                         else:
                             raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")
                         
@@ -126,7 +129,6 @@ class WritebackStage(Stage):
                         raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")
                     
                     if instr.opcode == H_Op.HALT:
-
                         #check if the instruction is predicated, if it is then we only want to update the halt mask for the threads that are active based on the predicate bits, if it is not predicated then we want to update the halt mask for all threads in the warp
                         pred_bits = Bits(bin=''.join(p.bin for p in instr.predicate))
                         new_mask = instr.active_mask & ~pred_bits
