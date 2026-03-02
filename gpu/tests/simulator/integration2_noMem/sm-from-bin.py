@@ -45,9 +45,8 @@ sys.path.append(str(GPU_SIM_ROOT))
 
 # ── simulator imports ──────────────────────────────────────────────────────────
 from gpu.common.custom_enums_multi import (
-    Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
+    Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op, Op
 )
-from gpu.common.custom_enums import Op
 
 from simulator.latch_forward_stage import (
     LatchIF, ForwardingIF, Instruction, DecodeType

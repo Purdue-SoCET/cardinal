@@ -11,8 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from bitstring import Bits 
 
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
-from gpu.common.custom_enums import Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op, Op
 
 global_cycle = 0
 
