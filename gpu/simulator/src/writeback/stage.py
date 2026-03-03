@@ -61,7 +61,7 @@ class WritebackStage(Stage):
     
     def tick(self) -> None:
         self._write_to_reg_file()
-        self._update_halt_mask()
+        self._update_halt_mask_and_decrement_counter()
         self.values_to_writeback = self.wb_buffer.tick()
         if self.values_to_writeback is not None and len(self.values_to_writeback) != self.total_banks:
             # print(f"Error: Expected {self.total_banks} banks, but got {len(self.values_to_writeback)}")
@@ -75,7 +75,8 @@ class WritebackStage(Stage):
     def send_output(self) -> None:
         raise NotImplementedError()
     
-    def _update_halt_mask(self):
+    def _update_halt_mask_and_decrement_counter(self):
+        data_to_scheduler = []
         for bank_name, instr in self.values_to_writeback.items():
             if instr is None:
                 continue
@@ -87,8 +88,13 @@ class WritebackStage(Stage):
             else:
                 new_mask = instr.active_mask
             
-            if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
-                self.forward_ifs_write["Writeback_Scheduler"].push({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask})
+            data_to_scheduler.append({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask})
+            
+
+        if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
+            self.forward_ifs_write["Writeback_Scheduler"].push(data_to_scheduler)
+        else:
+            raise ValueError("Forward IF to Scheduler is not set up in WritebackStage.")
         
     def _write_to_reg_file(self):
         if self.values_to_writeback is None:
