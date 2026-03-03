@@ -253,16 +253,11 @@ class Instruction:
     wdat: list[Bits] = field(default_factory=list)
     wdat_pred: list[Bits] = field(default_factory=list)
 
-
     # ----- optional / with defaults (must come after ALL non-defaults) -----
     # this is for instruction data memory responses, populated by the MemController
     stage_entry: Dict[str, int] = field(default_factory=dict)
     stage_exit:  Dict[str, int] = field(default_factory=dict)
     fu_entries:  List[Dict]     = field(default_factory=list)
-    
-
-
-
     
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)

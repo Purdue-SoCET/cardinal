@@ -685,10 +685,9 @@ def get_test_values(warp_id: int, threads_per_warp: int) -> dict:
         13: [4.0  for _ in range(threads_per_warp)],
     }
 
-
 def run_test(
     # program_file: Path = FILE_ROOT / "test.bin",
-    program_file: Path = FILE_ROOT / "test_binaries/b_type.bin",
+    program_file: Path = FILE_ROOT / "test_binaries" /  "jump.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -848,7 +847,7 @@ def _parse_args():
         "program",
         nargs="?",
         # default=str(FILE_ROOT / "test.bin"),
-        default=str(FILE_ROOT / "test_binaries/b_type.bin"),
+        default=str(FILE_ROOT / "test_binaries/jump.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

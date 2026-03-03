@@ -155,7 +155,7 @@ class DecodeStage(Stage):
         # Jump operations
         if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
             for fu_name in self.fust.keys():
-                if "Branch" in fu_name or "branch" in fu_name:
+                if "Jump" in fu_name or "jump" in fu_name:
                     return fu_name
                 
         if isinstance(op, H_Op) and op == H_Op.HALT:
@@ -288,6 +288,9 @@ class DecodeStage(Stage):
         
         # no operands for csrr instruction
         if is_C:
+            inst.num_operands = 0
+
+        if is_J:
             inst.num_operands = 0
 
         # src_pred present for R/I/F/S/U/B (your original intent)

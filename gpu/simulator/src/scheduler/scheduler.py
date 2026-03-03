@@ -38,7 +38,7 @@ class SchedulerStage(Stage):
 
         # scheduler bookkeeping
         self.rr_index: int = 0
-        self.gto_index: int = -1
+        self.gto_index: int = 0
 
         # eop stuff
         self.eop: bool = False
