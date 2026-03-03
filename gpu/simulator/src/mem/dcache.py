@@ -507,11 +507,11 @@ class LockupFreeCacheStage(Stage):
         if (self.mem_resp_if.valid):
             resp = self.mem_resp_if.pop()
             if (resp):
-                target_bank_id = resp["warp"]
-                if "data" in resp:
-                    data = resp["data"]
-                elif "status" in resp:
-                    data = resp["status"]
+                target_bank_id = resp.warp_id
+                if resp.packet:
+                    data = resp.packet
+                elif resp.status:
+                    data = resp.status
                 else:
                     data = None
                     

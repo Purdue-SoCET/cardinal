@@ -491,6 +491,7 @@ def test_all_operations():
             opcode=opcode,
             predicate=[Bits(uint=1, length=1) for _ in range(pipeline_rf.threads_per_warp)],
             target_bank=rd_reg % 2,
+            target_regfile="normal",
             imm=imm_val
         )
         pc += 4
@@ -540,60 +541,60 @@ def test_all_operations():
         run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
         start_cycle += 3
 
-        #print("\nTESTING ADD")
-        #run_sim(start_cycle, 1, instruction_list[2])                        # Send in the add instruction
-        #start_cycle += 1
-        #run_sim(start_cycle, 8, None)
-        #start_cycle += 8                                                    # Add finished. Data can be found in r24
-#
-        #print("\nTESTING SW")
-        #run_sim(start_cycle, 1, instruction_list[3])                        # Send the sw instruction
-        #start_cycle += 1
-        #while (not ldst.ex_wb_interface.valid):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1            
-        #print_banks(dCache)                                                 # Finished the sw instruction
-#
-        #print("\nTESTING LH")
-        #run_sim(start_cycle, 1, instruction_list[4])                        # Send the LH instruction
-        #start_cycle += 1
-        #while (not ldst.ex_wb_interface.valid):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1
-        #run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
-        #start_cycle += 3
-#
-        #print("\nTESTING LB")
-        #run_sim(start_cycle, 1, instruction_list[5])                        # Send the LB instruction
-        #start_cycle += 1
-        #while (not ldst.ex_wb_interface.valid):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1
-        #run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
-        #start_cycle += 3
-        #
-        #print("\nTESTING SH")                                               # Send the SH instruction
-        #run_sim(start_cycle, 1, instruction_list[6])
-        #start_cycle += 1
-        #while (not ldst.ex_wb_interface.valid):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1
-        #print_banks(dCache)                                                 # Finished SH
-#
-        #print("\nTESTING SB")
-        #run_sim(start_cycle, 1, instruction_list[7])                        # Send SB instruction
-        #start_cycle += 1
-        #while (not ldst.ex_wb_interface.valid):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1                                                # Finished SB
-        #print_banks(dCache)
-#
-        #print("\nTESTING HALT")                                             # Sending Halt
-        #scheduler_ldst_forward.push({"halt": True})
-        #while (ldst_scheduler_forward.payload == None):
-        #    run_sim(start_cycle, 1, None)
-        #    start_cycle += 1
-        #print_banks(dCache)                                                 # Finished flushing
+        print("\nTESTING ADD")
+        run_sim(start_cycle, 1, instruction_list[2])                        # Send in the add instruction
+        start_cycle += 1
+        run_sim(start_cycle, 9, None)
+        start_cycle += 9                                                    # Add finished. Data can be found in r24
+
+        print("\nTESTING SW")
+        run_sim(start_cycle, 1, instruction_list[3])                        # Send the sw instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1            
+        print_banks(dCache)                                                 # Finished the sw instruction
+
+        print("\nTESTING LH")
+        run_sim(start_cycle, 1, instruction_list[4])                        # Send the LH instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+        start_cycle += 3
+
+        print("\nTESTING LB")
+        run_sim(start_cycle, 1, instruction_list[5])                        # Send the LB instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        run_sim(start_cycle, 3, None)                                       # Flushing the wb buffer for # cycles to ensure that the data is written back to the rf
+        start_cycle += 3
+        
+        print("\nTESTING SH")                                               # Send the SH instruction
+        run_sim(start_cycle, 1, instruction_list[6])
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        print_banks(dCache)                                                 # Finished SH
+
+        print("\nTESTING SB")
+        run_sim(start_cycle, 1, instruction_list[7])                        # Send SB instruction
+        start_cycle += 1
+        while (not ldst.ex_wb_interface.valid):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1                                                # Finished SB
+        print_banks(dCache)
+
+        print("\nTESTING HALT")                                             # Sending Halt
+        scheduler_ldst_forward.push({"halt": True})
+        while (ldst_scheduler_forward.payload == None):
+            run_sim(start_cycle, 1, None)
+            start_cycle += 1
+        print_banks(dCache)                                                 # Finished flushing
         
 
     # 6. Verify Results

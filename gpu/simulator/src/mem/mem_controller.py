@@ -82,20 +82,20 @@ class MemController(Stage):
 
         raise TypeError(f"Unsupported write payload type: {type(payload)}")
 
-    def _build_min_inst(self, req_info: dict) -> Instruction:
+    def _build_min_inst(self, req_info: dict):
         pc_raw = req_info.get("pc", 0)
         pc_bits = pc_raw if isinstance(pc_raw, Bits) else Bits(uint=int(pc_raw), length=32)
 
         return Instruction(
-            iid=req_info.get("uuid", req_info.get("iid", 0)),
             pc=pc_bits,
-            intended_FSU=req_info.get("intended_FSU", None),
-            warp=req_info.get("warp", req_info.get("warp_id", 0)),
-            warpGroup=req_info.get("warpGroup", req_info.get("warp_group_id", None)),
+            intended_FU=req_info.get("intended_FU", None),
+            warp_id=req_info.get("warp_id", req_info.get("warp_id", 0)),
+            warp_group_id=req_info.get("warp_group_id", req_info.get("warp_group_id", None)),
             opcode=req_info.get("opcode", None),
             rs1=req_info.get("rs1", Bits(uint=0, length=5)),
             rs2=req_info.get("rs2", Bits(uint=0, length=5)),
             rd=req_info.get("rd", Bits(uint=0, length=5)),
+            predicate = [Bits(uint=1, length=1) for i in range(32)]
         )
 
     # compatibility fix for naming conventions used across tests
@@ -227,6 +227,7 @@ class MemController(Stage):
                 data_bits, nbytes = self._payload_to_bits(req.data, req.size)
                 self.mem_backend.write(req.addr, data_bits, nbytes)
                 # should try to return an instruction type here
+                inst.status = "WRITE_DONE"
                 resp = inst
             else:
                 data_bits = self.mem_backend.read(req.addr, req.size)
