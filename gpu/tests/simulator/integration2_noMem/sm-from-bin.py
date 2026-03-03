@@ -674,20 +674,23 @@ def initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads_per_warp, defau
 def get_test_values(warp_id: int, threads_per_warp: int) -> dict:
     """Initial register values identical to sm-no-mem.py."""
     return {
-        1:  [0  + i + warp_id for i in range(threads_per_warp)],
-        2:  [5  + i + warp_id for i in range(threads_per_warp)],
-        3:  [3  for _ in range(threads_per_warp)],
-        4:  [2  for _ in range(threads_per_warp)],
-        5:  [-5 - i + warp_id for i in range(threads_per_warp)],
-        10: [10.5 + i * 0.5  + warp_id for i in range(threads_per_warp)],
-        11: [2.5  + i * 0.25 + warp_id for i in range(threads_per_warp)],
-        12: [1.57 for _ in range(threads_per_warp)],
-        13: [4.0  for _ in range(threads_per_warp)],
+        # 1:  [0  + i + warp_id for i in range(threads_per_warp)],
+        # 2:  [5  + i + warp_id for i in range(threads_per_warp)],
+        # 3:  [3  for _ in range(threads_per_warp)],
+        # 4:  [2  for _ in range(threads_per_warp)],
+        # 5:  [-5 - i + warp_id for i in range(threads_per_warp)],
+        # 10: [10.5 + i * 0.5  + warp_id for i in range(threads_per_warp)],
+        # 11: [2.5  + i * 0.25 + warp_id for i in range(threads_per_warp)],
+        # 12: [1.57 for _ in range(threads_per_warp)],
+        # 13: [4.0  for _ in range(threads_per_warp)],
+        1: [31 - i for i in range(threads_per_warp)],
+        2: [i for i in range(threads_per_warp)],
     }
 
 def run_test(
     # program_file: Path = FILE_ROOT / "test.bin",
-    program_file: Path = FILE_ROOT / "test_binaries" /  "jump.bin",
+    # program_file: Path = FILE_ROOT / "test_binaries/jump.bin",
+    program_file: Path = FILE_ROOT / "test_binaries/predicated_halt.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -743,6 +746,12 @@ def run_test(
     for _ in range(FLUSH_CYCLES):
         tick_all(p)
     print("Flush complete.")
+    print(p["scheduler"].warp_table)
+    # print(pipeline_rf.regs[0][0])
+    # print(prf.reg_file[0][1])
+    # print()
+    # print(prf.reg_file[0][2])
+    # print()
     
     # ── golden model: compute expected results from decoded instructions ───────
     print("\nComputing golden reference from decoded instruction stream...")
@@ -847,7 +856,8 @@ def _parse_args():
         "program",
         nargs="?",
         # default=str(FILE_ROOT / "test.bin"),
-        default=str(FILE_ROOT / "test_binaries/jump.bin"),
+        # default=str(FILE_ROOT / "test_binaries/jump.bin"),
+        default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

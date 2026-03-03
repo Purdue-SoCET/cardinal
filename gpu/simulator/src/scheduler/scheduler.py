@@ -86,6 +86,7 @@ class SchedulerStage(Stage):
 
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
+            print("hello")
             group = writeback_ctrl["warp_group_id"]
             warp_id = writeback_ctrl["warp_id"]
             new_mask = writeback_ctrl["new_mask"]
