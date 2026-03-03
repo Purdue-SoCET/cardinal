@@ -87,34 +87,38 @@ class SchedulerStage(Stage):
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
             print("hello")
-            group = writeback_ctrl["warp_group_id"]
-            warp_id = writeback_ctrl["warp_id"]
-            new_mask = writeback_ctrl["new_mask"]
+            # group = writeback_ctrl["warp_group_id"]
+            # warp_id = writeback_ctrl["warp_id"]
+            # new_mask = writeback_ctrl["new_mask"]
 
-            # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
-            self.warp_table[group].in_flight -= 1
+            # multiple writebacks can happen in the same cycle so we need to loop through all of them and apply the changes to the warp table accordingly
+            for group, warp_id, new_mask in writeback_ctrl:
+                print(f"Group: {group}, Warp ID: {warp_id}, New Mask: {new_mask}")
 
-            if new_mask is not None:
-                if warp_id % 2 == 0:
-                    self.warp_table[group].halt_mask_even = new_mask
-                else:
-                    self.warp_table[group].halt_mask_odd = new_mask
+                # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
+                self.warp_table[group].in_flight -= 1
 
-            even_dead = self.warp_table[group].halt_mask_even.uint == 0
-            odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
+                if new_mask is not None:
+                    if warp_id % 2 == 0:
+                        self.warp_table[group].halt_mask_even = new_mask
+                    else:
+                        self.warp_table[group].halt_mask_odd = new_mask
 
-            if even_dead and odd_dead:
-                self.warp_table[group].state = WarpState.HALT
-                self.warp_table[group].halt = 1
-                return
+                even_dead = self.warp_table[group].halt_mask_even.uint == 0
+                odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
 
-            if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
-                if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
-                    self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
-                    self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
-                
-                else:
-                    self.warp_table[writeback_ctrl["warp_group"]].halt = 1
+                if even_dead and odd_dead:
+                    self.warp_table[group].state = WarpState.HALT
+                    self.warp_table[group].halt = 1
+                    return
+
+                if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
+                    if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
+                        self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
+                        self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
+                    
+                    else:
+                        self.warp_table[writeback_ctrl["warp_group"]].halt = 1
         
         # set group to halt
 
