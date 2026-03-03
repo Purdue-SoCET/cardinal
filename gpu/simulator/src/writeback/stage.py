@@ -8,7 +8,7 @@ from bitstring import Bits
 from gpu.common.custom_enums_multi import H_Op, I_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
-from simulator.latch_forward_stage import Instruction, Stage, LatchIF
+from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF
 from simulator.writeback.writeback_buffer import WritebackBuffer
 from simulator.writeback.config import (
     WritebackBufferCount,
@@ -30,13 +30,15 @@ class WritebackStage(Stage):
         behind_latches: Dict[str, LatchIF], 
         reg_file: RegisterFile,
         pred_reg_file: PredicateRegFile,
+        forward_ifs_write: Dict[str, ForwardingIF] = None,
+        forward_ifs_read = None,
         fsu_names: list[str] = None
     ):
         super().__init__(name="Writeback_Stage")
         self.behind_latches = behind_latches
         self.ahead_latch = None
-        self.forward_ifs_read = None
-        self.forward_ifs_write = None
+        self.forward_ifs_read = forward_ifs_read
+        self.forward_ifs_write = forward_ifs_write
         self.values_to_writeback = {}
         self.total_banks = rf_config.num_banks + pred_rf_config.num_banks
         self.reg_file = reg_file
@@ -159,5 +161,24 @@ class WritebackStage(Stage):
                     raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")              
 
     @classmethod
-    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, pred_rf_config: PredicateRegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, pred_reg_file: PredicateRegFile, fsu_names: list[str]) -> WritebackStage:
-        return cls(wb_config=wb_config, rf_config=rf_config, pred_rf_config=pred_rf_config, behind_latches=ex_stage_ahead_latches, reg_file=reg_file, pred_reg_file=pred_reg_file, fsu_names=fsu_names)
+    def create_pipeline_stage(
+        cls, 
+        wb_config: WritebackBufferConfig, 
+        rf_config: RegisterFileConfig, 
+        pred_rf_config: PredicateRegisterFileConfig, 
+        ex_stage_ahead_latches: Dict[str, LatchIF], 
+        reg_file: RegisterFile, 
+        pred_reg_file: PredicateRegFile, 
+        forward_ifs_write: Dict[str, ForwardingIF],
+        fsu_names: list[str]
+    ) -> WritebackStage:
+        return cls(
+            wb_config=wb_config, 
+            rf_config=rf_config, 
+            pred_rf_config=pred_rf_config, 
+            behind_latches=ex_stage_ahead_latches, 
+            reg_file=reg_file, 
+            pred_reg_file=pred_reg_file, 
+            forward_ifs_write=forward_ifs_write, 
+            fsu_names=fsu_names
+        )

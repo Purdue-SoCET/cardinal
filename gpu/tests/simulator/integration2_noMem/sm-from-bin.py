@@ -594,6 +594,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
         pred_reg_file=prf,
+        forward_ifs_write=scheduler_stage.forward_ifs_read,
         fsu_names=list(fust.keys()),
     )
 
