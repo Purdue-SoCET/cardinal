@@ -241,9 +241,10 @@ class Alu(ArithmeticSubUnit):
         int: [
             R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, 
             R_Op.XOR, R_Op.SLT, R_Op.SLTU, R_Op.SLL, 
-            R_Op.SRL, R_Op.SRA, I_Op.SUBI, I_Op.ADDI,
-            I_Op.ORI, I_Op.XORI, I_Op.SLTI, I_Op.SLTIU,
-            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI, C_Op.CSRR      # added C_Op.CSRR here
+            R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU, 
+            I_Op.SUBI, I_Op.ADDI, I_Op.ORI, I_Op.XORI, 
+            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, 
+            I_Op.SRAI, C_Op.CSRR,
         ],
         float: [
             # No floating-point operations supported in ALU
@@ -319,6 +320,10 @@ class Alu(ArithmeticSubUnit):
                 case R_Op.SLT | I_Op.SLTI:
                     # print(f"[EX: SLT] {a} < {b} = ", int(a < b))
                     result = int(a < b)
+                case R_Op.SGE:
+                    result = not int(a < b)
+                case R_Op.SGEU:
+                    result = not int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))
                 case R_Op.SLTU | I_Op.SLTIU:
                     # print(f"[EX: SLTU] {a} < {b} (unsigned) = ", int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF)))
                     result = int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))

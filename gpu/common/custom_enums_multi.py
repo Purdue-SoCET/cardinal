@@ -41,6 +41,11 @@ class R_Op(Op):
     SRL = Bits(bin='0001110', length=7)   # 0001 110
     SRA = Bits(bin='0001111', length=7)   # 0001 111
 
+    SLTF = Bits(bin='1001011', length=7)  # 1001 011
+    SGE =  Bits(bin='1001101', length=7)  # 1001 101
+    SGEU = Bits(bin='1001110', length=7)  # 1001 110
+    SGEF = Bits(bin='1001111', length=7)  # 1001 111
+
 # I-Type Operations (opcode: 0010xxx, 0011xxx, 0100xxx)
 class I_Op(Op):
     # From I_Op_0 (0010xxx)
