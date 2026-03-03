@@ -686,6 +686,8 @@ def get_test_values(warp_id: int, threads_per_warp: int) -> dict:
         # 13: [4.0  for _ in range(threads_per_warp)],
         1: [31 - i for i in range(threads_per_warp)],
         2: [i for i in range(threads_per_warp)],
+        8: [100 for i in range(threads_per_warp)],
+        9: [100 for i in range(threads_per_warp)],
     }
 
 def run_test(
