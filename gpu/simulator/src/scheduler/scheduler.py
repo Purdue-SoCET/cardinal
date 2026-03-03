@@ -53,7 +53,7 @@ class SchedulerStage(Stage):
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
-        decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
+        # decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
         issue_ctrl = self.forward_ifs_read["Issue_Scheduler"].pop()
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
@@ -311,10 +311,6 @@ class SchedulerStage(Stage):
         icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
         # print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
 
-        if not icache_ctrl["fetch"]:
-            # print("[Scheduler] MISS in ICache, STALLING.")
-            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
-
         self.eop = icache_ctrl["eop"]
         self.warp_id = icache_ctrl["warp_id"]
         
@@ -322,6 +318,10 @@ class SchedulerStage(Stage):
         self.halt()
         # determining next states
         self.collision()
+
+        if not icache_ctrl["fetch"]:
+            # print("[Scheduler] MISS in ICache, STALLING.")
+            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         match self.policy:
             case "RR":
