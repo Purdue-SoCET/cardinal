@@ -48,7 +48,8 @@ class Branch(FunctionalSubUnit):
         # FIX: initializng w-dat predicabtee becaue it yelling
         instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            # if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
             match instr.opcode:
                 case B_Op.BEQ:
