@@ -198,7 +198,7 @@ def test_all_operations():
     )
 
     prf = PredicateRegFile(
-        num_preds_per_warp=16,
+        num_preds_per_warp=32,
         num_warps=WARP_COUNT
     )
 
@@ -247,6 +247,7 @@ def test_all_operations():
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
         pred_reg_file=prf,
+        forward_ifs_write=scheduler_stage.forward_ifs_read,
         fsu_names=list(fust.keys())
     )
 
@@ -335,9 +336,9 @@ def test_all_operations():
         ("MUL", R_Op.MUL, 1, 2, 22, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF),
         ("DIV", R_Op.DIV, 1, 2, 23, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0),
         
-        # Floating point operations (AddSub_float_0, Mul_float_0, Div_float_0)
-        ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
-        ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
+        # Floating point operations (Alu_float_0, Mul_float_0, Div_float_0)
+        ("ADDF", R_Op.ADDF, 10, 11, 50, "Alu_float_0", lambda a, b: a + b),
+        ("SUBF", R_Op.SUBF, 10, 11, 51, "Alu_float_0", lambda a, b: a - b),
         ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
         ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
         
