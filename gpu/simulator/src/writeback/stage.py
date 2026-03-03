@@ -86,7 +86,6 @@ class WritebackStage(Stage):
                 #check if the instruction is predicated, if it is then we only want to update the halt mask for the threads that are active based on the predicate bits, if it is not predicated then we want to update the halt mask for all threads in the warp
                 pred_bits = Bits(bin=''.join(p.bin for p in instr.predicate))
                 new_mask = instr.active_mask & ~pred_bits
-                print(new_mask)
             else:
                 new_mask = instr.active_mask
             
@@ -123,9 +122,6 @@ class WritebackStage(Stage):
                             prf_wr_tsel=i,
                             prf_wr_data=(instr.wdat_pred[i])
                         )
-                        if instr.warp_id == 0 and i == 0:
-                            print(instr)
-                            print()
                     elif instr.target_regfile is not None:
                         # write to normal reg file
                         self.reg_file.write_thread_gran(
@@ -155,9 +151,6 @@ class WritebackStage(Stage):
                             thread_id=i,
                             warp_id=instr.warp_id
                         )
-                        if instr.warp_id == 0 and i == 0:
-                            print(instr)
-                            print()
                 else:
                     raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")              
 
