@@ -124,7 +124,7 @@ class SchedulerStage(Stage):
         else:            
             active_mask = self.warp_table[group].halt_mask_odd 
 
-        inst = Instruction(pc=pc, warp_id=warp, warp_group_id=group, active_mask=active_mask)
+        inst = Instruction(pc=Bits(uint=pc, length=32), warp_id=warp, warp_group_id=group, active_mask=active_mask)
         return inst 
     
     # pushing to latch

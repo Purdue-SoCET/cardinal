@@ -314,7 +314,7 @@ class DecodeStage(Stage):
         elif is_U:
             inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
-            imm = (raw >> 13) & 0xFFF
+            imm = ((raw >> 13) & 0xFFF) << 1
             inst.imm = Bits(uint=imm, length=17)
         elif is_P:
             inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
@@ -391,7 +391,7 @@ class DecodeStage(Stage):
             ]
             # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
             # without having to modify other stages to check for both an active mask and a predicate mask separately
-        if is_H:
+        if is_H or is_J:
             inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
 
         # Initialize wdat list for result storage (32 threads per warp)

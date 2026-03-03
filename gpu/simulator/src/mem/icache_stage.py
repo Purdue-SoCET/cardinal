@@ -89,7 +89,7 @@ class ICacheStage(Stage):
     def _fill_from_response(self, pc_int: int, data_bits):
         set_idx, tag, _ = self._addr_decode(pc_int)
         self._fill_cache_line(set_idx, tag, data_bits)
-        # print(f"[ICache] FILL complete: pc=0x{pc_int:X}")
+        # print(f"[I    Cache] FILL complete: pc=0x{pc_int:X}")
 
     # ---------------- Main compute ----------------
     def compute(self):
