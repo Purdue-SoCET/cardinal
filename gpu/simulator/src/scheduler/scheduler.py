@@ -85,7 +85,7 @@ class SchedulerStage(Stage):
                             self.warp_table[ibuffer].state = WarpState.READY
 
         # decrement my in flight counter and go back to ready
-        if writeback_ctrl is not None:
+        if not len(writeback_ctrl) == 0:
             # print("hello")
 
             # multiple writebacks can happen in the same cycle so we need to loop through all of them and apply the changes to the warp table accordingly

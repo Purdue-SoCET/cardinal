@@ -200,7 +200,7 @@ def test_all_operations():
     #       * R-type: MUL
     #   - Div_int_0: Integer divide
     #       * R-type: DIV
-    #   - AddSub_float_0: Floating point add/subtract
+    #   - Alu_float_0: Floating point add/subtract/comparison
     #       * R-type: ADDF, SUBF
     #   - Mul_float_0: Floating point multiply
     #       * R-type: MULF
@@ -240,9 +240,9 @@ def test_all_operations():
         ("MUL", R_Op.MUL, 1, 2, 22, "Mul_int_0", lambda a, b: (a * b) & 0xFFFFFFFF),
         ("DIV", R_Op.DIV, 1, 2, 23, "Div_int_0", lambda a, b: (a // b) if b != 0 else 0),
         
-        # Floating point operations (AddSub_float_0, Mul_float_0, Div_float_0)
-        ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
-        ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
+        # Floating point operations (Alu_float_0, Mul_float_0, Div_float_0)
+        ("ADDF", R_Op.ADDF, 10, 11, 50, "Alu_float_0", lambda a, b: a + b),
+        ("SUBF", R_Op.SUBF, 10, 11, 51, "Alu_float_0", lambda a, b: a - b),
         ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
         ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
         

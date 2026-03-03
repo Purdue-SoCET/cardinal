@@ -54,7 +54,7 @@ class WritebackBufferConfig:
             elif "div_int" in fsu_name.lower():
                 buffer_sizes[fsu_name] = 4
                 fsu_priorities[fsu_name] = 1
-            elif "addsub_float" in fsu_name.lower():
+            elif "alu_float" in fsu_name.lower():
                 buffer_sizes[fsu_name] = 16
                 fsu_priorities[fsu_name] = 2
             elif "mul_float" in fsu_name.lower():

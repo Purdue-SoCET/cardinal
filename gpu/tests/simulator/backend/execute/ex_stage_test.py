@@ -594,10 +594,10 @@ def test_float_operations(harness):
         return [base + random.uniform(-variance, variance) for i in range(32)]
     
     tests = [
-        (R_Op.ADDF, "AddSub_float_0", create_varied_float_data(10.0, 5.0), create_varied_float_data(5.0, 2.0),
+        (R_Op.ADDF, "Alu_float_0", create_varied_float_data(10.0, 5.0), create_varied_float_data(5.0, 2.0),
          lambda r: True, "ADDF: varied inputs"),
         
-        (R_Op.SUBF, "AddSub_float_0", create_varied_float_data(20.0, 5.0), create_varied_float_data(5.0, 2.0),
+        (R_Op.SUBF, "Alu_float_0", create_varied_float_data(20.0, 5.0), create_varied_float_data(5.0, 2.0),
          lambda r: True, "SUBF: varied inputs"),
         
         (R_Op.MULF, "Mul_float_0", create_varied_float_data(5.0, 2.0), create_varied_float_data(3.0, 1.0),
@@ -639,7 +639,7 @@ def test_float_edge_cases(harness):
     normal_vals = [float(i + 1) for i in range(32)]
     
     tests = [
-        (R_Op.ADDF, "AddSub_float_0", [inf] * 32, normal_vals,
+        (R_Op.ADDF, "Alu_float_0", [inf] * 32, normal_vals,
          lambda r: all(math.isinf(r.wdat[i].float) for i in range(32) if r.predicate[i].bin == '1'),
          "ADDF: inf + normal (all lanes)"),
         
@@ -647,7 +647,7 @@ def test_float_edge_cases(harness):
          lambda r: all(math.isinf(r.wdat[i].float) for i in range(32) if r.predicate[i].bin == '1'),
          "MULF: -inf * positive (all lanes)"),
         
-        (R_Op.ADDF, "AddSub_float_0", [nan] * 32, normal_vals,
+        (R_Op.ADDF, "Alu_float_0", [nan] * 32, normal_vals,
          lambda r: all(math.isnan(r.wdat[i].float) for i in range(32) if r.predicate[i].bin == '1'),
          "ADDF: NaN propagation (all lanes)"),
         
@@ -655,7 +655,7 @@ def test_float_edge_cases(harness):
          lambda r: all(r.wdat[i].float == 0.0 for i in range(32) if r.predicate[i].bin == '1'),
          "MULF: 0.0 * x (all lanes)"),
         
-        (R_Op.ADDF, "AddSub_float_0", mixed_special, normal_vals,
+        (R_Op.ADDF, "Alu_float_0", mixed_special, normal_vals,
          lambda r: True,  # Just check it doesn't crash
          "ADDF: mixed special values per lane"),
     ]
@@ -847,7 +847,7 @@ def test_unsupported_operations():
         harness_test2 = PipelineTestHarness(ex_stage_test2)
         instr = create_instruction(
             opcode=R_Op.ADD,
-            intended_fsu="AddSub_float_0",
+            intended_fsu="Alu_float_0",
             rdat1_vals=[10 + i for i in range(32)],
             rdat2_vals=[20 + i for i in range(32)],
             is_float=False,
@@ -950,8 +950,8 @@ def test_mixed_sign_operands(harness):
         (R_Op.DIV, "Div_int_0", mixed_vals, [i % 4 + 1 if i % 2 == 0 else -(i % 4 + 1) for i in range(32)], False, "DIV: mixed signs"),
         
         # Float operations with mixed signs
-        (R_Op.ADDF, "AddSub_float_0", [float(v) for v in pos_vals], [float(v) for v in neg_vals], True, "ADDF: pos + neg"),
-        (R_Op.SUBF, "AddSub_float_0", [float(v) for v in neg_vals], [float(v) for v in pos_vals], True, "SUBF: neg - pos"),
+        (R_Op.ADDF, "Alu_float_0", [float(v) for v in pos_vals], [float(v) for v in neg_vals], True, "ADDF: pos + neg"),
+        (R_Op.SUBF, "Alu_float_0", [float(v) for v in neg_vals], [float(v) for v in pos_vals], True, "SUBF: neg - pos"),
         (R_Op.MULF, "Mul_float_0", [float(v) for v in mixed_vals], [-2.5] * 32, True, "MULF: mixed * neg"),
         (R_Op.DIVF, "Div_float_0", [100.0 * (1 if i % 2 == 0 else -1) for i in range(32)], [-10.0] * 32, True, "DIVF: mixed / neg"),
     ]
@@ -1024,10 +1024,10 @@ def test_subnormal_floats(harness):
     normal_vals = [1.0 + i * 0.1 for i in range(32)]
     
     tests = [
-        (R_Op.ADDF, "AddSub_float_0", subnormal_vals, tiny_vals,
+        (R_Op.ADDF, "Alu_float_0", subnormal_vals, tiny_vals,
          lambda r: True, "ADDF: subnormal + tiny"),
         
-        (R_Op.ADDF, "AddSub_float_0", subnormal_vals, normal_vals,
+        (R_Op.ADDF, "Alu_float_0", subnormal_vals, normal_vals,
          lambda r: all(r.wdat[i].float > 0 for i in range(32) if r.predicate[i].bin == '1'),
          "ADDF: subnormal + normal (should be normal)"),
         
@@ -1041,7 +1041,7 @@ def test_subnormal_floats(harness):
         (R_Op.DIVF, "Div_float_0", normal_vals, [1e40] * 32,
          lambda r: True, "DIVF: normal / huge (result subnormal)"),
         
-        (R_Op.SUBF, "AddSub_float_0", tiny_vals, tiny_vals,
+        (R_Op.SUBF, "Alu_float_0", tiny_vals, tiny_vals,
          lambda r: True, "SUBF: tiny - tiny (near zero)"),
     ]
     
@@ -1094,7 +1094,7 @@ def test_warp_divergence(harness):
         ops = [
             (R_Op.ADD, "Alu_int_0", False),
             (R_Op.MUL, "Mul_int_0", False),
-            (R_Op.ADDF, "AddSub_float_0", True),
+            (R_Op.ADDF, "Alu_float_0", True),
         ]
         
         op, fsu, is_float = ops[idx % len(ops)]
@@ -1143,9 +1143,9 @@ def test_latency_verification(harness):
     div_latency = harness.fsu_latency_map.get("Div_int_0", 17)
     latency_tests.append((R_Op.DIV, "Div_int_0", div_latency, [100 + i for i in range(32)], [10] * 32, False, "DIV latency"))
     
-    # AddSub float (latency typically 2)
-    addsub_latency = harness.fsu_latency_map.get("AddSub_float_0", 2)
-    latency_tests.append((R_Op.ADDF, "AddSub_float_0", addsub_latency, [10.0 + i for i in range(32)], [5.0] * 32, True, "ADDF latency"))
+    # Alu float (latency typically 2)
+    alu_float_latency = harness.fsu_latency_map.get("Alu_float_0", 2)
+    latency_tests.append((R_Op.ADDF, "Alu_float_0", alu_float_latency, [10.0 + i for i in range(32)], [5.0] * 32, True, "ADDF latency"))
     
     # Trig operations (latency typically 16)
     trig_latency = harness.fsu_latency_map.get("Trig_float_0", 16)
@@ -1228,14 +1228,14 @@ def test_cross_warp_interleaving(harness):
             elif warp_id == 2:
                 # Warp 2: Float operations
                 opcode = [R_Op.ADDF, R_Op.SUBF, R_Op.MULF, R_Op.ADDF, R_Op.SUBF][op_idx]
-                fsu = "AddSub_float_0" if opcode in [R_Op.ADDF, R_Op.SUBF] else "Mul_float_0"
+                fsu = "Alu_float_0" if opcode in [R_Op.ADDF, R_Op.SUBF] else "Mul_float_0"
                 is_float = True
                 rdat1 = [float(warp_id * 100 + op_idx * 10 + i) for i in range(32)]
                 rdat2 = [float(op_idx + 1 + i * 0.1) for i in range(32)]
             else:  # warp_id == 3
                 # Warp 3: Mixed operations
                 ops = [(R_Op.ADD, "Alu_int_0", False), (R_Op.MUL, "Mul_int_0", False), 
-                       (R_Op.ADDF, "AddSub_float_0", True), (R_Op.DIV, "Div_int_0", False),
+                       (R_Op.ADDF, "Alu_float_0", True), (R_Op.DIV, "Div_int_0", False),
                        (R_Op.MULF, "Mul_float_0", True)]
                 opcode, fsu, is_float = ops[op_idx]
                 if is_float:

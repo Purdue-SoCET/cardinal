@@ -182,8 +182,8 @@ def test_all_operations():
         ("SRAI", I_Op.SRAI, 5, 3, 40, "Alu_int_0", lambda a, b: (a >> b) if b < 32 else 0),
         
         # Floating Point (50-53)
-        ("ADDF", R_Op.ADDF, 10, 11, 50, "AddSub_float_0", lambda a, b: a + b),
-        ("SUBF", R_Op.SUBF, 10, 11, 51, "AddSub_float_0", lambda a, b: a - b),
+        ("ADDF", R_Op.ADDF, 10, 11, 50, "Alu_float_0", lambda a, b: a + b),
+        ("SUBF", R_Op.SUBF, 10, 11, 51, "Alu_float_0", lambda a, b: a - b),
         ("MULF", R_Op.MULF, 10, 11, 52, "Mul_float_0", lambda a, b: a * b),
         ("DIVF", R_Op.DIVF, 10, 11, 53, "Div_float_0", lambda a, b: a / b if b != 0.0 else 0.0),
         

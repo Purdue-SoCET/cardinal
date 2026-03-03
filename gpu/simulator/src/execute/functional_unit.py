@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, AddSub, Sqrt, Trig, InvSqrt, Branch, Jump
+from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, Sqrt, Trig, InvSqrt, Branch, Jump
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import Instruction
 from simulator.mem.ld_st import Ldst_Fu
@@ -49,12 +49,12 @@ class IntUnitConfig:
 
 @dataclass
 class FpUnitConfig:
-    add_sub_count: int
+    alu_count: int
     mul_count: int
     div_count: int
     sqrt_count: int
     
-    add_sub_latency: int
+    alu_latency: int
     mul_latency: int
     div_latency: int
     sqrt_latency: int
@@ -62,11 +62,11 @@ class FpUnitConfig:
     @classmethod
     def get_default_config(cls) -> FpUnitConfig:
         return cls(
-            add_sub_count=1,
+            alu_count=1,
             mul_count=1,
             div_count=1,
             sqrt_count=1,
-            add_sub_latency=1,
+            alu_latency=1,
             mul_latency=4,
             div_latency=24,
             sqrt_latency=20
@@ -139,8 +139,8 @@ class IntUnit(FunctionalUnit):
 class FpUnit(FunctionalUnit):
     def __init__(self, config: FpUnitConfig, num: int):
         subunits = []
-        for i in range(config.add_sub_count):
-            subunits.append(AddSub(latency=config.add_sub_latency, type_=float, num=i * (num + 1)))
+        for i in range(config.alu_count):
+            subunits.append(Alu(latency=config.alu_latency, type_=float, num=i * (num + 1)))
         for i in range(config.mul_count):
             subunits.append(Mul(latency=config.mul_latency, type_=float, num=i * (num + 1)))
         for i in range(config.div_count):

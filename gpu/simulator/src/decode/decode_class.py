@@ -105,7 +105,7 @@ class DecodeStage(Stage):
         # Floating-point add/sub
         if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF]:
             for fu_name in self.fust.keys():
-                if fu_name.startswith("AddSub_float_"):
+                if fu_name.startswith("Alu_float_"):
                     return fu_name
 
         # Floating-point slt/sge
