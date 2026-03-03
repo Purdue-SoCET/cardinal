@@ -86,7 +86,7 @@ class SchedulerStage(Stage):
 
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
-            print("hello")
+            # print("hello")
 
             # multiple writebacks can happen in the same cycle so we need to loop through all of them and apply the changes to the warp table accordingly
             for data in writeback_ctrl:
@@ -94,7 +94,7 @@ class SchedulerStage(Stage):
                 warp_id = data["warp_id"]
                 new_mask = data["new_mask"]
 
-                print(f"Group: {group}, Warp ID: {warp_id}, New Mask: {new_mask}")
+                # print(f"Group: {group}, Warp ID: {warp_id}, New Mask: {new_mask}")
 
                 # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
                 self.warp_table[group].in_flight -= 1
@@ -164,7 +164,7 @@ class SchedulerStage(Stage):
     def halt(self):
         if self.start_flush is False:
             if all(group.halt == 1 for group in self.warp_table):
-                print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
+                # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
                 self.start_flush = True
                 self.forward_ifs_write["Scheduler_LDST"].push({"flush_start": 1})
         return

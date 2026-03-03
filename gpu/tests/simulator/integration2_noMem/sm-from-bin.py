@@ -749,12 +749,6 @@ def run_test(
     for _ in range(FLUSH_CYCLES):
         tick_all(p)
     print("Flush complete.")
-    print(p["scheduler"].warp_table)
-    # print(pipeline_rf.regs[0][0])
-    # print(prf.reg_file[0][1])
-    # print()
-    # print(prf.reg_file[0][2])
-    # print()
     
     # ── golden model: compute expected results from decoded instructions ───────
     print("\nComputing golden reference from decoded instruction stream...")
