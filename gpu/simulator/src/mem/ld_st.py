@@ -3,9 +3,8 @@ from typing import Dict, List, Optional
 import logging
 from bitstring import Bits
 
-from simulator.base_class import *
+from simulator.latch_forward_stage import *
 from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
-from simulator.base_class import LatchIF, ForwardingIF
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
@@ -20,27 +19,56 @@ class Ldst_Fu(FunctionalSubUnit):
 
         self.outstanding = False #Whether we have an outstanding dcache request
 
+        # Trackers for halt instruction
+        self.halting = False
+        self.waiting_for_flush = False
+
         super().__init__(num)
 
         #Manually instantiate interfaces while doing integration
         self.dcache_if = LatchIF()
         self.dcache_if.forward_if = ForwardingIF()
-        self.sched_if = ForwardingIF()
+        self.sched_ldst_if = ForwardingIF()
+        self.ldst_sched_if = ForwardingIF()
 
-    def connect_interfaces(self, dcache_if: LatchIF, sched_if = None):
+    def connect_interfaces(self, dcache_if: LatchIF, sched_ldst_if = ForwardingIF, ldst_sched_if = ForwardingIF):
         self.dcache_if: LatchIF = dcache_if
         # self.issue_if: LatchIF = issue_if
         # self.wb_if: LatchIF = wb_if replaced with self.ex_wb_interface
-        self.sched_if = sched_if
+        self.sched_ldst_if: ForwardingIF = sched_ldst_if
+        self.ldst_sched_if: ForwardingIF = ldst_sched_if
     
     # def forward_miss(self, instr: Instruction):
     #     self.sched_if.push(instr)
 
     def compute(self):
         pass
+    
+    def print_dcache_resp(self, dcache_response):
+        if dcache_response:
+            msg_type = dcache_response.type
+            uuid = dcache_response.uuid
+            data = dcache_response.data
+
+            # --- Helper: Format Data as Hex ---
+            data_hex = data
+            if isinstance(data, int):
+                data_hex = f"0x{data:08X}" # Format as 8-digit Hex
+            elif isinstance(data, list):
+                data_hex = [f"0x{x:X}" for x in data] # Format list items
+            # ----------------------------------
+
+            if (msg_type == 'MISS_ACCEPTED'):
+                print(f"[LSU] Received: MISS ACCEPTED (UUID: {uuid})")
+            elif (msg_type == 'HIT_COMPLETE'):
+                print(f"[LSU] Received: HIT COMPLETE (Data: {data_hex})")
+            elif (msg_type == 'MISS_COMPLETE'):
+                print(f"[LSU] Received: MISS COMPLETE (UUID: {uuid}) - Data is in cache")
+            elif (msg_type == 'HIT_STALL'):
+                print(f"[LSU] Received: HIT STALL")
         
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
-        return_instr = None
+        return_instr = False
         if issue_if and hasattr(issue_if, 'valid'):
             print(f"[DEBUG] Cycle Start: QueueLen={len(self.ldst_q)}, LatchValid={issue_if.valid}")
 
@@ -49,6 +77,13 @@ class Ldst_Fu(FunctionalSubUnit):
             if instr != None:
                 print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
                 self.ldst_q.append(pending_mem(instr))
+        
+        # Accept halt signal from the scheduler
+        if self.sched_ldst_if.payload != None:
+            sched_payload = self.sched_ldst_if.pop()
+            if sched_payload.get('halt', False):
+                print("[LSU] Received HALT command from Scheduler.")
+                self.halting = True
 
         #apply backpressure if ldst_q full
         if len(self.ldst_q) == self.ldst_q_size:
@@ -58,51 +93,61 @@ class Ldst_Fu(FunctionalSubUnit):
         else:
             # issue_if.forward_if.set_wait(False)
             self.ready_out = True
-
-        #send instr to wb if ready
-        if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
-            return_instr = self.wb_buffer.pop(0)
-            if (return_instr):
-                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
-
-        #send req to cache if not waiting for response
-        if self.outstanding == False and self.dcache_if.ready_for_push() and len(self.ldst_q) > 0:
-            req = self.ldst_q[0].genReq()
-            if req:
-                self.dcache_if.push(
-                    self.ldst_q[0].genReq()
-                )
-                self.outstanding = True
-
-        #move mem_req to wb_buffer if finished
-        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
-            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
-            self.wb_buffer.append(self.ldst_q.pop(0).instr)
-
+        
         #handle dcache packet
-        if self.dcache_if.forward_if.pop():
-            if len(self.ldst_q) == 0:
-                print(f"LSQ is length 0 and recieved a dcache response")
+        payload: dMemResponse = self.dcache_if.forward_if.pop()
+        
+        if payload:
+            self.dcache_if.forward_if.payload = None
+            if len(self.ldst_q) == 0 and payload.type != 'FLUSH_COMPLETE':
+                print(f"LSQ is length 0 and recieved a dcache response. Should never happen!")
 
-            payload: dMemResponse = self.dcache_if.forward_if.pop()
-
-            mem_req = self.ldst_q[0]
+            self.print_dcache_resp(payload)
             match payload.type:
                 case 'MISS_ACCEPTED':
                     # logger.info("Handling dcache MISS_ACCEPTED")
-                    mem_req.parseMiss(payload)     
+                    self.ldst_q[0].parseMiss(payload)     
                     self.outstanding = False                   
                 case 'HIT_STALL':
                     pass
                 case 'MISS_COMPLETE':
                     # logger.info("Handling dcache MISS_COMPLETE")
-                    mem_req.parseMshrHit(payload)
+                    self.ldst_q[0].parseMshrHit(payload)
                 case 'FLUSH_COMPLETE':
-                    mem_req.parseHit(payload)
+                    self.outstanding = False
+                    self.waiting_for_flush = False
+                    self.ldst_sched_if.push({'flush_complete': True})
                 case 'HIT_COMPLETE':
                     # logger.info("Handling dcache HIT_COMPLETE")
-                    mem_req.parseHit(payload)
+                    self.ldst_q[0].parseHit(payload)
                     self.outstanding = False
+        
+        #move mem_req to wb_buffer if finished
+        if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
+            print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
+            self.wb_buffer.append(self.ldst_q.pop(0).instr)
+        
+        #send req to cache if not waiting for response
+        if self.outstanding == False and self.dcache_if.ready_for_push():
+            if self.halting and len(self.ldst_q) == 0:
+                halt_req = dCacheRequest(addr_val=0, rw_mode='read', size='word', halt=True)
+                self.dcache_if.push(halt_req)
+                self.outstanding = True
+                self.halting = False
+                self.waiting_for_flush = True
+            
+            elif len(self.ldst_q) > 0:
+                req = self.ldst_q[0].genReq()
+                if req:
+                    self.dcache_if.push(req)
+                    self.outstanding = True
+
+        #send instr to wb if ready
+        if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
+            return_instr = self.wb_buffer.pop(0)
+            # self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
+            if (return_instr):
+                print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
     
         return return_instr
             
@@ -118,75 +163,75 @@ class pending_mem():
         self.mshr_idx: List[int] = [0 for i in range(32)]
         self.addrs = [0 for i in range(32)]
         
-        self.halt = False
         self.write = False
         self.size = "word"
+        self.is_signed = False
 
         match self.instr.opcode:
-            case I_Op.LW.value:
+            case I_Op.LW:
                 self.write = False
                 self.size = "word"
-            case I_Op.LH.value:
+                self.is_signed = True
+            case I_Op.LH:
                 self.write = False
                 self.size = "half"
-            case I_Op.LB.value:
+                self.is_signed = True
+            case I_Op.LB:
                 self.write = False
                 self.size = "byte"
+                self.is_signed = True
             
-            case S_Op.SW.value:
+            case S_Op.SW:
                 self.write = True
                 self.size = "word"
-            case S_Op.SH.value:
+            case S_Op.SH:
                 self.write = True
                 self.size = "half"
-            case S_Op.SB.value:
+            case S_Op.SB:
                 self.write = True
                 self.size = "byte"
-            
-            case H_Op.HALT.value:
-                self.write = False
-                self.size = "word"
-                self.halt = True
             
             case _:
                 logger.error(f"Err: instr in ldst cannot be decoded")
                 print(f"\t{instr}")
         
+        offset = 0
+        if hasattr(self.instr, 'imm') and self.instr.imm is not None:
+            offset = self.instr.imm.int
+
         for i in range(32):
             self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
-            if self.write and self.instr.predicate[i].uint == 1:
-                offset = 0
-                if hasattr(self.instr, 'imm') and self.instr.imm is not None:
-                    offset = self.instr.imm.int
+            if self.instr.predicate[i].uint == 1:
                 self.addrs[i] = self.instr.rdat1[i].int + offset
-            elif not self.write and self.instr.predicate[i].uint == 1:
-                self.addrs[i] = self.instr.rdat1[i].int + self.instr.rdat2[i].int
 
     def readyWB(self):
         return all(self.finished_idx)
     
     def genReq(self):
-        if self.halt == True:
-            return dCacheRequest(
-                addr_val=0,
-                rw_mode='read',
-                size='word',
-                halt = True
-            )
         for i in range(32):
             if self.finished_idx[i] == 0 and self.mshr_idx[i] == 0:
+                st_val = 0
+                if self.write:
+                    raw_val = self.instr.rdat2[i].int
+
+                    if self.size == "byte":
+                        st_val = raw_val & 0xFF
+                    elif self.size == "half":
+                        st_val = raw_val & 0xFFFF
+                    else:
+                        st_val = raw_val & 0xFFFFFFFF
+
                 return dCacheRequest(
                     addr_val=self.addrs[i],
                     rw_mode='write' if self.write else 'read',
                     size=self.size,
-                    store_value=self.instr.rdat2[i].int
+                    store_value=st_val
                 )
         return None
     
     def parseHit(self, payload):
-        if self.halt == True:
-            self.finished_idx = [1]
-            return
+        if self.write == False and not self.instr.wdat:
+            self.instr.wdat = [None for _ in range(32)]
         
         for i in range(32):
             if self.addrs[i] == payload.address:
@@ -194,28 +239,48 @@ class pending_mem():
 
                 #set wdat if instr is a read
                 if self.write == False:
-                    self.instr.wdat[i] = Bits(uint=payload.data, length=32)
+                    # Convert to signed if applicable
+                    raw_val = payload.data
+
+                    if self.size == "byte":
+                        raw_val = raw_val & 0xFF
+                        if self.is_signed and (raw_val & 0x80):
+                            raw_val = raw_val - 0x100
+
+                    elif self.size == "half":
+                        raw_val = raw_val & 0xFFFF
+                        if self.is_signed and (raw_val & 0x8000):
+                            raw_val = raw_val - 0x10000
+                    
+                    else:
+                        raw_val = raw_val & 0xFFFFFFFF
+                        if self.is_signed and (raw_val & 0x80000000):
+                            raw_val = raw_val - 0x10000000
+
+                    if raw_val < 0:
+                        self.instr.wdat[i] = Bits(int = raw_val, length=32)
+                    else:
+                        self.instr.wdat[i] = Bits(uint = raw_val, length=32)
 
     
     def parseMshrHit(self, payload):
-        if self.write:
-            self.parseHit(payload)
-        else:
-            num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
-            block_mask = ~(num_bytes_block - 1)
-            incoming_block_addr = payload.address & block_mask
+        num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+        block_mask = ~(num_bytes_block - 1)
+        incoming_block_addr = payload.address & block_mask
 
-            for i in range(32):
-                thread_addr = self.addrs[i]
-                thread_block_addr = thread_addr & block_mask
-                if (thread_block_addr == incoming_block_addr) and (self.mshr_idx[i] == 1):
+        for i in range(32):
+            thread_addr = self.addrs[i]
+            thread_block_addr = thread_addr & block_mask
+            if (thread_block_addr == incoming_block_addr) and (self.mshr_idx[i] == 1):
+                if self.write:
+                    self.mshr_idx[i] = 0
+                    self.finished_idx[i] = 1
+                else:
                     print(f"[LSU] Wakeup thread {i} (Addr {hex(thread_addr)}) due to Block Match")
                     self.mshr_idx[i] = 0
+                
     
     def parseMiss(self, payload: dMemResponse):
         for i in range(32):
             if self.addrs[i] == payload.address:
-                if self.write == False:
-                    self.mshr_idx[i] = 1
-                elif self.write == True:
-                    self.finished_idx[i] = 1
+                self.mshr_idx[i] = 1                                # The ldst needs to wait for the cache to retrieve the data from main memory

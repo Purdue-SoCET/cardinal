@@ -722,4 +722,3 @@ class InvSqrt(ArithmeticSubUnit):
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
-

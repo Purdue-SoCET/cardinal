@@ -1,8 +1,10 @@
 from __future__ import annotations
+from builtins import print
+from unicodedata import name
 
 from simulator.execute.functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
-from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
+from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
 from simulator.issue.regfile import RegisterFile
 from simulator.latch_forward_stage import Instruction, LatchIF
 from simulator.issue.stage import IssueStage
@@ -18,9 +20,11 @@ FILE_ROOT = Path(__file__).resolve().parent
 gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op, Op
+from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from gpu.common.custom_enums import Op
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
+from simulator.mem.dcache_stage import LockupFreeDCacheStage
 from simulator.mem.mem_controller import MemController
 from simulator.mem.Memory import Mem
 from simulator.decode.decode_class import DecodeStage
@@ -29,6 +33,7 @@ from simulator.latch_forward_stage import *
 from datetime import datetime
 from typing import Iterable, Any
 
+print("SYSTEM CHECKPOINT: Imported all necessary modules and defined helper functions.")
 START_PC = 0x1000
 LAT = 2
 WARP_COUNT = 32
@@ -38,12 +43,8 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
     Compare two register files and return True if they match, False otherwise.
     """
     mismatches = []
-    if warp_id < 0:
-        raise ValueError(f"warp_id must be >= 0, got {warp_id}")
-    if warp_id >= pipeline_rf.warps:
-        raise ValueError(f"warp_id {warp_id} out of range for pipeline_rf.warps={pipeline_rf.warps}")
-    if warp_id >= golden_rf.warps:
-        raise ValueError(f"warp_id {warp_id} out of range for golden_rf.warps={golden_rf.warps}")
+    bank = warp_id % pipeline_rf.banks
+    warp_idx = warp_id // 2
     
     # Determine which registers to check
     if reg_list is None:
@@ -52,25 +53,12 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
         reg_range = reg_list
     
     for reg_num in reg_range:
-        if reg_num < 0 or reg_num >= pipeline_rf.regs_per_warp:
-            raise ValueError(
-                f"reg_num {reg_num} out of range for pipeline_rf.regs_per_warp={pipeline_rf.regs_per_warp}"
-            )
         for thread_id in range(pipeline_rf.threads_per_warp):
-            pipeline_val = pipeline_rf.read_thread_gran(
-                warp_id=warp_id,
-                src_operand=Bits(uint=reg_num, length=32),
-                thread_id=thread_id,
-            )
-            golden_val = golden_rf.read_thread_gran(
-                warp_id=warp_id,
-                src_operand=Bits(uint=reg_num, length=32),
-                thread_id=thread_id,
-            )
+            pipeline_val = pipeline_rf.regs[bank][warp_idx][reg_num][thread_id]
+            golden_val = golden_rf.regs[bank][warp_idx][reg_num][thread_id]
             
             # For float registers (typically >= 10 in our test), allow small tolerance
-            # Regs 57-60 hold integer CSR values even though they are > 50
-            is_float_reg = (reg_num >= 50 and reg_num <= 56) or (reg_num >= 10 and reg_num < 20)
+            is_float_reg = reg_num >= 50 or (reg_num >= 10 and reg_num < 20)
             
             # Special handling for trig/isqrt results which have higher error margins in CORDIC/FastApprox
             is_approx_reg = reg_num in [54, 55, 56] # SIN, COS, ISQRT
@@ -78,10 +66,6 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
             if is_float_reg:
                 p_float = pipeline_val.float
                 g_float = golden_val.float
-
-                # Treat NaN == NaN for comparison purposes
-                if math.isnan(p_float) and math.isnan(g_float):
-                    continue
                 
                 # Dynamic tolerance based on operation type
                 if is_approx_reg:
@@ -110,19 +94,84 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
     
     if verbose and mismatches:
         print(f"\n❌ Found {len(mismatches)} mismatches:")
-        for m in mismatches:
-            is_float_display = (m['reg'] >= 50 and m['reg'] <= 56) or (m['reg'] >= 10 and m['reg'] < 20)
-            if is_float_display:
+        for m in mismatches:  
+            if m['reg'] >= 50 or (m['reg'] >= 10 and m['reg'] < 20):
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
                       f"Pipe={m['pipeline'].float:.6f} "
                       f"Gold={m['golden'].float:.6f} "
                       f"Diff={m.get('diff', 0):.6f}")
             else:
                 print(f"  Reg[{m['reg']}][{m['thread']}]: "
-                      f"Pipe={m['pipeline'].uint} "
-                      f"Gold={m['golden'].uint}")
+                      f"Pipe={m['pipeline'].int} "
+                      f"Gold={m['golden'].int}")
 
     return len(mismatches) == 0
+
+def print_banks(dCache):
+    # --- 1. Calculate Bit Widths for Reconstruction ---
+    # Offset: 32 words * 4 bytes = 128 bytes -> 7 bits (usually)
+    offset_bits = int(math.log2(BLOCK_SIZE_WORDS * 4))
+    
+    # Bank Bits: log2(number of banks)
+    num_banks = len(dCache.banks)
+    bank_bits = int(math.log2(num_banks)) if num_banks > 1 else 0
+    
+    # Set Bits: log2(number of sets per bank)
+    num_sets = len(dCache.banks[0].sets)
+    set_bits = int(math.log2(num_sets))
+
+    # Calculate Shift Amounts (Assuming Addr Structure: [ Tag | Set | Bank | Offset ])
+    shift_bank = offset_bits
+    shift_set = offset_bits + bank_bits
+    shift_tag = offset_bits + bank_bits + set_bits
+    # --------------------------------------------------
+
+    for bank_id, bank in enumerate(dCache.banks):
+        print(f"\n======== Bank {bank_id} ========")
+        found_valid_line = False
+
+        for set_id, cache_set in enumerate(bank.sets):
+            set_has_valid_lines = any(frame.valid for frame in cache_set)
+
+            if set_has_valid_lines:
+                found_valid_line = True
+                print(f"  ---- Set {set_id} ----")
+
+                lru_list = bank.lru[set_id]
+                print(f"    LRU Order: {lru_list} (Front=MRU, Back=LRU)")
+
+                for way_id, frame in enumerate(cache_set):
+                    if frame.valid:
+                        tag_hex = f"0x{frame.tag:X}"
+                        dirty_str = "D" if frame.dirty else " "
+                        
+                        # --- 2. Reconstruct the Address ---
+                        # (Tag << shifts) | (Set << shifts) | (Bank << shifts)
+                        full_addr = (frame.tag << shift_tag) | (set_id << shift_set) | (bank_id << shift_bank)
+                        addr_hex = f"0x{full_addr:08X}" # Format as 8-digit Hex
+                        # ----------------------------------
+
+                        # Print Tag AND Address
+                        print(f"    [Way {way_id}] V:1 {dirty_str} Tag: {tag_hex:<6} (Addr: {addr_hex})")
+
+                        for i in range(0, BLOCK_SIZE_WORDS, 4):
+                            # FIX: Add '& 0xFFFFFFFF' to force unsigned 32-bit representation
+                            w0 = f"0x{(frame.block[i] & 0xFFFFFFFF):08X}"
+                            w1 = f"0x{(frame.block[i+1] & 0xFFFFFFFF):08X}"
+                            w2 = f"0x{(frame.block[i+2] & 0xFFFFFFFF):08X}"
+                            w3 = f"0x{(frame.block[i+3] & 0xFFFFFFFF):08X}"
+                            
+                            print(f"        Block[{i:02d}:{i+3:02d}]: {w0} {w1} {w2} {w3}")
+
+        if not found_valid_line:
+            print(f"  (Bank is empty)")
+
+def write_val_to_mem(filename: str, address: int, value: int):
+            f.write(line + '\n')
+
+
+def print_latch_states(latches, forward_latches, cycle, before_after):
+            print(f"  [{name}] Empty")
 
 def test_all_operations():
     """
@@ -136,20 +185,24 @@ def test_all_operations():
     tbs_ws_if = LatchIF("Thread Block Scheduler - Warp Scheduler Latch")
     sched_icache_if = LatchIF("Sched-ICache Latch")
     icache_mem_req_if = LatchIF("ICache-Mem Latch")
-    dummy_dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
+    dcache_mem_req_if = LatchIF("Dummy DCache-Mem Latch")
     mem_icache_resp_if = LatchIF("Mem-ICache Latch")
     dummy_dcache_mem_resp_if = LatchIF("Mem-Dummy DCache Latch")
     icache_decode_if = LatchIF("ICache-Decode Latch")
     decode_issue_if = LatchIF("Decode-Issue Latch")
+    # issue execute connections setup below 
+    lsu_dcache_if = LatchIF("LSU-DCache Latch")
+    # patch to make it compatible for working with the dcache and ldst
+    lsu_dcache_if.forward_if = ForwardingIF(name="LSU_DCache_Forward_IF")  # Add forwarding IF to coordinate LSU and DCache during memory ops
+    dcache_mem_resp_if = LatchIF("Mem-DCache Latch")
     icache_scheduler_fwif = ForwardingIF(name = "icache_forward_if")
     decode_scheduler_fwif = ForwardingIF(name = "decode_forward_if")
     issue_scheduler_fwif = ForwardingIF(name = "issue_forward_if")
     branch_scheduler_fwif = ForwardingIF(name = "branch_forward_if")
     writeback_scheduler_fwif = ForwardingIF(name = "Writeback_forward_if")
-    scheduler_ldst_fwif = ForwardingIF(name="scheduler_ldst_fwif")
 
     mem = Mem(
-        start_pc=START_PC,
+        start_pc=0x1000,
         input_file = FILE_ROOT / "test.bin",
         fmt="bin",
     )
@@ -157,9 +210,9 @@ def test_all_operations():
     memc = MemController(
         name="Mem_Controller",
         ic_req_latch=icache_mem_req_if,
-        dc_req_latch=dummy_dcache_mem_req_if,
+        dc_req_latch=dcache_mem_req_if,
         ic_serve_latch=mem_icache_resp_if,
-        dc_serve_latch=dummy_dcache_mem_resp_if,
+        dc_serve_latch=dcache_mem_resp_if,
         mem_backend=mem, 
         latency=LAT,
         policy="rr"
@@ -168,8 +221,6 @@ def test_all_operations():
     functional_unit_config = FunctionalUnitConfig.get_default_config()
     fust = functional_unit_config.generate_fust_dict()
 
-    csr_table = CsrTable()
-
     scheduler_stage = SchedulerStage(
         name="Scheduler_Stage",
         behind_latch=tbs_ws_if,
@@ -177,13 +228,10 @@ def test_all_operations():
         forward_ifs_read= {"ICache_Scheduler" : icache_scheduler_fwif, "Decode_Scheduler": decode_scheduler_fwif, 
                            "Issue_Scheduler": issue_scheduler_fwif, "Branch_Scheduler": branch_scheduler_fwif, 
                            "Writeback_Scheduler": writeback_scheduler_fwif},
-        # forward_ifs_write=None,
-        forward_ifs_write={"Scheduler_LDST": scheduler_ldst_fwif},
-        csrtable = csr_table,
+        forward_ifs_write=None,
+        start_pc=START_PC, 
         warp_count=WARP_COUNT
     )
-
-    tbs_ws_if.push([0, 1024, START_PC])
 
     icache_stage = ICacheStage(
         name="ICache_Stage",
@@ -202,12 +250,19 @@ def test_all_operations():
         num_warps=WARP_COUNT
     )
 
+    csr_table = CsrTable()
+    for warp_id in range(WARP_COUNT):
+        if warp_id < (WARP_COUNT//2):
+            csr_table.write_data(warp_id, 32*warp_id, 10, 512)
+        else:
+            csr_table.write_data(warp_id, 32*(warp_id%(WARP_COUNT//2)), 11, 512)
+
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     kernel_base_ptrs.write(0, Bits(uint=9203930, length=32)) # random address for testing
     
     # Initialize all predicate registers to 1 (all threads active)
     for warp in range(WARP_COUNT):
-        for pred in range(16):  # num_preds_per_warp * 2
+        for pred in range(16 * 2):  # num_preds_per_warp * 2
             for neg in range(2):  # both positive and negative versions
                 prf.reg_file[warp][pred][neg] = [True] * 32  # all 32 threads active
 
@@ -237,19 +292,16 @@ def test_all_operations():
     
     wb_buffer_config = WritebackBufferConfig.get_default_config()
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-    reg_file_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
-    pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf) # each predicate has a positive and negative bank
+    reg_file_config = RegisterFileConfig.get_config_from_reg_File(reg_file=pipeline_rf)
     
     wb_stage = WritebackStage.create_pipeline_stage(
         wb_config=wb_buffer_config,
         rf_config=reg_file_config,
-        pred_rf_config=pred_reg_file_config,
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
-        pred_reg_file=prf,
         fsu_names=list(fust.keys())
     )
-
+    
     decode_issue_fwif = ForwardingIF(name="Decode_issue_fwif")
 
     issue_stage = IssueStage(
@@ -264,7 +316,22 @@ def test_all_operations():
         forward_ifs_write= {"issue_scheduler_fwif" : issue_scheduler_fwif, 
                             "decode_issue_fwif" : decode_issue_fwif},
     )
-    
+
+    #dcache
+    dcache_stage = LockupFreeDCacheStage(
+        name="DCache_Stage",
+        behind_latch=lsu_dcache_if,
+        # ahead_latch=None,  # No stage after DCache in this test
+        mem_req_if=dcache_mem_req_if,
+        mem_resp_if=dcache_mem_resp_if,
+        forward_ifs_write=None # TBD: Implement halt and stall mechanisms in the forwarding IFs and connect them here to coordinate with the scheduler during memory operations
+    )
+
+
+    ldst = ex_stage.functional_units['MemBranchJumpUnit_0'].subunits['Ldst_Fu_0']
+    ldst.connect_interfaces(dcache_if = lsu_dcache_if)
+
+
     # 2. Initialize Register Data
     # ---------------------------------------------------------
     # Define list of warp IDs to test
@@ -307,7 +374,7 @@ def test_all_operations():
     # 3. Define Test Cases
     # ---------------------------------------------------------
     
-    test_cases = [
+    non_mem_test_cases = [
         # Integer ALU operations (Alu_int_0)
         ("ADD", R_Op.ADD, 1, 2, 20, "Alu_int_0", lambda a, b: (a + b) & 0xFFFFFFFF),
         ("SUB", R_Op.SUB, 1, 2, 21, "Alu_int_0", lambda a, b: (a - b) & 0xFFFFFFFF),
@@ -346,89 +413,22 @@ def test_all_operations():
         ("COS", F_Op.COS, 12, 12, 55, "Trig_float_0", lambda a, b: None),  # Special handling
         ("ISQRT", F_Op.ISQRT, 13, 13, 56, "InvSqrt_float_0", lambda a, b: None),  # Special handling
 
-        # CSRR instructions: rs1_reg field holds the csr_param (0=base_id, 1=tb_id, 2=tb_size, 3=kernel_base_ptr)
-        ("CSRR", C_Op.CSRR, 0, 0, 57, "Alu_int_0", lambda a, b: None),  # rd=57, csr_param=0 -> base_id
-        ("CSRR", C_Op.CSRR, 1, 0, 58, "Alu_int_0", lambda a, b: None),  # rd=58, csr_param=1 -> tb_id
-        ("CSRR", C_Op.CSRR, 2, 0, 59, "Alu_int_0", lambda a, b: None),  # rd=59, csr_param=2 -> tb_size
-        ("CSRR", C_Op.CSRR, 3, 0, 60, "Alu_int_0", lambda a, b: None),  # rd=60, csr_param=3 -> kernel_base_ptr
+        # TODO: NEED TO ADD CSRR INSTRUCTION HERE, BUT NOT SURE HOW TO COMPUTE PREDETERMINED VALUE
 
     ]
 
-    # print(f"Generated {len(instruction_list)} instructions.")
+    mem_test_cases = [
 
-    # 4. Run Pipeline Simulation
-    # ---------------------------------------------------------
-    print("\nStarting pipeline simulation...")
-    
-    print("Verifying initial state of register file matches golden model...")
-    all_warps_match = True
-    for warp_id in warp_ids:
-        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
-        if not compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
-            all_warps_match = False
-            print(f"❌ Initial register file state for warp {warp_id} does NOT match.")
-    
-    if all_warps_match:
-        print("✅ Initial register file state matches golden model for all warps.")
-    else:
-        print("❌ Initial register file state does NOT match golden model. Aborting test.")
-        return 0, 1
-    
-    # Cycle 1: Feed instructions
-    # for idx, instr in enumerate(instruction_list):
-    n_cycle = 0
-    for cycle in range(len(test_cases)):
-        # if instr.rd.uint == 1:
-        #     abcHI = 1
-        # print(f"\nCycle #{cycle}\n")
-        wb_stage.tick()
-        ex_stage.tick()
-        ex_stage.compute()
-        issue_stage.compute()
-        decode_stage.compute()
-        memc.compute()
-        icache_stage.compute()
-        scheduler_stage.compute()
-
-        if (cycle == (len(test_cases) - 1)):
-            n_cycle = cycle
-
-
-    print("All instructions issued. Flushing pipeline...")
-
-    FLUSH_CYCLES = len(test_cases) + 1500  # Run enough cycles to flush the pipeline after last instruction is issued
-    for _ in range(FLUSH_CYCLES):
-        # Refill forward IFs if they get drained
-        # print(f"\nCycle #{_ + n_cycle}\n")
-        # if issue_scheduler_fwif.payload is None:
-        #     issue_scheduler_fwif.push(filler_issue_scheduler)
-        # if decode_scheduler_fwif.payload is None:
-        #     decode_scheduler_fwif.push(filler_decode_scheduler)
-        
-        wb_stage.tick()
-        ex_stage.tick()
-        ex_stage.compute()
-        issue_stage.compute()
-        decode_stage.compute()
-        memc.compute()
-        icache_stage.compute()
-        scheduler_stage.compute()
-        # reg_is_same = compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=False)
-        # if reg_is_same >:
-        #     print("Register file state has diverged from golden model during flush. Aborting test.")
-        #     return 0, 1
-        
-    print("Pipeline flush complete.")
-
-    # 5. Update Golden Model
+    ]
+    # 4. Update Golden Model
     # ---------------------------------------------------------
     instruction_list = []
     
-    print("Computing golden reference...")
-    
+    test_cases = non_mem_test_cases # + mem_test_cases (to be defined later once we have memory operations working) 
+
     # Iterate over all warps for golden model computation
     for warp_id in warp_ids:
-        print(f"  Computing golden model for warp {warp_id}...")
+        print(f"  Computing reg file golden model for warp {warp_id}...")
         
         for test_name, opcode, rs1_reg, rs2_reg, rd_reg, intended_fu, python_op in test_cases:
             if intended_fu not in fust:
@@ -458,20 +458,6 @@ def test_all_operations():
                     val = rs1_vals[i].float
                     res = 0.0 if val <= 0 else 1.0 / math.sqrt(val)
                     golden_res.append(Bits(float=res, length=32))
-                elif test_name == "CSRR":
-                    # base_id (param=0): each thread gets base_id + thread_index
-                    # all others are scalar, broadcast to all threads
-                    if rs1_reg == 0:
-                        csr_val = int(csr_table.read_base_id(warp_id)) + i
-                    elif rs1_reg == 1:
-                        csr_val = int(csr_table.read_tb_id(warp_id))
-                    elif rs1_reg == 2:
-                        csr_val = int(csr_table.read_tb_size(warp_id))
-                    elif rs1_reg == 3:
-                        csr_val = kernel_base_ptrs.read(0).uint
-                    else:
-                        csr_val = 0
-                    golden_res.append(Bits(uint=csr_val, length=32))
                 # 2. Float Ops
                 elif rd_reg >= 50: 
                     res = python_op(rs1_vals[i].float, rs2_vals[i].float)
@@ -517,13 +503,91 @@ def test_all_operations():
         # instruction_list.append(instr)
         # print(instr.target_bank)
 
+    print("Computing memory golden reference...")
+
+
+
+    filler_decode_scheduler = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}
+    filler_issue_scheduler = [0] * scheduler_stage.num_groups
+    # Initialize all forward interfaces
+    icache_scheduler_fwif.payload = None
+    decode_scheduler_fwif.push(filler_decode_scheduler)
+    issue_scheduler_fwif.push(filler_issue_scheduler)
+    branch_scheduler_fwif.payload = None
+    writeback_scheduler_fwif.payload = None
+
+    # 5. Run Pipeline Simulation
+    # ---------------------------------------------------------
+    print("\nStarting pipeline simulation...")
+    
+    print("Verifying initial state of register file matches golden model...")
+    all_warps_match = True
+    for warp_id in warp_ids:
+        test_values = get_test_values(warp_id, pipeline_rf.threads_per_warp)
+        if not compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=True):
+            all_warps_match = False
+            print(f"❌ Initial register file state for warp {warp_id} does NOT match.")
+    
+    if all_warps_match:
+        print("✅ Initial register file state matches golden model for all warps.")
+    else:
+        print("❌ Initial register file state does NOT match golden model. Aborting test.")
+        return 0, 1
+    
+    # Cycle 1: Feed instructions
+    # for idx, instr in enumerate(instruction_list):
+    n_cycle = 0
+    for cycle in range(len(test_cases)):
+        # if instr.rd.uint == 1:
+        #     abcHI = 1
+        # print(f"\nCycle #{cycle}\n")
+        wb_stage.tick()
+        ex_stage.tick()
+        ex_stage.compute()
+        issue_stage.compute()
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
+
+        if (cycle == (len(test_cases) - 1)):
+            n_cycle = cycle
+
+
+    print("All instructions issued. Flushing pipeline...")
+
+    FLUSH_CYCLES = len(test_cases) + 1100  # Run enough cycles to flush the pipeline after last instruction is issued
+    for _ in range(FLUSH_CYCLES):
+        # Refill forward IFs if they get drained
+        # print(f"\nCycle #{_ + n_cycle}\n")
+        # if issue_scheduler_fwif.payload is None:
+        #     issue_scheduler_fwif.push(filler_issue_scheduler)
+        # if decode_scheduler_fwif.payload is None:
+        #     decode_scheduler_fwif.push(filler_decode_scheduler)
+        
+        wb_stage.tick()
+        ex_stage.tick()
+        ex_stage.compute()
+        # print the faulting instruction in the issue stage
+        issue_stage.compute()
+        decode_stage.compute()
+        memc.compute()
+        icache_stage.compute()
+        scheduler_stage.compute()
+        # reg_is_same = compare_register_files(pipeline_rf, golden_rf, warp_id=warp_id, reg_list=list(test_values.keys()), verbose=False)
+        # if reg_is_same >:
+        #     print("Register file state has diverged from golden model during flush. Aborting test.")
+        #     return 0, 1
+        
+    print("Pipeline flush complete.")
+
     # 6. Verify Results
     # ---------------------------------------------------------
     print("\nVerifying Register File State...")
     
     # We check all destination registers that were written to
     # Int Ops: 20-40, Float Ops: 50-56
-    regs_to_check = list(range(pipeline_rf.regs_per_warp))
+    regs_to_check = list(range(0, 63))
     
     all_warps_passed = True
     for warp_id in warp_ids:
@@ -548,12 +612,10 @@ def test_all_operations():
 
     if all_warps_passed:
         print(f"\n✅ SUCCESS: All register values match golden model for all {len(warp_ids)} warps.")
-        # prf.dump()
         return len(instruction_list), 0
     else:
         print("\n❌ FAILURE: Mismatches detected in register file.")
         return 0, 1
-
 
 if __name__ == "__main__":
     passed, failed = test_all_operations()

@@ -146,3 +146,4 @@ class ExecuteStage(Stage):
         ex_stage = ExecuteStage(config=functional_unit_config, fust=fust)
 
         return ex_stage
+    

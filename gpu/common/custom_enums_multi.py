@@ -18,10 +18,10 @@ class Instr_Type(MultiValueEnum):
     H_TYPE = Bits(bin='1111', length=4)    # 1111 (Halt)
 
 class Op(Enum):
-    pass 
+    pass
 
 # R-Type Operations (opcode: 0000xxx and 0001xxx)
-class R_Op(Enum):
+class R_Op(Op):
     # From R_Op_0 (0000xxx)
     ADD = Bits(bin='0000000', length=7)   # 0000 000
     SUB = Bits(bin='0000001', length=7)   # 0000 001
@@ -42,7 +42,7 @@ class R_Op(Enum):
     SRA = Bits(bin='0001111', length=7)   # 0001 111
 
 # I-Type Operations (opcode: 0010xxx, 0011xxx, 0100xxx)
-class I_Op(Enum):
+class I_Op(Op):
     # From I_Op_0 (0010xxx)
     ADDI = Bits(bin='0010000', length=7)   # 0010 000
     SUBI = Bits(bin='0010001', length=7)   # 0010 001
@@ -61,7 +61,7 @@ class I_Op(Enum):
     JALR = Bits(bin='0100011', length=7)   # 0100 011
 
 # F-Type Operations (opcode: 0101xxx) - Floating Point and Type Conversion
-class F_Op(Enum):
+class F_Op(Op):
     ISQRT = Bits(bin='0101000', length=7)  # 0101 000
     SIN = Bits(bin='0101001', length=7)    # 0101 001
     COS = Bits(bin='0101010', length=7)    # 0101 010
@@ -69,7 +69,7 @@ class F_Op(Enum):
     FTOI = Bits(bin='0101100', length=7)   # 0101 100
 
 # S-Type Operations (opcode: 0110xxx, 0111xxx)
-class S_Op(Enum):
+class S_Op(Op):
     # From S_Op_0 (0110xxx)
     SW = Bits(bin='0110000', length=7)     # 0110 000
     SH = Bits(bin='0110001', length=7)     # 0110 001
@@ -77,7 +77,7 @@ class S_Op(Enum):
     # S_Op_1 (0111xxx) - Currently unused but reserved
 
 # B-Type Operations (opcode: 1000xxx, 1001xxx)
-class B_Op(Enum):
+class B_Op(Op):
     # From B_Op_0 (1000xxx) - Predicate Write
     BEQ = Bits(bin='1000000', length=7)    # 1000 000
     BNE = Bits(bin='1000001', length=7)    # 1000 001
@@ -88,27 +88,25 @@ class B_Op(Enum):
     # B_Op_1 (1001xxx) - Currently unused but reserved
 
 # U-Type Operations (opcode: 1010xxx)
-class U_Op(Enum):
+class U_Op(Op):
     AUIPC = Bits(bin='1010000', length=7)  # 1010 000
     LLI = Bits(bin='1010001', length=7)    # 1010 001
     LMI = Bits(bin='1010010', length=7)    # 1010 010
     LUI = Bits(bin='1010100', length=7)    # 1010 100
 
 # C-Type Operations (opcode: 1011xxx)
-class C_Op(Enum):
+class C_Op(Op):
     CSRR = Bits(bin='1011000', length=7)   # 1011 000
     CSRW = Bits(bin='1011001', length=7)   # 1011 001
 
 # J-Type Operations (opcode: 1100xxx)
-class J_Op(Enum):
+class J_Op(Op):
     JAL = Bits(bin='1100000', length=7)    # 1100 000
 
 # P-Type Operations (opcode: 1101xxx)
-class P_Op(Enum):
+class P_Op(Op):
     JPNZ = Bits(bin='1101000', length=7)   # 1101 000
-    PRR = Bits(bin='1101100', length=7)
-    PRW = Bits(bin='1101101', length=7)
-    
+
 # H-Type Operations (opcode: 1111xxx)
-class H_Op(Enum):
+class H_Op(Op):
     HALT = Bits(bin='1111111', length=7)   # 1111 111
