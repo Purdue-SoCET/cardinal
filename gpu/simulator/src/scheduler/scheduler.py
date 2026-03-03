@@ -87,12 +87,13 @@ class SchedulerStage(Stage):
         # decrement my in flight counter and go back to ready
         if writeback_ctrl is not None:
             print("hello")
-            # group = writeback_ctrl["warp_group_id"]
-            # warp_id = writeback_ctrl["warp_id"]
-            # new_mask = writeback_ctrl["new_mask"]
 
             # multiple writebacks can happen in the same cycle so we need to loop through all of them and apply the changes to the warp table accordingly
-            for group, warp_id, new_mask in writeback_ctrl:
+            for data in writeback_ctrl:
+                group = data["warp_group_id"]
+                warp_id = data["warp_id"]
+                new_mask = data["new_mask"]
+
                 print(f"Group: {group}, Warp ID: {warp_id}, New Mask: {new_mask}")
 
                 # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
@@ -112,13 +113,13 @@ class SchedulerStage(Stage):
                     self.warp_table[group].halt = 1
                     return
 
-                if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
-                    if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
-                        self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
-                        self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
+                if self.warp_table[group].in_flight == 0:
+                    if self.warp_table[group].state != WarpState.HALT:
+                        self.warp_table[group].state = WarpState.READY
+                        self.warp_table[group].finished_packet = False
                     
                     else:
-                        self.warp_table[writeback_ctrl["warp_group"]].halt = 1
+                        self.warp_table[group].halt = 1
         
         # set group to halt
 
