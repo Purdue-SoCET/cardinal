@@ -107,7 +107,6 @@ class WritebackStage(Stage):
                 continue
             
             for i in range(32):
-                # if instr.predicate[i].bin == 0b0:
                 if instr.predicate[i].bin == "0":
                     continue
                 
