@@ -111,7 +111,7 @@ class ICacheStage(Stage):
                 self._fill_from_response(pc_int_resp, data_bits)
 
                 # print("[I$] Returned value from memory")
-                self._send_valid(True, data_bits[31], resp.warp_id)
+                self._send_valid(True, data_bits[24], resp.warp_id)
                 self.pending = False
                 if self.ahead_latch.ready_for_push():
                     self.ahead_latch.push(resp)
@@ -137,7 +137,7 @@ class ICacheStage(Stage):
                 
                 # in the cache
                 if line_lookup:
-                    self._send_valid(True, line_lookup.data[31], fetch.warp_id)
+                    self._send_valid(True, line_lookup.data[24], fetch.warp_id)
                     fetch.packet = line_lookup.data
 
                     # push
