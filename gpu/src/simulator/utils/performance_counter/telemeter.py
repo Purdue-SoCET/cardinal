@@ -38,16 +38,18 @@ Typical wiring inside a tick() method
             is_stalled=stalled,
         )
 
-    # 3. Optionally trigger the flight recorder on stall
-    if stalled:
-        self.telemeter.trigger_flight_recorder(self.name, cycle)
+    # 3. Optionally check all registered triggers
+    self.telemeter.check_triggers(self.name, cycle,
+        is_stalled   = stalled,
+        cache_miss   = cache_miss,
+    )
 """
 
 from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import polars as pl
 
@@ -82,10 +84,11 @@ class Telemeter:
         # Flight recorder state
         self._fr_deque: Optional[deque] = None
         self._fr_post_cycles_remaining: int = 0
-        self._fr_active: bool = False     # True while in post-trigger capture window
+        self._fr_active: bool = False       # True while in post-trigger capture window
+        self._active_capture_units: Set[str] = set()  # empty = capture all units
 
         if config.flight_recorder is not None:
-            self._fr_deque = deque(maxlen=config.flight_recorder.pre_stall_depth)
+            self._fr_deque = deque(maxlen=config.flight_recorder.max_pre_capture_depth)
 
     # ------------------------------------------------------------------
     # Unit registration
@@ -146,10 +149,18 @@ class Telemeter:
         row: Dict[str, Any] = {"cycle": cycle, "unit_name": unit_name, **fields}
 
         if self._fr_deque is not None and not self._fr_active:
-            # Pre-trigger: rotate through the circular buffer
+            # Pre-trigger: rotate through the circular buffer (all units)
+            self._fr_deque.append(row)
+        elif self._fr_active and self._is_unit_captured(unit_name):
+            # Post-trigger capture window: only route captured units to main buffer
+            self._trace_buffer.append(row)
+            if len(self._trace_buffer) >= self.config.buffer_limit:
+                self.flush_traces()
+        elif self._fr_deque is not None:
+            # Post-trigger window but this unit is not in capture_units: keep rotating
             self._fr_deque.append(row)
         else:
-            # Active tracing: straight to the main buffer
+            # No flight recorder configured: straight to main buffer
             self._trace_buffer.append(row)
             if len(self._trace_buffer) >= self.config.buffer_limit:
                 self.flush_traces()
@@ -158,34 +169,66 @@ class Telemeter:
     # Flight recorder
     # ------------------------------------------------------------------
 
-    def trigger_flight_recorder(self, unit_name: str, cycle: int) -> None:
+    def _is_unit_captured(self, unit_name: str) -> bool:
+        """Return True if unit_name should be routed to the main buffer
+        during an active post-trigger capture window.
+        Empty _active_capture_units means all units are captured."""
+        return not self._active_capture_units or unit_name in self._active_capture_units
+
+    def check_triggers(self, unit_name: str, cycle: int, **fields: Any) -> None:
         """
-        Fire the flight-recorder trigger from the named unit.
+        Evaluate all registered TriggerConfigs against the provided fields.
 
-        If the unit is in PerfConfig.flight_recorder.watched_units (or that
-        set is empty, meaning all units are watched), this commits the
-        pre-trigger deque to the main buffer and enters post-trigger capture
-        for `post_stall_cycles` cycles.
+        Call this once per tick() after record_trace(), passing the same
+        signal kwargs.  Any matching trigger commits the pre-capture deque
+        and starts (or extends) the post-capture window.
 
-        Calling this while already in post-trigger mode resets the countdown
-        (re-triggers), ensuring back-to-back stalls are fully captured.
+        If multiple triggers fire simultaneously, the longest
+        post_capture_cycles window takes effect.
+
+        Parameters
+        ----------
+        unit_name : Name of the emitting unit.
+        cycle     : Current simulation cycle.
+        **fields  : Signal values to evaluate against trigger conditions
+                    (e.g. is_stalled=True, cache_miss=True).
         """
         fr_cfg = self.config.flight_recorder
-        if fr_cfg is None:
+        if fr_cfg is None or not fr_cfg.triggers:
             return
 
-        # Check whether this unit is watched
-        if fr_cfg.watched_units and unit_name not in fr_cfg.watched_units:
-            return
+        longest_post = 0
+        fired_capture_units: Set[str] = set()
+        capture_all = False
 
-        # Commit pre-trigger buffer to main buffer
-        if self._fr_deque:
-            self._trace_buffer.extend(self._fr_deque)
-            self._fr_deque.clear()
+        for trigger in fr_cfg.triggers:
+            if trigger.matches(unit_name, fields):
+                # Filter the deque to only rows from this trigger's capture_units
+                if self._fr_deque:
+                    rows_to_commit = [
+                        r for r in self._fr_deque
+                        if not trigger.capture_units
+                        or r["unit_name"] in trigger.capture_units
+                    ]
+                    self._trace_buffer.extend(rows_to_commit)
+                    self._fr_deque.clear()
+                if not trigger.capture_units:
+                    capture_all = True
+                else:
+                    fired_capture_units.update(trigger.capture_units)
+                if trigger.post_capture_cycles > longest_post:
+                    longest_post = trigger.post_capture_cycles
 
-        # Enter / reset post-trigger capture window
-        self._fr_active = True
-        self._fr_post_cycles_remaining = fr_cfg.post_stall_cycles
+        if longest_post > 0:
+            self._fr_active = True
+            # Union capture_units across all fired triggers this cycle;
+            # if any trigger captures all, the union is all.
+            if not capture_all:
+                self._active_capture_units.update(fired_capture_units)
+            else:
+                self._active_capture_units.clear()  # empty = all
+            if longest_post > self._fr_post_cycles_remaining:
+                self._fr_post_cycles_remaining = longest_post
 
     def advance_flight_recorder(self) -> None:
         """
@@ -199,6 +242,7 @@ class Telemeter:
             self._fr_post_cycles_remaining -= 1
             if self._fr_post_cycles_remaining == 0:
                 self._fr_active = False
+                self._active_capture_units.clear()
 
     # ------------------------------------------------------------------
     # I/O
