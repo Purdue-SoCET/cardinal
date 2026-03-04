@@ -26,7 +26,7 @@ class PredicateRegFile():
 
         # 2D structure: warp -> predicate -> [bits per thread]
         self.reg_file = [
-            [[[False] * self.num_threads, [True] * self.num_threads]
+            [[[True] * self.num_threads]
               for _ in range(self.num_preds_per_warp)]
             for _ in range(num_warps)
         ]

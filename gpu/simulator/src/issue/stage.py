@@ -292,3 +292,4 @@ class IssueStage(Stage):
             self.iBuffer[given][tail] = inst
             self.iBufferCapacity[given] += 1
         # else: upstream should stall/retry
+

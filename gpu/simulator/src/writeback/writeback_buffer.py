@@ -206,7 +206,7 @@ class WritebackBuffer:
                     continue
 
                 for i in range(32):
-                    values[bank].wdat[i] = None if values[bank].predicate[i].bin == "0" else values[bank].wdat[i]
+                    values[bank].wdat[i] = None if values[bank].predicate[i].bin == '0' else values[bank].wdat[i]
 
         return values
 

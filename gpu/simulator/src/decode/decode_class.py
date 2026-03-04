@@ -155,7 +155,7 @@ class DecodeStage(Stage):
         # Jump operations
         if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
             for fu_name in self.fust.keys():
-                if "Jump" in fu_name or "jump" in fu_name:
+                if "Branch" in fu_name or "branch" in fu_name:
                     return fu_name
                 
         if isinstance(op, H_Op) and op == H_Op.HALT:
@@ -290,9 +290,6 @@ class DecodeStage(Stage):
         if is_C:
             inst.num_operands = 0
 
-        if is_J:
-            inst.num_operands = 0
-
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
         if is_R or is_I or is_F or is_S or is_U or is_B or is_C:
@@ -314,7 +311,7 @@ class DecodeStage(Stage):
         elif is_U:
             inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
-            imm = ((raw >> 13) & 0xFFF) << 1
+            imm = (raw >> 13) & 0xFFF
             inst.imm = Bits(uint=imm, length=17)
         elif is_P:
             inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
@@ -391,7 +388,7 @@ class DecodeStage(Stage):
             ]
             # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
             # without having to modify other stages to check for both an active mask and a predicate mask separately
-        if is_H or is_J:
+        if is_H:
             inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
 
         # Initialize wdat list for result storage (32 threads per warp)
