@@ -5,6 +5,7 @@ from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
 from bitstring import Bits
+from gpu.common.custom_enums_multi import H_Op, I_Op
 from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
 from simulator.scheduler.csrtable import CsrTable
 import math
@@ -74,7 +75,7 @@ class SchedulerStage(Stage):
         
         # check all my things in the issue
         if issue_ctrl is not None:
-            for ibuffer in range(len(issue_ctrl)):
+            for ibuffer in range(self.num_groups):
                 if self.warp_table[ibuffer].state != WarpState.BARRIER and self.warp_table[ibuffer].state != WarpState.HALT:
                     # i buffer full, stop issuing
                     if issue_ctrl[ibuffer] == 1:
@@ -185,6 +186,8 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = True
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
+                    if instr.pc.uint == 4112:
+                        print("DEBUG")
                     # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return 
