@@ -218,14 +218,6 @@ class WritebackBuffer:
 
         for latch in self.behind_latches.values():
             in_data = latch.snoop()
-            active_threads = 0
-            for i in range(32):
-                if in_data is not None and in_data.predicate[i].bin == '1':
-                    active_threads += 1
-            if active_threads == 0:
-                # No active threads, just pop to clear latch
-                latch.pop()
-                continue
             if in_data is None:
                 # No instruction, just pop to clear latch
                 latch.pop()

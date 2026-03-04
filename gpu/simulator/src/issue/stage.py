@@ -85,6 +85,9 @@ class IssueStage(Stage):
         """
         inst_in: Optional[Instruction] = None
         input_data = self.behind_latch.pop()
+        if input_data is not None and isinstance(input_data, Instruction):
+            if input_data.pc.uint == 4112:
+                print("DEBUG")
         # print(f"[Issue] Received instruction: {input_data}")
         # dispatched_inst: Optional[Instruction] = None
         FU_stall_issue: bool = False
