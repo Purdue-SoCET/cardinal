@@ -10,7 +10,26 @@ Typical usage
         enabled_units   = {"ALU_Int_0", "ALU_Float_0", "L1_Cache"},
         trace_range     = (1000, 5000),
         buffer_limit    = 100_000,
-        flight_recorder = FlightRecorderConfig(pre_stall_depth=64, post_stall_cycles=32),
+        flight_recorder = FlightRecorderConfig(
+            triggers=[
+                TriggerConfig(
+                    field="is_stalled",
+                    operator=TriggerOperator.EQ,
+                    value=True,
+                    watched_units={"ALU_Int_0", "ALU_Float_0"},
+                    pre_capture_depth=64,
+                    post_capture_cycles=32,
+                ),
+                TriggerConfig(
+                    field="cache_miss",
+                    operator=TriggerOperator.EQ,
+                    value=True,
+                    watched_units={"L1_Cache"},
+                    pre_capture_depth=16,
+                    post_capture_cycles=8,
+                ),
+            ]
+        ),
     )
     telemeter = Telemeter(config=config, output_dir="results/run_0")
 """
@@ -18,30 +37,110 @@ Typical usage
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Set, Tuple
+from enum import Enum, auto
+from typing import Any, List, Optional, Set, Tuple
+
+
+class TriggerOperator(Enum):
+    """Comparison operator used to evaluate a trigger condition."""
+    EQ  = auto()   # field == value
+    NE  = auto()   # field != value
+    GT  = auto()   # field >  value
+    GTE = auto()   # field >= value
+    LT  = auto()   # field <  value
+    LTE = auto()   # field <= value
+
+
+@dataclass
+class TriggerConfig:
+    """
+    A single named trigger condition for the flight recorder.
+
+    When `field` in a record_trace() call satisfies `operator(value)` and
+    the emitting unit is in `watched_units` (or watched_units is empty),
+    the flight recorder fires: the pre-capture deque is committed and the
+    next `post_capture_cycles` cycles are captured into the main buffer.
+
+    Attributes
+    ----------
+    field              : The kwargs field name to watch (e.g. "is_stalled",
+                         "cache_miss", "buffer_occupancy").
+    operator           : TriggerOperator comparison to apply.
+    value              : Right-hand side of the comparison.
+    watched_units     : Restrict triggers to this set of unit names.
+                        Empty set (default) means *any* unit can trigger.
+    capture_units     : Units whose trace rows should be captured in the
+                        pre and post windows when this trigger fires.
+                        Empty set (default) means capture *all* units.
+    pre_capture_depth  : Size of the circular look-back buffer for this
+                         trigger.  Overrides FlightRecorderConfig default.
+    post_capture_cycles: Cycles to capture after the trigger fires.
+                         Overrides FlightRecorderConfig default.
+    name               : Optional human-readable label (used in trace rows).
+    """
+    field: str
+    operator: TriggerOperator = TriggerOperator.EQ
+    value: Any = True
+    watched_units: Set[str] = field(default_factory=set)
+    capture_units: Set[str] = field(default_factory=set)
+    pre_capture_depth: int = 64
+    post_capture_cycles: int = 32
+    name: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            self.name = f"{self.field}_{self.operator.name}_{self.value}"
+
+    def is_unit_watched(self, unit_name: str) -> bool:
+        """Return True if this unit can fire the trigger."""
+        return not self.watched_units or unit_name in self.watched_units
+
+    def evaluate(self, field_value: Any) -> bool:
+        """Evaluate the condition against a runtime field value."""
+        match self.operator:
+            case TriggerOperator.EQ:  return field_value == self.value
+            case TriggerOperator.NE:  return field_value != self.value
+            case TriggerOperator.GT:  return field_value >  self.value
+            case TriggerOperator.GTE: return field_value >= self.value
+            case TriggerOperator.LT:  return field_value <  self.value
+            case TriggerOperator.LTE: return field_value <= self.value
+        return False
+
+    def matches(self, unit_name: str, fields: dict[str, Any]) -> bool:
+        """
+        Return True if this trigger should fire given the emitting unit
+        and the kwargs dict from record_trace().
+        """
+        return (
+            self.is_unit_watched(unit_name)
+            and self.field in fields
+            and self.evaluate(fields[self.field])
+        )
 
 
 @dataclass
 class FlightRecorderConfig:
     """
-    Configuration for the flight-recorder (triggered tracing) feature.
+    Container for one or more TriggerConfig instances.
 
-    When a stall trigger fires on any watched unit, the circular pre-stall
-    buffer is committed to the main trace buffer together with the next
-    post_stall_cycles cycles of activity.
+    Any trigger firing commits the shared pre-capture deque and begins
+    the post-capture window for that trigger's post_capture_cycles.
+    If multiple triggers fire simultaneously, the longest post-capture
+    window wins.
+
+    The shared pre-capture deque depth is automatically set to the
+    maximum pre_capture_depth across all triggers.
 
     Attributes
     ----------
-    pre_stall_depth   : Number of cycles to retain in the circular buffer
-                        before a trigger event (the "look-back" window).
-    post_stall_cycles : Number of cycles to continue capturing after a
-                        trigger event (the "look-ahead" window).
-    watched_units     : Restrict triggers to this set of unit names.
-                        Empty set (default) means *any* unit can trigger.
+    triggers : List of TriggerConfig instances to evaluate each cycle.
     """
-    pre_stall_depth: int = 64
-    post_stall_cycles: int = 32
-    watched_units: Set[str] = field(default_factory=set)
+    triggers: List[TriggerConfig] = field(default_factory=list)
+
+    @property
+    def max_pre_capture_depth(self) -> int:
+        """Shared deque depth — max pre_capture_depth across all triggers."""
+        return max((t.pre_capture_depth for t in self.triggers), default=64)
 
 
 @dataclass
