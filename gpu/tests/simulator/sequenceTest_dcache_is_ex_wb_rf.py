@@ -257,6 +257,8 @@ scheduler_ldst_forward = ForwardingIF(name="Scheduler - Load/Store Unit Forwardi
 ldst_scheduler_forward = ForwardingIF(name="Load/Store Unit - Scheduler Forwarding")
 branch_scheduler_forward = ForwardingIF(name="Branch - Scheduler Forwarding")
 decode_issue_if = LatchIF("Decode-Issue Latch")
+scheduler_writeback_if= ForwardingIF(name="Scheduler - Writeback Forwarding")
+forwarding_ifs_write = {'Writeback_Scheduler': scheduler_writeback_if}
 issue_scheduler_forward = ForwardingIF(name="Issue - Scheduler Forwarding")
 decode_issue_forward = ForwardingIF(name="Decode - Issue Forwarding")
 
@@ -312,6 +314,7 @@ def test_all_operations():
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
         pred_reg_file=prf,
+        forward_ifs_write=forwarding_ifs_write,
         fsu_names=list(fust.keys())
     )
 
