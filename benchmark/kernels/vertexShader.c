@@ -17,7 +17,7 @@ void kernel_vertexShader(void* arg)
     int i = blockIdx * blockDim + threadIdx;
     #endif
 
-    if(i > 1023) return;
+    if(i >= args->num_verts) return;
 
     /****** ThreeD Rotation ******/
     // assuming radian
