@@ -19,42 +19,53 @@ class Mem:
 
         with p.open("r", encoding="utf-8") as f:
             for line_no, raw in enumerate(f, start=1):
+
                 for marker in ("//", "#"):
                     i = raw.find(marker)
                     if i != -1:
                         raw = raw[:i]
 
-                bits = raw.strip().replace("_", "")
-                if not bits:
+                line = raw.strip().replace("_", "")
+                if not line:
                     continue
 
-                if self.format == "hex":
-                    if len(bits) != 8:
-                        raise ValueError(f"Line {line_no}: expected 8 hex chars, got {bits!r}")
-                    word = int(bits, 16)
-                elif self.format == "bin":
-                    if len(bits) != 32:
-                        raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
-                    word = int(bits, 2)
-                else:
-                    raise ValueError("Unknown format type (use 'hex' or 'bin')")
+                parts = line.split()
 
-                if endianness == "little":
-                    b0 = (word >> 0) & 0xFF
-                    b1 = (word >> 8) & 0xFF
-                    b2 = (word >> 16) & 0xFF
-                    b3 = (word >> 24) & 0xFF
+                if len(parts) != 2:
+                    raise ValueError(
+                        f"Line {line_no}: expected 'addr data' format"
+                    )
+
+                addr = int(parts[0], 0)
+
+                bits = parts[1]
+
+                if self.format == "hex":
+                    word = int(bits, 16)
+
+                elif self.format == "bin":
+
+                    if len(bits) != 32:
+                        raise ValueError(
+                            f"Line {line_no}: expected 32 bits, got {bits}"
+                        )
+
+                    word = int(bits, 2)
+
                 else:
-                    b3 = (word >> 0) & 0xFF
-                    b2 = (word >> 8) & 0xFF
-                    b1 = (word >> 16) & 0xFF
-                    b0 = (word >> 24) & 0xFF
+                    raise ValueError("Unknown format")
+
+                # little endian write
+                b0 = (word >> 0) & 0xFF
+                b1 = (word >> 8) & 0xFF
+                b2 = (word >> 16) & 0xFF
+                b3 = (word >> 24) & 0xFF
 
                 self.memory[addr + 0] = b0
                 self.memory[addr + 1] = b1
                 self.memory[addr + 2] = b2
                 self.memory[addr + 3] = b3
-                addr += 4
+
         atexit.register(self.dump_on_exit)
 
     def read(self, addr: int, size: int = 4) -> Bits:

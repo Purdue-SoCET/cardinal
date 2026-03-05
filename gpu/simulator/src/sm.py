@@ -218,7 +218,7 @@ class SM:
             name="Decode Stage",
             behind_latch=self.icache_decode_if,
             ahead_latch=self.decode_issue_if,
-            prf=self.prf_config,
+            prf=self.prf,
             fust=self.fust,
             csr_table=self.csr_table,
             kernel_base_ptrs=self.kernel_base_ptrs,
@@ -245,19 +245,16 @@ class SM:
         
         self.wb_config.validate_config(fsu_names=list(self.fust.keys()))
 
-        if self.SMConfig.rf_config is None:
-            self.regfile = RegisterFile()
-            self.rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=self.regfile)
-        else:
-            self.rf_config = self.SMConfig.rf_config
-        
+        self.regfile = RegisterFile()
+        self.rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=self.regfile)
+
         self.writeback = WritebackStage.create_pipeline_stage(
             wb_config=self.wb_config,
             rf_config=self.rf_config,
             pred_rf_config=self.prf_config,
             ex_stage_ahead_latches=self.execute.ahead_latches,
-            reg_file=self.rf_config,
-            pred_reg_file=self.prf_config,
+            reg_file=self.regfile,
+            pred_reg_file=self.prf,
             forward_ifs_write=self.scheduler.forward_ifs_read,
             fsu_names=list(self.fust.keys())
         )
@@ -290,7 +287,7 @@ class SM:
                     # nothing second is being indexed
                     self.prf.reg_file[warp][pred] = [True] * 32  # all 32 threads active
         
-        self.tbs_ws_if.push([0, 1024, Bits(uint=self.SMConfig.mem_start_pc, length=32)])        # tbs_ws_if.push([0, 1024, START_PC])
+        self.tbs_ws_if.push([0, 1024, Bits(uint=self.SMConfig.mem_start_pc, length=32).int])        # tbs_ws_if.push([0, 1024, START_PC])
 
             # Bootstrap forwarding IFs so the scheduler never sees None on cycle 0
         filler_decode  = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}

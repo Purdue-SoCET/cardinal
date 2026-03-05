@@ -198,7 +198,7 @@ class DecodeStage(Stage):
             inst = self.behind_latch.pop()
 
         raw_bits = inst.packet
-        # print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
+        print(f"[Decode]: Received Raw Instruction Data: {int.from_bytes(raw_bits, 'little'):08x}")
         # Make the bytes explicit (adapt depending on your Bits type)
         raw_bytes = raw_bits.bytes if hasattr(raw_bits, "bytes") else bytes(raw_bits)
 

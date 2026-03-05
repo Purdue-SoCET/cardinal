@@ -118,12 +118,12 @@ class ICacheStage(Stage):
 
             # still pending
             else:
-                # print(f"[I$] waiting on memory")
+                print(f"[I$] waiting on memory")
                 self._send_valid(False, False, 0)
 
                 if self.req_latched:
                     if self.mem_req_if.ready_for_push():
-                        # print("[I$] Memrequest ACCEPTED by Memory")
+                        print("[I$] Memrequest ACCEPTED by Memory")
                         self.mem_req_if.push(self.req)
                         self.req_latched = False
 
@@ -162,11 +162,11 @@ class ICacheStage(Stage):
                     }
 
                     if self.mem_req_if.ready_for_push():
-                        # print("[I$] Memrequest ACCEPTED by Memory")
+                        print("[I$] Memrequest ACCEPTED by Memory")
                         self.mem_req_if.push(self.req)
                         self.req_latched = False
                     else:
-                        # print("[I$] Memrequest STALLED due tobusy memory")
+                        print("[I$] Memrequest STALLED due tobusy memory")
                         self.req_latched = True
 
             # if scheduler isnt fetching and if theres no pending memory request

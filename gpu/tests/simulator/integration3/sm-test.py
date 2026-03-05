@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+import math
 
 from bitstring import Bits
 
@@ -11,7 +12,9 @@ FILE_ROOT = Path(__file__).resolve().parent
 GPU_SIM_ROOT = Path(__file__).resolve().parents[3]
 sys.path.append(str(GPU_SIM_ROOT))
 
+from config_loader import load_sm_config, initialize_memory, initialize_register_file
 from simulator.sm import SM, SMConfig
+from simulator.issue.regfile import RegisterFile
 
 
 # ==============================================================================
@@ -20,11 +23,13 @@ from simulator.sm import SM, SMConfig
 
 def load_program(file_path: Path, fmt: str = "bin") -> List[int]:
 
-    words: List[int] = []
+    program = []
 
     with file_path.open("r") as fh:
+
         for line_no, raw in enumerate(fh, start=1):
 
+            # strip comments
             for marker in ("//", "#"):
                 idx = raw.find(marker)
                 if idx != -1:
@@ -34,69 +39,186 @@ def load_program(file_path: Path, fmt: str = "bin") -> List[int]:
             if not line:
                 continue
 
+            parts = line.split()
+
+            if len(parts) != 2:
+                raise ValueError(
+                    f"Line {line_no}: expected format 'addr data'"
+                )
+
+            addr_str, data_str = parts
+
+            addr = int(addr_str, 0)
+
+            if addr % 4 != 0:
+                raise ValueError(
+                    f"Line {line_no}: address {addr:#x} not word aligned"
+                )
+
             if fmt == "bin":
 
-                if len(line) != 32:
-                    raise ValueError(f"line {line_no} invalid binary")
+                if len(data_str) != 32:
+                    raise ValueError(
+                        f"Line {line_no}: expected 32-bit binary"
+                    )
 
-                words.append(int(line, 2))
+                word = int(data_str, 2)
 
             elif fmt == "hex":
 
-                parts = line.split()
-
-                if len(parts) == 2:
-                    words.append(int(parts[1], 16) & 0xFFFFFFFF)
-
-                elif len(parts) == 1:
-                    words.append(int(parts[0], 16) & 0xFFFFFFFF)
-
-                else:
-                    raise ValueError(f"line {line_no} invalid")
+                word = int(data_str, 16)
 
             else:
                 raise ValueError("format must be bin or hex")
 
+            program.append((addr, word & 0xFFFFFFFF))
+
+    # --------------------------------------------------
+    # Sort by address so pipeline executes correctly
+    # --------------------------------------------------
+
+    program.sort(key=lambda x: x[0])
+
+    words = [w for _, w in program]
+
     return words
+
+# ==============================================================================
+# Register-file comparison
+# ==============================================================================
+
+def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):
+
+    mismatches = []
+
+    if reg_list is None:
+        reg_range = range(pipeline_rf.regs_per_warp)
+    else:
+        reg_range = reg_list
+
+    for reg_num in reg_range:
+
+        for thread_id in range(pipeline_rf.threads_per_warp):
+
+            pipeline_val = pipeline_rf.read_thread_gran(
+                warp_id=warp_id,
+                src_operand=Bits(uint=reg_num, length=32),
+                thread_id=thread_id,
+            )
+
+            golden_val = golden_rf.read_thread_gran(
+                warp_id=warp_id,
+                src_operand=Bits(uint=reg_num, length=32),
+                thread_id=thread_id,
+            )
+
+            if pipeline_val != golden_val:
+
+                mismatches.append({
+                    "reg": reg_num,
+                    "thread": thread_id,
+                    "pipeline": pipeline_val,
+                    "golden": golden_val
+                })
+
+    if verbose and mismatches:
+
+        print(f"\n❌ Found {len(mismatches)} mismatches:")
+
+        for m in mismatches:
+
+            print(
+                f"  Reg[{m['reg']}][{m['thread']}]: "
+                f"Pipe={m['pipeline'].uint if m['pipeline'] else None} "
+                f"Gold={m['golden'].uint if m['golden'] else None}"
+            )
+
+    return len(mismatches) == 0
+
+
+# ==============================================================================
+# Verification Wrapper
+# ==============================================================================
+
+def verify_register_files(pipeline_rf, golden_rf, warp_ids, regs_to_check=None):
+
+    all_passed = True
+
+    for warp_id in warp_ids:
+
+        passed = compare_register_files(
+            pipeline_rf=pipeline_rf,
+            golden_rf=golden_rf,
+            warp_id=warp_id,
+            reg_list=regs_to_check,
+            verbose=True
+        )
+
+        if passed:
+            print(f"  ✅ Warp {warp_id} PASSED")
+        else:
+            print(f"  ❌ Warp {warp_id} FAILED")
+            all_passed = False
+
+    if all_passed:
+        print("\n✅ SUCCESS: All warps passed.")
+    else:
+        print("\n❌ FAILURE: Register mismatches detected.")
+
+    return all_passed
+
+
+# ==============================================================================
+# Golden RF creation
+# ==============================================================================
+
+def create_golden_rf(reference_rf):
+
+    golden_rf = RegisterFile()
+
+    for warp in range(reference_rf.warps):
+
+        for reg in range(reference_rf.regs_per_warp):
+
+            values = []
+
+            for thread in range(reference_rf.threads_per_warp):
+
+                val = reference_rf.read_thread_gran(
+                    warp_id=warp,
+                    src_operand=Bits(uint=reg, length=32),
+                    thread_id=thread
+                )
+
+                values.append(val)
+
+            golden_rf.write_warp_gran(
+                warp_id=warp,
+                dest_operand=Bits(uint=reg, length=32),
+                data=values
+            )
+
+    return golden_rf
 
 
 # ==============================================================================
 # Runner
 # ==============================================================================
 
-def run_SM(program_file: Path, fmt: str):
+def run_SM():
 
-    sm_config = SMConfig(
-        sm_no=1,
-        test_file=program_file,
-        test_file_type=fmt,
-        num_warps=32,
-        num_preds=16,
-        threads_per_warp=32,
+    uninit_regfile_out = FILE_ROOT / "pipeline_regfile_uninitialized_state.txt"
+    init_regfile_out = FILE_ROOT / "pipeline_regfile_initialized_state.txt"
+    fin_regfile_out = FILE_ROOT / "pipeline_regfile_final_state.txt"
 
-        mem_start_pc=0x1000,
-        mem_lat=5,
-        mem_mod=None,
-        memc_policy="rr",
+    uninit_mem_out = FILE_ROOT / "pipeline_mem_uninitialized_state.txt"
+    init_mem_out = FILE_ROOT / "pipeline_mem_initialized_state.txt"
+    fin_mem_out = FILE_ROOT / "pipeline_mem_final_state.txt"
+    fin_prf_out = FILE_ROOT / "predicate_regfile_final_state.txt"
 
-        kern_init={"Kern_per_SM": 1, "Kern_ID": 9203930},
-
-        icache_config={
-            "cache_size": 32 * 1024,
-            "block_size": 4,
-            "associativity": 1
-        },
-
-        fu_config=None,
-        wb_config=None,
-        rf_config=None,
-        prf_rf_config=None,
-
-        custom_regfile_init=None,
-        custom_prf_init=None,
-
-        stage_order=None
-    )
+    sm_config = load_sm_config("configs/sm_config.yaml")
+    program_file = FILE_ROOT / sm_config.test_file
+    fmt = sm_config.test_file_type
 
     print("Loading program:", program_file)
 
@@ -106,8 +228,29 @@ def run_SM(program_file: Path, fmt: str):
 
     sm = SM(sm_config)
 
+    with open(uninit_regfile_out, "w") as f:
+        sm.regfile.dump(file=f)
+        print(f"Dumped uninitialized register file to {uninit_regfile_out}")
+
+    # initialize the register files
+    initialize_register_file(sm.regfile, "configs/reg_init.yaml")
+
+    with open(init_regfile_out, "w") as f:
+        sm.regfile.dump(file=f)
+        print(f"Dumped initialized register file to {init_regfile_out}")
+
+    # initialize memory; modifies fields in memory
+    sm.mem.dump(uninit_mem_out)
+
+    print(f"Dumped uninitialized mem file to {uninit_mem_out}")
+
+    initialize_memory(sm.mem, "configs/mem_init.yaml")
     cycles = len(words)
 
+    sm.mem.dump(init_mem_out)
+    print(f"Dumped initialized regiter file to {init_mem_out}")
+
+    input("Checked both?")
     print("Running pipeline for", cycles, "cycles")
 
     for _ in range(cycles):
@@ -120,44 +263,32 @@ def run_SM(program_file: Path, fmt: str):
     for _ in range(flush):
         sm.compute()
 
-    regfile_out = FILE_ROOT / "regfile_dump.txt"
-    prf_out = FILE_ROOT / "predicate_regfile_dump.txt"
-
-    with open(regfile_out, "w") as f:
+    with open(fin_regfile_out, "w") as f:
         sm.regfile.dump(file=f)
+        print(f"Dumped regfile final state to {fin_regfile_out}")
 
-    with open(prf_out, "w") as f:
+    with open(fin_prf_out, "w") as f:
         sm.prf.dump(file=f)
+        print(f"Dumped predicate rf final state to {fin_prf_out}")
+    
+    sm.mem.dump(fin_mem_out)
+    print(f"Dumped memory final state to {fin_mem_out}")
 
-    print("Dumped register files")
-
+    return sm.regfile
 
 # ==============================================================================
-# CLI
+# Main
 # ==============================================================================
-
-def _parse_args():
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "program",
-        nargs="?",
-        default=str(FILE_ROOT / "test_binaries/predicated_halt.bin")
-    )
-
-    parser.add_argument(
-        "--fmt",
-        "-f",
-        default="bin",
-        choices=["bin", "hex"]
-    )
-
-    return parser.parse_args()
-
 
 if __name__ == "__main__":
 
-    args = _parse_args()
+    pipeline_rf = run_SM()
 
-    run_SM(Path(args.program), args.fmt)
+    # Example golden model (clone current state)
+    golden_rf = create_golden_rf(pipeline_rf)
+
+    verify_register_files(
+        pipeline_rf=pipeline_rf,
+        golden_rf=golden_rf,
+        warp_ids=list(range(pipeline_rf.warps))
+    )

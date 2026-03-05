@@ -1,0 +1,16 @@
+memory:
+
+  - address: 0x000
+    value: 40
+
+  - address: 0x004
+    value: 0xCAFEBABE
+
+  - address: 0x008
+    value: 1
+
+  - address: 0x00C
+    value: 1
+
+  - address: 0x0010
+    value: 2

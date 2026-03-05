@@ -1,0 +1,23 @@
+sm:
+  sm_no: 1
+  num_warps: 32
+  num_preds: 16
+  threads_per_warp: 32
+
+program:
+  file: test_binaries/lw.bin
+  format: bin
+
+memory:
+  start_pc: 0x1000
+  latency: 5
+  policy: rr
+
+kernel:
+  Kern_per_SM: 1
+  Kern_ID: 9203930
+
+icache:
+  cache_size: 32768
+  block_size: 4
+  associativity: 1

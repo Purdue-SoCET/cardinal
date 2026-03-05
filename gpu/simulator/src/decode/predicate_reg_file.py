@@ -38,7 +38,7 @@ class PredicateRegFile():
         if (prf_rd_en):
             # print("[PRF] Reading PRF: ", prf_rd_wsel, prf_rd_psel, prf_neg)
             # print(f"[PRF] Got: {self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]}")
-            return self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]
+            return self.reg_file[prf_rd_wsel][prf_rd_psel] # no need to select the true/false
         else: 
             return None
     
@@ -54,26 +54,15 @@ class PredicateRegFile():
             else:
                 bits = prf_wr_data  # assume already a list of bools
 
-            # Store positive version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][0] = bits
-            # Store negated version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][1] = [not b for b in bits]
+            # Store one version
+            self.reg_file[prf_wr_wsel][prf_wr_psel] = bits
 
     def write_predicate_thread_gran(self, prf_wr_en: int, prf_wr_wsel: int, prf_wr_psel: int, prf_wr_tsel, prf_wr_data):
         # Thread granularity (prf_wr_data must be a single bool representing the predicate value for a single thread)
         # the write will autopopulate the negated version in the table)
         if (prf_wr_en):
-                # Convert int to bit array if needed
-            # if isinstance(prf_wr_data, int):
-            #     # bits = [(prf_wr_data >> i) & 1 == 1 for i in range(self.num_threads)]
-            #     bits = [(prf_wr_data >> i) & 1 for i in range(self.num_threads)]
-            # else:
-            #     bits = prf_wr_data  # assume already a list of bools
-
-            # Store positive version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][0][prf_wr_tsel] = bool(prf_wr_data.uint)
-            # Store negated version
-            self.reg_file[prf_wr_wsel][prf_wr_psel][1][prf_wr_tsel] = not bool(prf_wr_data.uint)
+            # Store just one version
+            self.reg_file[prf_wr_wsel][prf_wr_psel][prf_wr_tsel] = bool(prf_wr_data.uint)
 
     def dump(self, file=None):
         """
@@ -96,10 +85,10 @@ class PredicateRegFile():
 
             # Check if warp is default state
             for p in range(self.num_preds_per_warp):
-                pos = self.reg_file[w][p][0]
-                neg = self.reg_file[w][p][1]
+                entry = self.reg_file[w][p]
 
-                if not (all(pos) and not any(neg)):
+                # Default = all threads True
+                if not all(entry):
                     warp_is_default = False
                     break
 
@@ -113,18 +102,12 @@ class PredicateRegFile():
 
             for p in range(self.num_preds_per_warp):
 
-                pos = self.reg_file[w][p][0]
-                neg = self.reg_file[w][p][1]
+                entry = self.reg_file[w][p]
 
-                print(f"  P{p:<2} (POS):", file=out)
-                for i in range(0, self.num_threads, 8):
-                    chunk = pos[i:i+8]
-                    formatted = [f"{int(b):>3}" for b in chunk]
-                    print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
+                print(f"  P{p:<2}:", file=out)
 
-                print(f"  P{p:<2} (NEG):", file=out)
                 for i in range(0, self.num_threads, 8):
-                    chunk = neg[i:i+8]
+                    chunk = entry[i:i+8]
                     formatted = [f"{int(b):>3}" for b in chunk]
                     print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
 
