@@ -78,7 +78,7 @@ class DecodeStage(Stage):
         
         # Integer ALU operations (ADD, SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA, etc.)
         if isinstance(op, R_Op) and op in [R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, R_Op.XOR, 
-                                            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA]:
+                                            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Alu_int_"):
                     return fu_name
@@ -105,8 +105,10 @@ class DecodeStage(Stage):
         # Floating-point add/sub
         if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF]:
             for fu_name in self.fust.keys():
-                if fu_name.startswith("AddSub_float_"):
+                if fu_name.startswith("Alu_float_"):
                     return fu_name
+
+        # Floating-point slt/sge
         
         # Floating-point multiplication
         if isinstance(op, R_Op) and op == R_Op.MULF:
@@ -292,7 +294,7 @@ class DecodeStage(Stage):
 
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
-        if is_R or is_I or is_F or is_S or is_U or is_B or is_C:
+        if is_R or is_I or is_F or is_S or is_U or is_B or is_C or is_H:
             inst.src_pred = (raw >> 25) & 0x1F
         else:
             inst.src_pred = None
@@ -315,9 +317,9 @@ class DecodeStage(Stage):
             inst.imm = Bits(uint=imm, length=17)
         elif is_P:
             inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
-        elif is_H:
-            # print(f"[Decode] Received HALT")
-            inst.imm = Bits(uint=0x7FFFFF, length=23)
+        # elif is_H:
+        #     # print(f"[Decode] Received HALT")
+        #     inst.imm = Bits(uint=0x7FFFFF, length=23)
         else:
             inst.imm = Bits(uint=0x0, length=6)
 
@@ -386,10 +388,11 @@ class DecodeStage(Stage):
                 Bits(uint=(p.uint if a else 0), length=1)
                 for a, p in zip(inst.active_mask, inst.predicate)
             ]
+            # inst.predicate = Bits(uint=(inst.predicate.uint & inst.active_mask.uint), length=32)
             # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
             # without having to modify other stages to check for both an active mask and a predicate mask separately
-        if is_H:
-            inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
+        # if is_H or is_J:
+        #     inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
 
         # Initialize wdat list for result storage (32 threads per warp)
         if not inst.wdat or len(inst.wdat) == 0:
@@ -407,8 +410,9 @@ class DecodeStage(Stage):
                 inst.target_bank = 1
                 inst.target_regfile = "regfile"
 
-        # if is_H:
+        # if is_B and inst.warp_id == 0:
         #     print(inst)
+        #     print()
 
         self._push_instruction_to_next_stage(inst)
         return 

@@ -48,7 +48,7 @@ class Branch(FunctionalSubUnit):
         # FIX: initializng w-dat predicabtee becaue it yelling
         instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
             match instr.opcode:
                 case B_Op.BEQ:
@@ -245,18 +245,19 @@ class Alu(ArithmeticSubUnit):
         int: [
             R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, 
             R_Op.XOR, R_Op.SLT, R_Op.SLTU, R_Op.SLL, 
-            R_Op.SRL, R_Op.SRA, I_Op.SUBI, I_Op.ADDI,
-            I_Op.ORI, I_Op.XORI, I_Op.SLTI, I_Op.SLTIU,
-            I_Op.SLLI, I_Op.SRLI, I_Op.SRAI, C_Op.CSRR      # added C_Op.CSRR here
+            R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU, 
+            I_Op.SUBI, I_Op.ADDI, I_Op.ORI, I_Op.XORI, 
+            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, 
+            I_Op.SRAI, C_Op.CSRR,
         ],
         float: [
-            # No floating-point operations supported in ALU
+            R_Op.ADDF, R_Op.SUBF, R_Op.SLTF, R_Op.SGEF,
         ]
     }
 
-    def __init__(self, latency: int, num: int, type_: type = int):
-        if type_ != int:
-            raise ValueError("ALU only supports integer operations.")
+    def __init__(self, latency: int, num: int, type_: type):
+        if type_ != int and type_ != float:
+            raise ValueError("ALU only supports integer and float operations.")
 
         super().__init__(latency=latency, num=num, type_=type_)
 
@@ -268,7 +269,7 @@ class Alu(ArithmeticSubUnit):
 
         if not isinstance(instr, Instruction):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
-        
+                                                                 
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             print(instr.opcode)
             print(self.type_)
@@ -277,14 +278,13 @@ class Alu(ArithmeticSubUnit):
 
         overflow_detected = False
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
-            
-            if self.type_ != int: 
-                raise ValueError("ALU only supports integer operations.")
 
             if isinstance(instr.opcode, C_Op):
                 a = instr.csr_value if instr.csr_param != 3 else instr.csr_value.uint
+            elif instr.opcode in self.SUPPORTED_OPS[float]:
+                a = instr.rdat1[i].float
             else:
                 a = instr.rdat1[i].int
             
@@ -292,121 +292,73 @@ class Alu(ArithmeticSubUnit):
                 b = instr.imm.int
             elif isinstance(instr.opcode, C_Op):
                 b = 0 if instr.csr_param != 0 else i
+            elif instr.opcode in self.SUPPORTED_OPS[float]:
+                b = instr.rdat2[i].float
             else:
                 b = instr.rdat2[i].int
 
             match instr.opcode:
                 # case R_Op.ADD | I_Op.ADDI:
-                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR:
+                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF:
                     result = a + b
-                    # if (instr.opcode == I_Op):
-                        # print(f"[EX: ADDI] {a} + {b} = ", result)
-                    # print(f"[EX: ADD] {a} + {b} = ", result)
                     # Check for signed overflow
-                    if result > 2147483647 or result < -2147483648:
+                    if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI and (result > 2147483647 or result < -2147483648):
                         overflow_detected = True
-                case R_Op.SUB | I_Op.SUBI:
+                case R_Op.SUB | I_Op.SUBI | R_Op.SUBF:
                     result = a - b
-                    # print(f"[EX: SUB] {a} - {b} = ", result)
                     # Check for signed overflow
-                    if result > 2147483647 or result < -2147483648:
+                    if instr.opcode == R_Op.SUB and (result > 2147483647 or result < -2147483648):
                         overflow_detected = True
                 case R_Op.AND:
-                    # print(f"[EX: AND] {a} & {b} = ", a & b)
                     result = a & b
                 case R_Op.OR | I_Op.ORI:
-                    # print(f"[EX: OR] {a} | {b} = ", a | b)
                     result = a | b
                 case R_Op.XOR | I_Op.XORI:
-                    # print(f"[EX: XOR] {a} ^ {b} = ", a ^ b)
                     result = a ^ b
                 case R_Op.SLT | I_Op.SLTI:
-                    # print(f"[EX: SLT] {a} < {b} = ", int(a < b))
                     result = int(a < b)
+                case R_Op.SGE:
+                    result = not int(a < b)
+                case R_Op.SGEU:
+                    result = not int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))
                 case R_Op.SLTU | I_Op.SLTIU:
-                    # print(f"[EX: SLTU] {a} < {b} (unsigned) = ", int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF)))
                     result = int((a & 0xFFFFFFFF) < (b & 0xFFFFFFFF))
                 case R_Op.SLL | I_Op.SLLI:
                     result = a << b
-                    # print(f"[EX: SLL] {a} << {b} = ", result)
                     # Check for shift overflow (shift amount >= 32)
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRL | I_Op.SRLI:
                     result = (a % 0x100000000) >> b
-                    # print(f"[EX: SRL] {a} >> {b} (logical) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
                 case R_Op.SRA | I_Op.SRAI:
                     result = a >> b
-                    # print(f"[EX: SRA] {a} >> {b} (arithmetic) = ", result)
                     # Check for shift overflow
                     if b >= 32 or b < 0:
                         overflow_detected = True
+                case R_Op.SLTF:
+                    if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
+                        overflow_detected = True
+                    result = int(a < b)
+                case R_Op.SGEF:
+                    if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
+                        overflow_detected = True
+                    result = int(a >= b)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
-            
+                
             if self.type_ == int:
-                # Mask to 32 bits and store as unsigned, bitstring will handle conversion
                 instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
+            elif self.type_ == float:
+                instr.wdat[i] = Bits(length=32, float=result)
             else:
-                raise ValueError("ALU only supports integer operations.")
+                raise ValueError(f"Unsupported type '{self.type_}' in ALU compute.")
         
         if overflow_detected:
             self.perf_count.increment_overflow(instr.opcode)
 
-        if self.latency == 1:
-            self.single_cycle_latency_compute_tick()
-
-class AddSub(ArithmeticSubUnit):
-    SUPPORTED_OPS = {
-        float: [R_Op.ADDF, R_Op.SUBF],
-    }
-
-    def __init__(self, latency: int, num: int,  type_: type = float):
-        if type_ != float:
-            raise ValueError("AddSub only supports floating-point operations.")
-
-        super().__init__(latency=latency, type_=type_, num=num)
-
-    def compute(self):
-        # Use current_instr if pipeline is empty (latency=1), else use last queue entry
-        instr = self.pipeline.queue[-1]
-        if instr is None:
-            return
-
-        if not isinstance(instr, Instruction):
-            raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
-        
-        if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"AddSub does not support operation {instr.opcode}")
-
-        overflow_detected = False
-        for i in range(32):
-            if instr.predicate[i].bin == 0b0:
-                continue
-
-            a = instr.rdat1[i].float
-            b = instr.rdat2[i].float
-
-            match instr.opcode:
-                case R_Op.ADDF:
-                    result = a + b
-                case R_Op.SUBF:
-                    result = a - b
-                case _:
-                    raise ValueError(f"Unsupported operation {instr.opcode} in AddSub.")
-            
-            # Check for floating-point overflow/underflow (inf or -inf)
-            if math.isinf(result) or math.isnan(result):
-                overflow_detected = True
-            
-            instr.wdat[i] = Bits(length=32, float=result)
-        
-        if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
-        
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
@@ -435,7 +387,7 @@ class Mul(ArithmeticSubUnit):
 
         overflow_detected = False
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
 
             match instr.opcode:
@@ -446,8 +398,7 @@ class Mul(ArithmeticSubUnit):
                     # Check for signed overflow
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
-                    # print(f"[EX: MUL] {a} * {b} = ", result)
-                    instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
+                    instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
                 case R_Op.MULF:
                     a = instr.rdat1[i].float
                     b = instr.rdat2[i].float
@@ -455,7 +406,6 @@ class Mul(ArithmeticSubUnit):
                     # Check for floating-point overflow
                     if math.isinf(result) or math.isnan(result):
                         overflow_detected = True
-                    # print(f"[EX: MUL] {a} * {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in MUL.")
@@ -491,7 +441,7 @@ class Div(ArithmeticSubUnit):
 
         overflow_detected = False
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
                 
             match instr.opcode:
@@ -554,7 +504,7 @@ class Sqrt(ArithmeticSubUnit):
             raise ValueError(f"SQRT does not support operation {instr.opcode}")
 
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
 
             a = instr.rdat1[i].float
@@ -631,7 +581,7 @@ class Trig(ArithmeticSubUnit):
 
         overflow_detected = False
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
 
             a = instr.rdat1[i].float
@@ -682,7 +632,7 @@ class InvSqrt(ArithmeticSubUnit):
 
         overflow_detected = False
         for i in range(32):
-            if instr.predicate[i].bin == 0b0:
+            if instr.predicate[i].bin == "0":
                 continue
                 
             match instr.opcode:

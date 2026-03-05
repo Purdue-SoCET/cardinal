@@ -45,8 +45,9 @@ sys.path.append(str(GPU_SIM_ROOT))
 
 # ── simulator imports ──────────────────────────────────────────────────────────
 from gpu.common.custom_enums_multi import (
-    Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op, Op
+    Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op
 )
+from gpu.common.custom_enums import Op
 
 from simulator.latch_forward_stage import (
     LatchIF, ForwardingIF, Instruction, DecodeType
@@ -129,6 +130,7 @@ def load_program(file_path: Path, fmt: str = "bin") -> List[int]:
 
     return words
 
+
 def _find_opcode_enum(opcode7: int):
     """Return the enum member whose .value matches the 7-bit opcode, or None."""
     opcode_bits = Bits(uint=opcode7, length=7)
@@ -137,6 +139,7 @@ def _find_opcode_enum(opcode7: int):
             if member.value == opcode_bits:
                 return member
     return None
+
 
 def decode_word(raw: int) -> dict:
     """
@@ -497,7 +500,6 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
     branch_scheduler_fwif   = ForwardingIF(name="branch_forward_if")
     writeback_scheduler_fwif = ForwardingIF(name="Writeback_forward_if")
     decode_issue_fwif       = ForwardingIF(name="Decode_issue_fwif")
-    scheduler_ldst_fwif     = ForwardingIF(name="scheduler_ldst_fwif")
 
     mem = Mem(start_pc=START_PC, input_file=str(input_file), fmt=fmt)
 
@@ -528,8 +530,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
             "Branch_Scheduler":    branch_scheduler_fwif,
             "Writeback_Scheduler": writeback_scheduler_fwif,
         },
-        # forward_ifs_write=None,
-        forward_ifs_write={"Scheduler_LDST": scheduler_ldst_fwif},
+        forward_ifs_write=None,
         csrtable = csr_table,
         warp_count=WARP_COUNT,
     )
@@ -592,7 +593,6 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
         ex_stage_ahead_latches=ex_stage.ahead_latches,
         reg_file=pipeline_rf,
         pred_reg_file=prf,
-        forward_ifs_write=scheduler_stage.forward_ifs_read,
         fsu_names=list(fust.keys()),
     )
 
@@ -648,24 +648,6 @@ def tick_all(p: dict):
     p["scheduler"].compute()
 
 
-def initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads_per_warp, default=True):
-
-    if (default):
-        # ── initialise register files ─────────────────────────────────────────────
-        for warp_id in warp_ids:
-            test_vals = get_test_values(warp_id, threads_per_warp)
-            for reg_num, values in test_vals.items():
-                if reg_num >= 10:
-                    data = [Bits(float=v, length=32) for v in values]
-                else:
-                    data = [Bits(int=v,   length=32) for v in values]
-                pipeline_rf.write_warp_gran(warp_id=warp_id,
-                                            dest_operand=Bits(uint=reg_num, length=32),
-                                            data=data)
-                golden_rf.write_warp_gran(warp_id=warp_id,
-                                        dest_operand=Bits(uint=reg_num, length=32),
-                                        data=data)
-
 # ==============================================================================
 #  Test driver
 # ==============================================================================
@@ -673,26 +655,20 @@ def initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads_per_warp, defau
 def get_test_values(warp_id: int, threads_per_warp: int) -> dict:
     """Initial register values identical to sm-no-mem.py."""
     return {
-        # 1:  [0  + i + warp_id for i in range(threads_per_warp)],
-        # 2:  [5  + i + warp_id for i in range(threads_per_warp)],
-        # 3:  [3  for _ in range(threads_per_warp)],
-        # 4:  [2  for _ in range(threads_per_warp)],
-        # 5:  [-5 - i + warp_id for i in range(threads_per_warp)],
-        # 10: [10.5 + i * 0.5  + warp_id for i in range(threads_per_warp)],
-        # 11: [2.5  + i * 0.25 + warp_id for i in range(threads_per_warp)],
-        # 12: [1.57 for _ in range(threads_per_warp)],
-        # 13: [4.0  for _ in range(threads_per_warp)],
-        1: [31 - i for i in range(threads_per_warp)],
-        2: [i for i in range(threads_per_warp)],
-        8: [100 for i in range(threads_per_warp)],
-        9: [100 for i in range(threads_per_warp)],
+        1:  [0  + i + warp_id for i in range(threads_per_warp)],
+        2:  [5  + i + warp_id for i in range(threads_per_warp)],
+        3:  [3  for _ in range(threads_per_warp)],
+        4:  [2  for _ in range(threads_per_warp)],
+        5:  [-5 - i + warp_id for i in range(threads_per_warp)],
+        10: [10.5 + i * 0.5  + warp_id for i in range(threads_per_warp)],
+        11: [2.5  + i * 0.25 + warp_id for i in range(threads_per_warp)],
+        12: [1.57 for _ in range(threads_per_warp)],
+        13: [4.0  for _ in range(threads_per_warp)],
     }
 
 
 def run_test(
-    # program_file: Path = FILE_ROOT / "test.bin",
-    # program_file: Path = FILE_ROOT / "test_binaries/jump.bin",
-    program_file: Path = FILE_ROOT / "test_binaries/predicated_halt.bin",
+    program_file: Path = FILE_ROOT / "test.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -722,8 +698,21 @@ def run_test(
     # ── warp IDs under test ───────────────────────────────────────────────────
     warp_ids = list(range(WARP_COUNT + (1 if WARP_COUNT % 2 else 0)))
 
-    # these must be initialized differenly based on the test case 
-    initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads, default=True)
+    # ── initialise register files ─────────────────────────────────────────────
+    for warp_id in warp_ids:
+        test_vals = get_test_values(warp_id, threads)
+        for reg_num, values in test_vals.items():
+            if reg_num >= 10:
+                data = [Bits(float=v, length=32) for v in values]
+            else:
+                data = [Bits(int=v,   length=32) for v in values]
+            pipeline_rf.write_warp_gran(warp_id=warp_id,
+                                        dest_operand=Bits(uint=reg_num, length=32),
+                                        data=data)
+            golden_rf.write_warp_gran(warp_id=warp_id,
+                                      dest_operand=Bits(uint=reg_num, length=32),
+                                      data=data)
+
 
     # ── sanity-check: initial RF matches ─────────────────────────────────────
     print("\nVerifying initial register file state against golden model...")
@@ -792,7 +781,7 @@ def run_test(
     pipeline_out = FILE_ROOT / "pipeline_regfile_dump.txt"
     golden_out   = FILE_ROOT / "golden_regfile_dump.txt"
     prf_out     = FILE_ROOT / "predicate_regfile_dump.txt"
-
+    
     with open(pipeline_out, "w", encoding="utf-8") as f:
             pipeline_rf.dump(file=f)
     with open(golden_out, "w", encoding="utf-8") as f:
@@ -851,9 +840,7 @@ def _parse_args():
     parser.add_argument(
         "program",
         nargs="?",
-        # default=str(FILE_ROOT / "test.bin"),
-        # default=str(FILE_ROOT / "test_binaries/jump.bin"),
-        default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
+        default=str(FILE_ROOT / "test.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(
@@ -868,6 +855,7 @@ def _parse_args():
         help="Suppress per-warp progress output.",
     )
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args    = _parse_args()

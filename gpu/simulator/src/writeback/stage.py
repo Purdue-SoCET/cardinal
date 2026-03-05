@@ -5,10 +5,10 @@ from typing import Dict
 
 from aenum import Enum
 from bitstring import Bits
-from gpu.common.custom_enums_multi import H_Op
+from gpu.common.custom_enums_multi import H_Op, I_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
-from simulator.latch_forward_stage import Instruction, Stage, LatchIF
+from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF
 from simulator.writeback.writeback_buffer import WritebackBuffer
 from simulator.writeback.config import (
     WritebackBufferCount,
@@ -30,13 +30,15 @@ class WritebackStage(Stage):
         behind_latches: Dict[str, LatchIF], 
         reg_file: RegisterFile,
         pred_reg_file: PredicateRegFile,
+        forward_ifs_write: Dict[str, ForwardingIF] = None,
+        forward_ifs_read = None,
         fsu_names: list[str] = None
     ):
         super().__init__(name="Writeback_Stage")
         self.behind_latches = behind_latches
         self.ahead_latch = None
-        self.forward_ifs_read = None
-        self.forward_ifs_write = None
+        self.forward_ifs_read = forward_ifs_read
+        self.forward_ifs_write = forward_ifs_write
         self.values_to_writeback = {}
         self.total_banks = rf_config.num_banks + pred_rf_config.num_banks
         self.reg_file = reg_file
@@ -61,7 +63,7 @@ class WritebackStage(Stage):
     
     def tick(self) -> None:
         self._write_to_reg_file()
-        self._update_halt_mask()
+        self._update_halt_mask_and_decrement_counter()
         self.values_to_writeback = self.wb_buffer.tick()
         if self.values_to_writeback is not None and len(self.values_to_writeback) != self.total_banks:
             # print(f"Error: Expected {self.total_banks} banks, but got {len(self.values_to_writeback)}")
@@ -75,7 +77,8 @@ class WritebackStage(Stage):
     def send_output(self) -> None:
         raise NotImplementedError()
     
-    def _update_halt_mask(self):
+    def _update_halt_mask_and_decrement_counter(self):
+        data_to_scheduler = []
         for bank_name, instr in self.values_to_writeback.items():
             if instr is None:
                 continue
@@ -86,8 +89,13 @@ class WritebackStage(Stage):
             else:
                 new_mask = instr.active_mask
             
-            if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
-                self.forward_ifs_write["Writeback_Scheduler"].push({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask})
+            data_to_scheduler.append({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask})
+            
+
+        if self.forward_ifs_write is not None and "Writeback_Scheduler" in self.forward_ifs_write:
+            self.forward_ifs_write["Writeback_Scheduler"].push(data_to_scheduler)
+        else:
+            raise ValueError("Forward IF to Scheduler is not set up in WritebackStage.")
         
     def _write_to_reg_file(self):
         if self.values_to_writeback is None:
@@ -99,7 +107,7 @@ class WritebackStage(Stage):
                 continue
             
             for i in range(32):
-                if instr.predicate[i].bin == 0b0:
+                if instr.predicate[i].bin == "0":
                     continue
                 
                 if isinstance(instr.target_bank, int):
@@ -132,7 +140,7 @@ class WritebackStage(Stage):
                             prf_wr_wsel=instr.warp_id,
                             prf_wr_psel=instr.pred_dest,
                             prf_wr_tsel=i,
-                            prf_wr_data=(instr.wdat_pred)
+                            prf_wr_data=(instr.wdat_pred[i])
                         )
                     else:
                         # write to normal reg file
@@ -146,5 +154,24 @@ class WritebackStage(Stage):
                     raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")              
 
     @classmethod
-    def create_pipeline_stage(cls, wb_config: WritebackBufferConfig, rf_config: RegisterFileConfig, pred_rf_config: PredicateRegisterFileConfig, ex_stage_ahead_latches: Dict[str, LatchIF], reg_file: RegisterFile, pred_reg_file: PredicateRegFile, fsu_names: list[str]) -> WritebackStage:
-        return cls(wb_config=wb_config, rf_config=rf_config, pred_rf_config=pred_rf_config, behind_latches=ex_stage_ahead_latches, reg_file=reg_file, pred_reg_file=pred_reg_file, fsu_names=fsu_names)
+    def create_pipeline_stage(
+        cls, 
+        wb_config: WritebackBufferConfig, 
+        rf_config: RegisterFileConfig, 
+        pred_rf_config: PredicateRegisterFileConfig, 
+        ex_stage_ahead_latches: Dict[str, LatchIF], 
+        reg_file: RegisterFile, 
+        pred_reg_file: PredicateRegFile, 
+        forward_ifs_write: Dict[str, ForwardingIF],
+        fsu_names: list[str]
+    ) -> WritebackStage:
+        return cls(
+            wb_config=wb_config, 
+            rf_config=rf_config, 
+            pred_rf_config=pred_rf_config, 
+            behind_latches=ex_stage_ahead_latches, 
+            reg_file=reg_file, 
+            pred_reg_file=pred_reg_file, 
+            forward_ifs_write=forward_ifs_write, 
+            fsu_names=fsu_names
+        )

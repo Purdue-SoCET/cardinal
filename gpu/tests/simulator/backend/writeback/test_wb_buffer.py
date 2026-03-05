@@ -189,7 +189,7 @@ class WritebackTestHarness:
         # Create FSU names list for testing
         self.fsu_names = [
             "Alu_int_0", "Mul_int_0", "Div_int_0",
-            "AddSub_float_0", "Mul_float_0", "Div_float_0",
+            "Alu_float_0", "Mul_float_0", "Div_float_0",
             "Sqrt_float_0", "Trig_float_0", "InvSqrt_float_0"
         ]
     
@@ -1130,7 +1130,7 @@ def main():
     # FSU names for testing
     fsu_names = [
         "Alu_int_0", "Mul_int_0", "Div_int_0",
-        "AddSub_float_0", "Mul_float_0", "Div_float_0",
+        "Alu_float_0", "Mul_float_0", "Div_float_0",
         "Sqrt_float_0", "Trig_float_0", "InvSqrt_float_0"
     ]
     

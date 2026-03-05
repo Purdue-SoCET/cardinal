@@ -5,6 +5,7 @@ from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
 from bitstring import Bits
+from gpu.common.custom_enums_multi import H_Op, I_Op
 from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
 from simulator.scheduler.csrtable import CsrTable
 import math
@@ -53,7 +54,7 @@ class SchedulerStage(Stage):
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
-        decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
+        # decode_ctrl = self.forward_ifs_read["Decode_Scheduler"].pop()
         issue_ctrl = self.forward_ifs_read["Issue_Scheduler"].pop()
         branch_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
@@ -74,7 +75,7 @@ class SchedulerStage(Stage):
         
         # check all my things in the issue
         if issue_ctrl is not None:
-            for ibuffer in range(len(issue_ctrl)):
+            for ibuffer in range(self.num_groups):
                 if self.warp_table[ibuffer].state != WarpState.BARRIER and self.warp_table[ibuffer].state != WarpState.HALT:
                     # i buffer full, stop issuing
                     if issue_ctrl[ibuffer] == 1:
@@ -85,35 +86,41 @@ class SchedulerStage(Stage):
                             self.warp_table[ibuffer].state = WarpState.READY
 
         # decrement my in flight counter and go back to ready
-        if writeback_ctrl is not None:
-            group = writeback_ctrl["warp_group_id"]
-            warp_id = writeback_ctrl["warp_id"]
-            new_mask = writeback_ctrl["new_mask"]
+        if not len(writeback_ctrl) == 0:
+            # print("hello")
 
-            # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
-            self.warp_table[group].in_flight -= 1
+            # multiple writebacks can happen in the same cycle so we need to loop through all of them and apply the changes to the warp table accordingly
+            for data in writeback_ctrl:
+                group = data["warp_group_id"]
+                warp_id = data["warp_id"]
+                new_mask = data["new_mask"]
 
-            if new_mask is not None:
-                if warp_id % 2 == 0:
-                    self.warp_table[group].halt_mask_even = new_mask
-                else:
-                    self.warp_table[group].halt_mask_odd = new_mask
+                # print(f"Group: {group}, Warp ID: {warp_id}, New Mask: {new_mask}")
 
-            even_dead = self.warp_table[group].halt_mask_even.uint == 0
-            odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
+                # TODO: change this later so it can decrement the inflight counter as many times for the number of writebacks the buffer was able to do.
+                self.warp_table[group].in_flight -= 1
 
-            if even_dead and odd_dead:
-                self.warp_table[group].state = WarpState.HALT
-                self.warp_table[group].halt = 1
-                return
+                if new_mask is not None:
+                    if warp_id % 2 == 0:
+                        self.warp_table[group].halt_mask_even = new_mask
+                    else:
+                        self.warp_table[group].halt_mask_odd = new_mask
 
-            if self.warp_table[writeback_ctrl["warp_group"]].in_flight == 0:
-                if self.warp_table[writeback_ctrl["warp_group"]].state != WarpState.Halt:
-                    self.warp_table[writeback_ctrl["warp_group"]].state = WarpState.READY
-                    self.warp_table[writeback_ctrl["warp_group"]].finished_packet = False
-                
-                else:
-                    self.warp_table[writeback_ctrl["warp_group"]].halt = 1
+                even_dead = self.warp_table[group].halt_mask_even.uint == 0
+                odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
+
+                if even_dead and odd_dead:
+                    self.warp_table[group].state = WarpState.HALT
+                    self.warp_table[group].halt = 1
+                    return
+
+                if self.warp_table[group].in_flight == 0:
+                    if self.warp_table[group].state != WarpState.HALT:
+                        self.warp_table[group].state = WarpState.READY
+                        self.warp_table[group].finished_packet = False
+                    
+                    else:
+                        self.warp_table[group].halt = 1
         
         # set group to halt
 
@@ -158,7 +165,7 @@ class SchedulerStage(Stage):
     def halt(self):
         if self.start_flush is False:
             if all(group.halt == 1 for group in self.warp_table):
-                print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
+                # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
                 self.start_flush = True
                 self.forward_ifs_write["Scheduler_LDST"].push({"flush_start": 1})
         return
@@ -179,6 +186,8 @@ class SchedulerStage(Stage):
                     warp_group.last_issue_even = True
                     
                     instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.pc)
+                    if instr.pc.uint == 4112:
+                        print("DEBUG")
                     # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
                     self.push_instruction(instr)
                     return 
@@ -305,10 +314,6 @@ class SchedulerStage(Stage):
         icache_ctrl = self.forward_ifs_read["ICache_Scheduler"].pop()
         # print("[SchedulerStage] Warp Issue Check, ICache Control:", icache_ctrl)
 
-        if not icache_ctrl["fetch"]:
-            # print("[Scheduler] MISS in ICache, STALLING.")
-            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
-
         self.eop = icache_ctrl["eop"]
         self.warp_id = icache_ctrl["warp_id"]
         
@@ -316,6 +321,10 @@ class SchedulerStage(Stage):
         self.halt()
         # determining next states
         self.collision()
+
+        if not icache_ctrl["fetch"]:
+            # print("[Scheduler] MISS in ICache, STALLING.")
+            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
         match self.policy:
             case "RR":
