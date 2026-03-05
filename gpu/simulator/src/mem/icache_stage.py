@@ -62,8 +62,8 @@ class ICacheStage(Stage):
             victim.valid = True
 
     # sending ready/stalled signals to scheduler
-    def _send_valid(self, val: bool):
-        self.forward_ifs_write["ICache_Scheduler"].push(val)
+    def _send_valid(self, val: bool, eop: bool, warp_id: int):
+        self.forward_ifs_write["ICache_Scheduler"].push({"fetch": val, "eop": eop, "warp_id": warp_id})
         # if "ICache_scheduler_Ihit" in self.forward_ifs_write:
         #     self.forward_ifs_write["ICache_scheduler_Ihit"].push(val)
         # if "ihit" in self.forward_ifs_write:
@@ -92,7 +92,7 @@ class ICacheStage(Stage):
         print(f"[ICache] FILL complete: pc=0x{pc_int:X}")
 
     # ---------------- Main compute ----------------
-    def compute(self, input_data=None):
+    def compute(self):
         print(f"[ICache] Received request: {self.behind_latch.snoop()}")
 
         # req in flight to memory
@@ -111,7 +111,7 @@ class ICacheStage(Stage):
                 self._fill_from_response(pc_int_resp, data_bits)
 
                 print("[I$] Returned value from memory")
-                self._send_valid(True)
+                self._send_valid(True, data_bits[0], resp.warp_id)
                 self.pending = False
                 if self.ahead_latch.ready_for_push():
                     self.ahead_latch.push(resp)
@@ -119,7 +119,7 @@ class ICacheStage(Stage):
             # still pending
             else:
                 print(f"[I$] waiting on memory")
-                self._send_valid(False)
+                self._send_valid(False, False, 0)
 
                 if self.req_latched:
                     if self.mem_req_if.ready_for_push():
@@ -137,7 +137,7 @@ class ICacheStage(Stage):
                 
                 # in the cache
                 if line_lookup:
-                    self._send_valid(True)
+                    self._send_valid(True, line_lookup.data[0], fetch.warp_id)
                     fetch.packet = line_lookup.data
 
                     # push
@@ -146,7 +146,7 @@ class ICacheStage(Stage):
 
                 # not in cache
                 else:
-                    self._send_valid(False)
+                    self._send_valid(False, False, 0)
                     self.pending = True
 
                     set_idx, tag, block = self._addr_decode(pc_int)
@@ -171,7 +171,7 @@ class ICacheStage(Stage):
 
             # if scheduler isnt fetching and if theres no pending memory request
             else:
-                self._send_valid(True)
+                self._send_valid(True, False, 0)
 
         self.cycle += 1
         return

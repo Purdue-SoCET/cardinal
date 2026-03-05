@@ -211,6 +211,7 @@ class WarpState(Enum):
 class WarpGroup:
     pc: int
     group_id: int
+    halt: int = 1
     last_issue_even: bool = False
     finished_packet: bool = False
     in_flight: int = 0
@@ -225,6 +226,7 @@ class Instruction:
     pc: Optional[Bits] = None
     warp_id: Optional[int] = None
     warp_group_id: Optional[int] = None
+    num_operands: Optional[int] = None
 
     # ----- fields populated by decode ----
     intended_FU: Optional[str] = None 
@@ -240,7 +242,7 @@ class Instruction:
     packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None
     wb_cycle: Optional[int] = None
-    target_bank: int = None 
+    target_bank: Optional[int] = None 
 
     rdat1: list[Bits] = field(default_factory=list)
     rdat2: list[Bits] = field(default_factory=list)
@@ -252,8 +254,10 @@ class Instruction:
     stage_entry: Dict[str, int] = field(default_factory=dict)
     stage_exit:  Dict[str, int] = field(default_factory=dict)
     fu_entries:  List[Dict]     = field(default_factory=list)
-    num_operands: Optional[int] = None
     
+
+
+
     
     def mark_stage_enter(self, stage: str, cycle: int):
         self.stage_entry.setdefault(stage, cycle)
