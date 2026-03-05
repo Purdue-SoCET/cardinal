@@ -16,6 +16,8 @@ void kernel_pixel(void* arg)
     // u = mod(threadIdx, args->buff_w);
     v = (((threadIdx()) / args->buff_w) - (args->buff_h)*(((threadIdx()) / args->buff_w)/(args->buff_h)));
     // v = mod(threadIdx / args->buff_w, args->buff_h);
+
+    int pixel_idx = threadIdx();
     
     int tag = args->tag_buff[threadIdx()];
     #else
@@ -25,6 +27,8 @@ void kernel_pixel(void* arg)
     // u = mod(threadIdx, args->buff_w);
     v = (((threadIdx) / args->buff_w) - (args->buff_h)*(((threadIdx) / args->buff_w)/(args->buff_h)));
     // v = mod(threadIdx / args->buff_w, args->buff_h);
+
+    int pixel_idx = threadIdx;
     
     int tag = args->tag_buff[threadIdx];
     #endif
@@ -132,9 +136,10 @@ void kernel_pixel(void* arg)
 
     // 3. Texture Lookup
     int idx = texel_y * args->texture.w + texel_x;
-    #ifdef GPU_SIM
-    args->color[threadIdx()] = args->texture.color_arr[idx];
-    #else
-    args->color[threadIdx] = args->texture.color_arr[idx];
-    #endif
+    args->color[pixel_idx] = args->texture.color_arr[idx];
+
+
+    // Added for debug 
+    //args->uv_buffer[pixel_idx].s = s_fract;
+    //args->uv_buffer[pixel_idx].t = t_fract;
 }

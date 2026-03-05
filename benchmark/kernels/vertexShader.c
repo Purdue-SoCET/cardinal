@@ -26,13 +26,17 @@ void kernel_vertexShader(void* arg)
     float lcs[9]; 
     float selAxis[3] = {0.0, 0.0, 0.0};
 
-    if((args->a_dist->x*args->a_dist->x) < (args->a_dist->y*args->a_dist->y))
-    { 
-        selAxis[0] = 1.0;
-    }
-    else
-    {
-        selAxis[1] = 1.0;
+    // Find the dimension with the smallest absolute value in the rotation axis
+    float absX = (args->a_dist->x < 0) ? -args->a_dist->x : args->a_dist->x;
+    float absY = (args->a_dist->y < 0) ? -args->a_dist->y : args->a_dist->y;
+    float absZ = (args->a_dist->z < 0) ? -args->a_dist->z : args->a_dist->z;
+
+    if (absX < absY && absX < absZ) {
+        selAxis[0] = 1.0; // Use X-axis if rotation axis is mostly YZ
+    } else if (absY < absZ) {
+        selAxis[1] = 1.0; // Use Y-axis if rotation axis is mostly XZ
+    } else {
+        selAxis[2] = 1.0; // Use Z-axis if rotation axis is mostly XY
     }
 
    selAxis[1] = 1.0;
@@ -161,6 +165,7 @@ void kernel_vertexShader(void* arg)
         }
     }
 
+    
     if (q[2] < 0.0){
         return;
     }

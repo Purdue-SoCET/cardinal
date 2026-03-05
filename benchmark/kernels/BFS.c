@@ -6,9 +6,16 @@
 // Kernel 1
 // Checks current mask and updates neighbors
 void kernel_BFS_1(void* arg) {
+
+    #ifdef GPU_SIM
+    bfs_kernel1_arg_t* args = (bfs_kernel1_arg_t*) argPtr();
+
+    int tid = blockIdx() * blockDim() + threadIdx();
+    #else
     bfs_kernel1_arg_t* args = (bfs_kernel1_arg_t*) arg;
 
     int tid = blockIdx * blockDim + threadIdx;
+    #endif
     
     if (tid < args->no_of_nodes && args->g_graph_mask[tid]) {
         // Mark current node as processed in the mask
@@ -33,9 +40,15 @@ void kernel_BFS_1(void* arg) {
 // Kernel 2
 // Updates the masks and visited status for the next iteration
 void kernel_BFS_2(void* arg) {
+    #ifdef GPU_SIM
+    bfs_kernel2_arg_t* args = (bfs_kernel2_arg_t*) argPtr();
+
+    int tid = blockIdx() * blockDim() + threadIdx();
+    #else
     bfs_kernel2_arg_t* args = (bfs_kernel2_arg_t*) arg;
 
     int tid = blockIdx * blockDim + threadIdx;
+    #endif
 
     if (tid < args->no_of_nodes && args->g_updating_graph_mask[tid]) {
         args->g_graph_mask[tid] = 1;

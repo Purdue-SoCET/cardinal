@@ -20,6 +20,9 @@ typedef struct {
     // Texture Data
     texture_t texture;
 
+    // Added for debug
+    //texel_t* uv_buffer;
+
 } pixel_arg_t;
 
 #ifdef GPU_SIM

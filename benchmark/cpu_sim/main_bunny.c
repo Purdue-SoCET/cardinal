@@ -21,7 +21,7 @@ uint8_t* memory_ptr;
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
-#define PIXEL_DEBUG 1
+#define PIXEL_DEBUG 0
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -56,48 +56,61 @@ uint8_t* memory_ptr;
     } \
 }
 
-//Teapot from:
-//https://github.com/sexton34/Graphics-Pipeline/tree/master/geometry
-
 // Make video from Frames:
 //ffmpeg -framerate 30 -pattern_type glob -i "build/output/*.ppm" -c:v libx264 -pix_fmt yuv420p output.mp4
 
+//Model Loaded: 35947 vertices, 69451 triangles
 int main(int argc, char** argv) {
     int frame = 0;
-    model_t teapot = {0};
-    loadbin("cpu_sim/data/geometry/teapot1K.bin", &teapot);
+    model_t bunny = {0};
+    loadbin("cpu_sim/data/geometry/bunny.bin", &bunny);
 
-    if (teapot.vertsN == 0) {
-        fprintf(stderr, "Failed to load teapot model!\n");
+    if (bunny.vertsN == 0) {
+        fprintf(stderr, "Failed to load bunny model!\n");
         return -1;
     }
-    //for (int frame = 0; frame < 300; frame++)
+    for (int frame = 0; frame < 300; frame++)
     {
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
     uint8_t* memory_ptr = memory_base;
 
     // ---- Setup Geometry ----
 
-    const int num_verts = teapot.vertsN;
-    const int num_tris = teapot.trisN;
+    /*
+    FILE *f = fopen("build/bunny.txt", "w");
+    for(int i = 0; i < bunny.vertsN; i++) {
+        fprintf(f, "Vertex %d: X:%+06.2f Y:%+06.2f Z:%+06.2f - U:%.2f V:%.2f\n", i, bunny.vertices[i].coords.x, bunny.vertices[i].coords.y, bunny.vertices[i].coords.z, bunny.vertices[i].s, bunny.vertices[i].t);
+    }
+    fclose(f);
+    */
+
+    const int num_verts = bunny.vertsN;
+    const int num_tris = bunny.trisN;
 
     ALLOCATE_MEM(verts, vertex_t, num_verts);
     ALLOCATE_MEM(tris, triangle_t, num_tris);
 
     for (int i = 0; i < num_verts; i++) {
-        verts[i] = teapot.vertices[i]; 
+        verts[i] = bunny.vertices[i]; 
     }
 
     for (int i = 0; i < num_tris; i++) {
-        tris[i] = teapot.triangles[i]; 
+        tris[i] = bunny.triangles[i]; 
     }
 
-    vector_t center = findCenter(teapot);
+    vector_t center = findCenter(bunny);
 
     for (int i = 0; i < num_verts; i++) {
         verts[i].coords.x -= center.x;
         verts[i].coords.y -= center.y;
         verts[i].coords.z -= center.z;
+    }
+
+    // Had to scale bunny up
+    for (int i = 0; i < num_verts; i++) {
+        verts[i].coords.x *= 1000.0f; 
+        verts[i].coords.y *= 1000.0f; 
+        verts[i].coords.z *= 1000.0f; 
     }
 
     // Texture
@@ -117,14 +130,15 @@ int main(int argc, char** argv) {
                 texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? red : blue;
             }
         }
-        texture->id = 0; 
+
 
     // Camera
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
             {0.0f, -1.0f, 0.0f}, 
-            {-OUTPUT_W/2, OUTPUT_H/2, -150.0f},
+            {-OUTPUT_W/2, OUTPUT_H/2, 150.0f},
         };
+
 
         const vector_t abcTranspose[3] = {
             {abc[0].x, abc[1].x, abc[2].x},
@@ -137,7 +151,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 00.0f; camera_C->y = 05.0f; camera_C->z = 80.0f; //z=60
+        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -150.0f; 
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
 
@@ -291,28 +305,21 @@ int main(int argc, char** argv) {
     // Checking TRIANGLE Output
     if(TRIANGLE_DEBUG) 
     {
-
-        FILE *f1 = fopen("build/depth_triangledebug.txt", "w");
-        if (f1 == NULL) {
-            printf("Error opening file!\n");
-        }
-        fprintf(f1, " --- Post Triangle Depths --- \n");
-        fprintf(f1, "\t[");
-        for(int i = 0; i < frame_w * frame_h; i++) {
-            fprintf(f1, "%+06.2f", zbuff[i]);
-            if(((i+1) % frame_w)) {
-                fprintf(f1, ", ");
-            } else if (i+1 != frame_w*frame_h) {
-                fprintf(f1, "]\n\t[");
-            } else {
-                fprintf(f1, "]\n");
-            }
-        }
-        fclose(f1);
-
-        FILE *f = fopen("build/tag_triangledebug.txt", "w");
+        FILE *f = fopen("build/triangledebug.txt", "w");
         if (f == NULL) {
             printf("Error opening file!\n");
+        }
+        fprintf(f, " --- Post Triangle Depths --- \n");
+        fprintf(f, "\t[");
+        for(int i = 0; i < frame_w * frame_h; i++) {
+            fprintf(f, "%+06.2f", zbuff[i]);
+            if(((i+1) % frame_w)) {
+                fprintf(f, ", ");
+            } else if (i+1 != frame_w*frame_h) {
+                fprintf(f, "]\n\t[");
+            } else {
+                fprintf(f, "]\n");
+            }
         }
         fprintf(f, " --- Post Triangle Tags --- \n");
         fprintf(f, "\t[");
@@ -327,8 +334,8 @@ int main(int argc, char** argv) {
                 fprintf(f, "]\n");
             }
         }
-        fprintf(f, " --- Triangle Printing DONE ---\n");
         fclose(f);
+        printf(" --- Triangle Printing DONE ---\n");
     }
 
     // --- Pixel Kernel ---
@@ -354,9 +361,6 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
-        pixel_args->uv_buffer = (texel_t*) memory_ptr;
-        memory_ptr += sizeof(texel_t) * frame_w*frame_h;
-
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
@@ -376,32 +380,6 @@ int main(int argc, char** argv) {
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
-    }
-
-    if(PIXEL_DEBUG) 
-    {
-        FILE *f = fopen("build/pixeldebug.txt", "w");
-        if (f == NULL) {
-            printf("Error opening file!\n");
-        }
-        fprintf(f, " --- Post Pixel Colors --- \n");
-        for(int i = 0; i < frame_w*frame_h; i++) {
-            fprintf(f, "Pixel %d: R:%+06.2f G:%+06.2f B:%+06.2f\n", i, color_output[i].x, color_output[i].y, color_output[i].z);
-        }
-        fprintf(f, " --- Pixel Printing DONE ---\n");
-        fclose(f);
-
-        FILE *f1 = fopen("build/pixeldebug_UV.txt", "w");
-        if (f1 == NULL) {
-            printf("Error opening file!\n");
-        }
-
-        fprintf(f1, " --- Post Pixel UVs --- \n");
-        for(int i = 0; i < frame_w*frame_h; i++) {
-            fprintf(f1, "Pixel %d: S:%+06.2f T:%+06.2f\n", i, pixel_args->uv_buffer[i].s, pixel_args->uv_buffer[i].t);
-        }
-        fprintf(f1, " --- Pixel UV Printing DONE ---\n");
-        fclose(f1);
     }
 
 
@@ -430,8 +408,6 @@ int main(int argc, char** argv) {
         // }
     }
 
-    
-
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
 
@@ -442,7 +418,7 @@ int main(int argc, char** argv) {
     free(memory_base);
     }
 
-    free(teapot.vertices);
-    free(teapot.triangles);
+    free(bunny.vertices);
+    free(bunny.triangles);
     
 }

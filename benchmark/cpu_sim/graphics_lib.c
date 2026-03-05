@@ -121,6 +121,7 @@ void loadbin(char *fname, model_t *model) {
             model->vertices[i].t = 0.0f;
         }
     }
+    
 
     // Load Triangles
     fread(&model->trisN, sizeof(int), 1, fptr);
