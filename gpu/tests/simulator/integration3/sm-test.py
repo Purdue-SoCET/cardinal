@@ -292,7 +292,7 @@ def run_SM():
         print(f"Dumped uninitialized register file to {uninit_regfile_out}")
 
     # initialize the register files
-    initialize_register_file(sm.regfile, "configs/lw_reg_init.yaml")
+    initialize_register_file(sm.regfile, "configs/sw_reg_init.yaml")
 
     with open(init_regfile_out, "w") as f:
         sm.regfile.dump(file=f)
@@ -303,7 +303,7 @@ def run_SM():
 
     print(f"Dumped uninitialized mem file to {uninit_mem_out}")
 
-    initialize_memory(sm.mem, "configs/lw_mem_init.yaml")
+    initialize_memory(sm.mem, "configs/sw_mem_init.yaml")
     cycles = len(words)
 
     sm.mem.dump(init_mem_out)

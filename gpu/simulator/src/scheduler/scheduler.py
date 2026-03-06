@@ -163,11 +163,9 @@ class SchedulerStage(Stage):
             self.free_warp += 1
 
     def halt(self):
-        if self.start_flush is False:
-            if all(group.halt == 1 for group in self.warp_table):
+        if all(group.halt == 1 for group in self.warp_table):
                 # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
-                self.start_flush = True
-                self.forward_ifs_write["Scheduler_LDST"].push({"flush_start": 1})
+            self.forward_ifs_write["Scheduler_LDST"].push({"halt": True})
         return
 
     # round robin policy
