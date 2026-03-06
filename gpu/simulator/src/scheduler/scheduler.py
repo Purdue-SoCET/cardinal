@@ -45,6 +45,9 @@ class SchedulerStage(Stage):
         self.eop: bool = False
         self.warp_id: int = 0
 
+        # Kai Ze: create halt signal to only fire once
+        self.halt_sent: bool = False
+
         # debug
         self.issued_warp_last_cycle: Optional[int] = None
 
@@ -163,9 +166,11 @@ class SchedulerStage(Stage):
             self.free_warp += 1
 
     def halt(self):
-        if all(group.halt == 1 for group in self.warp_table):
+        # Kai Ze: only fire when at least one warp has been initialized, and only once
+        if not self.halt_sent and self.free_warp > 0 and all(group.halt == 1 for group in self.warp_table):
                 # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
             self.forward_ifs_write["Scheduler_LDST"].push({"halt": True})
+            self.halt_sent = True
         return
 
     # round robin policy
