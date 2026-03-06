@@ -264,7 +264,7 @@ class DecodeStage(Stage):
             if is_P and opcode_lower != 0x0:
                 inst.rd = None
         else:
-            inst.rd = None
+            inst.rd = Bits(uint=0, length=32)
 
         # rs1 present for R/I/F/S/B/P
         if is_R or is_I or is_F or is_S or is_B or is_P:
@@ -409,10 +409,6 @@ class DecodeStage(Stage):
             else:
                 inst.target_bank = 1
                 inst.target_regfile = "regfile"
-
-        # if is_B and inst.warp_id == 0:
-        #     print(inst)
-        #     print()
 
         self._push_instruction_to_next_stage(inst)
         return 

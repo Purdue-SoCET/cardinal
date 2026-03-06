@@ -1,0 +1,37 @@
+warp_id: 0
+
+registers:
+  r1:
+    values: [0]
+
+  r2:
+    values: [24]
+
+warp_id: 1
+
+registers:
+  r1:
+    values: [0]
+
+  r2:
+    values: [24]
+
+warp_id: 2
+
+registers:
+  r1:
+    values: [0]
+
+  r2:
+    values: [24]
+
+
+warp_id: 3
+
+registers:
+  r1:
+    values: [0]
+
+  r2:
+    values: [24]
+  

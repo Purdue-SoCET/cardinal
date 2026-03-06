@@ -99,7 +99,11 @@ class IssueStage(Stage):
         
         # n = 1
         # if len(self.dispatched) < n or cycle > 6:
-        # if dispatched_inst == None and fust[dispatched_inst.intended_FU]: 
+        # if dispatched_inst == None and fust[dispatched_inst.intended_FU]:
+        if inst_in is not None:
+            if inst_in.opcode == H_Op.HALT:
+                input("STOP THIS BS") 
+
         if FU_stall_issue == False:
         
             # 2) RF reads for instructions in register/staged

@@ -76,6 +76,7 @@ class Ldst_Fu(FunctionalSubUnit):
             instr = issue_if.pop()
             if instr != None:
                 print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
+                print(f"Servicing instruction: op: {instr.opcode} rd: {instr.rd} rs1: {instr.rs1} rs2: {instr.rs2} rdat1: {instr.rdat1} rdat2: {instr.rdat2}")
                 self.ldst_q.append(pending_mem(instr))
         
         # Accept halt signal from the scheduler

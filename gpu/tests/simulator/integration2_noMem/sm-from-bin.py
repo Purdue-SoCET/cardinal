@@ -74,58 +74,64 @@ WARP_COUNT  = 32
 # ==============================================================================
 
 def load_program(file_path: Path, fmt: str = "bin") -> List[int]:
-    """
-    Load a program file and return a list of 32-bit instruction words
-    (as plain Python ints) in program order.
 
-    Parameters
-    ----------
-    file_path : Path
-        Path to the instruction file.
-    fmt : {"bin", "hex"}
-        "bin"  – each line is a 32-character '0'/'1' string
-        "hex"  – each line is either:
-                   • 8 hex characters  (e.g.  40184080)
-                   • "0xADDR 0xDATA"   (e.g.  0x00001000 0x40184080)
-    """
-    words: List[int] = []
-    with file_path.open("r", encoding="utf-8") as fh:
-        for line_no, raw_line in enumerate(fh, start=1):
-            # strip inline comments
+    program = []
+
+    with file_path.open("r") as fh:
+
+        for line_no, raw in enumerate(fh, start=1):
+
+            # strip comments
             for marker in ("//", "#"):
-                idx = raw_line.find(marker)
+                idx = raw.find(marker)
                 if idx != -1:
-                    raw_line = raw_line[:idx]
-            line = raw_line.strip().replace("_", "")
+                    raw = raw[:idx]
+
+            line = raw.strip().replace("_", "")
             if not line:
                 continue
 
+            parts = line.split()
+
+            if len(parts) != 2:
+                raise ValueError(
+                    f"Line {line_no}: expected format 'addr data'"
+                )
+
+            addr_str, data_str = parts
+
+            addr = int(addr_str, 0)
+
+            if addr % 4 != 0:
+                raise ValueError(
+                    f"Line {line_no}: address {addr:#x} not word aligned"
+                )
+
             if fmt == "bin":
-                if len(line) != 32 or not all(c in "01" for c in line):
+
+                if len(data_str) != 32:
                     raise ValueError(
-                        f"[load_program] line {line_no}: expected 32-bit binary string, "
-                        f"got {line!r}"
+                        f"Line {line_no}: expected 32-bit binary"
                     )
-                words.append(int(line, 2))
+
+                word = int(data_str, 2)
 
             elif fmt == "hex":
-                parts = line.split()
-                if len(parts) == 2:
-                    # "0xADDR 0xDATA" style – we only care about DATA
-                    words.append(int(parts[1], 16) & 0xFFFF_FFFF)
-                elif len(parts) == 1:
-                    if len(parts[0]) != 8:
-                        raise ValueError(
-                            f"[load_program] line {line_no}: expected 8 hex chars, "
-                            f"got {parts[0]!r}"
-                        )
-                    words.append(int(parts[0], 16) & 0xFFFF_FFFF)
-                else:
-                    raise ValueError(
-                        f"[load_program] line {line_no}: unexpected token count: {line!r}"
-                    )
+
+                word = int(data_str, 16)
+
             else:
-                raise ValueError(f"Unknown format {fmt!r}; use 'bin' or 'hex'")
+                raise ValueError("format must be bin or hex")
+
+            program.append((addr, word & 0xFFFFFFFF))
+
+    # --------------------------------------------------
+    # Sort by address so pipeline executes correctly
+    # --------------------------------------------------
+
+    program.sort(key=lambda x: x[0])
+
+    words = [w for _, w in program]
 
     return words
 
@@ -550,8 +556,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin"):
     prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
     for warp in range(WARP_COUNT):
         for pred in range(16):
-            for neg in range(2):
-                prf.reg_file[warp][pred][neg] = [True] * 32
+            prf.reg_file[warp][pred] = [True] * 32
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     kernel_base_ptrs.write(0, Bits(uint=9203930, length=32))

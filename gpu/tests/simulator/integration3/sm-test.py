@@ -16,7 +16,7 @@ from config_loader import load_sm_config, initialize_memory, initialize_register
 from simulator.sm import SM, SMConfig
 from simulator.issue.regfile import RegisterFile
 
-
+BLOCK_SIZE_WORDS = 32
 # ==============================================================================
 # Program Loader
 # ==============================================================================
@@ -201,6 +201,65 @@ def create_golden_rf(reference_rf):
     return golden_rf
 
 
+def print_banks(dCache):
+    # --- 1. Calculate Bit Widths for Reconstruction ---
+    # Offset: 32 words * 4 bytes = 128 bytes -> 7 bits (usually)
+    offset_bits = int(math.log2(BLOCK_SIZE_WORDS * 4))
+    
+    # Bank Bits: log2(number of banks)
+    num_banks = len(dCache.banks)
+    bank_bits = int(math.log2(num_banks)) if num_banks > 1 else 0
+    
+    # Set Bits: log2(number of sets per bank)
+    num_sets = len(dCache.banks[0].sets)
+    set_bits = int(math.log2(num_sets))
+
+    # Calculate Shift Amounts (Assuming Addr Structure: [ Tag | Set | Bank | Offset ])
+    shift_bank = offset_bits
+    shift_set = offset_bits + bank_bits
+    shift_tag = offset_bits + bank_bits + set_bits
+    # --------------------------------------------------
+
+    for bank_id, bank in enumerate(dCache.banks):
+        print(f"\n======== Bank {bank_id} ========")
+        found_valid_line = False
+
+        for set_id, cache_set in enumerate(bank.sets):
+            set_has_valid_lines = any(frame.valid for frame in cache_set)
+
+            if set_has_valid_lines:
+                found_valid_line = True
+                print(f"  ---- Set {set_id} ----")
+
+                lru_list = bank.lru[set_id]
+                print(f"    LRU Order: {lru_list} (Front=MRU, Back=LRU)")
+
+                for way_id, frame in enumerate(cache_set):
+                    if frame.valid:
+                        tag_hex = f"0x{frame.tag:X}"
+                        dirty_str = "D" if frame.dirty else " "
+                        
+                        # --- 2. Reconstruct the Address ---
+                        # (Tag << shifts) | (Set << shifts) | (Bank << shifts)
+                        full_addr = (frame.tag << shift_tag) | (set_id << shift_set) | (bank_id << shift_bank)
+                        addr_hex = f"0x{full_addr:08X}" # Format as 8-digit Hex
+                        # ----------------------------------
+
+                        # Print Tag AND Address
+                        print(f"    [Way {way_id}] V:1 {dirty_str} Tag: {tag_hex:<6} (Addr: {addr_hex})")
+
+                        for i in range(0, BLOCK_SIZE_WORDS, 4):
+                            # FIX: Add '& 0xFFFFFFFF' to force unsigned 32-bit representation
+                            w0 = f"0x{(frame.block[i] & 0xFFFFFFFF):08X}"
+                            w1 = f"0x{(frame.block[i+1] & 0xFFFFFFFF):08X}"
+                            w2 = f"0x{(frame.block[i+2] & 0xFFFFFFFF):08X}"
+                            w3 = f"0x{(frame.block[i+3] & 0xFFFFFFFF):08X}"
+                            
+                            print(f"        Block[{i:02d}:{i+3:02d}]: {w0} {w1} {w2} {w3}")
+
+        if not found_valid_line:
+            print(f"  (Bank is empty)")
+
 # ==============================================================================
 # Runner
 # ==============================================================================
@@ -233,7 +292,7 @@ def run_SM():
         print(f"Dumped uninitialized register file to {uninit_regfile_out}")
 
     # initialize the register files
-    initialize_register_file(sm.regfile, "configs/reg_init.yaml")
+    initialize_register_file(sm.regfile, "configs/lw_reg_init.yaml")
 
     with open(init_regfile_out, "w") as f:
         sm.regfile.dump(file=f)
@@ -244,7 +303,7 @@ def run_SM():
 
     print(f"Dumped uninitialized mem file to {uninit_mem_out}")
 
-    initialize_memory(sm.mem, "configs/mem_init.yaml")
+    initialize_memory(sm.mem, "configs/lw_mem_init.yaml")
     cycles = len(words)
 
     sm.mem.dump(init_mem_out)
@@ -256,7 +315,7 @@ def run_SM():
     for _ in range(cycles):
         sm.compute()
 
-    flush = cycles + 1100
+    flush = cycles + 2000
 
     print("Flushing pipeline", flush)
 
@@ -274,6 +333,8 @@ def run_SM():
     sm.mem.dump(fin_mem_out)
     print(f"Dumped memory final state to {fin_mem_out}")
 
+    print_banks(sm.dcache)
+    print(sm.scheduler.warp_table)
     return sm.regfile
 
 # ==============================================================================
@@ -284,11 +345,12 @@ if __name__ == "__main__":
 
     pipeline_rf = run_SM()
 
-    # Example golden model (clone current state)
-    golden_rf = create_golden_rf(pipeline_rf)
+    # not doing this 
+    # # Example golden model (clone current state)
+    # golden_rf = create_golden_rf(pipeline_rf)
 
-    verify_register_files(
-        pipeline_rf=pipeline_rf,
-        golden_rf=golden_rf,
-        warp_ids=list(range(pipeline_rf.warps))
-    )
+    # verify_register_files(
+    #     pipeline_rf=pipeline_rf,
+    #     golden_rf=golden_rf,
+    #     warp_ids=list(range(pipeline_rf.warps))
+    # )

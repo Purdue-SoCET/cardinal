@@ -219,8 +219,8 @@ def initialize_memory(mem, path):
         # --------------------------------------------------
         # Perform memory write (aligned with Mem.write)
         # --------------------------------------------------
-        data_bits = Bits(uint=val, length=32)
-
+        data_bits = Bits(uintle=val, length=32)
+        
         mem.write(addr, data_bits, 4)
 
         print(f"  Wrote 0x{val:08X} -> 0x{addr:08X}")

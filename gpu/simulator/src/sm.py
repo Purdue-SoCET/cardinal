@@ -278,7 +278,7 @@ class SM:
     def _initialize_inputs(self):
         
         #initialize the regular reg file
-        self._initialize_regfile()
+        # self._initialize_regfile()
 
         # initialize all the values in the predicat reg file to:
         for warp in range(32):
