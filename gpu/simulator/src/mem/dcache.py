@@ -351,6 +351,21 @@ class CacheBank:
         
         # Finished victinm eject and block pull
         elif self.state == 'FINISH':
+            for i in range(BLOCK_SIZE_WORDS):
+                if (self.active_mshr.write_status[i]):
+                    req = self.active_mshr.original_request
+                    data = self.active_mshr.write_block[i]
+                    
+                    size_masks = {'word': 0xFFFFFFFF, 'half': 0xFFFF, 'byte': 0xFF}
+                    base_mask = size_masks.get(req.size, 0xFFFFFFFF)
+                    
+                    shift = (req.addr_val & 0x3) * 8
+                    mask = base_mask << shift
+                    
+                    # Merge it directly into the fill_buffer before committing
+                    new_word = (self.fill_buffer.block[i] & ~mask) | (data << shift)
+                    self.fill_buffer.block[i] = new_word & 0xFFFFFFFF
+
             set_idx = self.active_mshr.original_request.addr.set_index  # Get the set
             self.sets[set_idx][self.latched_victim_way] = self.fill_buffer  
             self._update_lru(set_idx, self.latched_victim_way)
