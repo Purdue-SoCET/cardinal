@@ -1,6 +1,29 @@
 #!/bin/bash
-
-
+# ======================================================================
+# GPU SYSTEM TEST AUTOMATION SCRIPT (test_sim.sh)
+# ======================================================================
+# Description:
+# Automates the execution of GPU tests, comparing emulator (expected)
+# vs. simulator (actual) memory dumps.
+#
+# Usage:
+#   ./test_sim.sh [-1 | -2] [optional_search_pattern]
+#
+# Modes:
+#   -1 (Default) : Assembly Mode. Compiles .s files from 'tests/', 
+#                  generates memory init files, runs models, and diffs.
+#                  Usage: ./test_sim.sh -1
+#                  Usage: ./test_sim.sh -1 saxpy.s
+#
+#   -2           : Binary Mode. Takes pre-compiled .bin files from 
+#                  'tests_bin/', converts to hex, runs models, and diffs.
+#                  Usage: ./test_sim.sh -2
+#                  Usage: ./test_sim.sh -2 math_test.bin
+#
+# Debugging:
+#   If a test fails, check the 'test_diffs/' directory for detailed
+#   logs, expected vs. actual hex dumps, and diff results.
+# ======================================================================
 
 # ==========================================
 # Configuration
