@@ -670,12 +670,12 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
 def tick_all(p: dict):
     """Tick every pipeline stage once (same order as sm-no-mem.py)."""
     p["wb"].tick()
+    p["memc"].compute()
     p["ex"].tick()
     p["ex"].compute()
     p["dcache"].compute()
     p["issue"].compute()
     p["decode"].compute()
-    p["memc"].compute()
     p["icache"].compute()
     p["scheduler"].compute()
 
