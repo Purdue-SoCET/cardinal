@@ -136,6 +136,54 @@ def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, ver
     return len(mismatches) == 0
 
 
+# REG FILE SETUP AND COMPARISON
+
+def write_reg_warp(regfile, warp_id, reg_num, values, as_float=False):
+    threads = regfile.threads_per_warp
+    if len(values) == 1:
+        values = values * threads
+    if as_float:
+        data = [Bits(float=v, length=32) for v in values]
+    else:
+        data = [Bits(int=v, length=32) for v in values]
+    regfile.write_warp_gran(
+        warp_id=warp_id,
+        dest_operand=Bits(uint=reg_num, length=32),
+        data=data
+    )
+
+def write_mem_word(mem, addr, value, allow_instr_mem=False):
+    if addr >= mem.start_pc and not allow_instr_mem:
+        raise ValueError(f"Refusing to write instruction memory at {addr:#x}")
+    mem.write(addr, Bits(uintle=value & 0xFFFFFFFF, length=32), 4)
+
+def apply_local_setup(sm, setup_name):
+    if setup_name == "default":
+        warp = 0
+        threads = sm.regfile.threads_per_warp
+        write_reg_warp(sm.regfile, warp, 1, [31 - i for i in range(threads)])
+        write_reg_warp(sm.regfile, warp, 2, [i for i in range(threads)])
+        write_reg_warp(sm.regfile, warp, 8, [100])
+        write_reg_warp(sm.regfile, warp, 9, [100])
+
+        for i in range(threads):
+            write_mem_word(sm.mem, i * 32, 1)
+            write_mem_word(sm.mem, 0x400 + i * 32, 2)
+    elif setup_name == "sw_basic":
+        threads = sm.regfile.threads_per_warp
+
+        for warp in range(4):
+            addr_vals = [0x100 + i * 4 for i in range(threads)]
+            data_vals = [24 for _ in range(threads)]
+
+            write_reg_warp(sm.regfile, warp, 1, addr_vals)
+            write_reg_warp(sm.regfile, warp, 2, data_vals)
+
+        for i in range(threads):
+            write_mem_word(sm.mem, 0x100 + i * 4, 42)
+    else:
+        raise ValueError(f"Unknown setup: {setup_name}")
+
 # ==============================================================================
 # Verification Wrapper
 # ==============================================================================
@@ -167,6 +215,33 @@ def verify_register_files(pipeline_rf, golden_rf, warp_ids, regs_to_check=None):
 
     return all_passed
 
+# CLI
+def _parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run SM test with selectable program file and local setup."
+    )
+
+    parser.add_argument(
+        "program",
+        nargs="?",
+        default=None,
+        help="Path to the program file. If omitted, uses program from sm_config.yaml."
+    )
+
+    parser.add_argument(
+        "--fmt", "-f",
+        choices=["bin", "hex"],
+        default=None,
+        help="Program file format. If omitted, uses format from sm_config.yaml."
+    )
+
+    parser.add_argument(
+        "--setup", "-s",
+        default="default",
+        help="Local handwritten setup selection."
+    )
+
+    return parser.parse_args()
 
 # ==============================================================================
 # Golden RF creation
@@ -264,8 +339,7 @@ def print_banks(dCache):
 # Runner
 # ==============================================================================
 
-def run_SM():
-
+def run_SM(program_file: Path | None = None, fmt: str | None = None, setup_name: str = "default"):
     uninit_regfile_out = FILE_ROOT / "pipeline_regfile_uninitialized_state.txt"
     init_regfile_out = FILE_ROOT / "pipeline_regfile_initialized_state.txt"
     fin_regfile_out = FILE_ROOT / "pipeline_regfile_final_state.txt"
@@ -276,13 +350,23 @@ def run_SM():
     fin_prf_out = FILE_ROOT / "predicate_regfile_final_state.txt"
 
     sm_config = load_sm_config("configs/sm_config.yaml")
-    program_file = FILE_ROOT / sm_config.test_file
-    fmt = sm_config.test_file_type
+
+    if program_file is None:
+        program_file = FILE_ROOT / sm_config.test_file
+    else:
+        program_file = Path(program_file)
+
+    if fmt is None:
+        fmt = sm_config.test_file_type
+
+    sm_config.test_file = program_file
+    sm_config.test_file_type = fmt
 
     print("Loading program:", program_file)
+    print("Using setup:", setup_name)
+    print("Format:", fmt)
 
     words = load_program(program_file, fmt)
-
     print("Instructions loaded:", len(words))
 
     sm = SM(sm_config)
@@ -291,34 +375,26 @@ def run_SM():
         sm.regfile.dump(file=f)
         print(f"Dumped uninitialized register file to {uninit_regfile_out}")
 
-    # initialize the register files
-    initialize_register_file(sm.regfile, "configs/sw_reg_init.yaml")
+    sm.mem.dump(uninit_mem_out)
+    print(f"Dumped uninitialized mem file to {uninit_mem_out}")
+
+    apply_local_setup(sm, setup_name)
 
     with open(init_regfile_out, "w") as f:
         sm.regfile.dump(file=f)
         print(f"Dumped initialized register file to {init_regfile_out}")
 
-    # initialize memory; modifies fields in memory
-    sm.mem.dump(uninit_mem_out)
+    sm.mem.dump(init_mem_out)
+    print(f"Dumped initialized memory to {init_mem_out}")
 
-    print(f"Dumped uninitialized mem file to {uninit_mem_out}")
-
-    initialize_memory(sm.mem, "configs/sw_mem_init.yaml")
     cycles = len(words)
 
-    sm.mem.dump(init_mem_out)
-    print(f"Dumped initialized regiter file to {init_mem_out}")
-
-    input("Checked both?")
     print("Running pipeline for", cycles, "cycles")
-
     for _ in range(cycles):
         sm.compute()
 
     flush = cycles + 2000
-
     print("Flushing pipeline", flush)
-
     for _ in range(flush):
         sm.compute()
 
@@ -329,12 +405,13 @@ def run_SM():
     with open(fin_prf_out, "w") as f:
         sm.prf.dump(file=f)
         print(f"Dumped predicate rf final state to {fin_prf_out}")
-    
+
     sm.mem.dump(fin_mem_out)
     print(f"Dumped memory final state to {fin_mem_out}")
 
     print_banks(sm.dcache)
     print(sm.scheduler.warp_table)
+
     return sm.regfile
 
 # ==============================================================================
@@ -342,15 +419,10 @@ def run_SM():
 # ==============================================================================
 
 if __name__ == "__main__":
+    args = _parse_args()
 
-    pipeline_rf = run_SM()
-
-    # not doing this 
-    # # Example golden model (clone current state)
-    # golden_rf = create_golden_rf(pipeline_rf)
-
-    # verify_register_files(
-    #     pipeline_rf=pipeline_rf,
-    #     golden_rf=golden_rf,
-    #     warp_ids=list(range(pipeline_rf.warps))
-    # )
+    pipeline_rf = run_SM(
+        program_file=args.program,
+        fmt=args.fmt,
+        setup_name=args.setup,
+    )

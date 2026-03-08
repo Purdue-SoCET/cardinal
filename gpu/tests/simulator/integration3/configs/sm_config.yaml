@@ -5,7 +5,7 @@ sm:
   threads_per_warp: 32
 
 program:
-  file: test_binaries/lw.bin
+  file: test_binaries/ldst_sequence.bin
   format: bin
 
 memory:
