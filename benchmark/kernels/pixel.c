@@ -2,16 +2,34 @@
 #include "include/pixel.h"
 #include "include/graphics_lib.h"
 
-void kernel_pixel(void* arg) {
-    pixel_arg_t* args = (pixel_arg_t*) arg;
-    
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_pixel(void* arg)
+#endif
+{
     int u, v;
+    #ifdef GPU_SIM
+    pixel_arg_t* args = (pixel_arg_t*) argPtr();
+
+    u = (((threadIdx())) - (args->buff_w)*(((threadIdx()))/(args->buff_w)));
+    // u = mod(threadIdx, args->buff_w);
+    v = (((threadIdx()) / args->buff_w) - (args->buff_h)*(((threadIdx()) / args->buff_w)/(args->buff_h)));
+    // v = mod(threadIdx / args->buff_w, args->buff_h);
+    
+    int tag = args->tag_buff[threadIdx()];
+    #else
+    pixel_arg_t* args = (pixel_arg_t*) arg;
+
     u = (((threadIdx)) - (args->buff_w)*(((threadIdx))/(args->buff_w)));
     // u = mod(threadIdx, args->buff_w);
     v = (((threadIdx) / args->buff_w) - (args->buff_h)*(((threadIdx) / args->buff_w)/(args->buff_h)));
     // v = mod(threadIdx / args->buff_w, args->buff_h);
     
     int tag = args->tag_buff[threadIdx];
+    #endif
+    
+
     if(tag < 0) return;
 
     triangle_t tri = args->tris[tag];
@@ -47,6 +65,10 @@ void kernel_pixel(void* arg) {
     float det = m00 * (m11 * m22 - m21 * m12) -
                 m01 * (m10 * m22 - m12 * m20) +
                 m02 * (m10 * m21 - m11 * m20);
+
+    if (det > -0.00001 && det < 0.00001) { // added to render teapot
+        return; 
+    }
     
     float invDet = 1.0 / det;
 
@@ -110,5 +132,9 @@ void kernel_pixel(void* arg) {
 
     // 3. Texture Lookup
     int idx = texel_y * args->texture.w + texel_x;
+    #ifdef GPU_SIM
+    args->color[threadIdx()] = args->texture.color_arr[idx];
+    #else
     args->color[threadIdx] = args->texture.color_arr[idx];
+    #endif
 }

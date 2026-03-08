@@ -12,6 +12,7 @@ typedef struct {
     vector_t* a_dist;          //distane of one origin axes 
     float* alpha_r;            //theta - angle for rotation matrix
     vertex_t* threeDVert;      //input 3D vectors
+    int num_verts;            //number of vertices
 
     /*output*/
     vertex_t* threeDVertTrans; //output 3D vertors after transformation
@@ -27,6 +28,10 @@ typedef struct {
     vertex_t* twoDVert;        //output 2D  vertors
 } vertexShader_arg_t;
 
+#ifdef GPU_SIM
+void main(void*);
+#else
 void kernel_vertexShader(void*);
+#endif
 
 #endif

@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: gpu-simulator
+Version: 0.1.0
+Summary: GPU Cycle-Accurate Simulator
+Author: 
+Author-email: 
+Requires-Python: >=3.8
+Requires-Dist: bitstring>=4.0.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: aenum>=3.1.0
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

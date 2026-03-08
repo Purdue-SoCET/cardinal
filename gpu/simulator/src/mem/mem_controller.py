@@ -231,6 +231,7 @@ class MemController(Stage):
                 resp = inst
             else:
                 data_bits = self.mem_backend.read(req.addr, req.size)
+                print(f"[MEMC] Reading from {req.addr}, got {data_bits}")
                 inst.packet = data_bits
                 resp = inst
 

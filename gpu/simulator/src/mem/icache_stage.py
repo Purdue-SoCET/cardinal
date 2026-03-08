@@ -166,7 +166,7 @@ class ICacheStage(Stage):
                         self.mem_req_if.push(self.req)
                         self.req_latched = False
                     else:
-                        print("[I$] Memrequest STALLED due tobusy memory")
+                        print("[I$] Memrequest STALLED due to busy memory")
                         self.req_latched = True
 
             # if scheduler isnt fetching and if theres no pending memory request

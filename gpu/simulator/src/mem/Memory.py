@@ -72,7 +72,10 @@ class Mem:
         byte_addr = int(addr)
         data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
         word = int.from_bytes(data, "little")
-        # print(f"[Memory] Returning data: {word:08x}")
+        print(f"[Memory] Returning data: {word:08x}")
+        # # input(f"Um...{self.memory}")
+        # input(f"Looks OK? \n {self.dump("random.txt")}")
+
         return Bits(bytes=data)
 
     def write(self, addr: int, data: Bits, bytes_t: int):
