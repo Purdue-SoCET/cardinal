@@ -36,8 +36,6 @@ class PredicateRegFile():
         " and whether it wants the inverted version or not..."
 
         if (prf_rd_en):
-            # print("[PRF] Reading PRF: ", prf_rd_wsel, prf_rd_psel, prf_neg)
-            # print(f"[PRF] Got: {self.reg_file[prf_rd_wsel][prf_rd_psel][prf_neg]}")
             return self.reg_file[prf_rd_wsel][prf_rd_psel] # no need to select the true/false
         else: 
             return None

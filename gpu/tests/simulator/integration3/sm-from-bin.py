@@ -670,12 +670,12 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
 def tick_all(p: dict):
     """Tick every pipeline stage once (same order as sm-no-mem.py)."""
     p["wb"].tick()
-    p["memc"].compute()
     p["ex"].tick()
     p["ex"].compute()
     p["dcache"].compute()
     p["issue"].compute()
     p["decode"].compute()
+    p["memc"].compute()
     p["icache"].compute()
     p["scheduler"].compute()
 
@@ -762,6 +762,7 @@ def run_test(
     Returns (passed_count, failed_count).
     """
     print(f"\nLoading program: {program_file}  (format={fmt})")
+    
     words = load_program(program_file, fmt=fmt)
 
     # Decode the instruction stream (skip HALTs & instructions with no rd write)
@@ -770,7 +771,7 @@ def run_test(
           f"{sum(1 for d in decoded_instrs if d['opcode_enum'] is not None)} decoded.")
 
     # ── build pipeline ────────────────────────────────────────────────────────
-    p = build_pipeline(program_file, fmt=fmt)
+    p = build_pipeline(program_file, fmt=fmt, start_pc=0)
     pipeline_rf  = p["pipeline_rf"]
     golden_rf    = p["golden_rf"]
     csr_table    = p["csr_table"]
@@ -1065,16 +1066,16 @@ def _parse_args():
 
 if __name__ == "__main__":
     args    = _parse_args()
-    # passed, failed = run_test(
-    #     program_file=Path(args.program),
-    #     fmt=args.fmt,
-    #     verbose=not args.quiet,
-    # )
-    # sys.exit(0 if failed == 0 else 1)
-
-    run_ldst_test(
+    passed, failed = run_test(
         program_file=Path(args.program),
         fmt=args.fmt,
+        verbose=not args.quiet,
     )
-    sys.exit(1)
+    sys.exit(0 if failed == 0 else 1)
+
+    # run_ldst_test(
+    #     program_file=Path(args.program),
+    #     fmt=args.fmt,
+    # )
+    # sys.exit(1)
     

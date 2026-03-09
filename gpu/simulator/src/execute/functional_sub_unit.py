@@ -2,7 +2,7 @@ from builtins import range
 from abc import ABC, abstractmethod
 import math
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op
+from gpu.common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op, U_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import LatchIF, Instruction, ForwardingIF
@@ -43,7 +43,7 @@ class Branch(FunctionalSubUnit):
             return
         
         if instr.opcode not in self.SUPPORTED_OPS:
-            raise ValueError(f"Branch does not support operation {instr.opcode}")
+            raise ValueError(f"Branch does not support operation {instr.opcode}, instruction i at pc: {instr.pc}")
         
         # FIX: initializng w-dat predicabtee becaue it yelling
         instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
@@ -248,7 +248,7 @@ class Alu(ArithmeticSubUnit):
             R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU, 
             I_Op.SUBI, I_Op.ADDI, I_Op.ORI, I_Op.XORI, 
             I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, 
-            I_Op.SRAI, C_Op.CSRR,
+            I_Op.SRAI, C_Op.CSRR, U_Op.LUI, U_Op.AUIPC, U_Op.LLI, U_Op.LMI
         ],
         float: [
             R_Op.ADDF, R_Op.SUBF, R_Op.SLTF, R_Op.SGEF,
@@ -285,6 +285,8 @@ class Alu(ArithmeticSubUnit):
                 a = instr.csr_value if instr.csr_param != 3 else instr.csr_value.uint
             elif instr.opcode in self.SUPPORTED_OPS[float]:
                 a = instr.rdat1[i].float
+            elif isinstance(instr.opcode, U_Op):
+                a = instr.imm.int
             else:
                 a = instr.rdat1[i].int
             
@@ -294,6 +296,11 @@ class Alu(ArithmeticSubUnit):
                 b = 0 if instr.csr_param != 0 else i
             elif instr.opcode in self.SUPPORTED_OPS[float]:
                 b = instr.rdat2[i].float
+            elif isinstance(instr.opcode, U_Op):
+                if instr.opcode == U_Op.AUIPC:
+                    b = instr.pc[i].int
+                else:
+                    b = instr.rdat1[1].int
             else:
                 b = instr.rdat2[i].int
 
@@ -346,6 +353,19 @@ class Alu(ArithmeticSubUnit):
                     if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
                         overflow_detected = True
                     result = int(a >= b)
+                case U_Op.AUIPC:
+                    result = (b + ((a & 0xFFFFF) << 12)) & 0xFFFFFFFF
+                case U_Op.LLI:
+                    # {old[31:12], imm[11:0]}
+                    result = ((b & 0xFFFFF000) | (a & 0xFFF)) & 0xFFFFFFFF
+                case U_Op.LMI:
+                    # {old[31:24], imm[11:0], old[11:0]}
+                    result= ((b & 0xFF000FFF) | ((a & 0xFFF) << 12)) & 0xFFFFFFFF
+
+                case U_Op.LUI:
+                    # {imm[7:0], old[23:0]}
+                    print("Operating on a U_Op type instruction..")
+                    result= (((a & 0xFF) << 24) | (b & 0x00FFFFFF)) & 0xFFFFFFFF
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
                 

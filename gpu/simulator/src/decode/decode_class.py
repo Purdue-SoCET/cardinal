@@ -292,9 +292,13 @@ class DecodeStage(Stage):
         if is_C:
             inst.num_operands = 0
 
+        # if u type, route the dest reg to be a src reg for concat.
+        if is_U:
+            inst.num_operands = 1
+            inst.rs1 = inst.rd 
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
-        if is_R or is_I or is_F or is_S or is_U or is_B or is_C or is_H:
+        if is_R or is_I or is_F or is_S or is_B or is_C or is_H or is_U:
             inst.src_pred = (raw >> 25) & 0x1F
         else:
             inst.src_pred = None
@@ -360,6 +364,7 @@ class DecodeStage(Stage):
         # indexed by thread id in the teal card?
         pred_req = None
         if inst.src_pred is not None:
+            print(inst.src_pred)
             pred_req = PredRequest(
                 rd_en=1,
                 rd_wrp_sel=inst.warp_id,
@@ -369,7 +374,6 @@ class DecodeStage(Stage):
             )
             
             # print(f"[Decode] Initiating PRF Read {pred_req}")
-
             pred_mask = self.prf.read_predicate(
                 prf_rd_en=pred_req.rd_en,
                 prf_rd_wsel=pred_req.rd_wrp_sel,
@@ -388,11 +392,6 @@ class DecodeStage(Stage):
                 Bits(uint=(p.uint if a else 0), length=1)
                 for a, p in zip(inst.active_mask, inst.predicate)
             ]
-            # inst.predicate = Bits(uint=(inst.predicate.uint & inst.active_mask.uint), length=32)
-            # later in the pipeline, this 'merged' predicate mask can be used to disable threads that were active but got masked out by the predicate register value
-            # without having to modify other stages to check for both an active mask and a predicate mask separately
-        # if is_H or is_J:
-        #     inst.predicate = [Bits(uint=1, length=1) for _ in range(32)]
 
         # Initialize wdat list for result storage (32 threads per warp)
         if not inst.wdat or len(inst.wdat) == 0:
