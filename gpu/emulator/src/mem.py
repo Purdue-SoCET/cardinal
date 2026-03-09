@@ -1,15 +1,13 @@
 #write into memsim.hex as hash table
-import sys
 from pathlib import Path
 import atexit
 from pathlib import Path
 from bitstring import Bits
 
 class Mem: 
-    def __init__(self, start_pc: int, input_file: str) -> None:
+    def __init__(self, start_pc: int, input_file: str, mem_format: str) -> None:
         self.memory: dict[int, int] = {}
-
-        endianness = "little"
+        self.endianness = "little"
         addr = start_pc
 
         p = Path(input_file)
@@ -18,28 +16,36 @@ class Mem:
 
         with p.open("r", encoding="utf-8") as f:
             for line_no, raw in enumerate(f, start=1):
-                # clean line: remove comments/whitespace/underscores
-                for marker in ("//", "#"):
-                    i = raw.find(marker)
-                    if i != -1:
-                        raw = raw[:i]
-                bits = raw.strip().replace("_", "")
-                if not bits:
+                line_clean = raw.split("//")[0].split("#")[0].strip()
+                if not line_clean:
                     continue
-                # print(f"{sys.argv[6]}, {type(sys.argv[6])}")
-                if (sys.argv[5] == "hex"):
-                    if len(bits) != 8 or any(c not in "0123456789ABCDEF" for c in bits):
-                        raise ValueError(f"Line {line_no}: expected 8 hex, got {bits!r}")
-                    word = int(bits, 16) & 0xFFFF_FFFF
-                
-                elif (sys.argv[5] == "bin"):
+
+                word = 0
+                if mem_format == "hex":
+                    parts = line_clean.split() # Split by whitespace to check for "ADDR DATA" pair
+                    
+                    if len(parts) == 2: # Format: 0xADDR 0xDATA
+                        explicit_addr = int(parts[0], 16)
+                        word = int(parts[1], 16)
+                        addr = explicit_addr
+                        
+                    elif len(parts) == 1: # Format: 0xDATA (Legacy/Sequential)
+                        word = int(parts[0], 16)
+                    else:
+                        raise ValueError(f"Line {line_no}: Expected 1 or 2 hex tokens, got {len(parts)}")
+
+
+                    word &= 0xFFFF_FFFF
+
+                elif mem_format == "bin":
+                    # Legacy binary handling (strict 32-bit string)
+                    bits = line_clean.replace("_", "").upper()
                     if len(bits) != 32 or any(c not in "01" for c in bits):
                         raise ValueError(f"Line {line_no}: expected 32 bits, got {bits!r}")
                     word = int(bits, 2) & 0xFFFF_FFFF
-                # else: 
-                #     word = int(bits, 2) & 0xFFFF_FFFF
-                # split into 4 bytes per chosen endianness
-                if endianness == "little":
+
+                # Write to Memory (Endianness Handling)
+                if self.endianness == "little":
                     b0 = (word >> 0)  & 0xFF
                     b1 = (word >> 8)  & 0xFF
                     b2 = (word >> 16) & 0xFF
@@ -50,31 +56,32 @@ class Mem:
                     b1 = (word >> 16) & 0xFF
                     b0 = (word >> 24) & 0xFF
 
-                # store 4 consecutive bytes
                 self.memory[addr + 0] = b0
                 self.memory[addr + 1] = b1
                 self.memory[addr + 2] = b2
                 self.memory[addr + 3] = b3
 
-                addr += 4  # next word starts 4 bytes later
+                # Auto-increment address for the next line (unless overridden by explicit addr)
+                addr += 4
+
         atexit.register(self.dump_on_exit)
 
-    def read(self, addr: int, bytes: int) -> int:
+    def read(self, addr: int, bytes: int) -> Bits:
         val = 0
 
         for i in range(bytes): #reads LSB first
             b = self.memory[addr + i] & 0xFF #endianness
             val |= b << (8 * i)
-            # print(f"byte_{i}={bin(b)} at mem_addr={addr + i}")
-            
-        # print(f"word={hex(val)} at mem_addr={addr}")
-        return val
+
+        print(f"* Read from address {addr:#010x} for {bytes} bytes: {val:#010x}")
+        return Bits(uint=val, length=8 * bytes)
 
     def write(self, addr: Bits, data: Bits, bytes_t: int) -> None:
-        # print(f"{addr},{data}")
+        print(f"\tWrite to address {addr:#010x} for {bytes_t} bytes: {data.uint:#010x}")
         for i in range(bytes_t):
-            self.memory[addr + i] =  data >> (8 * i)#
-            # print(f"{i}, {data << (8*i)}, {addr}")
+            self.memory[addr + i] =  (data.uint >> (8 * i)) & 0xFF
+
+        
     def dump_on_exit(self) -> None:
         try:
             self.dump("memsim.hex")
@@ -101,7 +108,12 @@ class Mem:
                 if (b0 | b1 | b2 | b3) == 0:
                     continue  # skip all-zero words
 
-                word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+                if self.endianness == 'little':
+                    # Little Endian: Addr+0 is LSB
+                    word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+                else:
+                    # Big Endian: Addr+0 is MSB
+                    word = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
 
                 f.write(f"{base:#010x} {word:#010x}\n")
 

@@ -1,15 +1,16 @@
-PYTHON := venv/bin/python3
+PYTHON := python3
 EMULATOR := src/emulator.py
-INPUT_FILE := meminit.hex
-KERNEL_DIM := 1024 1
-START_PC := 0
-TYPE := "hex"
 
+# Default Parameters (Overridden by the generic test script)
+THREADS ?= 32
+BLOCKS ?= 1
+START_PC ?= 0
+INPUT ?= meminit.hex
+FORMAT ?= hex
+
+# The Interface
 run:
-	$(PYTHON) $(EMULATOR) $(INPUT_FILE) $(KERNEL_DIM) $(START_PC) $(TYPE)
-
-run-bin:
-	$(MAKE) run TYPE="bin"
+	$(PYTHON) $(EMULATOR) -t $(THREADS) -b $(BLOCKS) --start-pc $(START_PC) --mem-format $(FORMAT) $(INPUT)
 
 clean:
-	rm -f *.out *.log
+	rm -f *.out *.log *.hex
