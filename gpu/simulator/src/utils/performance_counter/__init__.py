@@ -4,6 +4,7 @@ from simulator.utils.performance_counter.perf_config import (
     FlightRecorderConfig,
     TriggerConfig,
     TriggerOperator,
+    SnapshotScope,
 )
 from simulator.utils.performance_counter.telemeter import Telemeter
 
@@ -13,5 +14,6 @@ __all__ = [
     "FlightRecorderConfig",
     "TriggerConfig",
     "TriggerOperator",
+    "SnapshotScope",
     "Telemeter",
 ]
