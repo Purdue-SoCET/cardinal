@@ -77,96 +77,88 @@ class DecodeStage(Stage):
         # Determine operation type and look for matching functional units
         
         # Integer ALU operations (ADD, SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA, etc.)
-        if isinstance(op, R_Op) and op in [R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, R_Op.XOR, 
-                                            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU]:
-            for fu_name in self.fust.keys():
-                if fu_name.startswith("Alu_int_"):
-                    return fu_name
-        
-        # Integer immediate operations (ADDI, SUBI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI)
-        if isinstance(op, I_Op) and op in [I_Op.ADDI, I_Op.SUBI, I_Op.ORI, I_Op.XORI, 
-                                            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, I_Op.SRAI]:
+        if op in [
+            R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, R_Op.XOR, 
+            R_Op.SLT, R_Op.SLTU, R_Op.SLL, R_Op.SRL, R_Op.SRA,
+            R_Op.SGE, R_Op.SGEU, U_Op.LLI, U_Op.LUI, U_Op.AUIPC, 
+            U_Op.LMI, C_Op.CSRR, C_Op.CSRW, I_Op.ADDI, I_Op.SUBI, 
+            I_Op.ORI, I_Op.XORI, I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, 
+            I_Op.SRLI, I_Op.SRAI
+        ]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Alu_int_"):
                     return fu_name
         
         # Integer multiplication
-        if isinstance(op, R_Op) and op == R_Op.MUL:
+        if op in [R_Op.MUL]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Mul_int_"):
                     return fu_name
         
         # Integer division
-        if isinstance(op, R_Op) and op == R_Op.DIV:
+        if op in [R_Op.DIV]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Div_int_"):
                     return fu_name
         
-        # Floating-point add/sub
-        # Floating-point slt/sge
-        if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF, R_Op.SGEF, R_Op.SLTF]:
+        # Floating-point add/sub/slt/sge
+        if op in [R_Op.ADDF, R_Op.SUBF, R_Op.SGEF, R_Op.SLTF]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Alu_float_"):
                     return fu_name
 
         # Floating-point multiplication
-        if isinstance(op, R_Op) and op == R_Op.MULF:
+        if op in [R_Op.MULF]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Mul_float_"):
                     return fu_name
         
         # Floating-point division
-        if isinstance(op, R_Op) and op == R_Op.DIVF:
+        if op in [R_Op.DIVF]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Div_float_"):
                     return fu_name
         
         # Square root
-        if isinstance(op, F_Op) and op == F_Op.ISQRT:
+        if op in [F_Op.ISQRT]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("InvSqrt_float_"):
                     return fu_name
         
         # Trigonometric functions (SIN, COS)
-        if isinstance(op, F_Op) and op in [F_Op.SIN, F_Op.COS]:
+        if op in [F_Op.SIN, F_Op.COS]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Trig_float_"):
                     return fu_name
         
         # Type conversion (ITOF, FTOI) - handled by the Conv subunit in the SpecialUnit (has type float)
-        if isinstance(op, F_Op) and op in [F_Op.ITOF, F_Op.FTOI]:
+        if op in [F_Op.ITOF, F_Op.FTOI]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Conv_float_"):
                     return fu_name
         
         # Load/Store operations
-        if isinstance(op, (S_Op, I_Op)) and (op in [S_Op.SW, S_Op.SH, S_Op.SB] or 
-                                              op in [I_Op.LW, I_Op.LH, I_Op.LB]):
+        if op in [
+            S_Op.SW, S_Op.SH, S_Op.SB, I_Op.LW,
+            I_Op.LH, I_Op.LB,
+        ]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Ldst_Fu_"):
                     return fu_name
         
         # Branch operations
-        if isinstance(op, B_Op):
+        if op in [
+            B_Op.BEQ, B_Op.BNE, B_Op.BLT, B_Op.BGE, 
+            B_Op.BLTU, B_Op.BGEU, H_Op.HALT,
+        ]:
             for fu_name in self.fust.keys():
-                if "Branch" in fu_name or "branch" in fu_name:
+                if "Branch" in fu_name:
                     return fu_name
         
         # Jump operations
-        if isinstance(op, (J_Op, I_Op)) and (isinstance(op, J_Op) or op == I_Op.JALR):
+        if op in [J_Op.JAL, I_Op.JALR, P_Op.JPNZ]:
             for fu_name in self.fust.keys():
-                if "Branch" in fu_name or "branch" in fu_name:
-                    return fu_name
-                
-        if isinstance(op, H_Op) and op == H_Op.HALT:
-            for fu_name in self.fust.keys():
-                if "Branch" in fu_name or "branch" in fu_name:
-                    return fu_name
-                
-        # csrr instruction
-        if isinstance(op, C_Op):
-            for fu_name in self.fust.keys():
-                if fu_name.startswith("Alu_int_"):
+                if "Jump" in fu_name:
                     return fu_name
                         
         # Opcode not mapped to an FU, throw an error

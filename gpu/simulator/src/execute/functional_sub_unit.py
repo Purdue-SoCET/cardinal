@@ -345,7 +345,7 @@ class Alu(ArithmeticSubUnit):
                 b = instr.rdat2[i].float
             elif isinstance(instr.opcode, U_Op):
                 if instr.opcode == U_Op.AUIPC:
-                    b = instr.pc[i].int
+                    b = instr.pc.int
                 else:
                     b = instr.rdat1[i].int
             else:
