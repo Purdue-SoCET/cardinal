@@ -53,12 +53,8 @@ class Branch(FunctionalSubUnit):
             match instr.opcode:
                 case B_Op.BEQ:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
-                    if instr.warp_id == 0 and i == 31:
-                        print(instr.wdat_pred)
                 case B_Op.BNE:
                     instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
-                    if instr.warp_id == 0 and i == 31:
-                        print(instr.wdat_pred)
                 case H_Op.HALT:
                     continue
                 case _:
@@ -325,9 +321,6 @@ class Alu(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
                                                                  
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            print(instr.opcode)
-            print(self.type_)
-            print(self.SUPPORTED_OPS[self.type_])
             raise ValueError(f"ALU does not support operation {instr.opcode}")
 
         overflow_detected = False
@@ -354,14 +347,14 @@ class Alu(ArithmeticSubUnit):
                 if instr.opcode == U_Op.AUIPC:
                     b = instr.pc[i].int
                 else:
-                    b = instr.rdat1[1].int
+                    b = instr.rdat1[i].int
             else:
                 b = instr.rdat2[i].int
 
             match instr.opcode:
                 # case R_Op.ADD | I_Op.ADDI:
                 case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF:
-                    result = a + b
+                    result = a + b            
                     # Check for signed overflow
                     if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI and (result > 2147483647 or result < -2147483648):
                         overflow_detected = True
@@ -418,7 +411,6 @@ class Alu(ArithmeticSubUnit):
 
                 case U_Op.LUI:
                     # {imm[7:0], old[23:0]}
-                    print("Operating on a U_Op type instruction..")
                     result= (((a & 0xFF) << 24) | (b & 0x00FFFFFF)) & 0xFFFFFFFF
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
@@ -530,7 +522,6 @@ class Div(ArithmeticSubUnit):
                         # Check for division overflow (MIN_INT / -1)
                         if a == -2147483648 and b == -1:
                             overflow_detected = True
-                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.DIVF:
                     a = instr.rdat1[i].float
@@ -543,7 +534,6 @@ class Div(ArithmeticSubUnit):
                         # Check for floating-point overflow
                         if math.isinf(result) or math.isnan(result):
                             overflow_detected = True
-                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in DIV.")

@@ -784,9 +784,6 @@ def run_test(
     # ── warp IDs under test ───────────────────────────────────────────────────
     warp_ids = list(range(WARP_COUNT + (1 if WARP_COUNT % 2 else 0)))
 
-    # these must be initialized differenly based on the test case 
-    initialize_regfile(pipeline_rf, golden_rf, warp_ids, threads, default=True)
-
     # ── sanity-check: initial RF matches ─────────────────────────────────────
     print("\nVerifying initial register file state against golden model...")
     for warp_id in warp_ids:

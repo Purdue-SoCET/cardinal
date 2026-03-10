@@ -104,7 +104,6 @@ class WritebackStage(Stage):
             if instr is None:
                 continue
             if instr.opcode == H_Op.HALT:
-                input("STOP THIS BULLSHIIIT")
                 continue
             
             for i in range(32):
