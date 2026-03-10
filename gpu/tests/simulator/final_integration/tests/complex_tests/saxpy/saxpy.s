@@ -10,7 +10,8 @@ START:
     lw x7, x15, 12              ; x7 = Y = Array 1 start
 
     ; if (i < N)
-    blt p2, x3, x4
+    slt x16, x3, x4
+    bne p2, x16, x0, pred
 
     ; Add offset for X and Y
     slli x3, x3, 2
