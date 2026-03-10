@@ -54,6 +54,9 @@ class SchedulerStage(Stage):
         # could add perf counters
         self.stop_fetching = False
 
+        # DELETE LATER
+        self.system_finished: bool = False
+
     # figuring out which warps can/cant issue
     def collision(self):
         # pop from decode, issue, writeback
@@ -66,6 +69,12 @@ class SchedulerStage(Stage):
         # print("[SchedulerStage] Warp Issue Check, Issue Control:", issue_ctrl)
         # print("[SchedulerStage] Warp Issue Check, Branch Control:", branch_ctrl)
         # print("[SchedulerStage] Warp Issue Check, Writeback Control:", writeback_ctrl)
+
+        # DELETE LATER
+        ldst_ctrl = self.forward_ifs_read["LDST_Scheduler"].pop()
+        if ldst_ctrl is not None and ldst_ctrl.get("flush_complete"):
+            print("Scheduler: Received halt")
+            self.system_finished = True
 
         # if im getting my odd warp EOP out of my i$
         if self.eop and self.warp_id % 2:

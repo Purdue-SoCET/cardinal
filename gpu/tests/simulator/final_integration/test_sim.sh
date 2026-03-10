@@ -141,7 +141,7 @@ if [ "$RUN_OPTION" -eq 1 ]; then
         # --------------------------------------
         # 3. Run Tests
         # --------------------------------------
-        THREADS=32
+        THREADS=1024
         BLOCKS=1
 
         # Run the emulator
@@ -151,7 +151,8 @@ if [ "$RUN_OPTION" -eq 1 ]; then
         fi
 
         # Run the simulator
-        make simulator INPUT="$MEMINIT_BIN"
+        debug_file="${base_name}_debug.txt"
+        make simulator SIM_INPUT="$MEMINIT_BIN" > "$debug_file"
 
         # --------------------------------------
         # 3. Compare emulator and simulator output
@@ -164,10 +165,12 @@ if [ "$RUN_OPTION" -eq 1 ]; then
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
             rm -f "$error_log"
+            rm -f "$debug_file"
             ((PASS_COUNT++))
         else
             echo -e "${RED}[FAIL]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
             # Save all artifacts for debugging
+            mv "$debug_file" "$DIFF_DIR/"
             cp "$EMU_OUTPUT" "$DIFF_DIR/${test_id}_exp.hex"
             cp "$SIM_OUTPUT" "$DIFF_DIR/${test_id}_sim.hex"
             cp "$MEMINIT" "$DIFF_DIR/${test_id}_meminit.hex" # <--- Added Dump
@@ -191,7 +194,7 @@ elif [ "$RUN_OPTION" -eq 2 ]; then
         # --------------------------------------
         # 2. Run Tests
         # --------------------------------------
-        THREADS=32
+        THREADS=1024
         BLOCKS=1
 
         # Run the emulator
@@ -201,7 +204,8 @@ elif [ "$RUN_OPTION" -eq 2 ]; then
         fi
 
         # Run the simulator
-        make simulator INPUT="$bin_file"
+        debug_file="${base_name}_debug.txt"
+        make simulator SIM_INPUT="$bin_file" > "$debug_file"
 
         # --------------------------------------
         # 3. Compare emulator and simulator output
@@ -214,10 +218,12 @@ elif [ "$RUN_OPTION" -eq 2 ]; then
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
             rm -f "$error_log"
+            rm -f "$debug_file"
             ((PASS_COUNT++))
         else
             echo -e "${RED}[FAIL]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
             # Save all artifacts for debugging
+            mv "$debug_file" "$DIFF_DIR/"
             cp "$EMU_OUTPUT" "$DIFF_DIR/${test_id}_exp.hex"
             cp "$SIM_OUTPUT" "$DIFF_DIR/${test_id}_sim.hex"
             cp "$hex_output" "$DIFF_DIR/${test_id}_meminit.hex" # <--- Added Dump

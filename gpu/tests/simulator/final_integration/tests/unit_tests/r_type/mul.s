@@ -12,8 +12,9 @@ START:
     lli   x6, 4                         ; stride = 4 bytes/thread (1 word each)
     lui   x7, 0x10                      ; heap base address
 
-    ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred              ; p2 = (x3 < x5) == (TID < MAX_THREADS)
+    ; if (tid < MAX_THREADS) -> compute         
+    slt x13, x3, x5
+    bne p2, x13, x0, pred               ; p2 = (x3 < x5) == (TID < MAX_THREADS)
 
 COMPUTE:
 

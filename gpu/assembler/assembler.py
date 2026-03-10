@@ -432,7 +432,8 @@ class Assembler:
         
         elif opcode in H_TYPE:
             # H-type (HALT): [end=1, start=0, 1s[29:7], opcode[6:0]]
-            return '10' + '1' * 23 + op_bits
+            #return '10' + '1' * 23 + op_bits
+            return (self.to_binary(end, 1) + self.to_binary(start, 1) + self.to_binary(predicate, 5) + '1' * 18 + op_bits)
         
         else:
             raise ValueError(f"Unknown instruction format for {opcode}")

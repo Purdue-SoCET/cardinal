@@ -7,6 +7,7 @@ from bitstring import Bits
 class Instr_Type(Enum):
     R_TYPE_0 = Bits(bin='0000', length=4)  # 0000
     R_TYPE_1 = Bits(bin='0001', length=4)  # 0001
+    R_TYPE_2 = Bits(bin='1001', length=4)  # 1001
     I_TYPE_0 = Bits(bin='0010', length=4)  # 0010
     I_TYPE_1 = Bits(bin='0011', length=4)  # 0011
     I_TYPE_2 = Bits(bin='0100', length=4)  # 0100
@@ -24,7 +25,7 @@ class Instr_Type(Enum):
 class Op(Enum):
     pass
 
-# R-Type Operations (opcode: 0000xxx and 0001xxx)
+# R-Type Operations (opcode: 0000xxx and 0001xxx and 1001xxx)
 class R_Op_0(Op):
     ADD = Bits(bin='000', length=3)   # 000
     SUB = Bits(bin='001', length=3)   # 001
@@ -45,16 +46,24 @@ class R_Op_1(Op):
     SRL = Bits(bin='110', length=3)   # 110
     SRA = Bits(bin='111', length=3)   # 111
 
+class R_Op_2(Op):
+    SLTF = Bits(bin='011', length=3)  # 011
+    SGE  = Bits(bin='101', length=3)  # 101
+    SGEU = Bits(bin='110', length=3)  # 110
+    SGEF = Bits(bin='111', length=3)  # 111
+
 # I-Type Operations (opcode: 0010xxx)
 class I_Op_0(Op):
     ADDI = Bits(bin='000', length=3)   # 000
     SUBI = Bits(bin='001', length=3)   # 001
     ORI = Bits(bin='101', length=3)    # 101
+    XORI = Bits(bin='100', length=3)   # 100
     SLTI = Bits(bin='111', length=3)   # 111
 
 # I-Type Operations (opcode: 0011xxx)
 class I_Op_1(Op):
     SLTIU = Bits(bin='000', length=3)  # 000
+    SLLI = Bits(bin='101', length=3)   # 101
     SRLI = Bits(bin='110', length=3)   # 110
     SRAI = Bits(bin='111', length=3)   # 111
 
@@ -94,6 +103,10 @@ class B_Op_0(Op):
 
 # B-Type Operations (opcode: 1001xxx) - Currently unused but reserved
 class B_Op_1(Op):
+    BEQF = Bits(bin='000', length=3)   # 000
+    BNEF = Bits(bin='001', length=3)   # 001
+    BGEF = Bits(bin='010', length=3)   # 010
+    BLTF = Bits(bin='100', length=3)   # 100
     pass  # No operations defined yet
 
 # U-Type Operations (opcode: 1010xxx)
@@ -115,6 +128,9 @@ class J_Op(Op):
 # P-Type Operations (opcode: 1101xxx)
 class P_Op(Op):
     JPNZ = Bits(bin='000', length=3)   # 000
+    PRSW = Bits(bin='100', length=3)   # 100
+    PRLW = Bits(bin='101', length=3)   # 101
+
 
 # H-Type Operations (opcode: 1111xxx)
 class H_Op(Op):
