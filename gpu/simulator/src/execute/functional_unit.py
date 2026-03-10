@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, Sqrt, Trig, InvSqrt, Branch, Jump
+from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, Sqrt, Trig, InvSqrt, Branch, Jump, Conv
 from simulator.compact_queue import CompactQueue
 from simulator.latch_forward_stage import Instruction
 from simulator.mem.ld_st import Ldst_Fu
@@ -76,17 +76,21 @@ class FpUnitConfig:
 class SpecialUnitConfig:
     trig_count: int
     inv_sqrt_count: int
+    conv_count: int
 
     trig_latency: int
     inv_sqrt_latency: int
+    conv_latency: int
 
     @classmethod
     def get_default_config(cls) -> SpecialUnitConfig:
         return cls(
             trig_count=1,
             inv_sqrt_count=1,
+            conv_count=1,
             trig_latency=16,
-            inv_sqrt_latency=12
+            inv_sqrt_latency=12,
+            conv_latency=1
         )    
     
 class FunctionalUnit(ABC):
@@ -156,5 +160,7 @@ class SpecialUnit(FunctionalUnit):
             subunits.append(Trig(latency=config.trig_latency, type_=float, num=i * (num + 1)))
         for i in range(config.inv_sqrt_count):
             subunits.append(InvSqrt(latency=config.inv_sqrt_latency, type_=float, num=i * (num + 1)))
+        for i in range(config.conv_count):
+            subunits.append(Conv(latency=config.conv_latency, num=i * (num + 1)))
 
         super().__init__(subunits=subunits, num=num)

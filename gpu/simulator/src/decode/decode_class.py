@@ -134,11 +134,10 @@ class DecodeStage(Stage):
                 if fu_name.startswith("Trig_float_"):
                     return fu_name
         
-        # Type conversion (ITOF, FTOI) - typically handled by ALU or special unit
+        # Type conversion (ITOF, FTOI) - handled by the Conv subunit in the SpecialUnit (has type float)
         if isinstance(op, F_Op) and op in [F_Op.ITOF, F_Op.FTOI]:
-            # Try Alu first, then any available unit
             for fu_name in self.fust.keys():
-                if fu_name.startswith("Alu_int_"):
+                if fu_name.startswith("Conv_float_"):
                     return fu_name
         
         # Load/Store operations

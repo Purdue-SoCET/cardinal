@@ -240,6 +240,60 @@ class ArithmeticSubUnit(FunctionalSubUnit):
         
         return out_data # return data to the Exectute stage so that all results can be collected and sent to WB stage together
 
+class Conv(ArithmeticSubUnit):
+    SUPPORTED_OPS = {
+        float: [F_Op.ITOF, F_Op.FTOI]
+    }
+
+    def __init__(self, latency: int, num: int, type_: type = float):
+        
+        # converstion unit will be considered float since it requires float hardware for all operations, even if int is involved
+        if type_ != float:
+            raise ValueError("Conversion unit only supports floating-point operations.")
+
+        super().__init__(latency=latency, num=num, type_=type_)
+
+    def compute(self):
+        # Use current_instr if pipeline is empty (latency=1), else use last queue entry
+        instr = self.pipeline.queue[-1]
+        if instr is None:
+            return
+
+        if not isinstance(instr, Instruction):
+            raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
+        
+        if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
+            raise ValueError(f"Conversion does not support operation {instr.opcode}")
+
+        overflow_detected = False
+        for i in range(32):
+            if instr.predicate[i].bin == "0":
+                continue
+
+            match instr.opcode:
+                case F_Op.ITOF:
+                    a = instr.rdat1[i].int
+                    result = float(a)
+                    # Check for overflow (exceeding max float or min float)
+                    if result > 3.4028235e+38 or result < -3.4028235e+38:
+                        overflow_detected = True
+                    instr.wdat[i] = Bits(length=32, float=result)
+                case F_Op.FTOI:
+                    a = instr.rdat1[i].float
+                    result = int(a)
+                    # Check for overflow (exceeding max int or min int)
+                    if result > 2147483647 or result < -2147483648:
+                        overflow_detected = True
+                    instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
+                case _:
+                    raise ValueError(f"Unsupported operation {instr.opcode} in Conversion.")
+        
+        if overflow_detected:
+            self.perf_count.increment_overflow(instr.opcode)
+
+        if self.latency == 1:
+            self.single_cycle_latency_compute_tick()
+
 class Alu(ArithmeticSubUnit):
     SUPPORTED_OPS = {
         int: [
@@ -369,6 +423,8 @@ class Alu(ArithmeticSubUnit):
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
                 
+            if instr.opcode == U_Op.LUI:
+                instr.wdat[i] = Bits(length=32, hex=result)
             if self.type_ == int:
                 instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
             elif self.type_ == float:
