@@ -5,7 +5,7 @@ from typing import Dict
 
 from aenum import Enum
 from bitstring import Bits
-from gpu.common.custom_enums_multi import H_Op, I_Op
+from gpu.common.custom_enums_multi import H_Op, I_Op, B_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF
@@ -107,7 +107,7 @@ class WritebackStage(Stage):
                 continue
             
             for i in range(32):
-                if instr.predicate[i].bin == "0":
+                if instr.predicate[i].bin == "0" and instr.opcode != B_Op.BEQ and instr.opcode != B_Op.BNE:
                     continue
                 
                 if isinstance(instr.target_bank, int):

@@ -48,13 +48,13 @@ class Branch(FunctionalSubUnit):
         # FIX: initializng w-dat predicabtee becaue it yelling
         instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
         for i in range(32):
-            if instr.predicate[i].bin == "0":
-                continue
+            #if instr.predicate[i].bin == "0":
+                #continue
             match instr.opcode:
                 case B_Op.BEQ:
-                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
+                    instr.wdat_pred[i] = Bits(uint=((instr.rdat1[i].uint == instr.rdat2[i].uint) & instr.predicate[i].uint), length=1)
                 case B_Op.BNE:
-                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
+                    instr.wdat_pred[i] = Bits(uint=((instr.rdat1[i].uint != instr.rdat2[i].uint) & instr.predicate[i].uint), length=1)
                 case H_Op.HALT:
                     continue
                 case _:
