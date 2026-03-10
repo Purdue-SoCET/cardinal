@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; base = 0x10000000
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred
+    slt x12, x3, x5
+    bne p2, x12, x0
 
     ; x8 = 2.0      TODO: Update to load in 32 different values from memory
     lui x8, 0x40, 2

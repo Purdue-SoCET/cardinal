@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; heap base address = 0x10000000
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred
+    slt x16, x3, x5
+    bne p2, x16, x0
 
     ; -----------------------------
     ; Test 1: slti with +16

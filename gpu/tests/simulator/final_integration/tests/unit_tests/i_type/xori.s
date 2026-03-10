@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred
+    slt x15, x3, x5
+    bne p2, x15, x0
 
     ; -----------------------------
     ; Test 1: xori with +0x0F
