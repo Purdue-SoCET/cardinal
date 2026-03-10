@@ -304,6 +304,23 @@ class Alu(ArithmeticSubUnit):
             R_Op.ADDF, R_Op.SUBF, R_Op.SLTF, R_Op.SGEF,
         ]
     }
+    OUTPUT_TYPE = {
+        int: [
+             R_Op.ADD, R_Op.SUB, R_Op.AND, R_Op.OR, 
+            R_Op.XOR, R_Op.SLT, R_Op.SLTU, R_Op.SLL, 
+            R_Op.SRL, R_Op.SRA, R_Op.SGE, R_Op.SGEU, 
+            I_Op.SUBI, I_Op.ADDI, I_Op.ORI, I_Op.XORI, 
+            I_Op.SLTI, I_Op.SLTIU, I_Op.SLLI, I_Op.SRLI, 
+            I_Op.SRAI, C_Op.CSRR, U_Op.LUI, U_Op.AUIPC, 
+            U_Op.LLI, U_Op.LMI,
+
+            # the results of these ops are integers, even though their input is float
+            R_Op.SLTF, R_Op.SGEF,
+        ],
+        float: [
+            R_Op.ADDF, R_Op.SUBF, 
+        ]
+    }
 
     def __init__(self, latency: int, num: int, type_: type):
         if type_ != int and type_ != float:
@@ -345,7 +362,7 @@ class Alu(ArithmeticSubUnit):
                 b = instr.rdat2[i].float
             elif isinstance(instr.opcode, U_Op):
                 if instr.opcode == U_Op.AUIPC:
-                    b = instr.pc.int
+                    b = instr.pc
                 else:
                     b = instr.rdat1[i].int
             else:
@@ -415,12 +432,12 @@ class Alu(ArithmeticSubUnit):
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU_{self.type_}.")
                 
-            if self.type_ == int:
+            if instr.opcode in self.OUTPUT_TYPE[int]:
                 instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
-            elif self.type_ == float:
+            elif instr.opcode in self.OUTPUT_TYPE[float]:
                 instr.wdat[i] = Bits(length=32, float=result)
             else:
-                raise ValueError(f"Unsupported type '{self.type_}' in ALU_{self.type_} compute.")
+                raise ValueError(f"Opcode {instr.opcode} doesnt have an output type listed in {self.__class__.__name__}.OUTPUT_TYPE.")
         
         if overflow_detected:
             self.perf_count.increment_overflow(instr.opcode)
