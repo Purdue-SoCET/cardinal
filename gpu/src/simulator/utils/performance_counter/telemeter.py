@@ -49,11 +49,11 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import polars as pl
 
-from simulator.utils.performance_counter.perf_config import PerfConfig
+from simulator.utils.performance_counter.perf_config import PerfConfig, SnapshotScope, TriggerConfig
 from simulator.utils.performance_counter.perf_counter_base import PerfCounterBase
 
 
@@ -87,6 +87,18 @@ class Telemeter:
         self._fr_active: bool = False       # True while in post-trigger capture window
         self._active_capture_units: Set[str] = set()  # empty = capture all units
 
+        # Snapshot provider registry — populated after construction via
+        # register_snapshot_provider().  Keyed by provider name.
+        # Provider signature: (scope: Optional[SnapshotScope]) -> Dict[str, Any]
+        self._snapshot_providers: Dict[str, Callable[..., Dict[str, Any]]] = {}
+        # Snapshot scopes active for the current trigger window
+        # Maps provider name → SnapshotScope (None = full snapshot)
+        self._active_snapshot_scopes: Dict[str, Optional[SnapshotScope]] = {}
+        self._snapshot_each_cycle: bool = False  # any active trigger needs per-cycle
+
+        # One entry per trigger fire event — written to trigger_summary.parquet at finalize()
+        self._trigger_events: List[Dict[str, Any]] = []
+
         if config.flight_recorder is not None:
             self._fr_deque = deque(maxlen=config.flight_recorder.max_pre_capture_depth)
 
@@ -108,6 +120,51 @@ class Telemeter:
     def get_unit(self, unit_name: str) -> Optional[PerfCounterBase]:
         """Return the registered counter for a unit, or None."""
         return self._units.get(unit_name)
+
+    # ------------------------------------------------------------------
+    # Snapshot provider registration
+    # ------------------------------------------------------------------
+
+    def register_snapshot_provider(
+        self,
+        name: str,
+        provider: Callable[[], Dict[str, Any]],
+    ) -> None:
+        """
+        Register a state snapshot provider.
+
+        Call this after constructing the Telemeter but before the simulation
+        loop starts, once the simulation objects (RF, memory, etc.) exist.
+
+        The provider is a callable with signature:
+            provider(scope: Optional[SnapshotScope]) -> Dict[str, Any]
+
+        When called with scope=None the provider should return a full
+        snapshot.  When called with a SnapshotScope the provider filters
+        its output to the requested warps/threads — the Telemeter does not
+        parse the returned dict keys itself.
+
+        Example
+        -------
+            telemeter.register_snapshot_provider(
+                "register_file",
+                lambda scope: reg_file.snapshot(scope=scope),
+            )
+            telemeter.register_snapshot_provider(
+                "memory",
+                lambda scope: mem.snapshot_dirty(),  # ignores scope
+            )
+
+        TriggerConfig then references providers by name and optionally
+        restricts them with snapshot_scopes:
+            TriggerConfig(
+                snapshot_providers={"register_file", "memory"},
+                snapshot_scopes={
+                    "register_file": SnapshotScope(warps={0,1}, threads={0}),
+                },
+            )
+        """
+        self._snapshot_providers[name] = provider
 
     # ------------------------------------------------------------------
     # Hot-path: trace active check
@@ -169,6 +226,29 @@ class Telemeter:
     # Flight recorder
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _trigger_row_base(trigger: TriggerConfig) -> Dict[str, Any]:
+        """Build the config-derived fields shared by config and event rows."""
+        scopes_str = (
+            "{" + ", ".join(
+                f"{k!r}: {v!r}" for k, v in sorted(trigger.snapshot_scopes.items())
+            ) + "}"
+            if trigger.snapshot_scopes else "(none)"
+        )
+        return {
+            "trigger_name":      trigger.name,
+            "trigger_field":     trigger.field,
+            "trigger_operator":  trigger.operator.name,
+            "trigger_value":     str(trigger.value),
+            "watched_units":     ", ".join(sorted(trigger.watched_units))  if trigger.watched_units  else "(any)",
+            "capture_units":     ", ".join(sorted(trigger.capture_units))  if trigger.capture_units  else "(all)",
+            "pre_capture_depth": trigger.pre_capture_depth,
+            "post_capture_cycles": trigger.post_capture_cycles,
+            "snapshot_providers": ", ".join(sorted(trigger.snapshot_providers)) if trigger.snapshot_providers else "(none)",
+            "snapshot_scopes":   scopes_str,
+            "snapshot_each_cycle": trigger.snapshot_each_cycle,
+        }
+
     def _is_unit_captured(self, unit_name: str) -> bool:
         """Return True if unit_name should be routed to the main buffer
         during an active post-trigger capture window.
@@ -199,10 +279,16 @@ class Telemeter:
 
         longest_post = 0
         fired_capture_units: Set[str] = set()
+        fired_snapshot_providers: Set[str] = set()
+        fired_snapshot_scopes: Dict[str, SnapshotScope] = {}
         capture_all = False
+        any_each_cycle = False
 
         for trigger in fr_cfg.triggers:
             if trigger.matches(unit_name, fields):
+                # Capture pre-trigger window info before the deque is cleared
+                pre_capture_rows: int = 0
+                pre_capture_start_cycle: Optional[int] = None
                 # Filter the deque to only rows from this trigger's capture_units
                 if self._fr_deque:
                     rows_to_commit = [
@@ -210,6 +296,9 @@ class Telemeter:
                         if not trigger.capture_units
                         or r["unit_name"] in trigger.capture_units
                     ]
+                    pre_capture_rows = len(rows_to_commit)
+                    if rows_to_commit:
+                        pre_capture_start_cycle = rows_to_commit[0]["cycle"]
                     self._trace_buffer.extend(rows_to_commit)
                     self._fr_deque.clear()
                 if not trigger.capture_units:
@@ -218,31 +307,91 @@ class Telemeter:
                     fired_capture_units.update(trigger.capture_units)
                 if trigger.post_capture_cycles > longest_post:
                     longest_post = trigger.post_capture_cycles
+                fired_snapshot_providers.update(trigger.snapshot_providers)
+                # Union scopes for providers declared by this trigger
+                for provider_name in trigger.snapshot_providers:
+                    new_scope = trigger.snapshot_scopes.get(provider_name)
+                    if new_scope is None:
+                        # No scope = full snapshot; union result is also full
+                        fired_snapshot_scopes.pop(provider_name, None)
+                    elif provider_name in fired_snapshot_scopes:
+                        fired_snapshot_scopes[provider_name] = (
+                            fired_snapshot_scopes[provider_name].union(new_scope)
+                        )
+                    else:
+                        fired_snapshot_scopes[provider_name] = new_scope
+                if trigger.snapshot_each_cycle:
+                    any_each_cycle = True
+                # Record this fire event for the trigger summary
+                self._trigger_events.append({
+                    "row_type":               "event",
+                    **self._trigger_row_base(trigger),
+                    "fired_cycle":            cycle,
+                    "fired_by_unit":          unit_name,
+                    "pre_capture_rows":        pre_capture_rows,
+                    "pre_capture_start_cycle": pre_capture_start_cycle,
+                    "post_capture_end_cycle":  cycle + trigger.post_capture_cycles,
+                })
 
         if longest_post > 0:
             self._fr_active = True
-            # Union capture_units across all fired triggers this cycle;
-            # if any trigger captures all, the union is all.
             if not capture_all:
                 self._active_capture_units.update(fired_capture_units)
             else:
                 self._active_capture_units.clear()  # empty = all
             if longest_post > self._fr_post_cycles_remaining:
                 self._fr_post_cycles_remaining = longest_post
+            # Union snapshot scopes across all fired triggers.
+            # For each provider, union with any already-active scope for that
+            # provider (handles re-triggers mid-window as well).
+            for provider_name, new_scope in fired_snapshot_scopes.items():
+                existing = self._active_snapshot_scopes.get(provider_name)
+                self._active_snapshot_scopes[provider_name] = (
+                    new_scope if existing is None else existing.union(new_scope)
+                )
+            if any_each_cycle:
+                self._snapshot_each_cycle = True
+            # Immediate on-fire snapshot
+            if fired_snapshot_providers:
+                self._take_snapshots(cycle, fired_snapshot_providers)
 
-    def advance_flight_recorder(self) -> None:
+    def advance_flight_recorder(self, cycle: int) -> None:
         """
         Decrement the post-trigger cycle counter.  Call this once per
-        simulation cycle (e.g. at the top of the main sim loop).
+        simulation cycle at the top of the main sim loop, passing the
+        current cycle number.
 
-        When the counter reaches zero, the flight recorder returns to
-        circular-buffer (pre-trigger) mode.
+        Calls any per-cycle snapshot providers registered on active triggers
+        before decrementing.  When the counter reaches zero, the flight
+        recorder returns to circular-buffer (pre-trigger) mode.
         """
-        if self._fr_active and self._fr_post_cycles_remaining > 0:
+        if not self._fr_active:
+            return
+
+        # Per-cycle snapshots during post-capture window
+        if self._snapshot_each_cycle and self._active_snapshot_scopes:
+            self._take_snapshots(cycle, set(self._active_snapshot_scopes.keys()))
+
+        if self._fr_post_cycles_remaining > 0:
             self._fr_post_cycles_remaining -= 1
             if self._fr_post_cycles_remaining == 0:
                 self._fr_active = False
                 self._active_capture_units.clear()
+                self._active_snapshot_scopes.clear()
+                self._snapshot_each_cycle = False
+
+    def _take_snapshots(self, cycle: int, provider_names: Set[str]) -> None:
+        """Call each named provider with its scope and write the result as a trace row."""
+        for name in provider_names:
+            provider = self._snapshot_providers.get(name)
+            if provider is None:
+                continue
+            scope: Optional[SnapshotScope] = self._active_snapshot_scopes.get(name)
+            state = provider(scope)
+            row: Dict[str, Any] = {"cycle": cycle, "unit_name": name, **state}
+            self._trace_buffer.append(row)
+        if len(self._trace_buffer) >= self.config.buffer_limit:
+            self.flush_traces()
 
     # ------------------------------------------------------------------
     # I/O
@@ -298,6 +447,32 @@ class Telemeter:
             df_traces.write_parquet(str(self.output_dir / "traces.parquet"))
             for part in part_files:
                 part.unlink()
+
+        # Write trigger summary: one config row per registered trigger +
+        # one event row per runtime fire, combined into trigger_summary.parquet.
+        fr_cfg = self.config.flight_recorder
+        if fr_cfg is not None and fr_cfg.triggers:
+            _null_runtime: Dict[str, Any] = {
+                "fired_cycle":            None,
+                "fired_by_unit":          None,
+                "pre_capture_rows":        None,
+                "pre_capture_start_cycle": None,
+                "post_capture_end_cycle":  None,
+            }
+            trigger_rows: List[Dict[str, Any]] = [
+                {"row_type": "config", **self._trigger_row_base(t), **_null_runtime}
+                for t in fr_cfg.triggers
+            ] + self._trigger_events
+            df_trig = pl.from_dicts(
+                trigger_rows,
+                schema_overrides={
+                    "fired_cycle":            pl.Int64,
+                    "pre_capture_rows":        pl.Int64,
+                    "pre_capture_start_cycle": pl.Int64,
+                    "post_capture_end_cycle":  pl.Int64,
+                },
+            )
+            df_trig.write_parquet(str(self.output_dir / "trigger_summary.parquet"))
 
         if not self._units:
             return

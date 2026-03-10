@@ -17,8 +17,18 @@ Typical usage
                     operator=TriggerOperator.EQ,
                     value=True,
                     watched_units={"ALU_Int_0", "ALU_Float_0"},
+                    capture_units={"Decode_Stage", "ALU_Int_0", "ALU_Float_0"},
                     pre_capture_depth=64,
                     post_capture_cycles=32,
+                    snapshot_providers={"register_file", "memory"},
+                    snapshot_scopes={
+                        "register_file": SnapshotScope(
+                            warps={0, 1, 2, 3},   # only first 4 warps
+                            threads={0},          # only thread 0 per warp
+                        ),
+                        # "memory" has no scope entry → full snapshot
+                    },
+                    snapshot_each_cycle=True,
                 ),
                 TriggerConfig(
                     field="cache_miss",
@@ -38,7 +48,120 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+
+@dataclass
+class SnapshotScope:
+    """
+    Restricts a snapshot provider to a subset of warps, threads, and/or
+    cache/memory addresses.
+
+    Pass one instance per provider name in TriggerConfig.snapshot_scopes.
+    The provider callable receives this scope and is responsible for
+    applying it — the Telemeter does not parse the returned dict keys.
+
+    All address fields accept plain Python int values; use hex literals
+    (e.g. 0x1000) for readability.  An empty set always means "all" for
+    that dimension.
+
+    Attributes
+    ----------
+    warps            : Warp indices to include.  Empty = all warps.
+    threads          : Thread indices within each warp.  Empty = all threads.
+    addresses        : Data-memory addresses to include in a memory snapshot.
+                       Empty = all addresses.
+    icache_addresses : Instruction-cache line addresses (PCs) to include in
+                       an I-cache snapshot.  Empty = all I-cache lines.
+    dcache_addresses : Data-cache line addresses to include in a D-cache
+                       snapshot.  Empty = all D-cache lines.
+
+    Example
+    -------
+        # Register file — first 4 warps, thread 0 only
+        SnapshotScope(warps={0, 1, 2, 3}, threads={0})
+
+        # Data memory — specific addresses
+        SnapshotScope(addresses={0x1000, 0x1004, 0x2000})
+
+        # Instruction cache — specific PC addresses
+        SnapshotScope(icache_addresses={0x0080, 0x0084})
+
+        # Data cache — specific line addresses
+        SnapshotScope(dcache_addresses={0x4000, 0x4040})
+
+        # Combined — RF + both caches
+        SnapshotScope(
+            warps={0}, threads={0},
+            icache_addresses={0x0080},
+            dcache_addresses={0x4000},
+        )
+
+        SnapshotScope()  # everything (same as no scope)
+    """
+    warps: Set[int] = field(default_factory=set)
+    threads: Set[int] = field(default_factory=set)
+    addresses: Set[int] = field(default_factory=set)
+    icache_addresses: Set[int] = field(default_factory=set)
+    dcache_addresses: Set[int] = field(default_factory=set)
+
+    def all_warps(self) -> bool:
+        return not self.warps
+
+    def all_threads(self) -> bool:
+        return not self.threads
+
+    def all_addresses(self) -> bool:
+        return not self.addresses
+
+    def all_icache_addresses(self) -> bool:
+        return not self.icache_addresses
+
+    def all_dcache_addresses(self) -> bool:
+        return not self.dcache_addresses
+
+    def hex_addresses(self) -> Set[str]:
+        """Return data-memory addresses as zero-padded hex strings."""
+        return {f"{addr:#010x}" for addr in self.addresses}
+
+    def hex_icache_addresses(self) -> Set[str]:
+        """Return I-cache addresses as zero-padded hex strings."""
+        return {f"{addr:#010x}" for addr in self.icache_addresses}
+
+    def hex_dcache_addresses(self) -> Set[str]:
+        """Return D-cache addresses as zero-padded hex strings."""
+        return {f"{addr:#010x}" for addr in self.dcache_addresses}
+
+    def union(self, other: SnapshotScope) -> SnapshotScope:
+        """
+        Return the union of two scopes.
+
+        An empty set in any dimension means "all" for that dimension;
+        the result is also "all" (empty set) — the broader scope wins.
+
+            {0,1} | {2,3}  -> {0,1,2,3}
+            {}    | {2,3}  -> {}   (unbounded wins)
+            {}    | {}     -> {}
+        """
+        def _merge(a: Set[int], b: Set[int]) -> Set[int]:
+            return set() if (not a or not b) else a | b
+
+        return SnapshotScope(
+            warps=_merge(self.warps, other.warps),
+            threads=_merge(self.threads, other.threads),
+            addresses=_merge(self.addresses, other.addresses),
+            icache_addresses=_merge(self.icache_addresses, other.icache_addresses),
+            dcache_addresses=_merge(self.dcache_addresses, other.dcache_addresses),
+        )
+
+    def __repr__(self) -> str:
+        parts = []
+        if self.warps:            parts.append(f"warps={sorted(self.warps)}")
+        if self.threads:          parts.append(f"threads={sorted(self.threads)}")
+        if self.addresses:        parts.append(f"addrs={self.hex_addresses()}")
+        if self.icache_addresses: parts.append(f"icache={self.hex_icache_addresses()}")
+        if self.dcache_addresses: parts.append(f"dcache={self.hex_dcache_addresses()}")
+        return f"SnapshotScope({', '.join(parts) or 'all'})"
 
 
 class TriggerOperator(Enum):
@@ -86,6 +209,23 @@ class TriggerConfig:
     pre_capture_depth: int = 64
     post_capture_cycles: int = 32
     name: str = ""
+    snapshot_providers: Set[str] = field(default_factory=set)
+    snapshot_scopes: Dict[str, SnapshotScope] = field(default_factory=dict)
+    snapshot_each_cycle: bool = False
+    """snapshot_providers  : Names of snapshot providers (registered on the
+                            Telemeter via register_snapshot_provider()) to
+                            invoke when this trigger fires.  An immediate
+                            snapshot is always taken on fire.  If
+                            snapshot_each_cycle is True, providers are also
+                            called every cycle during the post-capture window.
+    snapshot_scopes      : Optional per-provider SnapshotScope.  If a provider
+                            name has no entry here its provider is called with
+                            scope=None (full snapshot).  Use this to restrict
+                            register-file snapshots to specific warps/threads.
+    snapshot_each_cycle  : When True, call snapshot_providers every cycle
+                           during the post-capture window, not just on fire.
+                           Expensive — keep post_capture_cycles small.
+    """
 
     def __post_init__(self) -> None:
         if not self.name:
