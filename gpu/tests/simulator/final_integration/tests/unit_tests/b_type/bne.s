@@ -4,7 +4,8 @@ START:
     lli   x6, 4
     lui   x7, 0x10
 
-    blt   p2, x3, x5, pred
+    slt x13, x3, x5
+    bne p2, x13, x0, pred
 
     mul   x9,  x3, x6, 2
     add   x10, x7, x9, 2

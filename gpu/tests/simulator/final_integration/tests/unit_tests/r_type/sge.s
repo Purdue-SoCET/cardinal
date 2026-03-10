@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred              ; p2 = (TID < MAX_THREADS)
+    slt x14, x3, x5
+    bne p2, x14, x0, pred
 
     ; build a signed value: a = TID - 16
     ; use two's complement for -16: 0xFFFFFFF0

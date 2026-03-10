@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred
+    slt x13, x3, x5
+    bne p2, x13, x0, pred
 
     ; rs1 = 0x80000000 (negative if interpreted as signed)
     lui   x8, 0x80, 2             ; x8 = value to shift

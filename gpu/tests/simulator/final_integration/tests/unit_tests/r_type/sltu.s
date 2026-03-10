@@ -10,7 +10,8 @@ START:
     lui   x7, 0x10                      ; heap base address
 
     ; if (tid < MAX_THREADS) -> compute
-    blt   p2, x3, x5, pred
+    slt x13, x3, x5
+    bne p2, x13, x0, pred
 
     ; b = 0x80000000 (unsigned large, signed negative)
     lui   x9, 0x80, 2                   ; x9 = b
