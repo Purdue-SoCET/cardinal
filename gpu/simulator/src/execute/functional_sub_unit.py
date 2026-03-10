@@ -423,8 +423,6 @@ class Alu(ArithmeticSubUnit):
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
                 
-            if instr.opcode == U_Op.LUI:
-                instr.wdat[i] = Bits(length=32, hex=result)
             if self.type_ == int:
                 instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
             elif self.type_ == float:
