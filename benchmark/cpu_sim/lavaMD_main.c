@@ -11,6 +11,7 @@
 #define THREAD_BLOCK_SIZE 128
 #define NUMBER_PAR_PER_BOX 100
 #define BOX_DIM 1
+#define NUMBER_PASSES 1
 
 #define INPUT_DEBUG 0
 
@@ -128,11 +129,24 @@ int main() {
     int grid = num_boxes;
     int block = THREAD_BLOCK_SIZE; 
 
-    printf("Launching Initialization Kernel ...\n");
-    run_kernel(kernel_lavaMD_init, grid, block, (void*)&args);
+    // Host side INIT
+    for(int i = 0; i < num_particles; i++) {
+        args.fv[i].v = 0.0f;
+        args.fv[i].x = 0.0f;
+        args.fv[i].y = 0.0f;
+        args.fv[i].z = 0.0f;
+    }
 
-    printf("Launching Calculation Kernel ...\n");
-    run_kernel(kernel_lavaMD_calc, grid, block, (void*)&args);
+    for(int i = 0; i < NUMBER_PASSES; i++) {
+
+        // Could replace GPU INIT with HOST INIT and compare speed
+        printf("Launching Initialization Kernel ...\n");
+        run_kernel(kernel_lavaMD_init, grid, block, (void*)&args);
+
+        printf("Launching Calculation Kernel ...\n");
+        run_kernel(kernel_lavaMD_calc, grid, block, (void*)&args);
+
+    }
 
     printf("\nLavaMD Completed.\n");
 

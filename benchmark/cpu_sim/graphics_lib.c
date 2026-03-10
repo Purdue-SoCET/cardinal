@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "include/graphics_lib.h"
+#include "include/stb_image.h"
 
 // Returns the barycentric interpolation of the given three
 void barycentric_coordinates(vector_t* l, vector_t point, vector_t pVs[3]) {
@@ -154,4 +156,35 @@ vector_t findCenter(model_t model){
     center.z = (min_z + max_z) / 2.0f;
 
     return center;
+}
+
+texture_t load_jpg(char* FileName, int id) {
+    texture_t text;
+    text.id = id;
+    int width, height, bpp;
+    uint8_t* rgb_image = stbi_load(FileName, &width, &height, &bpp, 3);
+
+    if (rgb_image == NULL) {
+        printf("Error loading image\n");
+        return text; // Return an uninitialized texture on failure
+    }
+
+    text.w = width;
+    text.h = height;
+    text.color_arr = (vector_t*)malloc(sizeof(vector_t) * width * height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t red = rgb_image[(y * width + x) * 3];
+            uint8_t green = rgb_image[(y * width + x) * 3 + 1];
+            uint8_t blue = rgb_image[(y * width + x) * 3 + 2];
+
+            text.color_arr[y * width + x].x = red / 255.0f;
+            text.color_arr[y * width + x].y = green / 255.0f;
+            text.color_arr[y * width + x].z = blue / 255.0f;
+        }
+    }
+
+    stbi_image_free(rgb_image);
+
+    return text;
 }

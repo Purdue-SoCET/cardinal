@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // Include all needed kernels
 #include "../kernels/include/vertexShader.h"
@@ -131,6 +133,7 @@ int main(int argc, char** argv) {
             }
         }
 
+        *texture = load_jpg("build/wood_texture.jpg", 0);
 
     // Camera
         const vector_t abc[3] = {
@@ -151,7 +154,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -150.0f; 
+        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -100.0f; 
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
 

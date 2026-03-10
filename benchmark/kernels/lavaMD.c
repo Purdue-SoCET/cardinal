@@ -14,17 +14,17 @@ void kernel_lavaMD_init(void* args) {
     int bx = blockIdx;
     int tx = threadIdx;
 
-    if (bx >= kernel_args->dim.number_boxes) return;
+    if (bx < kernel_args->dim.number_boxes){
+        int first_i = kernel_args->box[bx].offset;
+        int my_particle_idx = first_i + tx;
 
-    int first_i = kernel_args->box[bx].offset;
-    int my_particle_idx = first_i + tx;
-
-    // Boundary check for particles in the box
-    if (tx < NUMBER_PAR_PER_BOX) {
-        kernel_args->fv[my_particle_idx].v = 0.0f;
-        kernel_args->fv[my_particle_idx].x = 0.0f;
-        kernel_args->fv[my_particle_idx].y = 0.0f;
-        kernel_args->fv[my_particle_idx].z = 0.0f;
+        // Boundary check for particles in the box
+        if (tx < NUMBER_PAR_PER_BOX) {
+            kernel_args->fv[my_particle_idx].v = 0.0f;
+            kernel_args->fv[my_particle_idx].x = 0.0f;
+            kernel_args->fv[my_particle_idx].y = 0.0f;
+            kernel_args->fv[my_particle_idx].z = 0.0f;
+        }
     }
 }
 
@@ -61,7 +61,7 @@ void kernel_lavaMD_calc(void* args) {
 
             float r2 = my_pos.v + n_pos.v - DOT(my_pos, n_pos);
             float u2 = a2 * r2;
-            float vij = exp(-u2) ;//FAST_EXP_NEG(u2);  // exp(-u2) 
+            float vij = FAST_EXP_NEG(u2);  // exp(-u2) 
             float fs = 2.0f * vij;
 
             float dx = my_pos.x - n_pos.x;
