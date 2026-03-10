@@ -321,7 +321,7 @@ class Alu(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
                                                                  
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"ALU does not support operation {instr.opcode}")
+            raise ValueError(f"ALU does not support operation {instr.opcode} for type {self.type_}")
 
         overflow_detected = False
         for i in range(32):
@@ -413,14 +413,14 @@ class Alu(ArithmeticSubUnit):
                     # {imm[7:0], old[23:0]}
                     result= (((a & 0xFF) << 24) | (b & 0x00FFFFFF)) & 0xFFFFFFFF
                 case _:
-                    raise ValueError(f"Unsupported operation {instr.opcode} in ALU.")
+                    raise ValueError(f"Unsupported operation {instr.opcode} in ALU_{self.type_}.")
                 
             if self.type_ == int:
                 instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
             elif self.type_ == float:
                 instr.wdat[i] = Bits(length=32, float=result)
             else:
-                raise ValueError(f"Unsupported type '{self.type_}' in ALU compute.")
+                raise ValueError(f"Unsupported type '{self.type_}' in ALU_{self.type_} compute.")
         
         if overflow_detected:
             self.perf_count.increment_overflow(instr.opcode)
@@ -449,7 +449,7 @@ class Mul(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"MUL does not support operation {instr.opcode}")
+            raise ValueError(f"MUL does not support operation {instr.opcode} for type {self.type_}")
 
         overflow_detected = False
         for i in range(32):
@@ -503,7 +503,7 @@ class Div(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"DIV does not support operation {instr.opcode}")
+            raise ValueError(f"DIV does not support operation {instr.opcode} for type {self.type_}")
 
         overflow_detected = False
         for i in range(32):
@@ -565,7 +565,7 @@ class Sqrt(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"SQRT does not support operation {instr.opcode}")
+            raise ValueError(f"SQRT does not support operation {instr.opcode} for type {self.type_}")
 
         for i in range(32):
             if instr.predicate[i].bin == "0":
@@ -641,7 +641,7 @@ class Trig(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"TRIG does not support operation {instr.opcode}")
+            raise ValueError(f"TRIG does not support operation {instr.opcode} for type {self.type_}")
 
         overflow_detected = False
         for i in range(32):
@@ -692,7 +692,7 @@ class InvSqrt(ArithmeticSubUnit):
             raise TypeError(f"Expected Instruction type in pipeline, got {type(instr)}")
         
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
-            raise ValueError(f"InvSqrt does not support operation {instr.opcode}")
+            raise ValueError(f"InvSqrt does not support operation {instr.opcode} for type {self.type_}")
 
         overflow_detected = False
         for i in range(32):
@@ -733,7 +733,7 @@ class InvSqrt(ArithmeticSubUnit):
                     
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
-                    raise ValueError(f"Unsupported operation {instr.opcode} in InvSqrt.")
+                    raise ValueError(f"Unsupported operation {instr.opcode} in InvSqrt for type {self.type_}.")
         
         if overflow_detected:
             self.perf_count.increment_overflow(instr.opcode)

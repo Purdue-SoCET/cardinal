@@ -103,13 +103,12 @@ class DecodeStage(Stage):
                     return fu_name
         
         # Floating-point add/sub
-        if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF]:
+        # Floating-point slt/sge
+        if isinstance(op, R_Op) and op in [R_Op.ADDF, R_Op.SUBF, R_Op.SGEF, R_Op.SLTF]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Alu_float_"):
                     return fu_name
 
-        # Floating-point slt/sge
-        
         # Floating-point multiplication
         if isinstance(op, R_Op) and op == R_Op.MULF:
             for fu_name in self.fust.keys():
@@ -169,14 +168,9 @@ class DecodeStage(Stage):
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Alu_int_"):
                     return fu_name
-        
-        # Fallback: return first available Alu if nothing else matches        
-        for fu_name in self.fust.keys():
-            if fu_name.startswith("Alu_int_"):
-                return fu_name
-        
-        # Final fallback: return first available unit
-        return next(iter(self.fust.keys()), None)
+                        
+        # Opcode not mapped to an FU, throw an error
+        raise ValueError(f"Opcode {op_name} does not have a corresponding functional unit in the decode stage.")
     
     def _push_instruction_to_next_stage(self, inst):
         if self.ahead_latch.ready_for_push:
