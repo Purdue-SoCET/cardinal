@@ -1,0 +1,7 @@
+structs:
+  - name: "saxpy_test_arg_t"
+    fields:
+      - { name: "n", type: "int" }
+      - { name: "a", type: "float" }
+      - { name: "x", type: "float*" }
+      - { name: "y", type: "float*" }

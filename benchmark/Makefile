@@ -2,7 +2,7 @@
 
 # CPU Compiler and flags
 CPU_CC = gcc
-CPU_CFLAGS = -DCPU_SIM -Wall -Wextra -g 
+CPU_CFLAGS = -DCPU_SIM -Wall -Wextra -g -lm -I ./cpu_sim/include
 CPU_LDFLAGS = -lm
 CPU_32BIT_FLAGS = -m32 -fsingle-precision-constant -Wdouble-promotion
 
@@ -12,11 +12,11 @@ GPU_CFLAGS =
 # CPU files
 KERNEL ?= saxpy
 CPU_SRCS = cpu_sim/main.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
-       kernels/vertexShader.c kernels/triangle.c kernels/pixel.c 
+       kernels/vertexShader.c kernels/triangle.c kernels/pixel.c kernels/post.c 
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
 
-CUSTOM_SRCS = cpu_sim/$(KERNEL)_main.c cpu_sim/kernel_run.c kernels/$(KERNEL).c
+CUSTOM_SRCS = cpu_sim/main_$(KERNEL).c cpu_sim/kernel_run.c kernels/$(KERNEL).c
 
 CPU_BUILD_DIR = build/
 CPU_OUTPUT_DIR = $(CPU_BUILD_DIR)output/
@@ -59,10 +59,14 @@ clean:
 	rm -rf $(CPU_BUILD_DIR)*
 
 new_custom:
-	touch cpu_sim/$(KERNEL)_main.c kernels/$(KERNEL).c kernels/include/$(KERNEL).h
+	python jinja2/generate.py $(KERNEL)
 
-custom: # make custom KERNEL="replace with kernel name" -> must have main in form "KERNEL_main.c"
+custom: 
 	$(CPU_CC) $(CPU_CFLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)/$(KERNEL)
+
+custom32: 
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)/$(KERNEL)
 
 # Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'

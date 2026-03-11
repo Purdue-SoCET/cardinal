@@ -1,0 +1,76 @@
+// Standard Includes
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "include/kernel_run.h"
+#include "include/graphics_lib.h"
+#include "include/shader_memdump.h"
+
+// Include all needed kernels
+#include "../kernels/include/{{ kernel_name }}.h"
+
+// Globals
+uint8_t* memory_ptr;
+
+// Macros
+#define PRINT_INPUT 0
+#define PRINT_OUTPUT 0
+
+#define ALLOCATE_MEM(dest, type, num) \
+    type* dest = (type*) memory_ptr; \
+    memory_ptr += num * sizeof(type);
+
+{% for s in structs %}
+
+void dump_{{ s.name }}({{ s.name }} *ptr, FILE *f) {
+
+    uint32_t *data = (uint32_t *)ptr;
+    size_t words = sizeof({{ s.name }}) / sizeof(uint32_t);
+
+    fprintf(f, "--- Memory Dump: {{ s.name }}  ---\n");
+    for (size_t i = 0; i < words; i++) {
+        fprintf(f, "%p : 0x%08x\n", (void*)&data[i], data[i]);
+    }
+    fprintf(f, "------------------------------------------\n");
+
+    /*Edit this function to dump the values at pointers*/
+
+}
+{% endfor %}
+
+int main() {
+
+    uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
+    uint8_t* memory_ptr = memory_base;
+
+    ALLOCATE_MEM({{ kernel_name }}_args, {{ kernel_name }}_arg_t, 1);
+
+    /*Set arg values HERE*/
+
+    /*END set arg values*/
+
+    {% for s in structs %}
+    if(PRINT_INPUT){
+        FILE* F = fopen("build/{{ s.name }}_input_dump.txt", "w");
+        dump_{{ s.name }}({{ kernel_name }}_args, F);
+    }
+    {% endfor %}
+
+    {
+        int grid_dim = //SET VALUE; 
+        int block_dim = //SET VALUE;
+        run_kernel(kernel_{{ kernel_name }}, grid_dim, block_dim, (void*){{ kernel_name }}_args);
+    }
+
+    {% for s in structs %}
+    if(PRINT_OUTPUT){
+        FILE* F = fopen("build/{{ s.name }}_output_dump.txt", "w");
+        dump_{{ s.name }}({{ kernel_name }}_args, F);
+    }
+    {% endfor %}
+
+    // --- Clean Up ---
+    free(memory_base);
+
+    return 0;
+}
