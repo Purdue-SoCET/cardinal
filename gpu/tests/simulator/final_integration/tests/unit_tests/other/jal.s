@@ -11,7 +11,7 @@ START:
 
     ; if (tid < MAX_THREADS) -> enable PR2
     slt x12, x3, x5
-    bne p2, x12, x0
+    bne p2, x12, x0, 0
 
     ; addr = base + tid*stride
     mul   x9,  x3, x6, 2

@@ -5,7 +5,7 @@ START:
     lui   x7, 0x10
 
     slt x13, x3, x5
-    bne p2, x13, x0, pred
+    bne p2, x13, x0, 0
 
     mul   x9,  x3, x6, 2
     add   x10, x7, x9, 2

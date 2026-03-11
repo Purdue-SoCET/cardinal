@@ -5,7 +5,7 @@ START:
     lui   x7, 0x10
 
     slt x13, x3, x5
-    bne p2, x13, x0, pred
+    bne p2, x13, x0, 0
 
     mul   x9,  x3, x6, 2
     add   x10, x7, x9, 2
@@ -22,8 +22,8 @@ START:
     ori   x11, x11, 0x10, 2
 
     ; if (rs1 <u rs2) store 1
-    sgeu x13, x11, x8
-    bne p2, x13, x0
+    sgeu x13, x11, x8, 2
+    bne p3, x13, x0, 2
 
     lli   x12, 1, 3
     sw    x12, x10, 0, 3

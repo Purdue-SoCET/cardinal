@@ -119,8 +119,8 @@ class Jump(FunctionalSubUnit):
 
         match instr.opcode:
             case J_Op.JAL:
-                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
-                instr.wdat = None
+                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.pc.uint + instr.imm.int}
+                instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
             case I_Op.JALR:
                 if not all(data == instr.rdat1[0] for data in instr.rdat1):
                       raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")

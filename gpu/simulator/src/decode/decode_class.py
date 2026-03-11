@@ -273,6 +273,9 @@ class DecodeStage(Stage):
             inst.rs2 = None
             inst.num_operands = 1 ### ADDED ###
         
+        if is_J:
+            inst.num_operands = 0
+
         # no operands for csrr instruction
         if is_C:
             inst.num_operands = 0

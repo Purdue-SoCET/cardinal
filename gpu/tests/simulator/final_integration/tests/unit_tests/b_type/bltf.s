@@ -15,8 +15,8 @@ START:
     itof  x8, x3, 2
 
     ; if (f1 < 0) store 1
-    sltf x12, x8, x0
-    bne p2, x12, x0, pred
+    sltf x12, x8, x0, 2
+    bne p3, x12, x0, 2
 
     lli   x13, 1, 3
     sw    x13, x10, 0, 3

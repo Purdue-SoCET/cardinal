@@ -5,7 +5,7 @@ START:
     lui   x7, 0x10
 
     slt x13, x3, x5
-    bne p2, x13, x0, pred
+    bne p2, x13, x0, 0
 
     mul   x9,  x3, x6, 2
     add   x10, x7, x9, 2
@@ -16,8 +16,8 @@ START:
     itof  x8, x3, 2                     ; f1 = float(TID)
 
     ; compare vs 0.0
-    subf x13, x8, x0
-    bne p2, x13, x0
+    subf x13, x8, x0, 2
+    bne p3, x13, x0, 2
 
     lli   x11, 1, 3
     sw    x11, x10, 0, 3

@@ -14,8 +14,7 @@ START:
     itof  x8, x3, 2
 
     ; f0 = 0.0 (use x0 bits as 0.0)
-    subf x12, x8, x0
-    beq p2, x12, x0
+    beq p3, x8, x0, 2
 
     lli   x11, 1, 3
     sw    x11, x10, 0, 3
