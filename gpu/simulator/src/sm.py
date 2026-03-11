@@ -66,7 +66,7 @@ class SMConfig:
     prf_rf_config: dict # writeback
 
     # custom initializations
-    # custom_regfile_init: <- dict this shouldnt be a thing, we can use load immediate instructions to initialize the regfile
+    custom_regfile_init: dict
     custom_prf_init: dict
 
     stage_order: List # probably not needed
@@ -100,6 +100,24 @@ class SM:
             8: [100 for i in range(threads_per_warp)],
             9: [100 for i in range(threads_per_warp)],
         }
+    
+    def _initialize_regfile(self):
+        "Initialized the register file"
+        warp_ids = list(range(self.SMConfig.num_warps + (1 if self.SMConfig.num_warps % 2 else 0)))
+        if (self.SMConfig.custom_prf_init is None):
+            # ── initialise register files ─────────────────────────────────────────────
+            for warp_id in warp_ids:
+                test_vals = self.get_test_values(warp_id, 32)
+                for reg_num, values in test_vals.items():
+                    if reg_num >= 10:
+                        data = [Bits(float=v, length=32) for v in values]
+                    else:
+                        data = [Bits(int=v,   length=32) for v in values]
+                    self.regfile.write_warp_gran(warp_id=warp_id,
+                                                dest_operand=Bits(uint=reg_num, length=32),
+                                                data=data)
+                    
+        # populate the reg file as specified in the dictionary, I haven't figured out how we want to do this yet..
     
     def _setup_pipeline(self):
         "This function is to setup the pipline and initialize it"
@@ -258,6 +276,10 @@ class SM:
         return ([self.writeback.name, self.dcache.name, self.execute.name, self.execute.name, self.issue.name, self.decode.name, self.memc.name, self.icache.name, self.scheduler.name])
         
     def _initialize_inputs(self):
+        
+        #initialize the regular reg file
+        # self._initialize_regfile()
+
         # initialize all the values in the predicat reg file to:
         for warp in range(32):
             for pred in range(16):  # num_preds_per_warp * 2

@@ -539,6 +539,7 @@ class Div(ArithmeticSubUnit):
                         # Check for division overflow (MIN_INT / -1)
                         if a == -2147483648 and b == -1:
                             overflow_detected = True
+                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.DIVF:
                     a = instr.rdat1[i].float
@@ -551,6 +552,7 @@ class Div(ArithmeticSubUnit):
                         # Check for floating-point overflow
                         if math.isinf(result) or math.isnan(result):
                             overflow_detected = True
+                    # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in DIV.")
