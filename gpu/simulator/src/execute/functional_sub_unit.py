@@ -280,7 +280,7 @@ class Conv(ArithmeticSubUnit):
                     # Check for overflow (exceeding max int or min int)
                     if result > 2147483647 or result < -2147483648:
                         overflow_detected = True
-                    instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
+                    instr.wdat[i] = Bits(length=32, int=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Conversion.")
         
