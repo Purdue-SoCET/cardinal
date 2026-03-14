@@ -1,7 +1,7 @@
 #include "include/shader_memdump.h"
 
 void print_line(FILE* f, uintptr_t addr, uint32_t data) {
-    fprintf(f, "0x%08X \t %08X\n", (unsigned int)addr, data);
+    fprintf(f, "0x%08X \t 0x%08X\n", (unsigned int)addr, data);
 }
 
 void print_vertex_args(char* fname, vertexShader_arg_t* vertex_args, int num_verts) {

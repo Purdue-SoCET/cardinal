@@ -110,18 +110,26 @@ if __name__ == "__main__":
             threads.append(Thread(state_data=states[tid], start_pc=args.start_pc, csr_file=csr_files[tid]))
             sys.stdout = _real_stdout
 
-        # Run Warp
+        # Run Warp: continue until ALL threads have halted (SIMT allows divergence)
         print(f"\n --- Starting Warp: {warp_id} in Block: {block_id} --- ")
-        has_halted = False
-        while(not has_halted):
+        thread_halted = [False] * len(threads)
+        while not all(thread_halted):
             for tid, thread in enumerate(threads):
+                if thread_halted[tid]:
+                    continue
                 if args.log_thread is not None and tid != args.log_thread:
                     sys.stdout = _NoOpWriter()
                 else:
                     sys.stdout = _real_stdout
-                thread_halted = thread.step_instruction()
-                if(has_halted): assert(thread_halted) # Ensure once one halts all do
-                has_halted = thread_halted
+                try:
+                    thread_halted[tid] = thread.step_instruction()
+                except KeyError as e:
+                    # Invalid memory access: addr not in mem (never stored/initialized)
+                    # Always print to real stdout (bypass --log-thread filter)
+                    _real_stdout.write(f"\n*** Invalid memory access: thread {tid}, PC 0x{thread.pc:04x} ***\n")
+                    _real_stdout.write(f"*** KeyError: {e} (address {e.args[0]} = 0x{e.args[0]:x}) ***\n")
+                    _real_stdout.flush()
+                    raise
         sys.stdout = _real_stdout
 
     mem.dump()

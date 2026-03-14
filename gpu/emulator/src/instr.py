@@ -146,8 +146,14 @@ class Instr(ABC):
                 ret_instr = F_Instr(op=op, rs1=rs1, rd=rd)
             case Instr_Type.P_TYPE:
                 op = P_Op(funct3)
-                print(f"ptype, funct={op}, prd={rd}, rs2={rs2}, imm={rs1}")
-                ret_instr = P_Instr(op, prd=rd, rs2=rs2, imm=rs1, pc=pc)
+                # JPNZ: imm is 12-bit signed from bits [24:13], multiplied by 2 for byte offset
+                if op == P_Op.JPNZ:
+                    jpnz_imm = Bits(bin=instruction.bin[7:19], length=12)  # bits [24:13]
+                    print(f"ptype, funct={op}, prd={rd}, rs2={rs2}, imm={jpnz_imm.int} (jpnz 12b signed)")
+                    ret_instr = P_Instr(op, prd=rd, rs2=rs2, imm=jpnz_imm, pc=pc)
+                else:
+                    print(f"ptype, funct={op}, prd={rd}, rs2={rs2}, imm={rs1}")
+                    ret_instr = P_Instr(op, prd=rd, rs2=rs2, imm=rs1, pc=pc)
             case Instr_Type.H_TYPE:
                 op=H_Op(funct3)
                 print(f"halt, funct={op}, {funct3}")
@@ -664,9 +670,11 @@ class P_Instr(Instr):
         match self.op:
             # Jump Pred
             case P_Op.JPNZ:
-                if(state.pfile.read(self.pred).uint != 0): # Has at least a predicate bit high
-                    return self.pc.int + self.imm.int
-                else: # No predicate is set, let pass
+                # prs = rd[4:0] = instr[11:7] specifies which predicate register to test
+                
+                if state.pfile.read(self.prd).uint != 0:  # prs has at least one thread with pred set
+                    return self.pc.int + (self.imm.int * 2)
+                else:
                     return None
 
             # Predicate Access

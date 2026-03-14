@@ -17,7 +17,7 @@
 //gcc -o main cpu_sim/saxpy_main.c cpu_sim/kernel_run.c cpu_sim/include/* kernels/saxpy.c -DCPU_SIM -m32
 
 void print_line(FILE* f, uintptr_t addr, uint32_t data) {
-    fprintf(f, "0x%08X \t %08X\n", (unsigned int)addr, data);
+    fprintf(f, "0x%08X \t 0x%08X\n", (unsigned int)addr, data);
 }
 
 void print_saxby_args(char* fname, saxpy_arg_t* args) {

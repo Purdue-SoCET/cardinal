@@ -263,6 +263,7 @@ if [ -n "$THREADS_OVERRIDE" ]; then
             cp "$EMU_OUTPUT" "$DIFF_DIR/${test_id}_gen.hex"
             cp "$FINAL_EXPECTED" "$DIFF_DIR/${test_id}_exp.hex"
             cp "$INPUT_TO_USE" "$DIFF_DIR/${test_id}_meminit.hex"
+            cp "$TEMP_CMD_LOG" "$DIFF_DIR/${test_id}_trace.log"
             ((FAIL_COUNT++))
         fi
     fi
@@ -322,6 +323,7 @@ else
             cp "$EMU_OUTPUT" "$DIFF_DIR/${test_id}_gen.hex"
             cp "$FINAL_EXPECTED" "$DIFF_DIR/${test_id}_exp.hex"
             cp "$INPUT_TO_USE" "$DIFF_DIR/${test_id}_meminit.hex"
+            cp "$TEMP_CMD_LOG" "$DIFF_DIR/${test_id}_trace.log"
             ((FAIL_COUNT++))
         fi
     done

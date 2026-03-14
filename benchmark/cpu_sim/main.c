@@ -23,8 +23,12 @@ uint8_t* memory_ptr;
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
 
-#define INPUT_ARGS_DEBUG 0
-#define OUTPUT_ARGS_DEBUG 0
+#define VERTEX_SHADER_PRINT_DEBUG 1
+#define TRIANGLE_PRINT_DEBUG 0
+#define PIXEL_PRINT_DEBUG 0
+
+#define INPUT_ARGS_DEBUG 1
+#define OUTPUT_ARGS_DEBUG 1
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -70,7 +74,7 @@ int main(int argc, char** argv) {
     // Single Triangle, all in a single plane
 
     // Vertexs
-        const int num_verts = 8;
+        const int num_verts = 32;
 
         // Allocation
         ALLOCATE_MEM(verts, vertex_t, num_verts);
@@ -163,6 +167,8 @@ int main(int argc, char** argv) {
 
     // --- Vertex Kernel ---
     ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
+
+    vertex_args->num_verts = num_verts;
     
     // Setup Transformation
         ALLOCATE_MEM(Oa, vector_t, 1);
@@ -188,9 +194,11 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(pVerts, vertex_t, num_verts);
         vertex_args->twoDVert = pVerts;
     
-        if(INPUT_ARGS_DEBUG){
-            print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
+        if(INPUT_ARGS_DEBUG && VERTEX_SHADER_PRINT_DEBUG){
+            print_vertex_args("build/vertexShaderInput.txt", vertex_args, num_verts);
         }
+
+        printf("args size: %lu\n", sizeof(vertexShader_arg_t));
     
     // Running the Kernel
     {
@@ -198,8 +206,8 @@ int main(int argc, char** argv) {
         run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
     }
 
-    if(OUTPUT_ARGS_DEBUG){
-        print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
+    if(OUTPUT_ARGS_DEBUG && VERTEX_SHADER_PRINT_DEBUG){
+        print_vertex_args("build/vertexShaderOutput.txt", vertex_args, num_verts);
     }
 
     // Checking Vertex Output
@@ -268,7 +276,7 @@ int main(int argc, char** argv) {
         };
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
-        if(INPUT_ARGS_DEBUG){
+        if(INPUT_ARGS_DEBUG && TRIANGLE_PRINT_DEBUG){
             char filename[30];
             sprintf(filename, "build/triangleInput%d.txt", tri); 
             print_triangle_args(filename, triangle_args);
@@ -278,7 +286,7 @@ int main(int argc, char** argv) {
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
 
-        if(OUTPUT_ARGS_DEBUG){
+        if(OUTPUT_ARGS_DEBUG && TRIANGLE_PRINT_DEBUG){
             char filename[30];
             sprintf(filename, "build/triangleOutput%d.txt", tri); 
             print_triangle_args(filename, triangle_args);
@@ -339,7 +347,7 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
-    if(INPUT_ARGS_DEBUG){
+    if(INPUT_ARGS_DEBUG && PIXEL_PRINT_DEBUG){
         print_pixel_args("build/pixelInput.txt", pixel_args); 
     }
     // Running the kernel
@@ -348,7 +356,7 @@ int main(int argc, char** argv) {
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
-    if(OUTPUT_ARGS_DEBUG){
+    if(OUTPUT_ARGS_DEBUG && PIXEL_PRINT_DEBUG){
         print_pixel_args("build/pixelOutput.txt", pixel_args); 
     }
 
