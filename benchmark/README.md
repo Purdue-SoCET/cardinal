@@ -18,6 +18,18 @@ or
 make custom32 KERNEL=$(KernelName) #32 bit version
 ```
 
+## Graphics Pipeline
+ 
+### vertex.c
+  - 3D transformation 
+  - perspective projection to 2D 
+  - NOTE: vertexShader.c is an older version of vertex shader were rotation matrix is built on GPU
+### triangle.c
+  - rasterization
+  - sequentially ran for each triangle in geometry (due to no fixed function hardware)
+### pixel.c
+  - fragment shader
+
 ## File Structure:
 * Benchmark/
   * kernels/ -> Contains the various gpu kernels for the benchmark

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "include/graphics_lib.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
@@ -189,4 +188,62 @@ texture_t load_jpg(char* FileName, int id) {
     stbi_image_free(rgb_image);
 
     return text;
+}
+
+vec4_t quat_from_euler(float x, float y, float z, float angle) {
+    vec4_t q;
+
+    float half_angle = angle * 0.5f;
+    float sin_half_angle = sinf(half_angle);
+
+    q.w = cosf(half_angle);
+    q.x = x * sin_half_angle;
+    q.y = y * sin_half_angle;
+    q.z = z * sin_half_angle;
+
+    return q;
+}
+
+vec4_t quat_multiply(vec4_t q1, vec4_t q2) {
+    vec4_t result;
+    result.w = q1.w*q2.w - q1.x*q2.x - q1.y*q2.y - q1.z*q2.z;
+    result.x = q1.w*q2.x + q1.x*q2.w + q1.y*q2.z - q1.z*q2.y;
+    result.y = q1.w*q2.y - q1.x*q2.z + q1.y*q2.w + q1.z*q2.x;
+    result.z = q1.w*q2.z + q1.x*q2.y - q1.y*q2.x + q1.z*q2.w;
+    return result;
+}
+
+void quat_to_matrix(vec4_t q, float* mat) {
+    float xx = q.x * q.x;
+    float yy = q.y * q.y;
+    float zz = q.z * q.z;
+    float xy = q.x * q.y;
+    float xz = q.x * q.z;
+    float yz = q.y * q.z;
+    float wx = q.w * q.x;
+    float wy = q.w * q.y;
+    float wz = q.w * q.z;
+
+    mat[0] = 1.0f - 2.0f * (yy + zz);
+    mat[1] = 2.0f * (xy - wz);
+    mat[2] = 2.0f * (xz + wy);
+
+    mat[3] = 2.0f * (xy + wz);
+    mat[4] = 1.0f - 2.0f * (xx + zz);
+    mat[5] = 2.0f * (yz - wx);
+
+    mat[6] = 2.0f * (xz - wy);
+    mat[7] = 2.0f * (yz + wx);
+    mat[8] = 1.0f - 2.0f * (xx + yy);
+}
+
+void build_rotation_matrix_from_euler(float pitch_x, float yaw_y, float roll_z, float* out_matrix) {
+    vec4_t qx = quat_from_euler(1.0f, 0.0f, 0.0f, pitch_x);
+    vec4_t qy = quat_from_euler(0.0f, 1.0f, 0.0f, yaw_y);
+    vec4_t qz = quat_from_euler(0.0f, 0.0f, 1.0f, roll_z);
+
+    vec4_t q_combined = quat_multiply(qy, qx); //X@Y
+    q_combined = quat_multiply(qz, q_combined); //(XY)@Z
+
+    quat_to_matrix(q_combined, out_matrix);
 }

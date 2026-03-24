@@ -21,7 +21,7 @@ uint8_t* memory_ptr;
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
-#define PIXEL_DEBUG 1
+#define PIXEL_DEBUG 0
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -157,8 +157,7 @@ int main(int argc, char** argv) {
 
         ALLOCATE_MEM(alpha_r, float, 1);
         vertex_args->alpha_r = alpha_r;
-        *alpha_r = 3.14f * 2 * frame / 300.0f;
-
+        *(vertex_args->alpha_r) = 3.14f * 2 * frame / 300.0f;
     // Give geometry inputs
         vertex_args->threeDVert = verts;
         vertex_args->camera = camera_C;

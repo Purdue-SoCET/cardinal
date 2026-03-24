@@ -1,0 +1,13 @@
+structs:
+  - name: "vertex_arg_t"
+    fields:
+      - { name: "num_verts", type: "int" }
+      - { name: "threeDVert", type: "vertex_t*" }
+      - { name: "Oa", type: "vector_t*" }
+      - { name: "combined_matrix", type: "float*" }
+      - { name: "threeDVertTrans", type: "vertex_t*" }
+      - { name: "camera", type: "vector_t*" }
+      - { name: "invTrans", type: "float*" }
+      - { name: "twoDVert", type: "vertex_t*" }
+      - { name: "viewport_w", type: "float" }
+      - { name: "viewport_h", type: "float" }

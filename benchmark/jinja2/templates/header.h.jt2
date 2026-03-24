@@ -12,6 +12,10 @@ typedef struct {
 
 {% endfor %}
 
+#ifdef GPU_SIM
+void main(void*); 
+#else
 void kernel_{{ kernel_name }}(void*);
+#endif
 
 #endif

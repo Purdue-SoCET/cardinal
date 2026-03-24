@@ -15,7 +15,7 @@ void print_vertex_args(char* fname, vertexShader_arg_t* vertex_args, int num_ver
     // 2. Pointed Constant Data
     if (vertex_args->Oa)      for(int i=0; i<3; i++) print_line(f, (uintptr_t)&((uint32_t*)vertex_args->Oa)[i], ((uint32_t*)vertex_args->Oa)[i]);
     if (vertex_args->a_dist)  for(int i=0; i<3; i++) print_line(f, (uintptr_t)&((uint32_t*)vertex_args->a_dist)[i], ((uint32_t*)vertex_args->a_dist)[i]);
-    if (vertex_args->alpha_r) print_line(f, (uintptr_t)vertex_args->alpha_r, *(uint32_t*)vertex_args->alpha_r);
+    if (vertex_args->alpha_r) for(int i=0; i<3; i++) print_line(f, (uintptr_t)&((uint32_t*)vertex_args->alpha_r)[i], ((uint32_t*)vertex_args->alpha_r)[i]);
     if (vertex_args->camera)   for(int i=0; i<3; i++) print_line(f, (uintptr_t)&((uint32_t*)vertex_args->camera)[i], ((uint32_t*)vertex_args->camera)[i]);
     if (vertex_args->invTrans) for(int i=0; i<9; i++) print_line(f, (uintptr_t)&((uint32_t*)vertex_args->invTrans)[i], ((uint32_t*)vertex_args->invTrans)[i]);
 
