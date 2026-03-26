@@ -7,9 +7,13 @@ class CsrTable:
     # Hierarchy: Warp(List): Data(List). Data = [base_id, tb_id, tb_size]
     warps: int = 32
     table: List[List[Any]] = field(init=False)
+    active_blks: set = field(default_factory=set)
 
     def __post_init__(self):
-        self.table = [[0, 0, 0] for _ in range(self.warps)]
+        self.reset_csr()
+
+    def add_blk(self, tb_id) -> None:
+        self.active_blks.add(tb_id)
 
     def write_data(self, warp_id, base_id, tb_id, tb_size) -> None:
         self.table[warp_id] = [base_id, tb_id, tb_size]
@@ -22,6 +26,10 @@ class CsrTable:
     
     def read_tb_size(self, warp_id) -> Any:
         return self.table[warp_id][2]
+
+    def reset_csr(self):
+        self.table = [[0, 0, 0] for _ in range(self.warps)]
+        self.active_blks.clear()
 
     def dump(self):
         print(f"\n{'='*80}")

@@ -99,6 +99,6 @@ class ThreadBlockScheduler(Stage):
                     ## NOTE: Launch bandwidth not restricted.
                     
         ## TODO: ADD RECIEVE. ASK WARPSCHEDULER. OTHERWISE CAN ONLY SEND 1 WARP.
-        # if self.forward_latch.payload:
-        #     bidx = self.forward_latch.forward_if.payload
-        #     self.finish_blk(bidx)
+        if self.forward_ifs_read["Scheduler_TBS"].payload:
+            for bidx in self.forward_ifs_read["Scheduler_TBS"].pop():
+                self.finish_blk(bidx)
