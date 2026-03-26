@@ -33,7 +33,7 @@ class SMRecord:
         return self.avail_warps >= self.warps_from_threads(nthreads) and not self.working
     
     def give_threads(self, nthreads: int):
-        assert self.can_give_warps(nthreads)
+        assert self.can_give_threads(nthreads)
         self.avail_warps -= self.warps_from_threads(nthreads)
         self.working = True
         
@@ -58,8 +58,8 @@ class ThreadBlockScheduler(Stage):
         
         # block list
         self.block_list: list[ThreadBlockRecord] = []
-        self.blocks_not_sent: set = set()
-        self.blocks_done: set = set()
+        self.blocks_not_sent: list[int] = []
+        self.blocks_done: list[int] = []
         
         # SM list, tracks availability
         self.SMs: list[SMRecord] = []
@@ -71,7 +71,7 @@ class ThreadBlockScheduler(Stage):
     def append_block(self, bdim: int, spc: int, apc: int = 0) -> None:
         bidx = len(self.block_list)
         self.block_list.append(ThreadBlockRecord(bidx, bdim, spc, apc))
-        self.blocks_not_sent.add(bidx)
+        self.blocks_not_sent.append(bidx)
     
     def can_send_blk_to_sm(self, bidx, smidx: int = 0):
         return self.SMs[smidx].avail_warps >= math.ceil(self.block_list[bidx].bdim / self.min_thread_division)
@@ -82,6 +82,9 @@ class ThreadBlockScheduler(Stage):
         self.blocks_not_sent.remove(bidx)
         self.block_list[bidx].assign(smidx)
         self.send_output(self.block_list[bidx])
+
+    def send_output(self, blk):
+        self.ahead_latch.push((blk.bidx, blk.bdim, blk.spc))
     
     def finish_blk(self, bidx, smidx: int = 0):
         # De-occupy
