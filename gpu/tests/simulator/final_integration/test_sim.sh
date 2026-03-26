@@ -60,10 +60,11 @@ NC='\033[0m'
 # Default to Option 1 if no flag is provided
 RUN_OPTION=1
 
-while getopts "12" opt; do
+while getopts "123" opt; do
     case ${opt} in
         1 ) RUN_OPTION=1 ;;
         2 ) RUN_OPTION=2 ;;
+        3 ) RUN_OPTION=3 ;;
         \? ) echo "Usage: $0 [-1] [-2] [search_pattern]"
              exit 1 ;;
     esac
@@ -78,7 +79,7 @@ if [ "$RUN_OPTION" -eq 1 ]; then
     TEST_ROOT="tests"
     SEARCH_PATTERN="${1:-*.s}"
     if [[ "$SEARCH_PATTERN" != *".s" ]]; then SEARCH_PATTERN="$SEARCH_PATTERN.s"; fi
-elif [ "$RUN_OPTION" -eq 2 ]; then
+elif [ "$RUN_OPTION" -eq 2 ] || [ "$RUN_OPTION" -eq 3 ]; then #
     TEST_ROOT="tests_bin"
     SEARCH_PATTERN="${1:-*.bin}"
     if [[ "$SEARCH_PATTERN" != *".bin" ]]; then SEARCH_PATTERN="$SEARCH_PATTERN.bin"; fi
@@ -231,6 +232,52 @@ elif [ "$RUN_OPTION" -eq 2 ]; then
         fi
 
         rm -f "$hex_output"   
+    done
+
+elif [ "$RUN_OPTION" -eq 3 ]; then
+    EXPECTED_DIR="test_bin_exp"
+
+    for bin_file in $files_found; do
+        base_name=$(basename "$bin_file" .bin)
+        hex_output="${base_name}_meminit.hex"
+
+        THREADS=32
+        BLOCKS=1
+
+        # Run the simulator
+        debug_file="${base_name}_debug.txt"
+        make simulator SIM_INPUT="$bin_file" > "$debug_file"
+
+        # Locate the expected files
+        expected_file="${EXPECTED_DIR}/${base_name}_exp_t${THREADS}_b${BLOCKS}.hex"
+
+        if [ ! -f "$expected_file" ]; then
+            echo -e "${YELLOW}[SKIP]${NC}     $base_name (Missing expected file: $expected_file)"
+            rm -f "$debug_file"
+            continue
+        fi
+
+        # --------------------------------------
+        # Compare expected and simulator output
+        # --------------------------------------
+        test_id="${base_name}_t${THREADS}_b${BLOCKS}"
+        error_log="$DIFF_DIR/${test_id}_error.log"
+
+        diff -u -w -i "$expected_file" "$SIM_OUTPUT" > "$error_log"
+
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}[PASS]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
+            rm -f "$error_log"
+            rm -f "$debug_file"
+            ((PASS_COUNT++))
+        else
+            echo -e "${RED}[FAIL]${NC}     $base_name (t=$THREADS, b=$BLOCKS)"
+            # Save all artifacts for debugging
+            mv "$debug_file" "$DIFF_DIR/"
+            cp "$SIM_OUTPUT" "$DIFF_DIR/${test_id}_sim.hex"
+            cp "$expected_file" "$DIFF_DIR/${test_id}_exp.hex"
+            ((FAIL_COUNT++))
+        fi
     done
 fi
 
