@@ -163,6 +163,7 @@ class SchedulerStage(Stage):
         # print(f"\n FUCKING TBS SHIT:\n")
         # print(f"{tb_id, tb_size, start_pc}\n\n")
         base_id = 0
+        self.csrtable.add_blk(tb_id)
 
         for _ in range(math.ceil(tb_size / self.warp_size)):
             if not (self.free_warp % 2):
@@ -180,6 +181,13 @@ class SchedulerStage(Stage):
                 # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
             self.forward_ifs_write["Scheduler_LDST"].push({"halt": True})
             self.halt_sent = True
+
+        # if self.halt_sent:
+        #     ldst_ctrl = self.forward_ifs_read["LDST_Scheduler"].pop()
+        #     if ldst_ctrl is not None and ldst_ctrl["flush_complete"]:
+        #         print("piss")
+        #         # self.forward_ifs_write["Scheduler_TBS"].push(list(self.csrtable.active_blks))
+
         return
 
     # round robin policy

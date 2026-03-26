@@ -55,7 +55,7 @@ from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
 from simulator.issue.regfile import RegisterFile
 from simulator.issue.stage import IssueStage
-from simulator.csr_table import CsrTable
+from simulator.scheduler.csrtable import CsrTable
 from simulator.kernel_base_pointers import KernelBasePointers
 from simulator.scheduler.scheduler import SchedulerStage
 from simulator.mem.icache_stage import ICacheStage
