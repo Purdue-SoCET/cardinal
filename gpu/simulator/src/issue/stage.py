@@ -1,6 +1,6 @@
 from builtins import isinstance, print
 from dataclasses import dataclass, field
-from gpu.simulator.drafts.custom_enums_multi import H_Op
+from gpu.simulator.drafts.custom_enums_multi import H_Op, S_Op
 from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
 from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
@@ -134,6 +134,7 @@ class IssueStage(Stage):
 
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
+            print(self.dispatched[0])
             if self.fust[self.dispatched[0].intended_FU] == 0:
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
