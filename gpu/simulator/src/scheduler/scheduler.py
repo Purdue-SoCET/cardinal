@@ -27,7 +27,7 @@ class SchedulerStage(Stage):
         self.start_flush: bool = False
 
         # warp table
-        self.warp_table: List[WarpGroup] = [WarpGroup(group_id=id, warps=[Warp(pc=0, id=id*2), Warp(pc=0, id=id*2+1)]) for id in range(self.num_groups)]
+        self.warp_table: List[WarpGroup] = [WarpGroup(group_id=id, warps=[Warp(pc=0, id=id*2), Warp(pc=0, id=id*2+1)], halt_mask_even=Bits(uint=0x0, length=32), halt_mask_odd=Bits(uint=0x0, length=32)) for id in range(self.num_groups)]
         self.warp_init: int = 0
 
         # initialization
@@ -178,6 +178,7 @@ class SchedulerStage(Stage):
 
         # TODO: simulate (num warps + (2 or 1 depending on how tbs works) cycles to init)
         tb_id, tb_size, start_pc = self.behind_latch.pop()
+        print("receive")
 
         # print(f"\n FUCKING TBS SHIT:\n")
         # print(f"{tb_id, tb_size, start_pc}\n\n")
@@ -185,16 +186,16 @@ class SchedulerStage(Stage):
         self.csrtable.add_blk(tb_id)
 
         for _ in range(math.ceil(tb_size / self.warp_size)):
-            if not (self.free_warp % 2):
-                self.warp_table[self.free_warp // 2].warps[0].pc = start_pc
-                self.warp_table[self.free_warp // 2].warps[1].pc = start_pc
+            self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
+            self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].state = WarpState.READY
 
-                self.warp_table[self.free_warp // 2].warps[0].state = WarpState.READY
-                self.warp_table[self.free_warp // 2].warps[1].state = WarpState.READY
-
+            if self.free_warp % 2 == 0:
                 # TODO: CHECK THIS SHIT AFTER U FINISH COLLISION
                 self.warp_table[self.free_warp // 2].issue = True
+                self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=0xffffffff, length=32)
                 self.warp_table[self.free_warp // 2].halt = 0
+            else:
+                self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=0xffffffff, length=32)
             
             self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
             base_id += self.warp_size

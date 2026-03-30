@@ -303,7 +303,6 @@ class ForwardingIF:
         return (f"<{self.name} valid={self.valid} wait={self.wait} "
             f"payload={self.payload!r}>")
             
-
 @dataclass
 class LatchIF:
     payload: Optional[Any] = None
