@@ -1,0 +1,8 @@
+#include "include/kernel.h"
+#include "include/{{ kernel_name }}.h"
+
+void kernel_{{ kernel_name }}(void* arg) {
+    {{ kernel_name }}_arg_t* args = ({{ kernel_name }}_arg_t*) arg;
+
+
+}

@@ -21,7 +21,7 @@ uint8_t* memory_ptr;
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
-#define PIXEL_DEBUG 0
+#define PIXEL_DEBUG 1
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Failed to load teapot model!\n");
         return -1;
     }
-    for (int frame = 0; frame < 300; frame++)
+    //for (int frame = 0; frame < 300; frame++)
     {
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
     uint8_t* memory_ptr = memory_base;
@@ -117,6 +117,7 @@ int main(int argc, char** argv) {
                 texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? red : blue;
             }
         }
+        texture->id = 0; 
 
     // Camera
         const vector_t abc[3] = {
@@ -290,32 +291,44 @@ int main(int argc, char** argv) {
     // Checking TRIANGLE Output
     if(TRIANGLE_DEBUG) 
     {
-        printf(" --- Post Triangle Depths --- \n");
-        printf("\t[");
+
+        FILE *f1 = fopen("build/depth_triangledebug.txt", "w");
+        if (f1 == NULL) {
+            printf("Error opening file!\n");
+        }
+        fprintf(f1, " --- Post Triangle Depths --- \n");
+        fprintf(f1, "\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
-            printf("%+06.2f", zbuff[i]);
+            fprintf(f1, "%+06.2f", zbuff[i]);
             if(((i+1) % frame_w)) {
-                printf(", ");
+                fprintf(f1, ", ");
             } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
+                fprintf(f1, "]\n\t[");
             } else {
-                printf("]\n");
+                fprintf(f1, "]\n");
             }
         }
-        printf(" --- Post Triangle Tags --- \n");
-        printf("\t[");
+        fclose(f1);
+
+        FILE *f = fopen("build/tag_triangledebug.txt", "w");
+        if (f == NULL) {
+            printf("Error opening file!\n");
+        }
+        fprintf(f, " --- Post Triangle Tags --- \n");
+        fprintf(f, "\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
             if(tbuff[i]+1 > 0)
-            printf("%d", tbuff[i]+1);
+            fprintf(f, "%d", tbuff[i]+1);
             if(((i+1) % frame_w)) {
-                printf("");
+                fprintf(f, ", ");
             } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
+                fprintf(f, "]\n\t[");
             } else {
-                printf("]\n");
+                fprintf(f, "]\n");
             }
         }
-        printf(" --- Triangle Printing DONE ---\n");
+        fprintf(f, " --- Triangle Printing DONE ---\n");
+        fclose(f);
     }
 
     // --- Pixel Kernel ---
@@ -341,6 +354,9 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
+        pixel_args->uv_buffer = (texel_t*) memory_ptr;
+        memory_ptr += sizeof(texel_t) * frame_w*frame_h;
+
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
@@ -360,6 +376,32 @@ int main(int argc, char** argv) {
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
+    }
+
+    if(PIXEL_DEBUG) 
+    {
+        FILE *f = fopen("build/pixeldebug.txt", "w");
+        if (f == NULL) {
+            printf("Error opening file!\n");
+        }
+        fprintf(f, " --- Post Pixel Colors --- \n");
+        for(int i = 0; i < frame_w*frame_h; i++) {
+            fprintf(f, "Pixel %d: R:%+06.2f G:%+06.2f B:%+06.2f\n", i, color_output[i].x, color_output[i].y, color_output[i].z);
+        }
+        fprintf(f, " --- Pixel Printing DONE ---\n");
+        fclose(f);
+
+        FILE *f1 = fopen("build/pixeldebug_UV.txt", "w");
+        if (f1 == NULL) {
+            printf("Error opening file!\n");
+        }
+
+        fprintf(f1, " --- Post Pixel UVs --- \n");
+        for(int i = 0; i < frame_w*frame_h; i++) {
+            fprintf(f1, "Pixel %d: S:%+06.2f T:%+06.2f\n", i, pixel_args->uv_buffer[i].s, pixel_args->uv_buffer[i].t);
+        }
+        fprintf(f1, " --- Pixel UV Printing DONE ---\n");
+        fclose(f1);
     }
 
 
@@ -387,6 +429,8 @@ int main(int argc, char** argv) {
         //     int_color_output[i*3 + 2] = 0;
         // }
     }
+
+    
 
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);

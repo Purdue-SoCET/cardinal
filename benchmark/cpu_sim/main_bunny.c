@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
-#include "include/shader_memdump.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // Include all needed kernels
 #include "../kernels/include/vertexShader.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
+#include "../kernels/include/post.h"
 
 // Globals
 uint8_t* memory_ptr;
@@ -22,9 +24,6 @@ uint8_t* memory_ptr;
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
-
-#define INPUT_ARGS_DEBUG 0
-#define OUTPUT_ARGS_DEBUG 0
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -59,70 +58,65 @@ uint8_t* memory_ptr;
     } \
 }
 
+// Make video from Frames:
+//ffmpeg -framerate 30 -pattern_type glob -i "build/output/*.ppm" -c:v libx264 -pix_fmt yuv420p output.mp4
+
+//Model Loaded: 35947 vertices, 69451 triangles
 int main(int argc, char** argv) {
     int frame = 0;
-    // for (int frame = 0; frame < 300; frame++)
+    model_t bunny = {0};
+    loadbin("cpu_sim/data/geometry/bunny.bin", &bunny);
+
+    if (bunny.vertsN == 0) {
+        fprintf(stderr, "Failed to load bunny model!\n");
+        return -1;
+    }
+    for (int frame = 0; frame < 300; frame++)
     {
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
     uint8_t* memory_ptr = memory_base;
 
     // ---- Setup Geometry ----
-    // Single Triangle, all in a single plane
 
-    // Vertexs
-        const int num_verts = 8;
+    /*
+    FILE *f = fopen("build/bunny.txt", "w");
+    for(int i = 0; i < bunny.vertsN; i++) {
+        fprintf(f, "Vertex %d: X:%+06.2f Y:%+06.2f Z:%+06.2f - U:%.2f V:%.2f\n", i, bunny.vertices[i].coords.x, bunny.vertices[i].coords.y, bunny.vertices[i].coords.z, bunny.vertices[i].s, bunny.vertices[i].t);
+    }
+    fclose(f);
+    */
 
-        // Allocation
-        ALLOCATE_MEM(verts, vertex_t, num_verts);
+    const int num_verts = bunny.vertsN;
+    const int num_tris = bunny.trisN;
 
-        // Definition
-        // Front Face
-        MAKE_VERTEX(verts[0], -10, -10, -20, 0, 0); // BL
-        MAKE_VERTEX(verts[1], -10,  10, -20, 0, 1); // TL
-        MAKE_VERTEX(verts[2],  10, -10, -20, 1, 0); // BR
-        MAKE_VERTEX(verts[3],  10,  10, -20, 1, 1); // TR
+    ALLOCATE_MEM(verts, vertex_t, num_verts);
+    ALLOCATE_MEM(tris, triangle_t, num_tris);
 
-        // Back Face
-        MAKE_VERTEX(verts[4], -10, -10, -40, 0, 1); // BL
-        MAKE_VERTEX(verts[5], -10,  10, -40, 1, 1); // TL
-        MAKE_VERTEX(verts[6],  10, -10, -40, 0, 0); // BR
-        MAKE_VERTEX(verts[7],  10,  10, -40, 1, 0); // TR
+    for (int i = 0; i < num_verts; i++) {
+        verts[i] = bunny.vertices[i]; 
+    }
 
-    // Triangles
-        const int num_tris = 12;
+    for (int i = 0; i < num_tris; i++) {
+        tris[i] = bunny.triangles[i]; 
+    }
 
-        // Allocation
-        ALLOCATE_MEM(tris, triangle_t, num_tris);
+    vector_t center = findCenter(bunny);
 
-        // Definition
-        // Front of Cube
-        MAKE_TRI(tris[0], 0, 1, 2);
-        MAKE_TRI(tris[1], 3, 1, 2);
-        
-        // Back of Cube
-        MAKE_TRI(tris[6], 4, 5, 6);
-        MAKE_TRI(tris[7], 7, 5, 6);
+    for (int i = 0; i < num_verts; i++) {
+        verts[i].coords.x -= center.x;
+        verts[i].coords.y -= center.y;
+        verts[i].coords.z -= center.z;
+    }
 
-        // Top of Cube
-        MAKE_TRI(tris[2], 1, 3, 5);
-        MAKE_TRI(tris[3], 7, 3, 5);
-
-        // Bottom of Cube
-        MAKE_TRI(tris[4], 0, 2, 4);
-        MAKE_TRI(tris[5], 6, 2, 4);
-
-        // Left of Cube
-        MAKE_TRI(tris[8], 0, 1, 4);
-        MAKE_TRI(tris[9], 5, 1, 4);
-
-        // Right of Cube
-        MAKE_TRI(tris[10], 2, 3, 6);
-        MAKE_TRI(tris[11], 7, 3, 6);
-
-
+    // Had to scale bunny up
+    for (int i = 0; i < num_verts; i++) {
+        verts[i].coords.x *= 1000.0f; 
+        verts[i].coords.y *= 1000.0f; 
+        verts[i].coords.z *= 1000.0f; 
+    }
 
     // Texture
-        const int text_w = 10, text_h = 10;
+        const int text_w = 5, text_h = 5;
 
         // Allocation
         ALLOCATE_MEM(texture, texture_t, 1);
@@ -139,13 +133,15 @@ int main(int argc, char** argv) {
             }
         }
 
+        *texture = load_jpg("build/wood_texture.jpg", 0);
+
     // Camera
-        float focal_range = 1.0f;
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
-            {0.0f, 1.0f * ((float)OUTPUT_H / (float)OUTPUT_W), 0.0f}, 
-            {0.0f, 0.0f, -focal_range * ((float)OUTPUT_H / (float)OUTPUT_W)},
+            {0.0f, -1.0f, 0.0f}, 
+            {-OUTPUT_W/2, OUTPUT_H/2, 150.0f},
         };
+
 
         const vector_t abcTranspose[3] = {
             {abc[0].x, abc[1].x, abc[2].x},
@@ -158,7 +154,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = 0.0f;
+        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -100.0f; 
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
 
@@ -170,11 +166,11 @@ int main(int argc, char** argv) {
     // Setup Transformation
         ALLOCATE_MEM(Oa, vector_t, 1);
         vertex_args->Oa = Oa;
-        MAKE_VECTOR((*Oa), 0, 0, -30);
+        MAKE_VECTOR((*Oa), 0, 0, 0);
 
         ALLOCATE_MEM(a_dist, vector_t, 1);
         vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 1, 1, 0); // Rotate around z
+        MAKE_VECTOR((*a_dist), 0, 1, 0); // Rotate around y
 
         ALLOCATE_MEM(alpha_r, float, 1);
         vertex_args->alpha_r = alpha_r;
@@ -184,26 +180,12 @@ int main(int argc, char** argv) {
         vertex_args->threeDVert = verts;
         vertex_args->camera = camera_C;
         vertex_args->invTrans = cameraProjMatrix;
-   
-    //viewport 
-    ALLOCATE_MEM(viewport_w, float, 1);
-    ALLOCATE_MEM(viewport_h, float, 1);
-    *viewport_w = OUTPUT_W;
-    *viewport_h = OUTPUT_H;
-    vertex_args->viewport_w = *viewport_w;
-    vertex_args->viewport_h = *viewport_h;
-
+    
     // Allocate Output Space
         ALLOCATE_MEM(tVerts, vertex_t, num_verts);
         vertex_args->threeDVertTrans = tVerts;
         ALLOCATE_MEM(pVerts, vertex_t, num_verts);
         vertex_args->twoDVert = pVerts;
-    
-        if(INPUT_ARGS_DEBUG){
-            print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
-        }
-
-        printf("args size: %lu\n", sizeof(vertexShader_arg_t));
     
     // Running the Kernel
     {
@@ -211,22 +193,59 @@ int main(int argc, char** argv) {
         run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
     }
 
-    if(OUTPUT_ARGS_DEBUG){
-        print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
-    }
-
     // Checking Vertex Output
     if(VERTEX_DEBUG) 
     {
+        FILE *f = fopen("build/vertexdebug.txt", "w");
+        if (f == NULL) {
+            printf("Error opening file!\n");
+        }
+
+        fprintf(f, " --- Vertex Debug Dump (Count: %d) --- \n", num_verts);
+        
+        for(int i = 0; i < num_verts; i++) {
+            fprintf(f, " --- Vertex %d --- \n", i);
+            
+            fprintf(f, "3D (Model):\n");
+            fprintf(f, "\tX:%+06.2f Y:%+06.2f Z:%+06.2f | U:%.2f V:%.2f\n", 
+                vertex_args->threeDVert[i].coords.x, 
+                vertex_args->threeDVert[i].coords.y, 
+                vertex_args->threeDVert[i].coords.z, 
+                vertex_args->threeDVert[i].s, 
+                vertex_args->threeDVert[i].t);
+
+            fprintf(f, "3D (Trans):\n");
+            fprintf(f, "\tX:%+06.2f Y:%+06.2f Z:%+06.2f | U:%.2f V:%.2f\n", 
+                vertex_args->threeDVertTrans[i].coords.x, 
+                vertex_args->threeDVertTrans[i].coords.y, 
+                vertex_args->threeDVertTrans[i].coords.z, 
+                vertex_args->threeDVertTrans[i].s, 
+                vertex_args->threeDVertTrans[i].t);
+
+            fprintf(f, "2D (Screen):\n");
+            fprintf(f, "\tX:%+06.2f Y:%+06.2f Z:%+06.2f | U:%.2f V:%.2f\n", 
+                vertex_args->twoDVert[i].coords.x, 
+                vertex_args->twoDVert[i].coords.y, 
+                vertex_args->twoDVert[i].coords.z, 
+                vertex_args->twoDVert[i].s, 
+                vertex_args->twoDVert[i].t);
+            
+            fprintf(f, "\n");
+        }
+
+        fprintf(f, " --- End of Dump --- \n");
+        fclose(f);
+        /*
         for(int i = 0; i < num_verts; i++) {
             printf(" --- Vertex %d --- \n", i);
             printf("3D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVert[i].coords.x, (double)vertex_args->threeDVert[i].coords.y, (double)vertex_args->threeDVert[i].coords.z, (double)vertex_args->threeDVert[i].s, (double)vertex_args->threeDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVert[i].coords.x, vertex_args->threeDVert[i].coords.y, vertex_args->threeDVert[i].coords.z, vertex_args->threeDVert[i].s, vertex_args->threeDVert[i].t);
             printf("3Dt:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVertTrans[i].coords.x, (double)vertex_args->threeDVertTrans[i].coords.y, (double)vertex_args->threeDVertTrans[i].coords.z, (double)vertex_args->threeDVertTrans[i].s, (double)vertex_args->threeDVertTrans[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVertTrans[i].coords.x, vertex_args->threeDVertTrans[i].coords.y, vertex_args->threeDVertTrans[i].coords.z, vertex_args->threeDVertTrans[i].s, vertex_args->threeDVertTrans[i].t);
             printf("2D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->twoDVert[i].coords.x, (double)vertex_args->twoDVert[i].coords.y, (double)vertex_args->twoDVert[i].coords.z, (double)vertex_args->twoDVert[i].s, (double)vertex_args->twoDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->twoDVert[i].coords.x, vertex_args->twoDVert[i].coords.y, vertex_args->twoDVert[i].coords.z, vertex_args->twoDVert[i].s, vertex_args->twoDVert[i].t);
         }
+        */
         printf(" --- Vertex end --- \n");
     }
 
@@ -281,51 +300,44 @@ int main(int argc, char** argv) {
         };
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
-        if(INPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleInput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
-        }
-
         // Running the Kernel
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
-
-        if(OUTPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleOutput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
-        }
     }
 
     // Checking TRIANGLE Output
     if(TRIANGLE_DEBUG) 
     {
-        printf(" --- Post Triangle Depths --- \n");
-        printf("\t[");
+        FILE *f = fopen("build/triangledebug.txt", "w");
+        if (f == NULL) {
+            printf("Error opening file!\n");
+        }
+        fprintf(f, " --- Post Triangle Depths --- \n");
+        fprintf(f, "\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
-            printf("%+06.2f", (double) zbuff[i]);
+            fprintf(f, "%+06.2f", zbuff[i]);
             if(((i+1) % frame_w)) {
-                printf(", ");
+                fprintf(f, ", ");
             } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
+                fprintf(f, "]\n\t[");
             } else {
-                printf("]\n");
+                fprintf(f, "]\n");
             }
         }
-        printf(" --- Post Triangle Tags --- \n");
-        printf("\t[");
+        fprintf(f, " --- Post Triangle Tags --- \n");
+        fprintf(f, "\t[");
         for(int i = 0; i < frame_w * frame_h; i++) {
             if(tbuff[i]+1 > 0)
-            printf("%d", tbuff[i]+1);
+            fprintf(f, "%d", tbuff[i]+1);
             if(((i+1) % frame_w)) {
-                printf("");
+                fprintf(f, ", ");
             } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
+                fprintf(f, "]\n\t[");
             } else {
-                printf("]\n");
+                fprintf(f, "]\n");
             }
         }
+        fclose(f);
         printf(" --- Triangle Printing DONE ---\n");
     }
 
@@ -352,18 +364,27 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
-    if(INPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelInput.txt", pixel_args); 
-    }
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
-    if(OUTPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelOutput.txt", pixel_args); 
+    // --- FXAA Kernel --- (it's called post for now but probably want it to be called fxaa and then every shader after should be called its own thing.)
+    ALLOCATE_MEM(post_args, post_arg_t, 1);
+
+    post_args->color = color_output;
+    post_args->depth_buff = zbuff;
+    post_args->buff_w = frame_w;
+    post_args->buff_h = frame_h;
+    post_args->threshold = 2;
+
+    // Running the kernel
+    {
+        int grid_dim = 1; int block_dim = frame_w * frame_h;
+        run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
     }
+
 
     // --- Create Image from Data ---
     
@@ -393,11 +414,14 @@ int main(int argc, char** argv) {
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
 
-    createPPMFile(fname, int_color_output, OUTPUT_W, OUTPUT_H);
+    createPPMFile(fname, int_color_output);
     free(int_color_output);
 
     // --- Clean Up ---
     free(memory_base);
     }
+
+    free(bunny.vertices);
+    free(bunny.triangles);
     
 }

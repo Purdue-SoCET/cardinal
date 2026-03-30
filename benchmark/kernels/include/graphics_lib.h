@@ -12,12 +12,17 @@ typedef struct {
 } vertex_t;
 
 typedef struct {
+    float s, t; 
+} texel_t;
+
+typedef struct {
     unsigned int v1, v2, v3;
 } triangle_t;
 
 typedef struct {
     int w, h;
     vector_t* color_arr;
+    int id;
 } texture_t;
 
 typedef struct {

@@ -1,0 +1,17 @@
+#ifndef {{ kernel_name | upper }}_H
+#define {{ kernel_name | upper }}_H
+
+#include "graphics_lib.h"
+
+{% for struct in structs %}
+typedef struct {
+    {% for field in struct.fields -%}
+    {{ field.type }} {{ field.name }};
+    {% endfor %}
+} {{ struct.name }};
+
+{% endfor %}
+
+void kernel_{{ kernel_name }}(void*);
+
+#endif

@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
-#include "include/shader_memdump.h"
 
 // Include all needed kernels
 #include "../kernels/include/vertexShader.h"
@@ -16,15 +16,20 @@
 uint8_t* memory_ptr;
 
 // Defines
-#define OUTPUT_W 800 // 680
-#define OUTPUT_H 800 // 480
+#define OUTPUT_W 800
+#define OUTPUT_H 800
+
+#define PI_F 3.14159265f
+
+// Sphere resolution (keep NUM_VERTS <= 1024)
+#define SPHERE_LAT 16
+#define SPHERE_LON 32
+#define NUM_VERTS ((SPHERE_LAT + 1) * SPHERE_LON)
+#define NUM_TRIS  (SPHERE_LAT * SPHERE_LON * 2)
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
-
-#define INPUT_ARGS_DEBUG 0
-#define OUTPUT_ARGS_DEBUG 0
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -35,11 +40,6 @@ uint8_t* memory_ptr;
     vector.x = ix; \
     vector.y = iy; \
     vector.z = iz; \
-}
-
-#define MAKE_VERTEX(vertex, ix, iy, iz, is, it) { \
-    MAKE_VECTOR(vertex.coords, ix, iy, iz); \
-    vertex.s = is; vertex.t = it; \
 }
 
 #define MAKE_TRI(tri, iv1, iv2, iv3) { \
@@ -59,83 +59,55 @@ uint8_t* memory_ptr;
     } \
 }
 
+
+
 int main(int argc, char** argv) {
-    int frame = 0;
-    // for (int frame = 0; frame < 300; frame++)
-    {
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
     uint8_t* memory_ptr = memory_base;
 
     // ---- Setup Geometry ----
-    // Single Triangle, all in a single plane
+    // UV sphere phong lighting test
+
+    const int num_verts = NUM_VERTS;
+    const int num_tris = NUM_TRIS;
+    const float sphere_radius = 10.0f;
+    vector_t sphere_center;
+    MAKE_VECTOR(sphere_center, 0.0f, 0.0f, -30.0f);
 
     // Vertexs
-        const int num_verts = 8;
-
         // Allocation
         ALLOCATE_MEM(verts, vertex_t, num_verts);
 
-        // Definition
-        // Front Face
-        MAKE_VERTEX(verts[0], -10, -10, -20, 0, 0); // BL
-        MAKE_VERTEX(verts[1], -10,  10, -20, 0, 1); // TL
-        MAKE_VERTEX(verts[2],  10, -10, -20, 1, 0); // BR
-        MAKE_VERTEX(verts[3],  10,  10, -20, 1, 1); // TR
-
-        // Back Face
-        MAKE_VERTEX(verts[4], -10, -10, -40, 0, 1); // BL
-        MAKE_VERTEX(verts[5], -10,  10, -40, 1, 1); // TL
-        MAKE_VERTEX(verts[6],  10, -10, -40, 0, 0); // BR
-        MAKE_VERTEX(verts[7],  10,  10, -40, 1, 0); // TR
+        // Generate UV sphere
+        for(int lat = 0; lat <= SPHERE_LAT; lat++) {
+            float theta = PI_F * (float)lat / (float)SPHERE_LAT;
+            float st = sinf(theta), ct = cosf(theta);
+            for(int lon = 0; lon < SPHERE_LON; lon++) {
+                float phi = 2.0f * PI_F * (float)lon / (float)SPHERE_LON;
+                int idx = lat * SPHERE_LON + lon;
+                verts[idx].coords.x = sphere_center.x + sphere_radius * st * cosf(phi);
+                verts[idx].coords.y = sphere_center.y + sphere_radius * ct;
+                verts[idx].coords.z = sphere_center.z + sphere_radius * st * sinf(phi);
+                verts[idx].s = 0.0f;
+                verts[idx].t = 0.0f;
+            }
+        }
 
     // Triangles
-        const int num_tris = 12;
-
         // Allocation
         ALLOCATE_MEM(tris, triangle_t, num_tris);
 
         // Definition
-        // Front of Cube
-        MAKE_TRI(tris[0], 0, 1, 2);
-        MAKE_TRI(tris[1], 3, 1, 2);
-        
-        // Back of Cube
-        MAKE_TRI(tris[6], 4, 5, 6);
-        MAKE_TRI(tris[7], 7, 5, 6);
-
-        // Top of Cube
-        MAKE_TRI(tris[2], 1, 3, 5);
-        MAKE_TRI(tris[3], 7, 3, 5);
-
-        // Bottom of Cube
-        MAKE_TRI(tris[4], 0, 2, 4);
-        MAKE_TRI(tris[5], 6, 2, 4);
-
-        // Left of Cube
-        MAKE_TRI(tris[8], 0, 1, 4);
-        MAKE_TRI(tris[9], 5, 1, 4);
-
-        // Right of Cube
-        MAKE_TRI(tris[10], 2, 3, 6);
-        MAKE_TRI(tris[11], 7, 3, 6);
-
-
-
-    // Texture
-        const int text_w = 10, text_h = 10;
-
-        // Allocation
-        ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(color_map, vector_t, (text_w * text_h));
-
-        // Definition
-        texture->w = text_w; texture->h = text_h;
-        texture->color_arr = color_map;
-        for(int u = 0; u < text_w; u++) {
-            for(int v = 0; v < text_h; v++) {
-                // Make red/blue checkerboard texture
-                const vector_t red = {1.0f, 1.0f, 1.0f}; const vector_t blue = {0.0f, 0.0f, 0.0f};
-                texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? red : blue;
+        int tri_count = 0;
+        for(int lat = 0; lat < SPHERE_LAT; lat++) {
+            for(int lon = 0; lon < SPHERE_LON; lon++) {
+                int ln = (lon + 1) % SPHERE_LON;
+                int v00 = lat * SPHERE_LON + lon;
+                int v01 = lat * SPHERE_LON + ln;
+                int v10 = (lat + 1) * SPHERE_LON + lon;
+                int v11 = (lat + 1) * SPHERE_LON + ln;
+                MAKE_TRI(tris[tri_count], v00, v10, v01); tri_count++;
+                MAKE_TRI(tris[tri_count], v01, v10, v11); tri_count++;
             }
         }
 
@@ -164,24 +136,23 @@ int main(int argc, char** argv) {
 
     // --- Vertex Kernel ---
     ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
-
-    vertex_args->num_verts = num_verts;
     
-    // Setup Transformation
+    // Setup Transformation (no rotation for static frame)
         ALLOCATE_MEM(Oa, vector_t, 1);
         vertex_args->Oa = Oa;
         MAKE_VECTOR((*Oa), 0, 0, -30);
 
         ALLOCATE_MEM(a_dist, vector_t, 1);
         vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 1, 1, 0); // Rotate around z
+        MAKE_VECTOR((*a_dist), 0, 1, 0);
 
         ALLOCATE_MEM(alpha_r, float, 1);
         vertex_args->alpha_r = alpha_r;
-        *alpha_r = 3.14f * 2 * frame / 300.0f;
+        *alpha_r = 0.0f;
 
     // Give geometry inputs
         vertex_args->threeDVert = verts;
+        vertex_args->num_verts = num_verts;
         vertex_args->camera = camera_C;
         vertex_args->invTrans = cameraProjMatrix;
    
@@ -199,20 +170,10 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(pVerts, vertex_t, num_verts);
         vertex_args->twoDVert = pVerts;
     
-        if(INPUT_ARGS_DEBUG){
-            print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
-        }
-
-        printf("args size: %lu\n", sizeof(vertexShader_arg_t));
-    
     // Running the Kernel
     {
         int grid_dim = 1; int block_dim = num_verts;
         run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
-    }
-
-    if(OUTPUT_ARGS_DEBUG){
-        print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
     }
 
     // Checking Vertex Output
@@ -221,17 +182,16 @@ int main(int argc, char** argv) {
         for(int i = 0; i < num_verts; i++) {
             printf(" --- Vertex %d --- \n", i);
             printf("3D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVert[i].coords.x, (double)vertex_args->threeDVert[i].coords.y, (double)vertex_args->threeDVert[i].coords.z, (double)vertex_args->threeDVert[i].s, (double)vertex_args->threeDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f\n", vertex_args->threeDVert[i].coords.x, vertex_args->threeDVert[i].coords.y, vertex_args->threeDVert[i].coords.z);
             printf("3Dt:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->threeDVertTrans[i].coords.x, (double)vertex_args->threeDVertTrans[i].coords.y, (double)vertex_args->threeDVertTrans[i].coords.z, (double)vertex_args->threeDVertTrans[i].s, (double)vertex_args->threeDVertTrans[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f\n", vertex_args->threeDVertTrans[i].coords.x, vertex_args->threeDVertTrans[i].coords.y, vertex_args->threeDVertTrans[i].coords.z);
             printf("2D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", (double)vertex_args->twoDVert[i].coords.x, (double)vertex_args->twoDVert[i].coords.y, (double)vertex_args->twoDVert[i].coords.z, (double)vertex_args->twoDVert[i].s, (double)vertex_args->twoDVert[i].t);
+            printf("\t%+06.2f %+06.2f %+06.2f\n", vertex_args->twoDVert[i].coords.x, vertex_args->twoDVert[i].coords.y, vertex_args->twoDVert[i].coords.z);
         }
         printf(" --- Vertex end --- \n");
     }
 
     // --- Triangle Kernel ---
-    // Only one call - still implement multi triangle framework
     ALLOCATE_MEM(triangle_args, triangle_arg_t, 1);
 
     // Setup Pixel Buffers
@@ -281,52 +241,10 @@ int main(int argc, char** argv) {
         };
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
-        if(INPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleInput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
-        }
-
         // Running the Kernel
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
+        if(block_dim <= 0) continue;
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
-
-        if(OUTPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleOutput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
-        }
-    }
-
-    // Checking TRIANGLE Output
-    if(TRIANGLE_DEBUG) 
-    {
-        printf(" --- Post Triangle Depths --- \n");
-        printf("\t[");
-        for(int i = 0; i < frame_w * frame_h; i++) {
-            printf("%+06.2f", (double) zbuff[i]);
-            if(((i+1) % frame_w)) {
-                printf(", ");
-            } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
-            } else {
-                printf("]\n");
-            }
-        }
-        printf(" --- Post Triangle Tags --- \n");
-        printf("\t[");
-        for(int i = 0; i < frame_w * frame_h; i++) {
-            if(tbuff[i]+1 > 0)
-            printf("%d", tbuff[i]+1);
-            if(((i+1) % frame_w)) {
-                printf("");
-            } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
-            } else {
-                printf("]\n");
-            }
-        }
-        printf(" --- Triangle Printing DONE ---\n");
     }
 
     // --- Pixel Kernel ---
@@ -334,7 +252,7 @@ int main(int argc, char** argv) {
 
     // Setup Output
         ALLOCATE_MEM(color_output, vector_t, frame_w*frame_h);
-        vector_t color_default = {0.6f, 0.6f, 0.6f};
+        vector_t color_default = {0.18f, 0.25f, 0.35f};
         DEFAULT_ARR(color_output, frame_w*frame_h, color_default);
         pixel_args->color = color_output;
 
@@ -350,19 +268,28 @@ int main(int argc, char** argv) {
         pixel_args->depth_buff = zbuff;
         pixel_args->tag_buff = tbuff;
 
-        pixel_args->texture = *texture;
+    // no texture
+        pixel_args->texture.w = 0;
+        pixel_args->texture.h = 0;
+        pixel_args->texture.color_arr = 0;
+    // phong lighting vars
+        pixel_args->threeDVertTrans = tVerts;
+        pixel_args->camera = *camera_C;
+        pixel_args->sphere_center = sphere_center;
 
-    if(INPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelInput.txt", pixel_args); 
-    }
+        // light source
+        pixel_args->light_pos = (vector_t){15.0f, 15.0f, 0.0f};
+
+        // material defs
+        pixel_args->albedo  = (vector_t){1.0f, 0.1f, 0.1f};
+        pixel_args->ambient = (vector_t){0.05f, 0.05f, 0.05f};
+        pixel_args->kd = 0.7f;
+        pixel_args->ks = 0.3f;
+
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
-    }
-
-    if(OUTPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelOutput.txt", pixel_args); 
     }
 
     // --- Create Image from Data ---
@@ -373,31 +300,12 @@ int main(int argc, char** argv) {
         int_color_output[i*3 + 0] = color_output[i].x * 255 + .5;
         int_color_output[i*3 + 1] = color_output[i].y * 255 + .5;
         int_color_output[i*3 + 2] = color_output[i].z * 255 + .5;
-        // int_color_output[i*3 + 0] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 1] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 2] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 0] = tbuff[i] != -1 ? (((tbuff[i]+1) % 3)+1.0f) / 3.0f * 255 : 0;
-        // int_color_output[i*3 + 1] = tbuff[i] != -1 ? (((tbuff[i]+2) % 4)+1.0f) / 4.0f * 255 : 0;
-        // int_color_output[i*3 + 2] = tbuff[i] != -1 ? (((tbuff[i]+3) % 5)+1.0f) / 5.0f * 255 : 0;
-        // if(tbuff[i] != -1) {
-        //     int_color_output[i*3 + 0] = 255;
-        //     int_color_output[i*3 + 1] = 255;
-        //     int_color_output[i*3 + 2] = 255;
-        // } else {
-        //     int_color_output[i*3 + 0] = 0;
-        //     int_color_output[i*3 + 1] = 0;
-        //     int_color_output[i*3 + 2] = 0;
-        // }
     }
 
-    char fname[30];
-    snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
-
-    createPPMFile(fname, int_color_output, OUTPUT_W, OUTPUT_H);
+    createPPMFile("build/output/lighting_frame.ppm", int_color_output, OUTPUT_W, OUTPUT_H);
     free(int_color_output);
 
     // --- Clean Up ---
     free(memory_base);
-    }
     
 }
