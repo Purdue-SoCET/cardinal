@@ -119,18 +119,18 @@ class Jump(FunctionalSubUnit):
 
         match instr.opcode:
             case J_Op.JAL:
-                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.pc.uint + instr.imm.int}
+                schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int}
                 instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
             case I_Op.JALR:
                 if not all(data == instr.rdat1[0] for data in instr.rdat1):
                       raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")
-                schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.rdat1[0].uint + instr.imm}
+                schedule_if_value = {"warp": instr.warp_id, "dest": instr.rdat1[0].uint + instr.imm}
                 instr.wdat = None
             case P_Op.JPNZ:
                 if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
                     raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.")
                 if instr.predicate[0] == Bits(length=1, uint=1):
-                    schedule_if_value = {"warp_group": instr.warp_group_id, "dest": instr.pc + instr.imm}
+                    schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc + instr.imm}
                 instr.wdat = None
             case _:
                 raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")

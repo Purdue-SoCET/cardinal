@@ -24,13 +24,13 @@ class SMRecord:
     def __init__(self, max_threads: int, threads_per_warp: int) -> None:
         self.threads_per_warp: int = threads_per_warp
         self.avail_warps: int = self.warps_from_threads(max_threads)
-        self.working: bool = False
+        # self.working: bool = False
     
     def warps_from_threads(self, nthreads: int):
         return math.ceil(nthreads / self.threads_per_warp)
     
     def can_give_threads(self, nthreads: int):
-        return self.avail_warps >= self.warps_from_threads(nthreads) and not self.working
+        return self.avail_warps >= self.warps_from_threads(nthreads) # and not self.working
     
     def give_threads(self, nthreads: int):
         assert self.can_give_threads(nthreads)
@@ -64,6 +64,11 @@ class ThreadBlockScheduler(Stage):
         # SM list, tracks availability
         self.SMs: list[SMRecord] = []
     
+    def reset(self) -> None:
+        self.block_list = []
+        self.blocks_not_sent = []
+        self.blocks_done = []
+
     def add_SM(self) -> None:
         availability = self.threads_per_sm // self.min_thread_division
         self.SMs.append(SMRecord(self.threads_per_sm, self.min_thread_division))
@@ -89,7 +94,7 @@ class ThreadBlockScheduler(Stage):
     def finish_blk(self, bidx, smidx: int = 0):
         # De-occupy
         self.SMs[smidx].free_threads(self.block_list[bidx].bdim)
-        self.blocks_done.add(bidx)
+        self.blocks_done.append(bidx)
             
     def compute(self):
         for bidx in self.blocks_not_sent:
@@ -102,3 +107,5 @@ class ThreadBlockScheduler(Stage):
         if self.forward_ifs_read["Scheduler_TBS"].payload:
             for bidx in self.forward_ifs_read["Scheduler_TBS"].pop():
                 self.finish_blk(bidx)
+        
+            # self.SMs[0].working = False

@@ -191,13 +191,6 @@ class FetchRequest:
     warp_id: int
     uuid: Optional[int] = None
     
-@dataclass
-class Warp:
-    pc: int
-    group_id: int
-    can_issue: bool = True
-    halt: bool = True
-
 class WarpState(Enum):
     READY = "ready"
     BARRIER = "barrier"
@@ -205,14 +198,20 @@ class WarpState(Enum):
     HALT = "halt"
 
 @dataclass
-class WarpGroup:
+class Warp:
     pc: int
+    id: int
+    state: WarpState = WarpState.HALT
+    finished_packet: bool = False
+    in_flight: int = 0
+
+@dataclass
+class WarpGroup:
+    warps: List[Warp]
     group_id: int
     halt: int = 1
     last_issue_even: bool = False
-    finished_packet: bool = False
-    in_flight: int = 0
-    state: WarpState = WarpState.HALT
+    issue: bool = False 
 
     halt_mask_even: Bits = field(default_factory=lambda: Bits(uint=(1 << 32) - 1, length=32))
     halt_mask_odd: Bits = field(default_factory=lambda: Bits(uint=(1 << 32) - 1, length=32))
@@ -235,7 +234,7 @@ class Instruction:
     rd: Optional[Bits]= None
     src_pred: Optional[Bits]= None
     dest_pred: Optional[Bits]= None
-    predicate:Optional[Bits] = None
+    predicate: Optional[Bits] = None
     active_mask: Optional[Bits] = None
     opcode: Optional[Op]= None
     imm: Optional[Bits]= None
