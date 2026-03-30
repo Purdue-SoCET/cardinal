@@ -19,6 +19,7 @@ void kernel_vertexShader(void* arg)
 
     if(i < args->num_verts){
 
+        /****** ThreeD Rotation ******/ 
         // assuming radian
         // V3::RotateThisPointAboutArbitraryAxis and TM::RotateAboutArbitraryAxis
 

@@ -140,7 +140,9 @@ void kernel_pixel(void* arg)
         int texel_y = ftoi(t_fract * h_minus_1 + 0.5);
 
         int idx = texel_y * args->texture.w + texel_x;
-        albedo = args->texture.color_arr[idx];
+        albedo.x = args->texture.color_arr[idx].x;
+        albedo.y = args->texture.color_arr[idx].y;
+        albedo.z = args->texture.color_arr[idx].z;
     }
 
     // if we cant calculate the lighting just exit

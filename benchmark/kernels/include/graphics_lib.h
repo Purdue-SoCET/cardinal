@@ -20,7 +20,12 @@ typedef struct {
 } triangle_t;
 
 typedef struct {
+    float w, x, y, z;
+} vec4_t;
+
+typedef struct {
     int w, h;
+    //vec4_t* color_arr;
     vector_t* color_arr;
     int id;
 } texture_t;
@@ -31,10 +36,6 @@ typedef struct {
     vertex_t* vertices;
     triangle_t* triangles;
 } model_t;
-
-typedef struct {
-    float w, x, y, z;
-} vec4_t;
 
 // --- Macros ---
 #define GET_1D_INDEX(idx_w, idx_h, arr_w) (idx_h*arr_w + idx_w)
