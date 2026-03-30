@@ -121,17 +121,21 @@ class Jump(FunctionalSubUnit):
             case J_Op.JAL:
                 schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int}
                 instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
+                print(f"immediate for jal: {instr.imm}")
             case I_Op.JALR:
                 if not all(data == instr.rdat1[0] for data in instr.rdat1):
                       raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")
-                schedule_if_value = {"warp": instr.warp_id, "dest": instr.rdat1[0].uint + instr.imm}
-                instr.wdat = None
+                schedule_if_value = {"warp": instr.warp_id, "dest": instr.rdat1[0].uint + instr.imm.int}
+                # instr.wdat = None
+                instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
             case P_Op.JPNZ:
-                if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
-                    raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.")
-                if instr.predicate[0] == Bits(length=1, uint=1):
-                    schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc + instr.imm}
-                instr.wdat = None
+                # if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
+                #     raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.") # this is not true
+                # if instr.predicate[0] == Bits(length=1, uint=1):
+                # print(instr.pc.uint)
+                schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int if not all(x == Bits(uint=0, length=1) for x in instr.predicate) else instr.pc.uint + 4}
+                print(schedule_if_value)
+                # instr.wdat = None
             case _:
                 raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")
             
@@ -362,7 +366,7 @@ class Alu(ArithmeticSubUnit):
                 b = instr.rdat2[i].float
             elif isinstance(instr.opcode, U_Op):
                 if instr.opcode == U_Op.AUIPC:
-                    b = instr.pc
+                    b = instr.pc.uint
                 else:
                     b = instr.rdat1[i].int
             else:
@@ -370,7 +374,7 @@ class Alu(ArithmeticSubUnit):
 
             match instr.opcode:
                 # case R_Op.ADD | I_Op.ADDI:
-                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF:
+                case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF | U_Op.AUIPC:
                     result = a + b            
                     # Check for signed overflow
                     if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI and (result > 2147483647 or result < -2147483648):
@@ -417,8 +421,9 @@ class Alu(ArithmeticSubUnit):
                     if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
                         overflow_detected = True
                     result = int(a >= b)
-                case U_Op.AUIPC:
-                    result = (b + ((a & 0xFFFFF) << 12)) & 0xFFFFFFFF
+                # case U_Op.AUIPC:
+                #     # result = (b + ((a & 0xFFFFF) << 12)) & 0xFFFFFFFF
+                #     result = (a + b) & 0xFFFFFFFF
                 case U_Op.LLI:
                     # {old[31:12], imm[11:0]}
                     result = ((b & 0xFFFFF000) | (a & 0xFFF)) & 0xFFFFFFFF

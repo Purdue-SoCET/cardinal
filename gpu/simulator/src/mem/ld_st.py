@@ -4,7 +4,7 @@ import logging
 from bitstring import Bits
 
 from simulator.latch_forward_stage import *
-from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op
+from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op, P_Op
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
@@ -191,6 +191,13 @@ class pending_mem():
             case S_Op.SB:
                 self.write = True
                 self.size = "byte"
+
+            case P_Op.PRSW:
+                self.write = True
+                self.size = "word"
+            case P_Op.PRLW:
+                self.write = False
+                self.size = "word"
             
             case _:
                 logger.error(f"Err: instr in ldst cannot be decoded")

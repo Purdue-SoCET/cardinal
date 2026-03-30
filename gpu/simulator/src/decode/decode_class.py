@@ -140,7 +140,7 @@ class DecodeStage(Stage):
         # Load/Store operations
         if op in [
             S_Op.SW, S_Op.SH, S_Op.SB, I_Op.LW,
-            I_Op.LH, I_Op.LB,
+            I_Op.LH, I_Op.LB, P_Op.PRSW, P_Op.PRLW
         ]:
             for fu_name in self.fust.keys():
                 if fu_name.startswith("Ldst_Fu_"):
@@ -241,7 +241,8 @@ class DecodeStage(Stage):
 
         # rd present for R/I/F/U/J/P (per your intent)
         # if is_R or is_I or is_F or is_U or is_J or is_P:
-        if is_R or is_I or is_F or is_U or is_J or is_P or is_C:
+        # if is_R or is_I or is_F or is_U or is_J or is_P or is_C:
+        if is_R or is_I or is_F or is_U or is_J or is_C:
             inst.rd = Bits(uint=((raw >> 7) & 0x3F), length=6)
 
             # Your special P-type rule using LOWER 3 bits of opcode7
@@ -252,14 +253,14 @@ class DecodeStage(Stage):
             inst.rd = Bits(uint=0, length=32)
 
         # rs1 present for R/I/F/S/B/P
-        if is_R or is_I or is_F or is_S or is_B or is_P:
-            # inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=5)
+        # if is_R or is_I or is_F or is_S or is_B or is_P:
+        if is_R or is_I or is_F or is_S or is_B:
             inst.rs1 = Bits(uint=(raw >> 13) & 0x3F, length=6)
 
             opcode_lower = opcode7 & 0x7
-            if is_P and opcode_lower not in (0x4, 0x5):
-                inst.rs1 = None
-                inst.num_operands = 0 ### ADDED ###
+            # if is_P and opcode_lower not in (0x4, 0x5):
+            #     inst.rs1 = None
+            #     inst.num_operands = 0 ### ADDED ###
         else:
             inst.rs1 = None
             inst.num_operands = 0 ### ADDED ###
@@ -282,18 +283,34 @@ class DecodeStage(Stage):
 
         # if u type, route the dest reg to be a src reg for concat.
         if is_U:
-            inst.num_operands = 1
-            inst.rs1 = inst.rd 
+            if inst.opcode is U_Op.AUIPC:
+                inst.num_operands = 0 # don't collect anything from RF
+                inst.rdat1 = [inst.pc for _ in range(32)]
+            else:
+                inst.num_operands = 1 # collect rd reg value for rs1
+                inst.rs1 = inst.rd 
+
+        if is_P:
+            if inst.opcode is P_Op.JPNZ:
+                inst.num_operands = 0
+            elif inst.opcode is P_Op.PRLW or inst.opcode is P_Op.PRSW:
+                inst.num_operands = 1
+                inst.rs1 = Bits(uint=(raw >> 19) & 0x3F, length=6)
+
         # src_pred present for R/I/F/S/U/B (your original intent)
         # if is_R or is_I or is_F or is_S or is_U or is_B:
-        if is_R or is_I or is_F or is_S or is_B or is_C or is_H or is_U or is_J:
+        # if is_R or is_I or is_F or is_S or is_B or is_C or is_H or is_U or is_J:
+        if is_R or is_I or is_F or is_S or is_B or is_C or is_H or is_U or is_J or inst.opcode is P_Op.JPNZ:
             inst.src_pred = (raw >> 25) & 0x1F
-        else:
+        elif inst.opcode is P_Op.PRSW or inst.opcode is P_Op.PRLW:
             inst.src_pred = None
+        else:
+            inst.src_pred = 0
 
         # dest_pred for B-type (FIXED '=')
-        if is_B:
-            inst.dest_pred = (raw >> 7) & 0x3F
+        # if is_B:
+        if is_B or inst.opcode is P_Op.PRLW:
+            inst.dest_pred = (raw >> 7) & 0x1F # changed this to 0x1F since 5th bit should always be 0 for PRF access
         else:
             inst.dest_pred = None
 
@@ -303,12 +320,27 @@ class DecodeStage(Stage):
         elif is_S:
             inst.imm = Bits(uint=((raw >> 7) & 0x3F), length=6)
         elif is_U:
-            inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
+            if inst.opcode is U_Op.AUIPC:
+                inst.imm = Bits(uint=((raw >> 1) & 0xFFF000), length=24)
+            else:
+                inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
-            imm = ((raw >> 13) & 0xFFF) << 1
-            inst.imm = Bits(uint=imm, length=17)
+            inst.imm = Bits(uint=((raw >> 12) & 0x3FFFE), length=18)
         elif is_P:
-            inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
+            # inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
+            if inst.opcode is P_Op.JPNZ:
+                # inst.imm = Bits(uint=((raw >> 6) & 0x7FFFE), length=19) # imm = {rs1[24:19], imm[18:12], prd[11:7],  1'b0}
+                # inst.imm = Bits(uint=((raw >> 12) & 0x1FFE), length=13) ### MAKE SURE TO USE THIS LATER !!! ###
+                """
+                MAKE SURE TO USE THE ABOVE STATEMENT LATER FOR THE IMMEDIATE, NOT THE STATEMENT BELOW !!!
+                """
+                inst.imm = Bits(uint=16, length=13)
+            elif inst.opcode is P_Op.PRSW:
+                inst.imm = Bits(uint=((raw >> 7) & 0xFFF), length=12) # imm = {imm[18:12], prd[11:7]}
+            elif inst.opcode is P_Op.PRLW:
+                imm_lower = (raw >> 12) & 0x07F # imm[18:12]
+                imm_upper = (raw >> 25) & 0xF80 # prs[29:25]
+                inst.imm = Bits(uint=(imm_upper | imm_lower), length=12) # imm = {prs[29:25], imm[18:12]}
         # elif is_H:
         #     # print(f"[Decode] Received HALT")
         #     inst.imm = Bits(uint=0x7FFFFF, length=23)
@@ -380,12 +412,15 @@ class DecodeStage(Stage):
                 for a, p in zip(inst.active_mask, inst.predicate)
             ]
 
+        if inst.opcode is P_Op.PRSW or inst.opcode is P_Op.PRLW: # need this here so that the PRSW/PRLW mask doesn't get ANDed with the active mask
+            inst.predicate = [Bits(uint=1, length=1) if i == 0 else Bits(uint=0, length=1) for i in range(32)]
+
         # Initialize wdat list for result storage (32 threads per warp)
         if not inst.wdat or len(inst.wdat) == 0:
             inst.wdat = [Bits(uint=0, length=32) for _ in range(32)]
         
         # TODO: ADD LOGIC HERE TO SET inst.target_regfile TO "pred_regfile" IF THE INSTRUCTION WRITES TO PRED REG FILE
-        if inst.opcode is B_Op.BEQ or inst.opcode is B_Op.BNE:
+        if inst.opcode is B_Op.BEQ or inst.opcode is B_Op.BNE or inst.opcode is P_Op.PRLW:
             inst.target_regfile = "pred_regfile"
             inst.target_bank = 1 # for now, just hardcoding all pred reg file writes to go to bank 1 and all int/float reg file writes to go to bank 0, but this can be changed later if we want more flexible mapping of logical register files to physical banks
         else:
@@ -397,6 +432,8 @@ class DecodeStage(Stage):
                 inst.target_regfile = "regfile"
 
         self._push_instruction_to_next_stage(inst)
+        if inst.opcode is U_Op.LLI:
+            print(inst)
         return 
     
     def compute(self, input_data: Optional[Any] = None):
@@ -404,8 +441,4 @@ class DecodeStage(Stage):
         self._service_the_incoming_instruction()
         
         return
-
-
-       
-        
-        
+    

@@ -5,7 +5,7 @@ from typing import Dict
 
 from aenum import Enum
 from bitstring import Bits
-from gpu.common.custom_enums_multi import H_Op, I_Op, B_Op
+from gpu.common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF

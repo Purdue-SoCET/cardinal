@@ -22,12 +22,12 @@ START:
 WARP_1: 
     ; 2nd warp should jump here - all active
     ; All store 1
-    lli x10, 2
+    lli x10, 1
     sw x10, x9, 0
     halt
 
 WARP_0:
     ; 1st warp should jump here
-    lli x10, 1
+    lli x10, 2
     sw x10, x9, 0
     halt
