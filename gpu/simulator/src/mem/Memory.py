@@ -72,15 +72,17 @@ class Mem:
         byte_addr = int(addr)
         data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
         word = int.from_bytes(data, "little")
-        # print(f"[Memory] Returning data: {word:08x}")
+        print(f"[Memory] Returning data: {word:08x} from base address: {addr:08x}")
         return Bits(bytes=data)
 
     def write(self, addr: int, data: Bits, bytes_t: int):
         byte_addr = int(addr)
         b = data.tobytes()[:int(bytes_t)]
+        # print(f"[Memory] Writing data: {data:08x} to base address: {addr:08x} ")
         for i, val in enumerate(b):
             self.memory[byte_addr + i] = val & 0xFF
-
+        check_data = self.read(addr, 4).uint
+        print(f"[Memory] Written {check_data:08x} to base address: {addr:08x}")
     def dump_on_exit(self):
         try:
             self.dump("memsim.hex")

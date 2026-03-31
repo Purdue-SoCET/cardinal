@@ -77,6 +77,8 @@ class Ldst_Fu(FunctionalSubUnit):
             if instr != None:
                 print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
                 print(f"Servicing instruction: op: {instr.opcode} rd: {instr.rd} rs1: {instr.rs1} rs2: {instr.rs2} rdat1: {instr.rdat1} rdat2: {instr.rdat2}")
+                pm = pending_mem(instr)
+                print(f"Formatting the instr into a pending mem type..: {pm.__dict__}")
                 self.ldst_q.append(pending_mem(instr))
         
         # Accept halt signal from the scheduler
@@ -140,6 +142,7 @@ class Ldst_Fu(FunctionalSubUnit):
             elif len(self.ldst_q) > 0:
                 req = self.ldst_q[0].genReq()
                 if req:
+                    print(f"Sending request to dcache {req}")
                     self.dcache_if.push(req)
                     self.outstanding = True
 
@@ -210,7 +213,7 @@ class pending_mem():
         for i in range(32):
             self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
             if self.instr.predicate[i].uint == 1:
-                self.addrs[i] = self.instr.rdat1[i].int + offset
+                self.addrs[i] = (self.instr.rdat1[i].uint + offset) & 0xFFFFFFFF
 
     def readyWB(self):
         return all(self.finished_idx)
