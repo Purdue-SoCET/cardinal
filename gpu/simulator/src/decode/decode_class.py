@@ -325,16 +325,14 @@ class DecodeStage(Stage):
             else:
                 inst.imm = Bits(uint=((raw >> 13) & 0xFFF), length=12)
         elif is_J:
-            inst.imm = Bits(uint=((raw >> 12) & 0x3FFFE), length=18)
+            inst.imm = Bits(uint=((raw >> 12) & 0x3FFFE), length=18) ### THIS IS CORRECT, ONLY USE THE VALUE OF 8 IF TRYING TO PASS JAL UNIT TEST ###
+            # inst.imm = Bits(uint=8, length=18)
         elif is_P:
             # inst.imm = Bits(uint=((raw >> 13) & 0x7FF), length=11)
             if inst.opcode is P_Op.JPNZ:
                 # inst.imm = Bits(uint=((raw >> 6) & 0x7FFFE), length=19) # imm = {rs1[24:19], imm[18:12], prd[11:7],  1'b0}
-                # inst.imm = Bits(uint=((raw >> 12) & 0x1FFE), length=13) ### MAKE SURE TO USE THIS LATER !!! ###
-                """
-                MAKE SURE TO USE THE ABOVE STATEMENT LATER FOR THE IMMEDIATE, NOT THE STATEMENT BELOW !!!
-                """
-                inst.imm = Bits(uint=16, length=13)
+                inst.imm = Bits(uint=((raw >> 12) & 0x1FFE), length=13) ### THIS IS CORRECT, ONLY USE THE VALUE OF 16 IF TRYING TO PASS JPNZ UNIT TEST ###
+                # inst.imm = Bits(uint=16, length=13)
             elif inst.opcode is P_Op.PRSW:
                 inst.imm = Bits(uint=((raw >> 7) & 0xFFF), length=12) # imm = {imm[18:12], prd[11:7]}
             elif inst.opcode is P_Op.PRLW:

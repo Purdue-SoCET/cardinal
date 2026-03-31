@@ -213,7 +213,8 @@ class pending_mem():
         for i in range(32):
             self.finished_idx[i] = 1-self.instr.predicate[i].uint #iirc pred=1'b1
             if self.instr.predicate[i].uint == 1:
-                self.addrs[i] = (self.instr.rdat1[i].uint + offset) & 0xFFFFFFFF
+                # self.addrs[i] = (self.instr.rdat1[i].uint + offset) & 0xFFFFFFFF
+                self.addrs[i] = (self.instr.rdat1[i].uint + offset)
 
     def readyWB(self):
         return all(self.finished_idx)
@@ -255,23 +256,24 @@ class pending_mem():
 
                     if self.size == "byte":
                         raw_val = raw_val & 0xFF
-                        if self.is_signed and (raw_val & 0x80):
-                            raw_val = raw_val - 0x100
+                        # if self.is_signed and (raw_val & 0x80):
+                        #     raw_val = raw_val - 0x100
 
                     elif self.size == "half":
                         raw_val = raw_val & 0xFFFF
-                        if self.is_signed and (raw_val & 0x8000):
-                            raw_val = raw_val - 0x10000
+                        # if self.is_signed and (raw_val & 0x8000):
+                        #     raw_val = raw_val - 0x10000
                     
                     else:
                         raw_val = raw_val & 0xFFFFFFFF
-                        if self.is_signed and (raw_val & 0x80000000):
-                            raw_val = raw_val - 0x10000000
+                        # if self.is_signed and (raw_val & 0x80000000):
+                        #     raw_val = raw_val - 0x10000000
 
-                    if raw_val < 0:
-                        self.instr.wdat[i] = Bits(int = raw_val, length=32)
-                    else:
-                        self.instr.wdat[i] = Bits(uint = raw_val, length=32)
+                    # if raw_val < 0:
+                    #     self.instr.wdat[i] = Bits(int = raw_val, length=32)
+                    # else:
+                    #     self.instr.wdat[i] = Bits(uint = raw_val, length=32)
+                    self.instr.wdat[i] = Bits(uint = raw_val, length=32)
 
     
     def parseMshrHit(self, payload):
