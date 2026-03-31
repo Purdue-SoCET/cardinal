@@ -1,16 +1,9 @@
 from builtins import range
 from abc import ABC, abstractmethod
-import math
 import logging
 from typing import Optional, List
 from bitstring import Bits
-from pathlib import Path
-import sys
-
-# Add parent directory to path for imports
-parent = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(parent))
-
+from simulator.utils.performance_counter.telemeter import Telemeter
 from common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op, U_Op, S_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.interfaces import LatchIF, ForwardingIF
@@ -21,10 +14,16 @@ from simulator.mem_types import dCacheRequest, BLOCK_SIZE_WORDS, WORD_SIZE_BYTES
 logger = logging.getLogger(__name__)
 
 class FunctionalSubUnit(ABC):
-    def __init__(self, num: int):
+    def __init__(self, num: int, telemeter: Telemeter = None):
         self.name = f"{self.__class__.__name__}_{num}"
         self.ready_out = True
         self.perf_count = PerfCount(name=self.name)
+        self.telemeter = telemeter
+
+        if telemeter:
+            telemeter.register_unit(self.perf_count)
+        else:
+            print(f"Warning: No telemeter provided for {self.name}. Performance data will not be recorded.")
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
         self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
@@ -36,6 +35,62 @@ class FunctionalSubUnit(ABC):
     @abstractmethod
     def compute(self):
         pass
+    
+    # This method can be overridden in subclasses if they want to record additional custom performance data beyond the standard data.
+    def _record_cycle(
+        self,
+        *,
+        instr: Instruction,
+        ex_wb_interface_ready: bool,
+        ready_out: bool,
+        trace_kwargs: dict | None = None,
+        trigger_kwargs: dict | None = None,
+        record_kwargs: dict | None = None,
+    ):
+        cycle = self.perf_count.total_cycles
+
+        if trace_kwargs is None:
+            trace_kwargs = {}
+
+        if trigger_kwargs is None:
+            trigger_kwargs = {}
+        
+        if record_kwargs is None:
+            record_kwargs = {}
+
+        if self.telemeter and self.telemeter.is_trace_active(cycle):
+            self.telemeter.record_trace(
+                cycle=cycle, 
+                unit_name=self.name,
+                warp_id=instr.warp_group_id if instr is not None else None,
+                opcode=instr.opcode if instr is not None else None,
+                pc=instr.pc.uint if instr is not None else None,
+                is_stalled=not ex_wb_interface_ready,
+                pipeline_full=not ready_out,
+                **trace_kwargs,
+            )
+
+        # 3. Flight recorder trigger evaluation
+        if self.telemeter:
+            self.telemeter.check_triggers(
+                unit_name=self.name,
+                cycle=cycle,
+                warp_id=instr.warp_id if instr is not None else None,
+                opcode=instr.opcode if instr is not None else None,
+                pc=instr.pc.uint if instr is not None else None,
+                is_stalled=not ex_wb_interface_ready,
+                pipeline_full=not ready_out,
+                **trigger_kwargs,
+            )
+
+        self.perf_count.record_cycle(
+            cycle=cycle,
+            is_stalled=not ex_wb_interface_ready,
+            is_busy=instr is not None and ready_out,
+            pipeline_full=not ready_out,
+            instr=instr,
+            **record_kwargs,
+        )
 
 class Ldst_Fu(FunctionalSubUnit):
     def __init__(self, num, ldst_q_size=4, wb_buffer_size=1):
@@ -337,18 +392,18 @@ class Branch(FunctionalSubUnit):
             return
         
         if instr.opcode not in self.SUPPORTED_OPS:
-            raise ValueError(f"Branch does not support operation {instr.opcode}, instruction i at pc: {instr.pc}")
+            raise ValueError(f"Branch does not support operation {instr.opcode}")
         
         # FIX: initializng w-dat predicabtee becaue it yelling
         instr.wdat_pred = [Bits(uint=0, length=1) for _ in range(32)]
         for i in range(32):
-            #if instr.predicate[i].bin == "0":
-                #continue
+            if instr.predicate[i].bin == "0":
+                continue
             match instr.opcode:
                 case B_Op.BEQ:
-                    instr.wdat_pred[i] = Bits(uint=((instr.rdat1[i].uint == instr.rdat2[i].uint) & instr.predicate[i].uint), length=1)
+                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint == instr.rdat2[i].uint), length=1)
                 case B_Op.BNE:
-                    instr.wdat_pred[i] = Bits(uint=((instr.rdat1[i].uint != instr.rdat2[i].uint) & instr.predicate[i].uint), length=1)
+                    instr.wdat_pred[i] = Bits(uint=(instr.rdat1[i].uint != instr.rdat2[i].uint), length=1)
                 case H_Op.HALT:
                     continue
                 case _:
@@ -380,12 +435,12 @@ class Branch(FunctionalSubUnit):
             out_data = False
             self.ready_out = False            
 
-        self.perf_count.increment(
+        self._record_cycle(
             instr=in_data, 
             ready_out=self.ready_out, 
-            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
+            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
         )
-
+        
         return out_data
 
 class Jump(FunctionalSubUnit):
@@ -410,30 +465,21 @@ class Jump(FunctionalSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS:
             raise ValueError(f"Jump does not support operation {instr.opcode}")
         
-
         match instr.opcode:
             case J_Op.JAL:
                 schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int}
                 instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
-                print(f"immediate for jal: {instr.imm}")
             case I_Op.JALR:
                 if not all(data == instr.rdat1[0] for data in instr.rdat1):
                       raise ValueError("JALR requires all rdat1 values to be the same for correct scheduling.")
                 schedule_if_value = {"warp": instr.warp_id, "dest": instr.rdat1[0].uint + instr.imm.int}
-                # instr.wdat = None
                 instr.wdat = [Bits(uint=(instr.pc.uint + 4) & 0xFFFFFFFF, length=32) for x in range(32)]
             case P_Op.JPNZ:
-                # if not all(pred_val == instr.predicate[0] for pred_val in instr.predicate):
-                #     raise ValueError("JPNZ requires all predicate values to be the same for correct scheduling.") # this is not true
-                # if instr.predicate[0] == Bits(length=1, uint=1):
-                # print(instr.pc.uint)
                 schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int if not all(x == Bits(uint=0, length=1) for x in instr.predicate) else instr.pc.uint + 4}
-                # instr.wdat = None
             case _:
                 raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")
             
         self.schedule_if.push(schedule_if_value)
-        self.data = instr
         
     def tick(self, behind_latch: LatchIF) -> Instruction:
         if self.schedule_if is None:
@@ -461,11 +507,10 @@ class Jump(FunctionalSubUnit):
             out_data = False
             self.ready_out = False            
 
-        self.perf_count.increment(
-            instr=in_data, 
-            ready_out=self.ready_out, 
-            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
+        self._record_cycle(
+            instr=in_data,
+            ready_out=self.ready_out,
+            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
         )
 
         return out_data
-

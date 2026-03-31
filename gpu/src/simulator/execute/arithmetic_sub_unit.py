@@ -1,16 +1,18 @@
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 from simulator.interfaces import LatchIF
-from common.custom_enums_multi import Op, R_Op, I_Op, F_Op, C_Op, H_Op, U_Op
+from common.custom_enums_multi import Op, R_Op, I_Op, F_Op, C_Op, H_Op, U_Op, B_Op, P_Op, J_Op
 from typing import Optional
 from simulator.instruction import Instruction
 from bitstring import Bits
 import math
 from simulator.utils.data_structures.compact_queue import CompactQueue
+from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
+from simulator.utils.performance_counter.telemeter import Telemeter
 
 class ArithmeticSubUnitPipeline(CompactQueue):
     def __init__(self, latency: int):
         super().__init__(length=latency, type_=Instruction)
-
+        
 class ArithmeticSubUnit(FunctionalSubUnit):
     SUPPORTED_OPS = {
         int: [],
@@ -26,6 +28,7 @@ class ArithmeticSubUnit(FunctionalSubUnit):
             raise ValueError(f"Unsupported type '{type_}' for FunctionalSubUnit. Must be {int} or {float}.")
 
         self.type_ = type_
+        self._overflow_pending = False
 
         self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
 
@@ -72,13 +75,46 @@ class ArithmeticSubUnit(FunctionalSubUnit):
             out_data = False
             self.ready_out = False            
 
-        self.perf_count.increment(
-            instr=in_data, 
-            ready_out=self.ready_out, 
-            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push()
+        self._record_cycle(
+            instr=in_data,
+            ready_out=self.ready_out,
+            ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
+            overflow=self._overflow_pending,
         )
+        self._overflow_pending = False
         
         return out_data # return data to the Exectute stage so that all results can be collected and sent to WB stage together
+    
+    def _record_cycle(
+        self,
+        *,
+        instr: Instruction,
+        ex_wb_interface_ready: bool,
+        ready_out: bool,
+        overflow: bool = False,
+        trace_kwargs: dict | None = None,
+        trigger_kwargs: dict | None = None,
+        record_kwargs: dict | None = None,
+    ):
+        trace_payload = {"overflow": overflow}
+        trigger_payload = {"overflow": overflow}
+        record_payload = {"overflow": overflow}
+
+        if trace_kwargs:
+            trace_payload.update(trace_kwargs)
+        if trigger_kwargs:
+            trigger_payload.update(trigger_kwargs)
+        if record_kwargs:
+            record_payload.update(record_kwargs)
+
+        super()._record_cycle(
+            instr=instr,
+            ex_wb_interface_ready=ex_wb_interface_ready,
+            ready_out=ready_out,
+            trace_kwargs=trace_payload,
+            trigger_kwargs=trigger_payload,
+            record_kwargs=record_payload,
+        )
 
 class Alu(ArithmeticSubUnit):
     SUPPORTED_OPS = {
@@ -231,7 +267,7 @@ class Alu(ArithmeticSubUnit):
                 raise ValueError(f"Opcode {instr.opcode} doesnt have an output type listed in {self.__class__.__name__}.OUTPUT_TYPE.")
         
         if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+            self._overflow_pending = True
 
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -285,7 +321,7 @@ class Mul(ArithmeticSubUnit):
                     raise ValueError(f"Unsupported operation {instr.opcode} in MUL.")
         
         if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+            self._overflow_pending = True
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -404,7 +440,7 @@ class Conv(ArithmeticSubUnit):
         
         if overflow_detected:
             self.perf_count.increment_overflow(instr.opcode)
-
+        
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
 
@@ -530,7 +566,7 @@ class Trig(ArithmeticSubUnit):
             instr.wdat[i] = Bits(length=32, float=result)
         
         if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+            self._overflow_pending = True
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -600,7 +636,7 @@ class InvSqrt(ArithmeticSubUnit):
                     raise ValueError(f"Unsupported operation {instr.opcode} in InvSqrt for type {self.type_}.")
         
         if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+            self._overflow_pending = True
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()

@@ -79,6 +79,8 @@ class Telemeter:
 
         # Cycle-level trace buffer
         self._trace_buffer: List[Dict[str, Any]] = []
+        # Maps (cycle, unit_name) -> row index in _trace_buffer for merge-on-write
+        self._trace_buffer_index: Dict[tuple[int, str], int] = {}
         self._trace_file_index: int = 0   # incremented each flush (for multi-part files)
 
         # Flight recorder state
@@ -210,7 +212,7 @@ class Telemeter:
             self._fr_deque.append(row)
         elif self._fr_active and self._is_unit_captured(unit_name):
             # Post-trigger capture window: only route captured units to main buffer
-            self._trace_buffer.append(row)
+            self._append_or_merge_trace_row(row)
             if len(self._trace_buffer) >= self.config.buffer_limit:
                 self.flush_traces()
         elif self._fr_deque is not None:
@@ -218,7 +220,7 @@ class Telemeter:
             self._fr_deque.append(row)
         else:
             # No flight recorder configured: straight to main buffer
-            self._trace_buffer.append(row)
+            self._append_or_merge_trace_row(row)
             if len(self._trace_buffer) >= self.config.buffer_limit:
                 self.flush_traces()
 
@@ -254,6 +256,22 @@ class Telemeter:
         during an active post-trigger capture window.
         Empty _active_capture_units means all units are captured."""
         return not self._active_capture_units or unit_name in self._active_capture_units
+
+    def _append_or_merge_trace_row(self, row: Dict[str, Any]) -> None:
+        """
+        Append a new row to the trace buffer, or merge into an existing row
+        with the same (cycle, unit_name).
+
+        Merge rule: later values overwrite earlier values for duplicate keys,
+        while preserving any previously written keys not present in `row`.
+        """
+        key = (int(row["cycle"]), str(row["unit_name"]))
+        idx = self._trace_buffer_index.get(key)
+        if idx is None:
+            self._trace_buffer_index[key] = len(self._trace_buffer)
+            self._trace_buffer.append(row)
+            return
+        self._trace_buffer[idx].update(row)
 
     def check_triggers(self, unit_name: str, cycle: int, **fields: Any) -> None:
         """
@@ -299,7 +317,8 @@ class Telemeter:
                     pre_capture_rows = len(rows_to_commit)
                     if rows_to_commit:
                         pre_capture_start_cycle = rows_to_commit[0]["cycle"]
-                    self._trace_buffer.extend(rows_to_commit)
+                    for r in rows_to_commit:
+                        self._append_or_merge_trace_row(r)
                     self._fr_deque.clear()
                 if not trigger.capture_units:
                     capture_all = True
@@ -389,7 +408,7 @@ class Telemeter:
             scope: Optional[SnapshotScope] = self._active_snapshot_scopes.get(name)
             state = provider(scope)
             row: Dict[str, Any] = {"cycle": cycle, "unit_name": name, **state}
-            self._trace_buffer.append(row)
+            self._append_or_merge_trace_row(row)
         if len(self._trace_buffer) >= self.config.buffer_limit:
             self.flush_traces()
 
@@ -422,6 +441,7 @@ class Telemeter:
         path = self.output_dir / f"traces_part_{self._trace_file_index:04d}.parquet"
         df.write_parquet(str(path))
         self._trace_buffer.clear()
+        self._trace_buffer_index.clear()
         self._trace_file_index += 1
 
     def finalize(self) -> None:

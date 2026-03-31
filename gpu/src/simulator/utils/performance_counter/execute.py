@@ -1,18 +1,29 @@
 import pandas as pd
 from common.custom_enums_multi import Op
 from simulator.instruction import Instruction
+from simulator.utils.performance_counter.perf_counter_base import PerfCounterBase
 
-class ExecutePerfCount:
+class ExecutePerfCount(PerfCounterBase):
     def __init__(self, name: str):
-        self.name = f"{name}_Performance_Counter"
-        self.total_cycles: int = 0
-        self.stall_cycles: int = 0
-        self.pipeline_full_cycles: int = 0
-        self.nop_cycles: int = 0
-        self.utilization_cycles: int = 0
-        self.total_instructions: int = 0
-        self.instruction_types: dict[Op, int] = {}
-        self.overflow: dict[Op, int] = {}
+        super().__init__(name)
+        self.instruction_counts: dict[Op, int] = {}
+        self.overflow_counts: dict[Op, int] = {}
+
+    def _record_unit_cycle(self, *, instr: Instruction, overflow: bool, **kwargs) -> None:
+        if instr is not None:
+            self.instruction_counts[instr.opcode] = self.instruction_counts.get(instr.opcode, 0) + 1
+        else:
+            self.instruction_counts[None] = self.instruction_counts.get(None, 0) + 1
+
+        if overflow:
+            self.overflow_counts[instr.opcode] = self.overflow_counts.get(instr.opcode, 0) + 1
+
+    def _extra_summary(self) -> dict[str, Any]:
+        
+        return {
+            "instruction_counts": self.instruction_counts,
+            "overflow_counts": self.overflow_counts,
+        }
     
     def increment(self, instr: Instruction, ready_out: bool = True, ex_wb_interface_ready: bool = True) -> None:
         self.total_instructions += 1
@@ -40,17 +51,4 @@ class ExecutePerfCount:
             self.overflow[opcode] += 1
         else:
             self.overflow[opcode] = 1
-
-    def to_csv(self, directory: str = ".") -> None:
-        path = f"{directory}/{self.name}_Stats.csv"
-        df = pd.DataFrame([vars(self)])
-        df.to_csv(path, index=False)
-    
-    @staticmethod
-    def to_combined_csv(perf_counts: list['ExecutePerfCount'], directory: str) -> None:
-        """Combine multiple PerfCount instances into a single CSV"""
-        
-        data = [vars(pc) for pc in perf_counts]
-        df = pd.DataFrame(data)
-        df.to_csv(f"{directory}/Combined_ExStage_PerfCount_Stats.csv", index=False)
     
