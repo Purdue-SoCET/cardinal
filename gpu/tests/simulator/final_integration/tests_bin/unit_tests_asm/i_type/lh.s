@@ -1,0 +1,42 @@
+START:
+    ; per-thread id
+    csrr  x3, 0                        ; x3 = TID
+
+    ; set max thread count
+    lli   x5, 32                        ; MAX_THREADS = 32
+
+    ; load stride and base
+    lli   x6, 12
+    lui   x7, 0x10                      ; base = 0x10000000
+
+    ; if (tid < MAX_THREADS) -> compute
+    slt x12, x3, x5
+    bne 2, x12, x0
+
+    ; addr = base + tid*stride
+    mul   x9,  x3, x6, 2
+    add   x10, x7, x9, 2
+
+    ; -----------------------------
+    ; Setup word: 0x80017FFF
+    ;  - low half = 0x7FFF (positive)
+    ;  - high half = 0x8001 (negative if sign-extended by lh)
+    ; -----------------------------
+    lui   x8, 0x80, 2
+    lmi   x8, 0x017, 2
+    lli   x8, 0xFF, 2                   ; x8 = 0x80017FFF (per your nibble loaders)
+    sw    x8, 0(x10), 2
+
+    ; -----------------------------
+    ; Test 1: lh low halfword (offset 0)
+    ; -----------------------------
+    lh    x11, 0(x10), 2
+    sw    x11, 4(x10), 2
+
+    ; -----------------------------
+    ; Test 2: lh high halfword (offset 2)
+    ; -----------------------------
+    lh    x15, 2(x10), 2
+    sw    x15, 8(x10), 2
+
+    halt

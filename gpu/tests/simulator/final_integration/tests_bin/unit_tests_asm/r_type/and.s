@@ -1,0 +1,31 @@
+START:
+    ; per-thread id
+    csrr  x3, 0                        ; x3 = TID
+
+    ; load initial values (0x01010101)
+    lli   x4, 0x101                     ; change this to alter b in (y = b & TID)
+    lmi   x4, 0x010
+    lui   x4, 0x01
+
+    ; set max thread count
+    lli   x5, 32                        ; MAX_THREADS = 32
+
+    ; load stride and base
+    lli   x6, 4                         ; stride = 4 bytes/thread (1 word each)
+    lui   x7, 0x10                      ; heap base address
+
+    ; if (tid < MAX_THREADS) -> compute
+    slt x11, x3, x5
+    bne 2, x11, x0, 0               ; p2 = (x3 < x5) == (TID < MAX_THREADS)
+
+    ; address = base + tid*stride
+    mul   x8, x3, x6, 2             ; TID * stride
+    add   x9, x7, x8, 2             ; base + (tid*stride)
+
+    ; compute op (y = a & b): x10 = x4 & TID
+    and   x10, x4, x3, 2
+
+    ; store result
+    sw    x10, 0(x9), 2
+
+    halt
