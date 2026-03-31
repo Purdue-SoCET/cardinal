@@ -275,7 +275,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
     )
 
     # NOTE Kai Ze: Remove after we bring in TBS
-    tbs_ws_if.push([0, tb_size, start_pc])
+    tbs_ws_if.push([0, tb_size, start_pc]) #[tbbid, tbsize, start_pc]
 
     icache_stage = ICacheStage(
         name="ICache_Stage",
@@ -293,7 +293,8 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
             prf.reg_file[warp][pred] = [True] * 32
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
-    kernel_base_ptrs.write(0, Bits(uint=9203930, length=32))
+    # [kernelid, data start addr in dec]
+    kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) 
 
     decode_stage = DecodeStage(
         name="Decode Stage",
