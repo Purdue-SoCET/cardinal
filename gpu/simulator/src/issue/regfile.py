@@ -74,25 +74,15 @@ class RegisterFile:
             for r in range(self.regs_per_warp):
                 vals = self.read_warp_gran(w, Bits(uint=r, length=32))
                 
-                # Determine display format (Float vs Int)
-                is_float = r in float_regs
-                label = "FLOAT" if is_float else "INT"
-                
-                print(f"  R{r:<2} ({label}):", file=out)
+                print(f"  R{r:<2} (HEX):", file=out)
 
                 # Print 32 threads in a 4x8 grid for readability
                 # Change range(0, 32, 8) if threads_per_warp changes
                 for i in range(0, self.threads_per_warp, 8):
                     chunk = vals[i : i + 8]
                     
-                    if is_float:
-                        # Format as float (e.g., 1.5000)
-                        formatted = [f"{v.float:>10.4f}" for v in chunk]
-                    else:
-                        # Format as integer (e.g., 123)
-
-                        # TODO: what is breaking for branch here?
-                        formatted = [f"{v.int:>10}" for v in chunk]
+                    # Format as zero-padded hex (e.g., 00000000)
+                    formatted = [f"{v.hex:>8}" for v in chunk]
                     
                     # Print the row of 8 threads
                     print(f"    T{i:02d}-T{i+7:02d}: {' '.join(formatted)}", file=out)
