@@ -27,7 +27,7 @@ class SchedulerStage(Stage):
         self.start_flush: bool = False
 
         # warp table
-        self.warp_table: List[WarpGroup] = [WarpGroup(group_id=id, warps=[Warp(pc=0, id=id*2), Warp(pc=0, id=id*2+1)], halt_mask_even=Bits(uint=0x0, length=32), halt_mask_odd=Bits(uint=0x0, length=32)) for id in range(self.num_groups)]
+        self.warp_table: List[WarpGroup] = [WarpGroup(group_id=id, warps=[Warp(pc=0, id=id*2, finished_packet=True), Warp(pc=0, id=id*2+1, finished_packet=True)], halt_mask_even=Bits(uint=0x0, length=32), halt_mask_odd=Bits(uint=0x0, length=32)) for id in range(self.num_groups)]
         self.warp_init: int = 0
 
         # initialization
@@ -66,8 +66,8 @@ class SchedulerStage(Stage):
 
         for group in self.warp_table:
             print(f"group: {group.group_id}, halt: {group.halt}, issue: {group.issue}")
-            print(f"    warp: {group.warps[0].id}, state: {group.warps[0].state}, halt_mask: {group.halt_mask_even}, pc: {group.warps[0].pc}, in_flight: {group.warps[0].in_flight}")
-            print(f"    warp: {group.warps[1].id}, state: {group.warps[1].state}, halt_mask: {group.halt_mask_odd}, pc: {group.warps[1].pc}, in_flight: {group.warps[1].in_flight}\n")
+            print(f"    warp: {group.warps[0].id}, state: {group.warps[0].state}, halt_mask: {group.halt_mask_even}, pc: {group.warps[0].pc}, in_flight: {group.warps[0].in_flight}, finished_packet: {group.warps[0].finished_packet}")
+            print(f"    warp: {group.warps[1].id}, state: {group.warps[1].state}, halt_mask: {group.halt_mask_odd}, pc: {group.warps[1].pc}, in_flight: {group.warps[1].in_flight}, finished_packet: {group.warps[1].finished_packet}\n")
 
     # figuring out which warps can/cant issue 
     def collision(self):
@@ -124,14 +124,14 @@ class SchedulerStage(Stage):
                 if new_mask is not None:
                     if warp_id % 2 == 0:
                         self.warp_table[group].halt_mask_even = new_mask
-                        print(f"even mask: {new_mask}")
+                        print(f"even mask: {new_mask}\n")
                         even_dead = self.warp_table[group].halt_mask_even.uint == 0
                         if even_dead:
                             self.warp_table[group].warps[0].state = WarpState.HALT
 
                     else:
                         self.warp_table[group].halt_mask_odd = new_mask
-                        print(f"odd mask: {new_mask}")
+                        print(f"odd mask: {new_mask}\n")
                         odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
                         if odd_dead:
                             self.warp_table[group].warps[1].state = WarpState.HALT
@@ -188,6 +188,7 @@ class SchedulerStage(Stage):
         for _ in range(math.ceil(tb_size / self.warp_size)):
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].state = WarpState.READY
+            self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].finished_packet = False
 
             if self.free_warp % 2 == 0:
                 # TODO: CHECK THIS SHIT AFTER U FINISH COLLISION
@@ -202,8 +203,7 @@ class SchedulerStage(Stage):
             self.free_warp += 1
         
         self.csrtable.dump()
-        self.dump()
-        
+        self.dump()  
 
     def halt(self):
         # Kai Ze: only fire when at least one warp has been initialized, and only once
@@ -223,7 +223,7 @@ class SchedulerStage(Stage):
             # if we can issue this warp group
             if warp_group.issue:
 
-                # if the last issue for the group was odd DONT INCREATE RR_INDEX
+                # if the last issue for the group was even DONT INCREATE RR_INDEX
                 if not warp_group.last_issue_even:
                     warp_group.last_issue_even = True
                     
@@ -232,13 +232,13 @@ class SchedulerStage(Stage):
                         instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2), warp_group.warps[0].pc)
                         warp_group.warps[0].in_flight += 1
                         warp_group.warps[0].pc += 4
-                        # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
+                        print(f"[Scheduler] Issuing an instruction for warp group: {instr.warp_group_id}, warp: {instr.warp_id}, pc: {instr.pc}, state: {warp_group.warps[0].state}")
                         self.push_instruction(instr)
 
                     return 
                 
 
-                # if the last issue for the group was even increase index
+                # if the last issue for the group was odd increase index
                 else:
                     self.rr_index = (self.rr_index + 1) % self.num_groups
                     warp_group.last_issue_even = False
@@ -247,7 +247,7 @@ class SchedulerStage(Stage):
                         instr = self.make_instruction(warp_group.group_id, (warp_group.group_id * 2) + 1, warp_group.warps[1].pc)
                         warp_group.warps[1].in_flight += 1
                         warp_group.warps[1].pc += 4
-                        # print(f"[Scheduler] Issuing an instruction for warp group: {warp_group.group_id}, warp: {instr.warp_id}, {(warp_group.group_id * 2)}, pc: {warp_group.pc}")
+                        print(f"[Scheduler] Issuing an instruction for warp group: {instr.warp_group_id}, warp: {instr.warp_id}, pc: {instr.pc}, state: {warp_group.warps[1].state}")
                         self.push_instruction(instr)
 
                     return
