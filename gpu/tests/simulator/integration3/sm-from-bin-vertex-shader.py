@@ -287,9 +287,10 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
         forward_ifs_write={"ICache_Scheduler": icache_scheduler_fwif},
     )
 
-    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
+    # prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
+    prf = PredicateRegFile(num_preds_per_warp=32, num_warps=WARP_COUNT)
     for warp in range(WARP_COUNT):
-        for pred in range(16):
+        for pred in range(32):
             prf.reg_file[warp][pred] = [True] * 32
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
@@ -488,7 +489,8 @@ def print_banks(dCache):
 def run_test(
     # program_file: Path = FILE_ROOT / "test.bin",
     # program_file: Path = FILE_ROOT / "test_binaries/predicated_halt.bin", THESE DON'T MATTER
-    program_file: Path = FILE_ROOT / "test_binaries/manual_vertex.bin",
+    # program_file: Path = FILE_ROOT / "test_binaries/manual_vertex.bin",
+    program_file: Path = FILE_ROOT / "test_binaries/vertex_shader_pranav.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -561,7 +563,8 @@ def _parse_args():
         # default=str(FILE_ROOT / "test.bin"),
         # default=str(FILE_ROOT / "test_binaries/jump.bin"),
         # default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
-        default=str(FILE_ROOT / "test_binaries/manual_vertex.bin"),
+        # default=str(FILE_ROOT / "test_binaries/manual_vertex.bin"),
+        default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(
