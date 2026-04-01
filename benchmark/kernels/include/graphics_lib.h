@@ -20,8 +20,13 @@ typedef struct {
 } triangle_t;
 
 typedef struct {
+    float w, x, y, z;
+} vec4_t;
+
+typedef struct {
     int w, h;
-    vector_t* color_arr;
+    vec4_t* color_arr;
+    //vector_t* color_arr;
     int id;
 } texture_t;
 
@@ -36,5 +41,7 @@ typedef struct {
 #define GET_1D_INDEX(idx_w, idx_h, arr_w) (idx_h*arr_w + idx_w)
 
 // --- Functions ---
+
+void build_rotation_matrix_from_euler(float ax, float ay, float az, float* out_matrix);
 
 #endif

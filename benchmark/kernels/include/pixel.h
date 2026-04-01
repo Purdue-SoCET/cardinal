@@ -15,7 +15,7 @@ typedef struct {
     int buff_w, buff_h;
     float* depth_buff;
     int* tag_buff;
-    vector_t* color;
+    vec4_t* color;
 
     // Texture Data
     texture_t texture;
@@ -27,7 +27,7 @@ typedef struct {
     vector_t sphere_center;
     vector_t light_pos;
     //overridden by texture
-    vector_t albedo;
+    vec4_t albedo;
     vector_t ambient;
     //diffuse / specular
     float kd, ks;

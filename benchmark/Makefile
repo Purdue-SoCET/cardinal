@@ -12,7 +12,7 @@ GPU_CFLAGS =
 # CPU files
 KERNEL ?= saxpy
 CPU_SRCS = cpu_sim/main.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
-       kernels/vertexShader.c kernels/triangle.c kernels/pixel.c kernels/post.c 
+       kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c kernels/blend.c
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
 

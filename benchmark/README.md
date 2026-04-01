@@ -1,5 +1,9 @@
 ## CPU Sim
 
+## NOTE
+  - color vector was switched to vec4_t from vector_t tp support alpha blending
+  - may need to change this back for older graphics workflows to run
+
 ## Custom Kernels
 
 1. Create a yaml file inside yaml_structs of the arguments for the kernel
@@ -17,6 +21,21 @@ or
 ``` 
 make custom32 KERNEL=$(KernelName) #32 bit version
 ```
+
+## Graphics Pipeline
+ 
+### vertex.c
+  - vertex shader
+  - NOTE: vertexShader.c is an older version of vertex shader were rotation matrix is built on GPU
+### triangle.c
+  - software rasterization
+  - sequentially ran for each triangle in geometry (due to no fixed function hardware)
+### pixel.c
+  - fragment shader
+
+### blend.c
+ - alpha blend
+ - Note: Requires the color buffer and texture color struct to be vec4_t rather the vector_t
 
 ## File Structure:
 * Benchmark/

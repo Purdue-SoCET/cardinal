@@ -1,15 +1,13 @@
-
 // Standard Includes
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 // Include all needed kernels
-#include "../kernels/include/vertexShader.h"
+#include "../kernels/include/vertex.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
 #include "../kernels/include/post.h"
@@ -24,6 +22,12 @@ uint8_t* memory_ptr;
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
+
+#define X_ANGLE 238
+#define Y_ANGLE 0
+#define Z_ANGLE 0
+
+#define PATH "cpu_sim/data/geometry/terrain.bin"
 
 // Macros
 #define ALLOCATE_MEM(dest, type, num) \
@@ -61,14 +65,13 @@ uint8_t* memory_ptr;
 // Make video from Frames:
 //ffmpeg -framerate 30 -pattern_type glob -i "build/output/*.ppm" -c:v libx264 -pix_fmt yuv420p output.mp4
 
-//Model Loaded: 35947 vertices, 69451 triangles
 int main(int argc, char** argv) {
     int frame = 0;
-    model_t bunny = {0};
-    loadbin("cpu_sim/data/geometry/bunny.bin", &bunny);
+    model_t model = {0};
+    loadbin(PATH, &model);
 
-    if (bunny.vertsN == 0) {
-        fprintf(stderr, "Failed to load bunny model!\n");
+    if (model.vertsN == 0) {
+        fprintf(stderr, "Failed to load terrain model!\n");
         return -1;
     }
     for (int frame = 0; frame < 300; frame++)
@@ -78,42 +81,34 @@ int main(int argc, char** argv) {
 
     // ---- Setup Geometry ----
 
-    /*
-    FILE *f = fopen("build/bunny.txt", "w");
-    for(int i = 0; i < bunny.vertsN; i++) {
-        fprintf(f, "Vertex %d: X:%+06.2f Y:%+06.2f Z:%+06.2f - U:%.2f V:%.2f\n", i, bunny.vertices[i].coords.x, bunny.vertices[i].coords.y, bunny.vertices[i].coords.z, bunny.vertices[i].s, bunny.vertices[i].t);
-    }
-    fclose(f);
-    */
-
-    const int num_verts = bunny.vertsN;
-    const int num_tris = bunny.trisN;
+    const int num_verts = model.vertsN;
+    const int num_tris = model.trisN;
 
     ALLOCATE_MEM(verts, vertex_t, num_verts);
     ALLOCATE_MEM(tris, triangle_t, num_tris);
 
     for (int i = 0; i < num_verts; i++) {
-        verts[i] = bunny.vertices[i]; 
+        verts[i] = model.vertices[i]; 
     }
 
     for (int i = 0; i < num_tris; i++) {
-        tris[i] = bunny.triangles[i]; 
+        tris[i] = model.triangles[i]; 
     }
 
-    vector_t center = findCenter(bunny);
+    vector_t center = findCenter(model);
 
+    float maxDistSq = 0;
     for (int i = 0; i < num_verts; i++) {
-        verts[i].coords.x -= center.x;
-        verts[i].coords.y -= center.y;
-        verts[i].coords.z -= center.z;
+        float dx = verts[i].coords.x - center.x;
+        float dy = verts[i].coords.y - center.y;
+        float dz = verts[i].coords.z - center.z;
+        float distSq = dx*dx + dy*dy + dz*dz;
+        if (distSq > maxDistSq) maxDistSq = distSq;
     }
+    float radius = sqrtf(maxDistSq);
 
-    // Had to scale bunny up
-    for (int i = 0; i < num_verts; i++) {
-        verts[i].coords.x *= 1000.0f; 
-        verts[i].coords.y *= 1000.0f; 
-        verts[i].coords.z *= 1000.0f; 
-    }
+    float fov_radians = 90.0f * (3.14159 / 180.0f); 
+    float distance = radius / sinf(fov_radians / 2.0f);
 
     // Texture
         const int text_w = 5, text_h = 5;
@@ -133,15 +128,12 @@ int main(int argc, char** argv) {
             }
         }
 
-        *texture = load_jpg("build/wood_texture.jpg", 0);
-
     // Camera
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
-            {0.0f, -1.0f, 0.0f}, 
-            {-OUTPUT_W/2, OUTPUT_H/2, 150.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
         };
-
 
         const vector_t abcTranspose[3] = {
             {abc[0].x, abc[1].x, abc[2].x},
@@ -154,12 +146,32 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -100.0f; 
-        matrix_inversion((float*)abcTranspose, cameraProjMatrix);
+        float cam_dist = (frame*1.5f + 1)/300.0f + .5f;
 
+        camera_C->x = center.x; 
+        camera_C->y = center.y; 
+        camera_C->z = (center.z - distance)*cam_dist; 
+
+        float aspect_ratio = (float)OUTPUT_W / (float)OUTPUT_H;
+        float f = 1.0f / tanf(fov_radians / 2.0f);
+
+        float x_scaled = f / aspect_ratio;
+        float y_scaled = f;
+
+        cameraProjMatrix[0] = x_scaled * abcTranspose[0].x; 
+        cameraProjMatrix[1] = x_scaled * abcTranspose[0].y;
+        cameraProjMatrix[2] = x_scaled * abcTranspose[0].z;
+
+        cameraProjMatrix[3] = y_scaled * abcTranspose[1].x;
+        cameraProjMatrix[4] = y_scaled * abcTranspose[1].y;
+        cameraProjMatrix[5] = y_scaled * abcTranspose[1].z;
+
+        cameraProjMatrix[6] = abcTranspose[2].x;
+        cameraProjMatrix[7] = abcTranspose[2].y;
+        cameraProjMatrix[8] = abcTranspose[2].z;
 
     // --- Vertex Kernel ---
-    ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
+    ALLOCATE_MEM(vertex_args, vertex_arg_t, 1);
 
     vertex_args->num_verts = num_verts;
     
@@ -168,13 +180,19 @@ int main(int argc, char** argv) {
         vertex_args->Oa = Oa;
         MAKE_VECTOR((*Oa), 0, 0, 0);
 
-        ALLOCATE_MEM(a_dist, vector_t, 1);
-        vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 0, 1, 0); // Rotate around y
+        // Pre-compute 3x3 rotation matrix on CPU
+        ALLOCATE_MEM(combined_matrix, float, 9);
+        vertex_args->combined_matrix = combined_matrix;
 
-        ALLOCATE_MEM(alpha_r, float, 1);
-        vertex_args->alpha_r = alpha_r;
-        *(vertex_args->alpha_r) = 3.14f * 2 * frame / 300.0f;
+        float ax = 3.14f * 2 * X_ANGLE / 300.0f; 
+        float ay = 3.14f * 2 * Y_ANGLE / 300.0f;
+        float az = 3.14f * 2 * Z_ANGLE / 300.0f;
+
+        build_rotation_matrix_from_euler(ax, ay, az, combined_matrix);
+
+        // Viewport Settings
+        vertex_args->viewport_w = (float)OUTPUT_W;
+        vertex_args->viewport_h = (float)OUTPUT_H;
 
     // Give geometry inputs
         vertex_args->threeDVert = verts;
@@ -190,7 +208,7 @@ int main(int argc, char** argv) {
     // Running the Kernel
     {
         int grid_dim = 1; int block_dim = num_verts;
-        run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
+        run_kernel(kernel_vertex, grid_dim, block_dim, (void*)vertex_args);
     }
 
     // Checking Vertex Output
@@ -235,17 +253,6 @@ int main(int argc, char** argv) {
 
         fprintf(f, " --- End of Dump --- \n");
         fclose(f);
-        /*
-        for(int i = 0; i < num_verts; i++) {
-            printf(" --- Vertex %d --- \n", i);
-            printf("3D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVert[i].coords.x, vertex_args->threeDVert[i].coords.y, vertex_args->threeDVert[i].coords.z, vertex_args->threeDVert[i].s, vertex_args->threeDVert[i].t);
-            printf("3Dt:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->threeDVertTrans[i].coords.x, vertex_args->threeDVertTrans[i].coords.y, vertex_args->threeDVertTrans[i].coords.z, vertex_args->threeDVertTrans[i].s, vertex_args->threeDVertTrans[i].t);
-            printf("2D:");
-            printf("\t%+06.2f %+06.2f %+06.2f - %.2f %.2f\n", vertex_args->twoDVert[i].coords.x, vertex_args->twoDVert[i].coords.y, vertex_args->twoDVert[i].coords.z, vertex_args->twoDVert[i].s, vertex_args->twoDVert[i].t);
-        }
-        */
         printf(" --- Vertex end --- \n");
     }
 
@@ -277,14 +284,23 @@ int main(int argc, char** argv) {
         
         // Find Bounding Box
         int u_min, u_max;
-        u_min = MIN3(triangle_args->pVs[0].x, triangle_args->pVs[1].x, triangle_args->pVs[2].x) - .5;
+        u_min = MIN3(triangle_args->pVs[0].x, triangle_args->pVs[1].x, triangle_args->pVs[2].x) - .5f;
         u_min = u_min < 0 ? 0 : u_min;
-        u_max = MAX3(triangle_args->pVs[0].x, triangle_args->pVs[1].x, triangle_args->pVs[2].x) + .5;
+        u_max = MAX3(triangle_args->pVs[0].x, triangle_args->pVs[1].x, triangle_args->pVs[2].x) + .5f;
         u_max = u_max > (frame_w-1) ? (frame_w-1) : u_max;
         int v_min, v_max;
-        v_min = MIN3(triangle_args->pVs[0].y, triangle_args->pVs[1].y, triangle_args->pVs[2].y) - .5;
+        v_min = MIN3(triangle_args->pVs[0].y, triangle_args->pVs[1].y, triangle_args->pVs[2].y) - .5f;
         v_min = v_min < 0 ? 0 : v_min;
-        v_max = MAX3(triangle_args->pVs[0].y, triangle_args->pVs[1].y, triangle_args->pVs[2].y) + .5;
+        v_max = MAX3(triangle_args->pVs[0].y, triangle_args->pVs[1].y, triangle_args->pVs[2].y) + .5f;
+        v_max = v_max > (frame_h-1) ? (frame_h-1) : v_max;
+
+        if (u_min >= frame_w || u_max < 0 || v_min >= frame_h || v_max < 0) {
+            continue; 
+        }
+
+        u_min = u_min < 0 ? 0 : u_min;
+        u_max = u_max > (frame_w-1) ? (frame_w-1) : u_max;
+        v_min = v_min < 0 ? 0 : v_min;
         v_max = v_max > (frame_h-1) ? (frame_h-1) : v_max;
 
         triangle_args->bb_start[0] = u_min;
@@ -298,6 +314,16 @@ int main(int argc, char** argv) {
             {triangle_args->pVs[0].x, triangle_args->pVs[1].x, triangle_args->pVs[2].x},
             {triangle_args->pVs[0].y, triangle_args->pVs[1].y, triangle_args->pVs[2].y}
         };
+
+        float det = m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) 
+          - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0]) 
+          + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
+
+        // If the determinant is extremely close to 0, it's a line/point. Skip it.
+        if (fabs(det) < 0.00001f) {
+            continue; 
+        }
+
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
         // Running the Kernel
@@ -370,7 +396,7 @@ int main(int argc, char** argv) {
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
-    // --- FXAA Kernel --- (it's called post for now but probably want it to be called fxaa and then every shader after should be called its own thing.)
+    // --- FXAA Kernel --- 
     ALLOCATE_MEM(post_args, post_arg_t, 1);
 
     post_args->color = color_output;
@@ -385,30 +411,14 @@ int main(int argc, char** argv) {
         run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
     }
 
-
     // --- Create Image from Data ---
     
     // Convert vector colors into rgb values
     int* int_color_output = malloc(sizeof(int) * frame_w * frame_h * 3);
     for(int i = 0; i < frame_w*frame_h; i++) {
-        int_color_output[i*3 + 0] = color_output[i].x * 255 + .5;
-        int_color_output[i*3 + 1] = color_output[i].y * 255 + .5;
-        int_color_output[i*3 + 2] = color_output[i].z * 255 + .5;
-        // int_color_output[i*3 + 0] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 1] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 2] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 0] = tbuff[i] != -1 ? (((tbuff[i]+1) % 3)+1.0f) / 3.0f * 255 : 0;
-        // int_color_output[i*3 + 1] = tbuff[i] != -1 ? (((tbuff[i]+2) % 4)+1.0f) / 4.0f * 255 : 0;
-        // int_color_output[i*3 + 2] = tbuff[i] != -1 ? (((tbuff[i]+3) % 5)+1.0f) / 5.0f * 255 : 0;
-        // if(tbuff[i] != -1) {
-        //     int_color_output[i*3 + 0] = 255;
-        //     int_color_output[i*3 + 1] = 255;
-        //     int_color_output[i*3 + 2] = 255;
-        // } else {
-        //     int_color_output[i*3 + 0] = 0;
-        //     int_color_output[i*3 + 1] = 0;
-        //     int_color_output[i*3 + 2] = 0;
-        // }
+        int_color_output[i*3 + 0] = color_output[i].x * 255 + .5f;
+        int_color_output[i*3 + 1] = color_output[i].y * 255 + .5f;
+        int_color_output[i*3 + 2] = color_output[i].z * 255 + .5f;
     }
 
     char fname[30];
@@ -421,7 +431,7 @@ int main(int argc, char** argv) {
     free(memory_base);
     }
 
-    free(bunny.vertices);
-    free(bunny.triangles);
+    free(model.vertices);
+    free(model.triangles);
     
 }

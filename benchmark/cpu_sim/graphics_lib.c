@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "include/graphics_lib.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
@@ -38,7 +37,8 @@ void barycentric_coordinates(vector_t* l, vector_t point, vector_t pVs[3]) {
     l->z = bc_im[2][0] * 1.0 + bc_im[2][1] * point.x + bc_im[2][2] * point.y;
 }
 
-void get_texture(vector_t* col, texture_t texture, float s, float t) {
+
+void get_texture(vec4_t* col, texture_t texture, float s, float t) {
     s = s > 0 ? s : -s;
     t = t > 0 ? t : -t;
     int texel_x = ((s - (int)s) * (texture.w-1)) + 0.5;
@@ -173,7 +173,7 @@ texture_t load_jpg(char* FileName, int id) {
 
     text.w = width;
     text.h = height;
-    text.color_arr = (vector_t*)malloc(sizeof(vector_t) * width * height);
+    text.color_arr = (vec4_t*)malloc(sizeof(vec4_t) * width * height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             uint8_t red = rgb_image[(y * width + x) * 3];
@@ -183,10 +183,137 @@ texture_t load_jpg(char* FileName, int id) {
             text.color_arr[y * width + x].x = red / 255.0f;
             text.color_arr[y * width + x].y = green / 255.0f;
             text.color_arr[y * width + x].z = blue / 255.0f;
+            text.color_arr[y * width + x].w = 1.0f;
         }
     }
 
     stbi_image_free(rgb_image);
 
     return text;
+}
+    
+
+vec4_t quat_from_euler(float x, float y, float z, float angle) {
+    vec4_t q;
+
+    float half_angle = angle * 0.5f;
+    float sin_half_angle = sinf(half_angle);
+
+    q.w = cosf(half_angle);
+    q.x = x * sin_half_angle;
+    q.y = y * sin_half_angle;
+    q.z = z * sin_half_angle;
+
+    return q;
+}
+
+vec4_t quat_multiply(vec4_t q1, vec4_t q2) {
+    vec4_t result;
+    result.w = q1.w*q2.w - q1.x*q2.x - q1.y*q2.y - q1.z*q2.z;
+    result.x = q1.w*q2.x + q1.x*q2.w + q1.y*q2.z - q1.z*q2.y;
+    result.y = q1.w*q2.y - q1.x*q2.z + q1.y*q2.w + q1.z*q2.x;
+    result.z = q1.w*q2.z + q1.x*q2.y - q1.y*q2.x + q1.z*q2.w;
+    return result;
+}
+
+void quat_to_matrix(vec4_t q, float* mat) {
+    float xx = q.x * q.x;
+    float yy = q.y * q.y;
+    float zz = q.z * q.z;
+    float xy = q.x * q.y;
+    float xz = q.x * q.z;
+    float yz = q.y * q.z;
+    float wx = q.w * q.x;
+    float wy = q.w * q.y;
+    float wz = q.w * q.z;
+
+    mat[0] = 1.0f - 2.0f * (yy + zz);
+    mat[1] = 2.0f * (xy - wz);
+    mat[2] = 2.0f * (xz + wy);
+
+    mat[3] = 2.0f * (xy + wz);
+    mat[4] = 1.0f - 2.0f * (xx + zz);
+    mat[5] = 2.0f * (yz - wx);
+
+    mat[6] = 2.0f * (xz - wy);
+    mat[7] = 2.0f * (yz + wx);
+    mat[8] = 1.0f - 2.0f * (xx + yy);
+}
+
+void build_rotation_matrix_from_euler(float pitch_x, float yaw_y, float roll_z, float* out_matrix) {
+    vec4_t qx = quat_from_euler(1.0f, 0.0f, 0.0f, pitch_x);
+    vec4_t qy = quat_from_euler(0.0f, 1.0f, 0.0f, yaw_y);
+    vec4_t qz = quat_from_euler(0.0f, 0.0f, 1.0f, roll_z);
+
+    vec4_t q_combined = quat_multiply(qy, qx); //X@Y
+    q_combined = quat_multiply(qz, q_combined); //(XY)@Z
+
+    quat_to_matrix(q_combined, out_matrix);
+}
+
+
+texture_t load_png(char* FileName, int id) {
+    int width, height, bpp;
+    
+    uint8_t* rgba_image = stbi_load(FileName, &width, &height, &bpp, 4);
+    
+    texture_t tex;
+    tex.id = id;
+    tex.w = width;
+    tex.h = height;
+    
+    if (rgba_image == NULL) {
+        fprintf(stderr, "Error: Failed to load PNG image %s\n", FileName);
+        tex.color_arr = NULL;
+        return tex;
+    }
+
+    // Note: If you want to use your custom ALLOCATE_MEM macro here, 
+    // make sure memory_ptr is accessible, or just stick to malloc for host-side loading.
+    tex.color_arr = malloc(width * height * sizeof(*tex.color_arr));
+    
+    if (tex.color_arr == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed for PNG texture %s\n", FileName);
+        stbi_image_free(rgba_image);
+        return tex;
+    }
+
+    // Convert the 8-bit STB image data (0-255) into your float vectors (0.0 - 1.0)
+    for (int i = 0; i < width * height; i++) {
+        // Since we forced 4 channels, we step through the raw array by 4
+        tex.color_arr[i].x = rgba_image[i * 4 + 0] / 255.0f; // R
+        tex.color_arr[i].y = rgba_image[i * 4 + 1] / 255.0f; // G
+        tex.color_arr[i].z = rgba_image[i * 4 + 2] / 255.0f; // B
+        tex.color_arr[i].w = rgba_image[i * 4 + 3] / 255.0f; // A (Alpha channel!)
+    }
+
+    // Free the raw STB image data from memory now that it's in our custom struct
+    stbi_image_free(rgba_image); 
+    
+    return tex;
+}
+
+
+void dump_memory(const char* filename, uint8_t* host_memory_ptr, uint32_t simulated_base_address, size_t num_bytes) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Error: Could not open %s for writing.\n", filename);
+        return;
+    }
+
+    uint32_t* memory_words = (uint32_t*) host_memory_ptr;
+    size_t num_words = num_bytes / sizeof(uint32_t);
+
+    for (size_t i = 0; i < num_words; i++) {
+        uint32_t value = memory_words[i];
+        
+        if (value != 0) {
+            // Calculate the simulated physical address for this specific word
+            uint32_t current_address = simulated_base_address + (i * sizeof(uint32_t));
+            
+            fprintf(file, "0x%08X %08X\n", current_address, value);
+        }
+    }
+
+    fclose(file);
 }

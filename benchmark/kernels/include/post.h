@@ -4,7 +4,7 @@
 
 typedef struct {
     //Image
-    vector_t* color;
+    vec4_t* color;
 
     // Pixel buffers
     int buff_w, buff_h;

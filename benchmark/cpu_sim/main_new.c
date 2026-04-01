@@ -3,12 +3,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <string.h>
+#include <math.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
 #include "include/shader_memdump.h"
 
 // Include all needed kernels
-#include "../kernels/include/vertexShader.h"
+#include "../kernels/include/vertex.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
 
@@ -23,13 +27,30 @@ uint8_t* memory_ptr;
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
 
-#define INPUT_ARGS_DEBUG 0
-#define OUTPUT_ARGS_DEBUG 0
+#define INPUT_ARGS_DEBUG 1
+#define OUTPUT_ARGS_DEBUG 1
+
+#define ARGS_BASE_ADDR 0x00100000
+#define HEAP_BASE_ADDR 0x10000000
 
 // Macros
+uint8_t* memory_base;
+uint8_t* memory_ptr;
 #define ALLOCATE_MEM(dest, type, num) \
     type* dest = (type*) memory_ptr; \
     memory_ptr += num * sizeof(type);
+
+#define ALLOCATE_ARGS(dest, type, num) \
+    type* dest = (type*) args_ptr; \
+    args_ptr += (num) * sizeof(type);
+
+#define ALLOCATE_HEAP(dest, type, num) \
+    type* dest = (type*) heap_ptr; \
+    heap_ptr += (num) * sizeof(type);
+
+#define TO_SIM_ADDR(host_ptr) ((uint32_t)((uint8_t*)(host_ptr) - memory_base))
+
+#define FROM_SIM_ADDR(type, sim_addr) ((type*)(memory_base + (sim_addr)))
 
 #define MAKE_VECTOR(vector, ix, iy, iz) { \
     vector.x = ix; \
@@ -63,8 +84,37 @@ int main(int argc, char** argv) {
     int frame = 0;
     // for (int frame = 0; frame < 300; frame++)
     {
-    uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
-    uint8_t* memory_ptr = memory_base;
+    memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
+    memory_ptr = memory_base;
+
+    uint8_t* args_ptr;
+    uint8_t* heap_ptr;
+    /*
+
+    args_ptr = memory_base + ARGS_BASE_ADDR;
+    heap_ptr = memory_base + HEAP_BASE_ADDR;
+    */
+
+    // 1. Map the Arguments Space (Starts at 0x00100000, size ~15MB)
+    size_t args_size = 15 * 1024 * 1024;
+    args_ptr = mmap((void*)0x00100000, args_size, 
+                             PROT_READ | PROT_WRITE, 
+                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, 
+                             -1, 0);
+
+    // 2. Map the Heap Space (Starts at 0x10000000, size ~256MB)
+    size_t heap_size = 256 * 1024 * 1024;
+    heap_ptr = mmap((void*)0x10000000, heap_size, 
+                             PROT_READ | PROT_WRITE, 
+                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, 
+                             -1, 0);
+
+    if (args_ptr == MAP_FAILED || heap_ptr == MAP_FAILED) {
+        fprintf(stderr, "mmap failed! OS refused to give us those exact addresses. Error: %s\n", strerror(errno));
+        return -1;
+    }
+
+    printf("Successfully forced Arguments to %p and Heap to %p\n", args_ptr, heap_ptr);
 
     // ---- Setup Geometry ----
     // Single Triangle, all in a single plane
@@ -73,7 +123,7 @@ int main(int argc, char** argv) {
         const int num_verts = 8;
 
         // Allocation
-        ALLOCATE_MEM(verts, vertex_t, num_verts);
+        ALLOCATE_HEAP(verts, vertex_t, num_verts);
 
         // Definition
         // Front Face
@@ -92,7 +142,7 @@ int main(int argc, char** argv) {
         const int num_tris = 12;
 
         // Allocation
-        ALLOCATE_MEM(tris, triangle_t, num_tris);
+        ALLOCATE_HEAP(tris, triangle_t, num_tris);
 
         // Definition
         // Front of Cube
@@ -119,14 +169,29 @@ int main(int argc, char** argv) {
         MAKE_TRI(tris[10], 2, 3, 6);
         MAKE_TRI(tris[11], 7, 3, 6);
 
+    vector_t center = {0.0f, 0.0f, 0.0f};
+
+    float maxDistSq = 0;
+    for (int i = 0; i < num_verts; i++) {
+        float dx = verts[i].coords.x - center.x;
+        float dy = verts[i].coords.y - center.y;
+        float dz = verts[i].coords.z - center.z;
+        float distSq = dx*dx + dy*dy + dz*dz;
+        if (distSq > maxDistSq) maxDistSq = distSq;
+    }
+    float radius = sqrtf(maxDistSq);
+
+    float fov_radians = 90.0f * (3.14159 / 180.0f); 
+    float distance = radius / sinf(fov_radians / 2.0f);
+
 
 
     // Texture
         const int text_w = 10, text_h = 10;
 
         // Allocation
-        ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(color_map, vector_t, (text_w * text_h));
+        ALLOCATE_HEAP(texture, texture_t, 1);
+        ALLOCATE_HEAP(color_map, vector_t, (text_w * text_h));
 
         // Definition
         texture->w = text_w; texture->h = text_h;
@@ -140,11 +205,10 @@ int main(int argc, char** argv) {
         }
 
     // Camera
-        float focal_range = 1.0f;
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
-            {0.0f, 1.0f * ((float)OUTPUT_H / (float)OUTPUT_W), 0.0f}, 
-            {0.0f, 0.0f, -focal_range * ((float)OUTPUT_H / (float)OUTPUT_W)},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
         };
 
         const vector_t abcTranspose[3] = {
@@ -154,31 +218,52 @@ int main(int argc, char** argv) {
         };
 
         // Allocation
-        ALLOCATE_MEM(camera_C, vector_t, 1);
-        ALLOCATE_MEM(cameraProjMatrix, float, 9);
+        ALLOCATE_HEAP(camera_C, vector_t, 1);
+        ALLOCATE_HEAP(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = 0.0f;
-        matrix_inversion((float*)abcTranspose, cameraProjMatrix);
+        float cam_dist = (100*1.5f + 1)/300.0f + .5f;
 
+        camera_C->x = center.x; 
+        camera_C->y = center.y; 
+        camera_C->z = (center.z - distance)*cam_dist; 
 
+        float aspect_ratio = (float)OUTPUT_W / (float)OUTPUT_H;
+        float f = 1.0f / tanf(fov_radians / 2.0f);
+
+        float x_scaled = f / aspect_ratio;
+        float y_scaled = f;
+
+        cameraProjMatrix[0] = x_scaled * abcTranspose[0].x; 
+        cameraProjMatrix[1] = x_scaled * abcTranspose[0].y;
+        cameraProjMatrix[2] = x_scaled * abcTranspose[0].z;
+
+        cameraProjMatrix[3] = y_scaled * abcTranspose[1].x;
+        cameraProjMatrix[4] = y_scaled * abcTranspose[1].y;
+        cameraProjMatrix[5] = y_scaled * abcTranspose[1].z;
+
+        cameraProjMatrix[6] = abcTranspose[2].x;
+        cameraProjMatrix[7] = abcTranspose[2].y;
+        cameraProjMatrix[8] = abcTranspose[2].z;
     // --- Vertex Kernel ---
-    ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
+    ALLOCATE_ARGS(vertex_args, vertex_arg_t, 1);
 
     vertex_args->num_verts = num_verts;
     
     // Setup Transformation
-        ALLOCATE_MEM(Oa, vector_t, 1);
+        ALLOCATE_HEAP(Oa, vector_t, 1);
         vertex_args->Oa = Oa;
         MAKE_VECTOR((*Oa), 0, 0, -30);
 
-        ALLOCATE_MEM(a_dist, vector_t, 1);
-        vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 1, 1, 0); // Rotate around z
+        // Pre-compute 3x3 rotation matrix on CPU
+        ALLOCATE_HEAP(combined_matrix, float, 9);
+        vertex_args->combined_matrix = combined_matrix;
 
-        ALLOCATE_MEM(alpha_r, float, 1);
-        vertex_args->alpha_r = alpha_r;
-        *(vertex_args->alpha_r) = 3.14f * 2 * frame / 300.0f;
+        float ax = 3.14f * 2 * 0 / 300.0f; 
+        float ay = 3.14f * 2 * 0 / 300.0f;
+        float az = 3.14f * 2 * 0 / 300.0f;
+
+        build_rotation_matrix_from_euler(ax, ay, az, combined_matrix);
 
     // Give geometry inputs
         vertex_args->threeDVert = verts;
@@ -186,33 +271,41 @@ int main(int argc, char** argv) {
         vertex_args->invTrans = cameraProjMatrix;
    
     //viewport 
-    ALLOCATE_MEM(viewport_w, float, 1);
-    ALLOCATE_MEM(viewport_h, float, 1);
+    ALLOCATE_HEAP(viewport_w, float, 1);
+    ALLOCATE_HEAP(viewport_h, float, 1);
     *viewport_w = OUTPUT_W;
     *viewport_h = OUTPUT_H;
     vertex_args->viewport_w = *viewport_w;
     vertex_args->viewport_h = *viewport_h;
 
     // Allocate Output Space
-        ALLOCATE_MEM(tVerts, vertex_t, num_verts);
+        ALLOCATE_HEAP(tVerts, vertex_t, num_verts);
         vertex_args->threeDVertTrans = tVerts;
-        ALLOCATE_MEM(pVerts, vertex_t, num_verts);
+        ALLOCATE_HEAP(pVerts, vertex_t, num_verts);
         vertex_args->twoDVert = pVerts;
     
         if(INPUT_ARGS_DEBUG){
-            print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
+            //print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
+            size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+            size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+            dump_memory("build/mem_dump/vertexInput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory("build/mem_dump/vertexInput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
         }
 
-        printf("args size: %lu\n", sizeof(vertexShader_arg_t));
+        //printf("args size: %lu\n", sizeof(vertex_arg_t));
     
     // Running the Kernel
     {
         int grid_dim = 1; int block_dim = num_verts;
-        run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
+        run_kernel(kernel_vertex, grid_dim, block_dim, (void*)vertex_args);
     }
 
     if(OUTPUT_ARGS_DEBUG){
-        print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
+        //print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
+        size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+        size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+        dump_memory("build/mem_dump/vertexOutput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/vertexOutput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     // Checking Vertex Output
@@ -232,13 +325,13 @@ int main(int argc, char** argv) {
 
     // --- Triangle Kernel ---
     // Only one call - still implement multi triangle framework
-    ALLOCATE_MEM(triangle_args, triangle_arg_t, 1);
+    ALLOCATE_ARGS(triangle_args, triangle_arg_t, 1);
 
     // Setup Pixel Buffers
         const int frame_w = OUTPUT_W; const int frame_h = OUTPUT_H;
-        ALLOCATE_MEM(zbuff, float, frame_w*frame_h);
+        ALLOCATE_HEAP(zbuff, float, frame_w*frame_h);
         DEFAULT_ARR(zbuff, frame_w*frame_h, 0);
-        ALLOCATE_MEM(tbuff, int, frame_w*frame_h);
+        ALLOCATE_HEAP(tbuff, int, frame_w*frame_h);
         DEFAULT_ARR(tbuff, frame_w*frame_h, -1);
 
         triangle_args->buff_w = frame_w;
@@ -282,9 +375,15 @@ int main(int argc, char** argv) {
         matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
         if(INPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleInput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
+            size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+            size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+            char filename_args[50];
+            char filename_heap[50];
+            sprintf(filename_args, "build/mem_dump/triangleInput%d_args_dump.txt", tri); 
+            sprintf(filename_heap, "build/mem_dump/triangleInput%d_heap_dump.txt", tri); 
+            //print_triangle_args(filename, triangle_args);
+            dump_memory(filename_args, memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory(filename_heap, memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
         }
 
         // Running the Kernel
@@ -292,9 +391,15 @@ int main(int argc, char** argv) {
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
 
         if(OUTPUT_ARGS_DEBUG){
-            char filename[30];
-            sprintf(filename, "build/triangleOutput%d.txt", tri); 
-            print_triangle_args(filename, triangle_args);
+            size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+            size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+            char filename_args[50];
+            char filename_heap[50];
+            sprintf(filename_args, "build/mem_dump/triangleOutput%d_args_dump.txt", tri); 
+            sprintf(filename_heap, "build/mem_dump/triangleOutput%d_heap_dump.txt", tri); 
+            //print_triangle_args(filename, triangle_args);
+            dump_memory(filename_args, memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory(filename_heap, memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
         }
     }
 
@@ -330,10 +435,10 @@ int main(int argc, char** argv) {
     }
 
     // --- Pixel Kernel ---
-    ALLOCATE_MEM(pixel_args, pixel_arg_t, 1);
+    ALLOCATE_ARGS(pixel_args, pixel_arg_t, 1);
 
     // Setup Output
-        ALLOCATE_MEM(color_output, vector_t, frame_w*frame_h);
+        ALLOCATE_HEAP(color_output, vector_t, frame_w*frame_h);
         vector_t color_default = {0.6f, 0.6f, 0.6f};
         DEFAULT_ARR(color_output, frame_w*frame_h, color_default);
         pixel_args->color = color_output;
@@ -353,7 +458,11 @@ int main(int argc, char** argv) {
         pixel_args->texture = *texture;
 
     if(INPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelInput.txt", pixel_args); 
+        //print_pixel_args("build/pixelInput.txt", pixel_args); 
+        size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+        size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+        dump_memory("build/mem_dump/pixelInput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/pixelInput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
     }
     // Running the kernel
     {
@@ -362,7 +471,11 @@ int main(int argc, char** argv) {
     }
 
     if(OUTPUT_ARGS_DEBUG){
-        print_pixel_args("build/pixelOutput.txt", pixel_args); 
+        //print_pixel_args("build/pixelOutput.txt", pixel_args); 
+        size_t current_args_bytes = args_ptr - (memory_base + ARGS_BASE_ADDR);
+        size_t current_heap_bytes = heap_ptr - (memory_base + HEAP_BASE_ADDR);
+        dump_memory("build/mem_dump/pixelOutput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/pixelOutput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     // --- Create Image from Data ---
