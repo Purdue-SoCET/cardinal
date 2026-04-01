@@ -134,7 +134,6 @@ class Jump(FunctionalSubUnit):
                 # if instr.predicate[0] == Bits(length=1, uint=1):
                 # print(instr.pc.uint)
                 schedule_if_value = {"warp": instr.warp_id, "dest": instr.pc.uint + instr.imm.int if not all(x == Bits(uint=0, length=1) for x in instr.predicate) else instr.pc.uint + 4}
-                print(schedule_if_value)
                 # instr.wdat = None
             case _:
                 raise ValueError(f"Unsupported operation {instr.opcode} in Jump.")

@@ -134,7 +134,7 @@ class IssueStage(Stage):
 
         if len(self.dispatched) != 0:
             self.dispatched[0].issued_cycle = self.cycle
-            print(self.dispatched[0])
+            # print(self.dispatched[0])
             if self.fust[self.dispatched[0].intended_FU] == 0:
                 self.ahead_latch.push(self.dispatched[0])
                 self.dispatched = [] 
