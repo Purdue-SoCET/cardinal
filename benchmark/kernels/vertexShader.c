@@ -1,93 +1,27 @@
 #include "include/kernel.h"
 #include "include/vertexShader.h"
-#include "include/graphics_lib.h"
+#include "../cpu_sim/include/graphics_lib.h"
 
 void kernel_vertexShader(void* arg)
 {
     vertexShader_arg_t* args = (vertexShader_arg_t*) arg;
 
     int i = blockIdx * blockDim + threadIdx;
-    if(i > 1023) return;
+    if (i >= args->num_verts) return;
 
-    /****** ThreeD Rotation ******/ 
-    // assuming radian
-    // V3::RotateThisPointAboutArbitraryAxis and TM::RotateAboutArbitraryAxis
-
-    float lcs[9]; 
-    float selAxis[3] = {0.0, 0.0, 0.0};
-
-    if((args->a_dist->x*args->a_dist->x) < (args->a_dist->y*args->a_dist->y))
-    { 
-        selAxis[0] = 1.0;
-    }
-    else
-    {
-        selAxis[1] = 1.0;
-    }
-
-   selAxis[1] = 1.0;
-
-    /* Build Local Coordinates System*/
-
-    //cross(selAxis, args->a_dist)
-    lcs[0] = selAxis[1] * args->a_dist->z - selAxis[2] * args->a_dist->y;
-    lcs[1] = selAxis[2] * args->a_dist->x - selAxis[0] * args->a_dist->z;
-    lcs[2] = selAxis[0] * args->a_dist->y - selAxis[1] * args->a_dist->x;
-
-    //normalize(lcs[0 to 2])
-    float inv_lcs_dist = isqrt(lcs[0]*lcs[0] + lcs[1]*lcs[1] + lcs[2]*lcs[2]);
-    for(int j = 0; j < 3; j++)
-    {
-        lcs[j] = lcs[j] * inv_lcs_dist;
-    }
-
-    lcs[3] = args->a_dist->x;
-    lcs[4] = args->a_dist->y;
-    lcs[5] = args->a_dist->z;
-
-    lcs[6] = lcs[1] * lcs[5] - lcs[2] * lcs[4];
-    lcs[7] = lcs[2] * lcs[3] - lcs[0] * lcs[5];
-    lcs[8] = lcs[0] * lcs[4] - lcs[1] * lcs[3];
-
-    //normalize(lcs[3 to 5])
-    inv_lcs_dist = isqrt(lcs[3]*lcs[3] + lcs[4]*lcs[4] + lcs[5]*lcs[5]);
-    for(int j = 3; j < 6; j++)
-    {
-        lcs[j] = lcs[j] * inv_lcs_dist;
-    }
-
-    //normalize(lcs[6 to 8])
-    inv_lcs_dist = isqrt(lcs[6]*lcs[6] + lcs[7]*lcs[7] + lcs[8]*lcs[8]);
-    for(int j = 6; j < 9; j++)
-    {
-        lcs[j] = lcs[j] * inv_lcs_dist;
-    }
+    /****** ThreeD Rotation ******/
+    // Per-frame common matrices and lighting values are precomputed on the CPU
+    // and passed through vertexShader_arg_t.
+    const float* lcs = args->lcs;
+    const float* lcsInv = args->lcsInv;
+    const float* rotMat = args->rotMat;
 
     // vertex normalized to rotation origin
     float p_tempAxis[3] = {
-        (args->threeDVert[i].coords.x   - args->Oa->x),
-        (args->threeDVert[i].coords.y - args->Oa->y),
-        (args->threeDVert[i].coords.z - args->Oa->z)
+        args->vertex_input_buffer[i].coords.x - args->Oa->x,
+        args->vertex_input_buffer[i].coords.y - args->Oa->y,
+        args->vertex_input_buffer[i].coords.z - args->Oa->z
     };
-
-    /*Create Rotation Matrix */
-
-    // Y AXIS M33::MakeRotationMatrix
-
-    float rotMat[9] = {
-        cos(*(args->alpha_r)), 0, sin(*(args->alpha_r)),
-        0, 1, 0,
-        -sin(*(args->alpha_r)), 0, cos(*(args->alpha_r))
-    };
-
-
-    /*invert LCS where LCS^-1 = LCS.T*/
-    float lcsInv[9];
-    for (int row = 0; row < 3; ++row) {
-        for (int col = 0; col < 3; ++col) {
-            lcsInv[col*3 + row] = lcs[row*3 + col];
-        }
-    }
 
     /*world -> local*/
     float p1[3] = {0, 0, 0};
@@ -125,9 +59,53 @@ void kernel_vertexShader(void* arg)
         if(j == 2)
             args->threeDVertTrans[i].coords.z = p_world[j] + args->Oa->z;
     }
-    args->threeDVertTrans[i].s = args->threeDVert[i].s;
-    args->threeDVertTrans[i].t = args->threeDVert[i].t;
+    args->threeDVertTrans[i].u = args->vertex_input_buffer[i].u;
+    args->threeDVertTrans[i].v = args->vertex_input_buffer[i].v;
 
+    // 1. take the normal vector of vertex
+    float n_tempAxis[3] = {
+        args->vertex_input_buffer[i].normal.x,
+        args->vertex_input_buffer[i].normal.y,
+        args->vertex_input_buffer[i].normal.z
+    };
+
+    // normal to world -> local
+    float n1[3] = {0, 0, 0};
+    for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+            n1[j] += lcsInv[k*3 + j] * n_tempAxis[k];
+        }
+    }
+
+    // rotate normal in local space
+    float n2[3] = {0, 0, 0};
+    for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+            n2[j] += rotMat[k*3 + j] * n1[k];
+        }
+    }
+
+    // rotate normal back to world space
+    float n_world[3] = {0, 0, 0};
+    for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+            n_world[j] += lcs[k*3 + j] * n2[k];
+        }
+    }
+
+    vector_t n_world_vec = {n_world[0], n_world[1], n_world[2]};
+    normalize_vector(&n_world_vec);
+
+    // lighting calculation (Lambertian diffuse + ambient)
+    float normal_dot_light = dot_product(n_world_vec, args->light_dir);
+    float intensity = args->ambient;
+    
+    if (normal_dot_light > 0.0f) {
+        intensity += normal_dot_light * args->diffuse;
+    }
+    if (intensity > 1.0f) intensity = 1.0f; 
+
+    args->vertex_output_buffer[i].intensity = intensity;
     
     /****** Projection ******/
     //PPC::Project
@@ -150,15 +128,21 @@ void kernel_vertexShader(void* arg)
         }
     }
 
-    if (q[2] < 0.0) return;
-    if (q[2] == 0.0) return;
+    // if (q[2] < 0.0) return;
+    // if (q[2] == 0.0) return;
+    if (q[2] < 0.00001f) {
+        args->vertex_output_buffer[i].coords.x = -10000.0f; 
+        args->vertex_output_buffer[i].coords.y = -10000.0f;
+        args->vertex_output_buffer[i].coords.z = 0.0f;
+        return;
+    }
 
-    args->twoDVert[i].coords.x = q[0] / q[2];
-    args->twoDVert[i].coords.y = q[1] / q[2];
-    args->twoDVert[i].coords.z = 1.0 / q[2];
+    args->vertex_output_buffer[i].coords.x = q[0] / q[2];
+    args->vertex_output_buffer[i].coords.y = q[1] / q[2];
+    args->vertex_output_buffer[i].coords.z = 1.0 / q[2];
 
-    args->twoDVert[i].s = args->threeDVert[i].s;
-    args->twoDVert[i].t = args->threeDVert[i].t;
+    args->vertex_output_buffer[i].u = args->vertex_input_buffer[i].u;
+    args->vertex_output_buffer[i].v = args->vertex_input_buffer[i].v;
 
     return;
 }

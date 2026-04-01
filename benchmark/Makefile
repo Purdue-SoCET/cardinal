@@ -9,7 +9,7 @@ GPU_CC = python3 ../../gpu-ppci-compiler/compile_twig.py
 GPU_CFLAGS = 
 
 # CPU files
-CPU_SRCS = cpu_sim/main.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c \
+CPU_SRCS = cpu_sim/main.c cpu_sim/primitive_assembly.c cpu_sim/obj_parser.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c \
        kernels/vertexShader.c kernels/triangle.c kernels/pixel.c
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm

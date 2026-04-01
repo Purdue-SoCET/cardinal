@@ -8,7 +8,7 @@
 //  - Triangle Tag
 //  - Pixel Buffer
 //  - Tag Buffer
-#include "graphics_lib.h"
+#include "../../cpu_sim/include/graphics_lib.h"
 
 typedef struct {
     // Per Triangle Information
@@ -16,12 +16,12 @@ typedef struct {
     int bb_size[2];
     float bc_im[3][3];
     int tag;
-    vector_t pVs[3];
+    vector_t triangle_verts[3];
 
     // Buffer Information
-    int buff_w, buff_h;
-    float* depth_buff;
-    int*    tag_buff;
+    int buffer_w, buffer_h;
+    float* depth_buffer;
+    int*    tag_buffer;
 } triangle_arg_t;
 
 void kernel_triangle(void*);

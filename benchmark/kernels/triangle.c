@@ -37,13 +37,13 @@ void kernel_triangle(void* arg) {
 		return;
     }
 
-    float pix_z = l[0]*args->pVs[0].z + l[1]*args->pVs[1].z + l[2]*args->pVs[2].z;
-    if(pix_z < args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) { // Check if current pixel is closer then known pixel
+    float pix_z = l[0]*args->triangle_verts[0].z + l[1]*args->triangle_verts[1].z + l[2]*args->triangle_verts[2].z;
+    if(pix_z < args->depth_buffer[GET_1D_INDEX(u, v, args->buffer_w)]) { // Check if current pixel is closer then known pixel
         // current pixel is hidden
         return;
     }
 
     // Current pixel is closest - set as so
-    args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)] = pix_z;
-    args->tag_buff[GET_1D_INDEX(u, v, args->buff_w)] = args->tag;
+    args->depth_buffer[GET_1D_INDEX(u, v, args->buffer_w)] = pix_z;
+    args->tag_buffer[GET_1D_INDEX(u, v, args->buffer_w)] = args->tag;
 }

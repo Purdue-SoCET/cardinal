@@ -1,114 +1,82 @@
 #include "include/kernel.h"
 #include "include/pixel.h"
-#include "include/graphics_lib.h"
+#include "../cpu_sim/include/graphics_lib.h"
+
+void barycentric_coordinates(vector_t* l, vector_t point, vector_t triangle_verts[3]);
+void get_texture(vector_t* col, texture_t texture, float u, float v);
 
 void kernel_pixel(void* arg) {
     pixel_arg_t* args = (pixel_arg_t*) arg;
+
+    int pixel_count = args->buffer_w * args->buffer_h;
+    if (threadIdx >= pixel_count) return;
     
-    int u, v;
-    u = (((threadIdx)) - (args->buff_w)*(((threadIdx))/(args->buff_w)));
-    // u = mod(threadIdx, args->buff_w);
-    v = (((threadIdx) / args->buff_w) - (args->buff_h)*(((threadIdx) / args->buff_w)/(args->buff_h)));
-    // v = mod(threadIdx / args->buff_w, args->buff_h);
-    
-    int tag = args->tag_buff[threadIdx];
+    int screen_x, screen_y;
+    screen_x = threadIdx % args->buffer_w;
+    screen_y = threadIdx / args->buffer_w;
+
+    int tag = args->tag_buffer[threadIdx];
     if(tag < 0) return;
 
-    triangle_t tri = args->tris[tag];
+    triangle_t tri = args->surviving_triangle_index_buffer[tag];
 
     // Make the pixel a point in screen-space
     vector_t point;
-    float value_half = 0.5;
-    point.x = itof(u) + value_half;
-    point.y = itof(v) + value_half;
-    point.z = 1.0;
+    float value_half = 0.5f;
+    point.x = itof(screen_x) + value_half;
+    point.y = itof(screen_y) + value_half;
+    point.z = 1.0f;
 
     // Get the coords for the known triangle verticies
-    vertex_t pVs[3];
-    pVs[0] = args->verts[tri.v1];
-    pVs[1] = args->verts[tri.v2];
-    pVs[2] = args->verts[tri.v3];
+    vertex_t triangle_verts[3];
+    triangle_verts[0] = args->vertex_output_buffer[tri.v1];
+    triangle_verts[1] = args->vertex_output_buffer[tri.v2];
+    triangle_verts[2] = args->vertex_output_buffer[tri.v3];
 
     vector_t coords[3];
-    coords[0] = pVs[0].coords;
-    coords[1] = pVs[1].coords;
-    coords[2] = pVs[2].coords;
+    coords[0] = triangle_verts[0].coords;
+    coords[1] = triangle_verts[1].coords;
+    coords[2] = triangle_verts[2].coords;
 
     // Get Barycentric coordinates
-    // vector_t l;
-    // barycentric_coordinates(&point, coords, &l);
-
-    // INSERT THIS (Manually Inlined):
-    float m00 = 1.0; float m01 = 1.0; float m02 = 1.0;
-    float m10 = coords[0].x; float m11 = coords[1].x; float m12 = coords[2].x;
-    float m20 = coords[0].y; float m21 = coords[1].y; float m22 = coords[2].y;
-
-    // Calculate Determinant
-    float det = m00 * (m11 * m22 - m21 * m12) -
-                m01 * (m10 * m22 - m12 * m20) +
-                m02 * (m10 * m21 - m11 * m20);
-    
-    float invDet = 1.0 / det;
-
-    // Calculate Inverse Row 0 (only needed for Barycentric x/y/z)
-    float bc00 = (m11 * m22 - m21 * m12) * invDet;
-    float bc01 = (m02 * m21 - m01 * m22) * invDet;
-    float bc02 = (m01 * m12 - m02 * m11) * invDet;
-    float bc10 = (m12 * m20 - m10 * m22) * invDet;
-    float bc11 = (m00 * m22 - m02 * m20) * invDet;
-    float bc12 = (m02 * m10 - m00 * m12) * invDet;
-    float bc20 = (m10 * m21 - m20 * m11) * invDet;
-    float bc21 = (m20 * m01 - m00 * m21) * invDet;
-    float bc22 = (m00 * m11 - m10 * m01) * invDet;
-
-    // Calculate 'l' (Barycentric Coords)
     vector_t l;
-    l.x = bc00 + bc01 * point.x + bc02 * point.y;
-    l.y = bc10 + bc11 * point.x + bc12 * point.y;
-    l.z = bc20 + bc21 * point.x + bc22 * point.y;
+    barycentric_coordinates(&l, point, coords);
 
-    // Get new texture interpolation
-    float correction_factor = l.x * (pVs[0].coords.z) + l.y * (pVs[1].coords.z) + l.z * (pVs[2].coords.z);
+    // Get new texture interpolation (perspective correct interpolation)
+    float correction_factor = (l.x * triangle_verts[0].coords.z) + (l.y * triangle_verts[1].coords.z) + (l.z * triangle_verts[2].coords.z);
+    float tex_u = l.x * (triangle_verts[0].u * triangle_verts[0].coords.z) + l.y * (triangle_verts[1].u * triangle_verts[1].coords.z) + l.z * (triangle_verts[2].u * triangle_verts[2].coords.z);
+    float tex_v = l.x * (triangle_verts[0].v * triangle_verts[0].coords.z) + l.y * (triangle_verts[1].v * triangle_verts[1].coords.z) + l.z * (triangle_verts[2].v * triangle_verts[2].coords.z);
 
-    float s = l.x * (pVs[0].s * pVs[0].coords.z) + l.y * (pVs[1].s * pVs[1].coords.z) + l.z * (pVs[2].s * pVs[2].coords.z);
-    s = s / (correction_factor);
-
-    float t = l.x * (pVs[0].t * pVs[0].coords.z) + l.y * (pVs[1].t * pVs[1].coords.z) + l.z * (pVs[2].t * pVs[2].coords.z);
-    t = t / (correction_factor);
-
-
-    // args->color[threadIdx] = get_texture(args->texture, s, t);
-    // REPLACE WITH INLINED LOGIC:
-    
-    // 1. Abs function for s and t
-    float s_abs;
-    float t_abs;
-
-    if(s>0.0){
-        s_abs = s;
-    } else{
-        s_abs = 0.0-s;
+    if (correction_factor != 0.0f) {
+        tex_u /= correction_factor;
+        tex_v /= correction_factor;
     }
-    if(t>0.0){
-        t_abs = t;
-    }
-    else{
-        t_abs = 0.0-t;
+    else {
+        tex_u = 0.0f;
+        tex_v = 0.0f;
     }
 
-    // 2. Calculate Texel Coordinates
-    // Note: Breaking down math to avoid tree coverage errors
-    float w_minus_1 = itof(args->texture.w - 1);
-    float h_minus_1 = itof(args->texture.h - 1);
+    // call Texture Mapping
+    vector_t texture_color;
+    get_texture(&texture_color, args->texture_buffer, tex_u, tex_v);
     
-    // (s - (int)s)
-    float s_fract = s_abs - itof(ftoi(s_abs));
-    float t_fract = t_abs - itof(ftoi(t_abs));
-    
-    int texel_x = ftoi(s_fract * w_minus_1 + 0.5);
-    int texel_y = ftoi(t_fract * h_minus_1 + 0.5);
+    // simple lighting calculation using interpolated intensity
+    float interp_intensity = (l.x * triangle_verts[0].intensity) + (l.y * triangle_verts[1].intensity) + (l.z * triangle_verts[2].intensity);
 
-    // 3. Texture Lookup
-    int idx = texel_y * args->texture.w + texel_x;
-    args->color[threadIdx] = args->texture.color_arr[idx];
+    // calculate final color with lighting applied
+    vector_t final_color;
+    final_color.x = texture_color.x * interp_intensity;
+    final_color.y = texture_color.y * interp_intensity;
+    final_color.z = texture_color.z * interp_intensity;
+
+    // clamp final color to [0, 255]
+    if (final_color.x < 0.0f) final_color.x = 0.0f;
+    if (final_color.y < 0.0f) final_color.y = 0.0f;
+    if (final_color.z < 0.0f) final_color.z = 0.0f;
+    if (final_color.x > 255.0f) final_color.x = 255.0f;
+    if (final_color.y > 255.0f) final_color.y = 255.0f;
+    if (final_color.z > 255.0f) final_color.z = 255.0f;
+
+    // save final color to frame buffer
+    args->frame_buffer[threadIdx] = final_color;
 }

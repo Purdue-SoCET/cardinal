@@ -1,24 +1,24 @@
 #ifndef PIXEL_H
 #define PIXEL_H
-#include "graphics_lib.h"
+#include "../../cpu_sim/include/graphics_lib.h"
 
 typedef struct {
     // Transformed Verticies
-    vertex_t* verts;
+    vertex_t* vertex_output_buffer;
     int num_verts;
 
     // Triangle Data
-    triangle_t* tris;
+    triangle_t* surviving_triangle_index_buffer;
     int num_tris;
 
     // Pixel buffers
-    int buff_w, buff_h;
-    float* depth_buff;
-    int* tag_buff;
-    vector_t* color;
+    int buffer_w, buffer_h;
+    float* depth_buffer;
+    int* tag_buffer;
+    vector_t* frame_buffer;
 
     // Texture Data
-    texture_t texture;
+    texture_t texture_buffer;
 
 } pixel_arg_t;
 
