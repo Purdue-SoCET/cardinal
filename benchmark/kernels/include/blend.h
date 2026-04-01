@@ -24,7 +24,7 @@ typedef struct {
     int num_tris;
 
     // Pixel buffers
-    vector_t* color;
+    vec4_t* color;
 
     // Texture Data
     texture_t texture;

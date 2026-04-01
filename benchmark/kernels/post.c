@@ -36,7 +36,7 @@ void kernel_post(void* arg)
     int right_idx = ctr_idx + 1;
 
     float* zbuff = args->depth_buff;
-    vector_t* out = args->color;
+    vec4_t* out = args->color;
 
     //Bounds and edge check (if you're out of bounds you don't want to seg fault you just want to ignore!)
     float ctr = zbuff[ctr_idx];

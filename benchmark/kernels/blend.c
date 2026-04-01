@@ -113,10 +113,10 @@ void kernel_blend(void* arg)
 
         // Fetch the existing color in the frame buffer 
         int pixel_idx = GET_1D_INDEX(u, v, args->buff_w);
-        vector_t dest_color = args->color[pixel_idx];
+        vec4_t dest_color = args->color[pixel_idx];
 
         // Standard Alpha Blending Equation
-        vector_t final_color;
+        vec4_t final_color;
         final_color.x = (texel.x * texel.w) + (dest_color.x * (1.0f - texel.w));
         final_color.y = (texel.y * texel.w) + (dest_color.y * (1.0f - texel.w));
         final_color.z = (texel.z * texel.w) + (dest_color.z * (1.0f - texel.w));

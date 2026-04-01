@@ -1,5 +1,9 @@
 ## CPU Sim
 
+## NOTE
+  - color vector was switched to vec4_t from vector_t tp support alpha blending
+  - may need to change this back for older graphics workflows to run
+
 ## Custom Kernels
 
 1. Create a yaml file inside yaml_structs of the arguments for the kernel

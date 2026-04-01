@@ -372,8 +372,8 @@ int main(int argc, char** argv) {
     ALLOCATE_MEM(pixel_args, pixel_arg_t, 1);
 
     // Setup Output
-        ALLOCATE_MEM(color_output, vector_t, frame_w*frame_h);
-        vector_t color_default = {0.6f, 0.6f, 0.6f};
+        ALLOCATE_MEM(color_output, vec4_t, frame_w*frame_h);
+        vec4_t color_default = {0.6f, 0.6f, 0.6f, 1.0f};
         DEFAULT_ARR(color_output, frame_w*frame_h, color_default);
         pixel_args->color = color_output;
 

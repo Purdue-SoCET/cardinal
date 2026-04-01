@@ -94,7 +94,7 @@ void kernel_pixel(void* arg)
     l.z = bc20 + bc21 * point.x + bc22 * point.y;
 
     // base color for material
-    vector_t albedo = args->albedo;
+    vec4_t albedo = args->albedo;
 
     // map texture if provided
     if(args->texture.color_arr != 0) {

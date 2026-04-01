@@ -25,8 +25,8 @@ typedef struct {
 
 typedef struct {
     int w, h;
-    //vec4_t* color_arr;
-    vector_t* color_arr;
+    vec4_t* color_arr;
+    //vector_t* color_arr;
     int id;
 } texture_t;
 
