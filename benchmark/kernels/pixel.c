@@ -140,14 +140,13 @@ void kernel_pixel(void* arg)
         int texel_y = ftoi(t_fract * h_minus_1 + 0.5);
 
         int idx = texel_y * args->texture.w + texel_x;
-        albedo.x = args->texture.color_arr[idx].x;
-        albedo.y = args->texture.color_arr[idx].y;
-        albedo.z = args->texture.color_arr[idx].z;
+        albedo = args->texture.color_arr[idx];
+
     }
 
     // if we cant calculate the lighting just exit
     if(args->threeDVertTrans == 0) {
-        args->color[threadIdx] = albedo;
+        args->color[pixel_idx] = albedo;
         return;
     }
 
@@ -189,7 +188,7 @@ void kernel_pixel(void* arg)
     float spec = ndoth*ndoth; spec = spec*spec; spec = spec*spec; spec = spec*spec; spec = spec*spec;
 
     // combine color
-    args->color[threadIdx].x = args->ambient.x + args->kd * diff * albedo.x + args->ks * spec;
-    args->color[threadIdx].y = args->ambient.y + args->kd * diff * albedo.y + args->ks * spec;
-    args->color[threadIdx].z = args->ambient.z + args->kd * diff * albedo.z + args->ks * spec;
+    args->color[pixel_idx].x = args->ambient.x + args->kd * diff * albedo.x + args->ks * spec;
+    args->color[pixel_idx].y = args->ambient.y + args->kd * diff * albedo.y + args->ks * spec;
+    args->color[pixel_idx].z = args->ambient.z + args->kd * diff * albedo.z + args->ks * spec;
 }

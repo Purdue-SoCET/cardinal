@@ -107,7 +107,7 @@ void kernel_blend(void* arg)
         texel = args->texture.color_arr[idx];
          // === 3. Alpha Blending ===
         // Early exit to save cycles if the pixel is fully transparent
-        if (texel.w <= 0.0f) {
+        if (texel.w <= 0.0) {
             return; 
         }
 
@@ -117,10 +117,10 @@ void kernel_blend(void* arg)
 
         // Standard Alpha Blending Equation
         vec4_t final_color;
-        final_color.x = (texel.x * texel.w) + (dest_color.x * (1.0f - texel.w));
-        final_color.y = (texel.y * texel.w) + (dest_color.y * (1.0f - texel.w));
-        final_color.z = (texel.z * texel.w) + (dest_color.z * (1.0f - texel.w));
-        final_color.w = texel.w + dest_color.w * (1.0f - texel.w); 
+        final_color.x = (texel.x * texel.w) + (dest_color.x * (1.0 - texel.w));
+        final_color.y = (texel.y * texel.w) + (dest_color.y * (1.0 - texel.w));
+        final_color.z = (texel.z * texel.w) + (dest_color.z * (1.0 - texel.w));
+        final_color.w = texel.w + dest_color.w * (1.0 - texel.w); 
 
         args->color[pixel_idx] = final_color;
     }
