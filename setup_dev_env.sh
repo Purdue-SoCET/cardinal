@@ -43,13 +43,9 @@ source "$VENV_DIR/bin/activate"
 echo -e "${BLUE}Upgrading pip...${NC}"
 pip install --upgrade pip
 
-# Install gpu package (includes common) in editable mode
-echo -e "${BLUE}Installing gpu package (includes common) in editable mode...${NC}"
-pip install -e gpu/
-
 # Install simulator package in editable mode
 echo -e "${BLUE}Installing simulator package in editable mode...${NC}"
-pip install -e gpu/simulator/
+pip install -e gpu/
 
 echo -e "${GREEN}✓ Development environment setup complete!${NC}"
 echo ""
