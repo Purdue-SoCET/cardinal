@@ -34,10 +34,21 @@
     out_y = (float)(_v1 & 0xFFFFFF) / 16777216.0; \
 }
 
+#ifdef GPU_SIM
+void main(void* arg)
+#else
 void kernel_monte_carlo_pi(void* arg) {
+#endif
+{
+    #ifdef GPU_SIM
+    monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) argPtr();
+
+    int i = blockIdx() * blockDim() + threadIdx();
+    #else
     monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) arg;
 
     int i = blockIdx * blockDim + threadIdx;
+    #endif
     
     if (i >= args->num_points) {
         return;
