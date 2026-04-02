@@ -1,5 +1,5 @@
 PYTHON := python3
-EMULATOR := ../../../emulator/src/emulator.py	# CHANGE THIS WHEN CHANGING DIRECTORY
+EMULATOR := ../../../src/emulator/src/emulator.py	# CHANGE THIS WHEN CHANGING DIRECTORY
 SIMULATOR := ../integration3/sm-from-bin.py						# CHANGE THIS WHEN CHANGING DIRECTORY
 
 # Default Parameters (Overridden by the generic test script)

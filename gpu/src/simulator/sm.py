@@ -17,7 +17,7 @@ GPU_SIM_ROOT  = Path(__file__).resolve().parents[3]
 sys.path.append(str(GPU_SIM_ROOT))
 
 # ── simulator imports ──────────────────────────────────────────────────────────
-from gpu.common.custom_enums_multi import (
+from common.custom_enums_multi import (
     Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, C_Op, Op
 )
 

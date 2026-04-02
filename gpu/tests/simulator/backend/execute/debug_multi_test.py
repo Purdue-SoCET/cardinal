@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from bitstring import Bits
-from gpu.common.custom_enums_multi import R_Op
+from common.custom_enums_multi import R_Op
 from simulator.latch_forward_stage import Instruction
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
 

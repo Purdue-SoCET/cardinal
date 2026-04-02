@@ -10,7 +10,7 @@ from simulator.latch_forward_stage import ForwardingIF, Instruction, LatchIF
 from simulator.issue.stage import IssueStage
 from pathlib import Path
 from bitstring import Bits
-from gpu.common.custom_enums_multi import *
+from common.custom_enums_multi import *
 
 """
 Create Execute and Writeback Stages

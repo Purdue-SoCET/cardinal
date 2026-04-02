@@ -52,7 +52,7 @@ from typing import List, Dict, Optional, Callable
 from datetime import datetime
 
 from bitstring import Bits
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, Op
+from common.custom_enums_multi import R_Op, I_Op, F_Op, Op
 from simulator.latch_forward_stage import Instruction, LatchIF
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig
 from simulator.writeback.writeback_buffer import WritebackBuffer

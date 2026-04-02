@@ -5,7 +5,7 @@ from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
 from bitstring import Bits
-from gpu.common.custom_enums_multi import H_Op, I_Op
+from common.custom_enums_multi import H_Op, I_Op
 from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, Stage, Warp
 from simulator.scheduler.csrtable import CsrTable
 import math

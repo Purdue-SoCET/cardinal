@@ -11,7 +11,7 @@ from simulator.latch_forward_stage import *
 from simulator.mem.Memory import Mem
 from simulator.mem.mem_controller import MemController
 from simulator.mem.ld_st import Ldst_Fu
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
+from common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
 
 BLOCK_SIZE_WORDS = 32       # 32 words per cache block
 

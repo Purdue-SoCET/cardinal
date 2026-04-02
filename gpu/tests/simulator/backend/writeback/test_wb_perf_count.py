@@ -10,7 +10,7 @@ import os
 from simulator.utils.performance_counter.writeback import PerfCount
 from simulator.latch_forward_stage import Instruction
 from bitstring import Bits
-from gpu.common.custom_enums_multi import Op, R_Op
+from common.custom_enums_multi import Op, R_Op
 
 def test_perf_count_basic():
     """Test basic PerfCount functionality."""

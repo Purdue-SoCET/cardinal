@@ -4,7 +4,7 @@ import logging
 from bitstring import Bits
 
 from simulator.latch_forward_stage import *
-from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op, P_Op
+from common.custom_enums_multi import I_Op, S_Op, H_Op, P_Op
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)

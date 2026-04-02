@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 parent = Path(__file__).resolve().parent
 sys.path.append(str(parent))
-from gpu.common.custom_enums_multi import Op
+from common.custom_enums_multi import Op
 
 '''FROM DCACHE'''
 # --- Cache Configuration ---

@@ -6,7 +6,7 @@ gpu_sim_root = Path(__file__).resolve().parents[3]
 sys.path.append(str(gpu_sim_root))
 
 from simulator.src.latch_forward_stage import LatchIF, Instruction, ForwardingIF, Stage, DecodeType
-from gpu.common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
+from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
 from common.custom_enums import Op
 from simulator.src.scheduler.scheduler import SchedulerStage
 from simulator.src.mem.icache_stage import ICacheStage

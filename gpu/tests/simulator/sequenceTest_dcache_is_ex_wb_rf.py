@@ -13,7 +13,7 @@ from simulator.mem.dcache import LockupFreeCacheStage
 from simulator.mem.ld_st import Ldst_Fu
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
 from simulator.latch_forward_stage import *
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
+from common.custom_enums_multi import R_Op, I_Op, F_Op, S_Op, H_Op
 
 from simulator.decode.predicate_reg_file import PredicateRegFile
 

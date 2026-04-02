@@ -5,7 +5,7 @@ from simulator.circular_buffer import CircularBuffer
 from simulator.compact_queue import CompactQueue
 from simulator.stack import Stack
 from typing import Any, Dict, Optional, Union, List
-from gpu.common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
+from common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
 from simulator.latch_forward_stage import LatchIF, Instruction
 from simulator.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
 from simulator.writeback.config import (

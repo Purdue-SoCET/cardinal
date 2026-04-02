@@ -5,7 +5,7 @@ from simulator.issue.regfile import RegisterFile
 from simulator.latch_forward_stage import Instruction, LatchIF
 from simulator.issue.stage import IssueStage
 from bitstring import Bits
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op
+from common.custom_enums_multi import R_Op, I_Op, F_Op
 import math
 
 def compare_register_files(pipeline_rf, golden_rf, warp_id=0, reg_list=None, verbose=False):

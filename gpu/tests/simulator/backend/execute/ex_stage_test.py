@@ -37,7 +37,7 @@ from typing import List, Tuple, Dict, Optional, Callable
 from datetime import datetime
 
 from bitstring import Bits
-from gpu.common.custom_enums_multi import R_Op, I_Op, F_Op, Op
+from common.custom_enums_multi import R_Op, I_Op, F_Op, Op
 from simulator.latch_forward_stage import Instruction
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
 from simulator.execute.arithmetic_functional_unit import IntUnitConfig, FpUnitConfig, SpecialUnitConfig

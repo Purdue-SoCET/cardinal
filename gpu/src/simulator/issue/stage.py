@@ -1,6 +1,6 @@
 from builtins import isinstance, print
 from dataclasses import dataclass, field
-from gpu.simulator.drafts.custom_enums_multi import H_Op, S_Op
+from common.custom_enums_multi import H_Op, S_Op
 from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
 from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
@@ -100,9 +100,9 @@ class IssueStage(Stage):
         # n = 1
         # if len(self.dispatched) < n or cycle > 6:
         # if dispatched_inst == None and fust[dispatched_inst.intended_FU]:
-        if inst_in is not None:
-            if inst_in.opcode == H_Op.HALT:
-                input("STOP THIS BS") 
+#        if inst_in is not None:
+#            if inst_in.opcode == H_Op.HALT:
+#                input("STOP THIS BS") 
 
         if FU_stall_issue == False:
         

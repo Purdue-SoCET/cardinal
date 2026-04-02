@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Optional, List
-from gpu.common.custom_enums_multi import Op
+from common.custom_enums_multi import Op
 from simulator.latch_forward_stage import Instruction
 
 class WritebackPerfCount:
