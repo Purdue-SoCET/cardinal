@@ -336,22 +336,6 @@ When debugging, focus on these in order:
 If those line up, the pipeline behavior is probably correct.
 
 ---
-
-## Why This Playground Is Useful Before the Full Simulator
-
-The full GPU simulator has many more moving parts: more stage interactions, more control signals, more state, and much more complicated instruction behavior. This playground strips the system down so that each mechanism can be understood in isolation first.
-
-By working through these test cases, you should come away understanding:
-
-- why latches are needed
-- why forwarding and backpressure signals are needed
-- how cycle-by-cycle timing is modeled
-- how hazards and stalls are enforced
-- how predication changes writeback behavior
-- how to inspect logs and verify correctness
-
-That is the main purpose of this setup.
-
 ## Playground Skeleton File
 
 A blank pipeline skeleton is included so you can experiment without needing to understand the full simulator first.
@@ -391,15 +375,3 @@ If you are not sure where to start, try one of these:
 3. Add a stage that stalls an instruction for a few cycles before forwarding it.  
 4. Add print statements to track where an instruction goes each cycle.  
 5. Create your own subclass of `GenericStage` and define new behavior in `process_instruction()`.
-
-### Why this file matters
-
-The purpose of the skeleton is not to give you a finished simulator. The purpose is to give you a safe place to learn the simulator model:
-
-- how instructions move between latches
-- how stages consume and produce data
-- how cycle-by-cycle progression works
-- how stalls happen when a stage cannot forward
-- how to structure new behavior cleanly before integrating it into a more complete simulator
-
-This is the best place to test ideas, make mistakes, and inspect behavior in a controlled way before working in the larger simulator codebase.
