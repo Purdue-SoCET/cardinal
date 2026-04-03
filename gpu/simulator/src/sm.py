@@ -287,9 +287,12 @@ class SM:
                     # nothing second is being indexed
                     self.prf.reg_file[warp][pred] = [True] * 32  # all 32 threads active
         
-        self.tbs_ws_if.push([0, 1024, Bits(uint=self.SMConfig.mem_start_pc, length=32).int])        # tbs_ws_if.push([0, 1024, START_PC])
-
-            # Bootstrap forwarding IFs so the scheduler never sees None on cycle 0
+        
+             # tbs_ws_if.push([0, 1024, START_PC])
+        # NOTE WITH TBS INTEGRATED, WE GET THE VALUES FROM THE LAUNCH PASSED IN
+        self.tbs_ws_if.push([self.SMConfig.tb_id, self.SMConfig.tb_size, Bits(uint=self.SMConfig.mem_start_pc, length=32).int])   
+        
+        # Bootstrap forwarding IFs so the scheduler never sees None on cycle 0
         filler_decode  = {"type": DecodeType.MOP, "warp_id": 0, "pc": 0}
         filler_issue   = [0] * self.scheduler.num_groups
         self.icache_scheduler_fwif.payload    = None
