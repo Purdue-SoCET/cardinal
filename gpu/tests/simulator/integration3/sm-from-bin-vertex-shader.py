@@ -295,7 +295,8 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     # [kernelid, data start addr in dec]
-    kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) 
+    # kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) 
+    kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) 
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -489,7 +490,8 @@ def run_test(
     # program_file: Path = FILE_ROOT / "test.bin",
     # program_file: Path = FILE_ROOT / "test_binaries/predicated_halt.bin", THESE DON'T MATTER
     # program_file: Path = FILE_ROOT / "test_binaries/manual_vertex.bin",
-    program_file: Path = FILE_ROOT / "test_binaries/vertex_shader_pranav.bin",
+    # program_file: Path = FILE_ROOT / "test_binaries/vertex_shader_pranav.bin",
+    program_file: Path = FILE_ROOT / "test_binaries/pixel.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
 ) -> tuple[int, int]:
@@ -565,7 +567,8 @@ def _parse_args():
         # default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
         # default=str(FILE_ROOT / "test_binaries/manual_vertex.bin"),
         # default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
-        default=str(FILE_ROOT / "test_binaries/triangle.bin"),
+        # default=str(FILE_ROOT / "test_binaries/triangle.bin"),
+        default=str(FILE_ROOT / "test_binaries/pixel.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

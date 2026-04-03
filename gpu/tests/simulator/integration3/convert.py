@@ -15,12 +15,13 @@ def format_hex(value):
     return f"0x{value:08x}"
 
 def main():
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print("Usage: python sort_triangle.py <input_file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
-    output_file = "output_triangle.hex"
+    # output_file = "output_triangle.hex"
+    output_file = sys.argv[2]
 
     rows = []
 
