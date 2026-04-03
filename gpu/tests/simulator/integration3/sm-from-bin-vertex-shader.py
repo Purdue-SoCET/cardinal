@@ -295,7 +295,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     # [kernelid, data start addr in dec]
-    kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) 
+    kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) 
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -386,7 +386,6 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000, t
         "prf":         prf,
         "mem":         mem,
     }
-
 
 def tick_all(p: dict):
     """Tick every pipeline stage once (same order as sm-no-mem.py)."""
@@ -509,13 +508,14 @@ def run_test(
           f"{sum(1 for d in decoded_instrs if d['opcode_enum'] is not None)} decoded.")
 
     # ── build pipeline ────────────────────────────────────────────────────────
-    p = build_pipeline(program_file, fmt=fmt, start_pc=0, tb_size=32)
+    p = build_pipeline(program_file, fmt=fmt, start_pc=0x24, tb_size=1024)
     pipeline_rf  = p["pipeline_rf"]
     golden_rf    = p["golden_rf"]
     csr_table    = p["csr_table"]
     kbp          = p["kbp"]
     prf = p["prf"]
 
+    # p["mem"].dump_on_exit() 
     threads = pipeline_rf.threads_per_warp
 
     # ── warp IDs under test ───────────────────────────────────────────────────
@@ -564,7 +564,8 @@ def _parse_args():
         # default=str(FILE_ROOT / "test_binaries/jump.bin"),
         # default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
         # default=str(FILE_ROOT / "test_binaries/manual_vertex.bin"),
-        default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
+        # default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
+        default=str(FILE_ROOT / "test_binaries/triangle.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(
