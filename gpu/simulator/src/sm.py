@@ -157,8 +157,10 @@ class SM:
             ic_serve_latch=self.mem_icache_resp_if,
             dc_serve_latch=self.mem_dcache_resp_if,
             mem_backend=self.mem,
+            latency=self.SMConfig.mem_lat,
             policy=self.SMConfig.memc_policy
         )
+
 
         if self.SMConfig.fu_config is None:
             self.fu_config = FunctionalUnitConfig.get_default_config()
