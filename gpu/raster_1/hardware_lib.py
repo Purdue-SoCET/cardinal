@@ -11,10 +11,6 @@ class Table():
     def read(self, index):
         return self.table[index]
 
-class translationLookupTable(Table):
-    def __init__(self, size : int = 1, dataSize : int = 5):
-        super().__init__(size, dataSize)
-
 
 class vertexTable(Table):
     def __init__(self, size : int = 12, blockSize : int = 64):
