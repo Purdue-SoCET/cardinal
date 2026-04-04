@@ -1,14 +1,26 @@
 from bits import Bits
 from numpy import inf as invalid
 
-class vertexTable():
+class Table():
     def __init__(self, size : int = 12, blockSize : int = 64):
         self.table = [Bits(blockSize)] * size
-        self.refCount = [0] * size
-        self.valid = [0] * size
 
     def insert(self, data, index):
         self.table[index] = data
+
+    def read(self, index):
+        return self.table[index]
+
+class translationLookupTable(Table):
+    def __init__(self, size : int = 1, dataSize : int = 4):
+        super().__init__(size, dataSize)
+
+
+class vertexTable(Table):
+    def __init__(self, size : int = 12, blockSize : int = 64):
+        super().__init__(size, blockSize)
+        self.refCount = [0] * size
+        self.valid = [0] * size
 
     def getRefCount(self, index):
         return self.refCount[index]
@@ -24,6 +36,10 @@ class vertexTable():
 
     def decrement(self, index):
         self.refCount[index] -= 1
+
+    def checkValid(self, index):
+        return self.valid[index]
+
 
 class buffer():
     def __init__(self, size : int = 2, dataSize : int = 32):
