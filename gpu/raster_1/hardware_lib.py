@@ -12,7 +12,7 @@ class Table():
         return self.table[index]
 
 class translationLookupTable(Table):
-    def __init__(self, size : int = 1, dataSize : int = 4):
+    def __init__(self, size : int = 1, dataSize : int = 5):
         super().__init__(size, dataSize)
 
 

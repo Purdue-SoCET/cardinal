@@ -1,7 +1,7 @@
 from bits import Bits
 from hardware_lib import vertexTable, buffer
 
-table = vertexTable(size = 12, blockSize = 8*12)
+table = vertexTable(size = 24, blockSize = 8*12)
 
 #index size = 10 bits, pack and send triangle's worth as 3 with 2 padded bit
 indexBuffer = buffer(size = 32, dataSize = 10)
