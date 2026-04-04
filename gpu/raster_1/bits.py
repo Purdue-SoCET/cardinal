@@ -17,6 +17,9 @@ class Bits():
     def getBits(self):
         return self.bits
     
+    def getSize(self):
+        return self.size
+
     def getInt(self):
         intCon = int(self.bits, 2)
         return intCon
@@ -24,6 +27,7 @@ class Bits():
     def getFloats(self):
         intCon = self.getInt()
         return struct.unpack('!f', struct.pack('!I', intCon))[0]
+
 '''
 val = '01000000010010010000111111011011' #some digits of pi
 #val = val[::-1]

@@ -1,7 +1,7 @@
 from bits import Bits
 from numpy import inf as invalid
 
-def vertexTable():
+class vertexTable():
     def __init__(self, size : int = 12, blockSize : int = 64):
         self.table = [Bits(blockSize)] * size
         self.refCount = [0] * size
@@ -25,7 +25,7 @@ def vertexTable():
     def decrement(self, index):
         self.refCount[index] -= 1
 
-def buffer():
+class buffer():
     def __init__(self, size : int = 2, dataSize : int = 32):
         self.size = size
         self.currSize = 0
@@ -34,19 +34,35 @@ def buffer():
         self.out = invalid
 
     def insert(self, data : Bits):
-        if (len(data.getBits()) != self.dataSize):
-            return -1
+        if (data.getSize() != self.dataSize):
+            return -1 #Bit width mismatch
         
         if (self.currSize < self.size):
             self.buffer.append(data)
+            self.currSize += 1
         elif (self.currSize == self.size):
             if (self.out == invalid):
-                self.out = self.buffer[self.size - 1]
+                self.out = self.buffer.pop(0)
+                self.buffer.append(data)
+                return 0
             else:
-                return -2
-            
-            self.buffer.remove(self.size - 1)
-            self.buffer.append(data)
+                return -2 #Output has not yet been acknowledged, so nothing doing
+        else:
+            return -3 #This should not be possible!
+
+        if (self.currSize == self.size):
+            self.out = self.buffer[0]
+        
+        return 0
 
     def acked(self):
         self.out = invalid
+
+    def checkOut(self):
+        if (self.out != invalid):
+            return True
+        
+        return False
+    
+    def getOut(self):
+        return self.out
