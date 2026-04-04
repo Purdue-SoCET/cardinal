@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 gpu_sim/emulator/src/__pycache__
 gpu_sim/emulator/venv
 gpu_sim/common/__pycache__
@@ -5,5 +6,34 @@ graphics_hw/__pycache__
 graphics_hw_cpp/.vs
 graphics_hw_cpp/out
 
+=======
+# Python cache directories
+>>>>>>> c34ac7766590ef84e481c96513720b4abb04cf36
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
 venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.so
+*.o
+*.out
+
+# Logs
+*.log
+
+*.egg-info/
+test_results/

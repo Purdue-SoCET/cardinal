@@ -17,6 +17,9 @@ class Instr_Type(MultiValueEnum):
     P_TYPE = Bits(bin='1101', length=4)    # 1101
     H_TYPE = Bits(bin='1111', length=4)    # 1111 (Halt)
 
+class Op(Enum):
+    pass 
+
 # R-Type Operations (opcode: 0000xxx and 0001xxx)
 class R_Op(Enum):
     # From R_Op_0 (0000xxx)
@@ -43,10 +46,12 @@ class I_Op(Enum):
     # From I_Op_0 (0010xxx)
     ADDI = Bits(bin='0010000', length=7)   # 0010 000
     SUBI = Bits(bin='0010001', length=7)   # 0010 001
+    XORI = Bits(bin='0010100', length=7)   # 0010 100
     ORI = Bits(bin='0010101', length=7)    # 0010 101
     SLTI = Bits(bin='0010111', length=7)   # 0010 111
     # From I_Op_1 (0011xxx)
     SLTIU = Bits(bin='0011000', length=7)  # 0011 000
+    SLLI = Bits(bin='0011101', length=7)   # 0011 101
     SRLI = Bits(bin='0011110', length=7)   # 0011 110
     SRAI = Bits(bin='0011111', length=7)   # 0011 111
     # From I_Op_2 (0100xxx)
@@ -101,7 +106,9 @@ class J_Op(Enum):
 # P-Type Operations (opcode: 1101xxx)
 class P_Op(Enum):
     JPNZ = Bits(bin='1101000', length=7)   # 1101 000
-
+    PRR = Bits(bin='1101100', length=7)
+    PRW = Bits(bin='1101101', length=7)
+    
 # H-Type Operations (opcode: 1111xxx)
 class H_Op(Enum):
     HALT = Bits(bin='1111111', length=7)   # 1111 111

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Memory.py — Fully Patched for ICache + MemController correctness
 import sys
 from pathlib import Path
@@ -61,6 +62,8 @@ class Mem:
     def read(self, addr: int, size: int = 4) -> Bits:
         byte_addr = int(addr)
         data = bytes(self.memory.get(byte_addr + i, 0) & 0xFF for i in range(int(size)))
+        word = int.from_bytes(data, "little")
+        # print(f"[Memory] Returning data: {word:08x}")
         return Bits(bytes=data)
 
     def write(self, addr: int, data: Bits, bytes_t: int):
@@ -82,11 +85,12 @@ class Mem:
         max_addr = max(self.memory.keys())
         with open(path, "w", encoding="utf-8") as f:
             for base in range(min_addr, max_addr + 1, 4):
+                if not any((base + i) in self.memory for i in range(4)):
+                    continue
                 b0 = self.memory.get(base + 0, 0)
                 b1 = self.memory.get(base + 1, 0)
                 b2 = self.memory.get(base + 2, 0)
                 b3 = self.memory.get(base + 3, 0)
-                if (b0 | b1 | b2 | b3) == 0:
-                    continue
-                word = (b0 & 0xFF) | ((b1 & 0xFF) << 8) | ((b2 & 0xFF) << 16) | ((b3 & 0xFF) << 24)
+
+                word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
                 f.write(f"{base:#010x} {word:#010x}\n")

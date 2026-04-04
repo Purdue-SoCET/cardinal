@@ -1,11 +1,11 @@
 import sys
 from pathlib import Path
 
-parent_dir = Path(__file__).resolve().parent.parent
+parent_dir = Path(__file__).resolve().parents[3]
 sys.path.append(str(parent_dir))
 
-from base import LatchIF, Stage, Instruction, MemRequest
-from Memory import Mem
+from simulator.latch_forward_stage import LatchIF, Stage, Instruction, MemRequest
+from simulator.mem.Memory import Mem
 from typing import Any, Dict, Optional, Deque, Tuple
 from bitstring import Bits
 
@@ -77,7 +77,8 @@ class MemController(Stage):
         if isinstance(payload, list):
             bb = bytearray()
             for w in payload:
-                bb.extend(int(w).to_bytes(4, "little", signed=False))
+                masked_w = int(w) & 0xFFFFFFFF
+                bb.extend(masked_w.to_bytes(4, "little", signed=False))
             return Bits(bytes=bytes(bb)), len(bb)
 
         raise TypeError(f"Unsupported write payload type: {type(payload)}")
@@ -87,21 +88,28 @@ class MemController(Stage):
         pc_bits = pc_raw if isinstance(pc_raw, Bits) else Bits(uint=int(pc_raw), length=32)
 
         return Instruction(
-            iid=req_info.get("uuid", req_info.get("iid", 0)),
             pc=pc_bits,
-            intended_FSU=req_info.get("intended_FSU", None),
-            warp=req_info.get("warp", req_info.get("warp_id", 0)),
-            warpGroup=req_info.get("warpGroup", req_info.get("warp_group_id", None)),
+            intended_FU=req_info.get("intended_FU", None),
+            warp_id=req_info.get("warp_id", req_info.get("warp_id", 0)),
+            warp_group_id=req_info.get("warp_group_id", req_info.get("warp_group_id", None)),
             opcode=req_info.get("opcode", None),
             rs1=req_info.get("rs1", Bits(uint=0, length=5)),
             rs2=req_info.get("rs2", Bits(uint=0, length=5)),
             rd=req_info.get("rd", Bits(uint=0, length=5)),
+            predicate = [Bits(uint=1, length=1) for i in range(32)]
         )
 
     # compatibility fix for naming conventions used across tests
     def _normalize_req(self, req: dict, src: str) -> dict:
         if not isinstance(req, dict):
+            # print(f"[MemController] Got the following request: {req}")
+            # pass through if None
+            if req is None:
+                # print("[MemController] Pass through None type.")
+                return
+
             raise TypeError(f"[{self.name}] expected dict req, got {type(req)}")
+
 
         req = dict(req)  # copy
         req["src"] = src
@@ -148,6 +156,7 @@ class MemController(Stage):
             raw = self.ic_req_latch.pop()
             return self._normalize_req(raw, "icache")
         raw = self.dc_req_latch.pop()
+
         return self._normalize_req(raw, "dcache")
 
     def _try_start_one_request(self) -> None:
@@ -167,6 +176,8 @@ class MemController(Stage):
 
         pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
         warp_id = req_info.get("warp_id", getattr(inst, "warp", 0))
+
+        # print(f"[MemController] Starting MemReq", req_info)
 
         mem_req = MemRequest(
             addr=int(req_info["addr"]),
@@ -216,30 +227,12 @@ class MemController(Stage):
             if req.rw_mode == "write":
                 data_bits, nbytes = self._payload_to_bits(req.data, req.size)
                 self.mem_backend.write(req.addr, data_bits, nbytes)
-                resp = {
-                    "src": src,
-                    "rw_mode": "write",
-                    "status": "WRITE_DONE",
-                    "addr": req.addr,
-                    "size": req.size,
-                    "uuid": req.uuid,
-                    "warp": req.warp_id,
-                    "pc": req.pc,
-                    "inst": inst,
-                }
+                # should try to return an instruction type here
+                resp = inst
             else:
                 data_bits = self.mem_backend.read(req.addr, req.size)
-                resp = {
-                    "src": src,
-                    "rw_mode": "read",
-                    "data": data_bits,
-                    "addr": req.addr,
-                    "size": req.size,
-                    "uuid": req.uuid,
-                    "warp": req.warp_id,
-                    "pc": req.pc,
-                    "inst": inst,
-                }
+                inst.packet = data_bits
+                resp = inst
 
             if src == "icache":
                 self.ic_serve_latch.push(resp)
@@ -253,6 +246,8 @@ class MemController(Stage):
     # Main compute
     # -----------------------------
     def compute(self, input_data=None):
+        # print("[MemController] compute: inflight =", len(self.inflight))
+        
         # 1) progress outstanding work
         self._age_inflight()
 

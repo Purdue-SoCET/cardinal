@@ -10,6 +10,7 @@
 #include "../kernels/include/vertexShader.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
+#include "../kernels/include/post.h"
 
 // Globals
 uint8_t* memory_ptr;
@@ -321,6 +322,21 @@ int main(int argc, char** argv) {
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
+    }
+
+    // --- FXAA Kernel --- (it's called post for now but probably want it to be called fxaa and then every shader after should be called its own thing.)
+    ALLOCATE_MEM(post_args, post_arg_t, 1);
+
+    post_args->color = color_output;
+    post_args->depth_buff = zbuff;
+    post_args->buff_w = frame_w;
+    post_args->buff_h = frame_h;
+    post_args->threshold = 2;
+
+    // Running the kernel
+    {
+        int grid_dim = 1; int block_dim = frame_w * frame_h;
+        run_kernel(kernel_post, grid_dim, block_dim, (void*)post_args);
     }
 
     // --- Create Image from Data ---
