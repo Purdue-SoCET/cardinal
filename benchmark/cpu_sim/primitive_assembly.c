@@ -3,6 +3,7 @@
 #define SCREEN_W 800
 #define SCREEN_H 800
 #define CLIP_EPS 1e-6f
+#define ENABLE_CLIPPING 0
 
 // Primitive Assembly Unit
 // 1. Read one input triangle in clip space
@@ -244,9 +245,6 @@ int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* t
         vertex_t clip_v2 = vertex_output_buffer[triangle_index_buffer[i].v3];
 
         // 2. Reject triangles fully outside the clip-space frustum
-        if (reject_outside_frustum(clip_v0, clip_v1, clip_v2)) continue;
-
-        // 3. Clip the surviving polygon against all 6 frustum planes
         vertex_t clip_poly_a[10];
         vertex_t clip_poly_b[10];
         int clip_vertex_count = 3;
@@ -255,6 +253,10 @@ int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* t
         clip_poly_a[1] = clip_v1;
         clip_poly_a[2] = clip_v2;
 
+#if ENABLE_CLIPPING
+        if (reject_outside_frustum(clip_v0, clip_v1, clip_v2)) continue;
+
+        // 3. Clip the surviving polygon against all 6 frustum planes
         clip_vertex_count = clip_left_plane(clip_poly_a, clip_vertex_count, clip_poly_b);
         if (clip_vertex_count < 3) continue;
         clip_vertex_count = clip_right_plane(clip_poly_b, clip_vertex_count, clip_poly_a);
@@ -267,6 +269,7 @@ int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* t
         if (clip_vertex_count < 3) continue;
         clip_vertex_count = clip_far_plane(clip_poly_b, clip_vertex_count, clip_poly_a);
         if (clip_vertex_count < 3) continue;
+#endif
 
         // 4. Triangulate the clipped polygon with triangle fan
         for (int j = 1; j < clip_vertex_count - 1; j++) {
