@@ -16,11 +16,10 @@ def format_hex(value):
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python sort_triangle.py <input_file>")
+        print("Usage: python convert.py <input_file> <output_file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
-    # output_file = "output_triangle.hex"
     output_file = sys.argv[2]
 
     rows = []
@@ -29,11 +28,18 @@ def main():
         for line_num, line in enumerate(infile, 1):
             if not line.strip():
                 continue
+
             parsed = parse_line(line)
             if parsed is None:
                 print(f"Skipping invalid line {line_num}: {line.strip()}")
                 continue
-            rows.append(parsed)
+
+            first, second = parsed
+
+            if second == 0:
+                continue
+
+            rows.append((first, second))
 
     rows.sort(key=lambda x: x[0])
 
