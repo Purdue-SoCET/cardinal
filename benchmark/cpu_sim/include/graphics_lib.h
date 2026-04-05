@@ -9,11 +9,19 @@ typedef struct {
 } vector_t;
 
 typedef struct {
-    vector_t coords; // 3D mapping
-    float u, v; // Mapping into textures
+    float x, y, z, w;
+} vector4_t;
 
+typedef struct {
+    vector_t coords; // 3D mapping
+    float w; // for clipping
+    float u, v; // Mapping into textures
     vector_t normal; // surface normal for lighting calculations
     float intensity; // lighting intensity
+
+    float inv_w; // for perspective-correct interpolation, store 1/w from pre-divide stage
+    float u_over_w; // for perspective-correct interpolation, store u/w from pre-divide stage
+    float v_over_w; // for perspective-correct interpolation, store v/w from pre-dive stage
 } vertex_t;
 
 typedef struct {
@@ -36,11 +44,13 @@ int matrix_inversion(const float*, float*);
 // obj parser: .obj file -> vertex data + triangle data
 int obj_parser(const char* filename, vertex_t** vertex_input_buffer, int* out_num_verts, triangle_t** triangle_index_buffer, int* out_num_tris);
 // primitive assembly: vertex data + triangle data -> assembled triangle data
-int primitive_assembly(vertex_t* vertex_output_buffer, triangle_t* triangle_index_buffer, int num_tris, triangle_t* surviving_triangle_index_buffer);
+int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* triangle_index_buffer, int num_tris, vertex_t* assembled_vertex_buffer, int* assembled_vertex_count, int max_assembled_verts, triangle_t* surviving_triangle_index_buffer);
 
 // math helper functions
 vector_t cross_product(vector_t v1, vector_t v2);
 void normalize_vector(vector_t* v);
 float dot_product(vector_t a, vector_t b);
+vector_t mat3_mul_vec3(const float m[9], vector_t v);
+vector4_t mat4_mul_vec4(const float m[16], vector4_t v);
 
 #endif

@@ -4,7 +4,7 @@
 
 typedef struct {
     // Transformed Verticies
-    vertex_t* vertex_output_buffer;
+    vertex_t* assembled_vertex_buffer;
     int num_verts;
 
     // Triangle Data

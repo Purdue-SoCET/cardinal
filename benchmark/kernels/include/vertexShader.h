@@ -20,7 +20,8 @@ typedef struct {
 
     /*inputs*/
     vector_t* camera;          //camera location
-    float* invTrans;        //inverse transformation matrix
+    // float* invTrans;        //inverse transformation matrix
+    float project4x4[16];      //projection matrix for 4D clip-space projection
     // threeDVertTrans is also an input 
 
     /*output*/

@@ -100,11 +100,21 @@ float dot_product(vector_t a, vector_t b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-// mat3 x vec3 multiplication
+// mat3 x vec3 multiplication (used in vertex shader)
 vector_t mat3_mul_vec3(const float m[9], vector_t v) {
-    vector_t out;
-    out.x = m[0] * v.x + m[1] * v.y + m[2] * v.z;
-    out.y = m[3] * v.x + m[4] * v.y + m[5] * v.z;
-    out.z = m[6] * v.x + m[7] * v.y + m[8] * v.z;
+    vector_t out = {0.0f, 0.0f, 0.0f};
+    out.x = m[0] * v.x + m[3] * v.y + m[6] * v.z;
+    out.y = m[1] * v.x + m[4] * v.y + m[7] * v.z;
+    out.z = m[2] * v.x + m[5] * v.y + m[8] * v.z;
+    return out;
+}
+
+// mat4 x vec4 multiplication (used in vertex shader)
+vector4_t mat4_mul_vec4(const float m[16], vector4_t v) {
+    vector4_t out = {0.0f, 0.0f, 0.0f, 0.0f};
+    out.x = m[0] * v.x + m[4] * v.y + m[8]  * v.z + m[12] * v.w;
+    out.y = m[1] * v.x + m[5] * v.y + m[9]  * v.z + m[13] * v.w;
+    out.z = m[2] * v.x + m[6] * v.y + m[10] * v.z + m[14] * v.w;
+    out.w = m[3] * v.x + m[7] * v.y + m[11] * v.z + m[15] * v.w;
     return out;
 }

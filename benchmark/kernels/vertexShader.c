@@ -9,95 +9,59 @@ void kernel_vertexShader(void* arg)
     int i = blockIdx * blockDim + threadIdx;
     if (i >= args->num_verts) return;
 
-    /****** ThreeD Rotation ******/
+    /****** Stage 1: ThreeD Rotation ******/
     // Per-frame common matrices and lighting values are precomputed on the CPU
     // and passed through vertexShader_arg_t.
+    // lcsInv = world -> local matrix
+    // rotMat = rotation matrix in local space
+    // lcs = local -> world matrix
     const float* lcs = args->lcs;
     const float* lcsInv = args->lcsInv;
     const float* rotMat = args->rotMat;
 
-    // vertex normalized to rotation origin
-    float p_tempAxis[3] = {
+    // move vertex to origin based on rotation axis
+    vector_t vertex_origin = {
         args->vertex_input_buffer[i].coords.x - args->Oa->x,
         args->vertex_input_buffer[i].coords.y - args->Oa->y,
         args->vertex_input_buffer[i].coords.z - args->Oa->z
     };
 
     /*world -> local*/
-    float p1[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++)
-    {
-        for(int k = 0; k < 3; k++)
-        {
-            p1[j] += lcsInv[k*3 + j] * p_tempAxis[k];
-        }
-    }
+    vector_t vertex_local = mat3_mul_vec3(lcsInv, vertex_origin);
 
     /* rotate in local space */
-    float p2[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++)
-    {
-        for(int k = 0; k < 3; k++)
-        {
-            p2[j] += rotMat[k*3 + j] * p1[k]; 
-        }
-    }
+    vector_t vertex_rotated = mat3_mul_vec3(rotMat, vertex_local);
 
     /* local -> world */
-    float p_world[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++)
-    {
-        for(int k = 0; k < 3; k++)
-        {
-            p_world[j] += lcs[k*3 + j] * p2[k]; 
-        }
+    vector_t vertex_world = mat3_mul_vec3(lcs, vertex_rotated);
 
-        if(j == 0)
-            args->threeDVertTrans[i].coords.x = p_world[j] + args->Oa->x;
-        else if(j == 1)
-            args->threeDVertTrans[i].coords.y = p_world[j] + args->Oa->y;
-        if(j == 2)
-            args->threeDVertTrans[i].coords.z = p_world[j] + args->Oa->z;
-    }
+    // move vertex back based on rotation axis
+    args->threeDVertTrans[i].coords.x = vertex_world.x + args->Oa->x;
+    args->threeDVertTrans[i].coords.y = vertex_world.y + args->Oa->y;
+    args->threeDVertTrans[i].coords.z = vertex_world.z + args->Oa->z;
+    // u, v coordinates are unaffected by rotation
     args->threeDVertTrans[i].u = args->vertex_input_buffer[i].u;
     args->threeDVertTrans[i].v = args->vertex_input_buffer[i].v;
 
-    // 1. take the normal vector of vertex
-    float n_tempAxis[3] = {
+    /****** Stage 2: Normal Transformation & Lighting ******/
+    vector_t normal_origin = {
         args->vertex_input_buffer[i].normal.x,
         args->vertex_input_buffer[i].normal.y,
         args->vertex_input_buffer[i].normal.z
     };
 
     // normal to world -> local
-    float n1[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++) {
-        for(int k = 0; k < 3; k++) {
-            n1[j] += lcsInv[k*3 + j] * n_tempAxis[k];
-        }
-    }
+    vector_t normal_local = mat3_mul_vec3(lcsInv, normal_origin);
 
     // rotate normal in local space
-    float n2[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++) {
-        for(int k = 0; k < 3; k++) {
-            n2[j] += rotMat[k*3 + j] * n1[k];
-        }
-    }
+    vector_t normal_rotated = mat3_mul_vec3(rotMat, normal_local);
 
     // rotate normal back to world space
-    float n_world[3] = {0, 0, 0};
-    for(int j = 0; j < 3; j++) {
-        for(int k = 0; k < 3; k++) {
-            n_world[j] += lcs[k*3 + j] * n2[k];
-        }
-    }
-
-    vector_t n_world_vec = {n_world[0], n_world[1], n_world[2]};
-    normalize_vector(&n_world_vec);
+    vector_t normal_world = mat3_mul_vec3(lcs, normal_rotated);
+    normalize_vector(&normal_world);
 
     // lighting calculation (Lambertian diffuse + ambient)
-    float normal_dot_light = dot_product(n_world_vec, args->light_dir);
+    float normal_dot_light = dot_product(normal_world, args->light_dir);
     float intensity = args->ambient;
     
     if (normal_dot_light > 0.0f) {
@@ -107,42 +71,41 @@ void kernel_vertexShader(void* arg)
 
     args->vertex_output_buffer[i].intensity = intensity;
     
-    /****** Projection ******/
-    //PPC::Project
-
-    /*Normalize 3D matrix w.r.t the camera*/
-    float threeD_norm[3] = { 
+    /****** Stage 3: 4D Camera Clip-space Projection ******/
+    // x/y/z are stored without perspective divide.
+    // w is reserved for the later 4D clip-space path.
+    vector4_t vertex_camera = { 
         args->threeDVertTrans[i].coords.x - args->camera->x,
         args->threeDVertTrans[i].coords.y - args->camera->y,
-        args->threeDVertTrans[i].coords.z - args->camera->z
+        args->threeDVertTrans[i].coords.z - args->camera->z,
+        1.0f
     };
 
-    float q[3] = {0.0, 0.0, 0.0};
+    vector4_t vertex_clip = mat4_mul_vec4(args->project4x4, vertex_camera);
 
-    // q = 3Dnorm @ trans^-1
-    for(int j = 0; j < 3; j++)
-    {
-        for(int k = 0; k < 3; k++)
-        {
-            q[j] += threeD_norm[k] * args->invTrans[j*3 + k];
-        }
-    }
+    // store clip-space output without perspective divide.
+    args->vertex_output_buffer[i].coords.x = vertex_clip.x;
+    args->vertex_output_buffer[i].coords.y = vertex_clip.y;
+    args->vertex_output_buffer[i].coords.z = vertex_clip.z;
+    args->vertex_output_buffer[i].w = vertex_clip.w;
 
-    // if (q[2] < 0.0) return;
-    // if (q[2] == 0.0) return;
-    if (q[2] < 0.00001f) {
-        args->vertex_output_buffer[i].coords.x = -10000.0f; 
-        args->vertex_output_buffer[i].coords.y = -10000.0f;
-        args->vertex_output_buffer[i].coords.z = 0.0f;
-        return;
-    }
-
-    args->vertex_output_buffer[i].coords.x = q[0] / q[2];
-    args->vertex_output_buffer[i].coords.y = q[1] / q[2];
-    args->vertex_output_buffer[i].coords.z = 1.0 / q[2];
-
+    // u, v coordinates are unaffected by projection
     args->vertex_output_buffer[i].u = args->vertex_input_buffer[i].u;
     args->vertex_output_buffer[i].v = args->vertex_input_buffer[i].v;
+    args->vertex_output_buffer[i].normal = normal_world;
+    args->vertex_output_buffer[i].intensity = intensity;
+
+    // prepare reciprocal-w varyings for later perspective-correct interpolation
+    if (vertex_clip.w != 0.0f) {
+        float inv_w = 1.0f / vertex_clip.w;
+        args->vertex_output_buffer[i].inv_w = inv_w;
+        args->vertex_output_buffer[i].u_over_w = args->vertex_input_buffer[i].u * inv_w;
+        args->vertex_output_buffer[i].v_over_w = args->vertex_input_buffer[i].v * inv_w;
+    } else {
+        args->vertex_output_buffer[i].inv_w = 0.0f;
+        args->vertex_output_buffer[i].u_over_w = 0.0f;
+        args->vertex_output_buffer[i].v_over_w = 0.0f;
+    }
 
     return;
 }

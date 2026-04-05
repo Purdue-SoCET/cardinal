@@ -70,7 +70,16 @@ int main(int argc, char** argv) {
 
     // frame loop
     for (frame = 0; frame < total_frames; frame++) {
-        printf("Frame %d\n", frame);
+        printf("===== Frame %d =====\n", frame);
+
+        // testing timers for each stage of the pipeline
+        clock_t frame_start, frame_end;
+        clock_t vertex_start, vertex_end;
+        clock_t primitive_start, primitive_end;
+        clock_t triangle_start, triangle_end;
+        clock_t pixel_start, pixel_end;
+        double vertex_ms, primitive_ms, triangle_ms, pixel_ms, total_ms;
+        frame_start = clock();
 
         // reset memory pointer for each frame
         memory_ptr = memory_base;
@@ -82,7 +91,7 @@ int main(int argc, char** argv) {
         texture->w = text_w; texture->h = text_h;
         texture->color_arr = texture_buffer;
 
-        const vector_t white = {255.0f, 255.0f, 255.0f};
+        const vector_t white = {1.0f, 1.0f, 1.0f};
         const vector_t black = {0.0f, 0.0f, 0.0f};
         for(int u = 0; u < text_w; u++) {
             for(int v = 0; v < text_h; v++) {
@@ -97,10 +106,35 @@ int main(int argc, char** argv) {
         };
         ALLOCATE_MEM(camera_C, vector_t, 1);
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = 150.0f;
+        ALLOCATE_MEM(project4x4, float, 16);
+
+        // camera is located at (0, 0, 150) in world space, looking towards the origin
+        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = 50.0f;
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
-        // 2. Vertex Kernel (3D -> 2D projection)
+        // Projection parameter & matrix for 4D clip-space projection
+        // Perspective projection parameters:
+        // - fov: vertical field of view in degrees/radians
+        // - aspect_ratio: output width / output height
+        // - near_clip, far_clip: clipping distances from the camera
+        // - proj_scale: 1 / tan(fov / 2), used to scale x/y in projection
+        float vertical_fov_deg = 60.0f;
+        float vertical_fov_rad = vertical_fov_deg * 3.141592f / 180.0f;
+        float aspect_ratio = (float)OUTPUT_W / (float)OUTPUT_H;
+        float near_clip = 1.0f;
+        float far_clip = 5000.0f;
+        float focal_scale = 1.0f / tanf(vertical_fov_rad * 0.5f);
+
+        for (int i = 0; i < 16; i++) project4x4[i] = 0.0f;
+        // Column-major perspective projection matrix matching mat4_mul_vec4()
+        project4x4[0]  = focal_scale / aspect_ratio;
+        project4x4[5]  = focal_scale;
+        project4x4[10] = (far_clip + near_clip) / (near_clip - far_clip);
+        project4x4[11] = -1.0f;
+        project4x4[14] = (2.0f * far_clip * near_clip) / (near_clip - far_clip);
+        project4x4[15] = 0.0f;
+
+        // Vertex Kernel (3D -> 2D projection)
         ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
         ALLOCATE_MEM(Oa, vector_t, 1);
         vertex_args->Oa = Oa; MAKE_VECTOR((*Oa), 0, 0, 0);
@@ -109,7 +143,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(alpha_r, float, 1);
         vertex_args->alpha_r = alpha_r; *alpha_r = (3.141592f * 2.0f * (float)frame) / (float)total_frames;
 
-        // CPU precomputation for vertex shader (to be reused across vertices)
+        /*** CPU precomputation for vertex shader (to be reused across vertices) ***/
         // these values can change per frame but not per vertex, so we compute them once on the CPU and pass them to the vertex shader
         vertex_args->num_verts = num_verts;
         vertex_args->viewport_w = OUTPUT_W;
@@ -182,43 +216,62 @@ int main(int argc, char** argv) {
 
         vertex_args->vertex_input_buffer = vertex_input_buffer;
         vertex_args->camera = camera_C;
-        vertex_args->invTrans = cameraProjMatrix;
-        
+        for(int i = 0; i < 16; i++) {
+            vertex_args->project4x4[i] = project4x4[i];
+        }
+
         ALLOCATE_MEM(tVerts, vertex_t, num_verts);
         vertex_args->threeDVertTrans = tVerts;
         ALLOCATE_MEM(vertex_output_buffer, vertex_t, num_verts);
         vertex_args->vertex_output_buffer = vertex_output_buffer;
         
+        /*** Stage 1: Run vertex shader kernel ***/
+        vertex_start = clock();
         run_kernel(kernel_vertexShader, 1, num_verts, (void*)vertex_args);
+        vertex_end = clock();
+        vertex_ms = (double)(vertex_end - vertex_start) * 1000.0 / CLOCKS_PER_SEC;
+        printf("1. Vertex Shader Time: %.2f ms\n", vertex_ms);
 
-        // 3. Primitive Assembly
-        // memory allocation for output of primitive assembly (culled triangles)
-        ALLOCATE_MEM(surviving_triangle_index_buffer, triangle_t, num_tris);
-        
-        int final_tri_count = primitive_assembly(vertex_output_buffer, triangle_index_buffer, num_tris, surviving_triangle_index_buffer);
+        /*** Stage 2: Primitive Assembly ***/
+        // primitive assembly outputs
+        int max_assembled_verts = num_tris * 5;
+        int max_surviving_tris = num_tris * 5;
+
+        ALLOCATE_MEM(assembled_vertex_buffer, vertex_t, max_assembled_verts);
+        ALLOCATE_MEM(surviving_triangle_index_buffer, triangle_t, max_surviving_tris);
+
+        int assembled_vertex_count = 0;
+
+        primitive_start = clock();
+        int final_tri_count = primitive_assembly(vertex_output_buffer, triangle_index_buffer, num_tris, assembled_vertex_buffer, &assembled_vertex_count, max_assembled_verts, surviving_triangle_index_buffer);
+        primitive_end = clock();
+        primitive_ms = (double)(primitive_end - primitive_start) * 1000.0 / CLOCKS_PER_SEC;
+        printf("2. Primitive Assembly Time: %.2f ms\n", primitive_ms);
         
         printf("\n[Primitive Assembly Result]\n");
-        printf("Original Triangles: %d\n", num_tris);
-        printf("Surviving Triangles: %d\n\n", final_tri_count);
+        printf("Input Triangles: %d\n", num_tris);
+        printf("Output Triangles: %d\n", final_tri_count);
+        printf("Assembled Vertices: %d\n", assembled_vertex_count);
 
-        // 4. Triangle Kernel (rasterization)
+        /*** Stage 3: Triangle Kernel (rasterization) ***/
         ALLOCATE_MEM(triangle_args, triangle_arg_t, 1);
         const int frame_w = OUTPUT_W; const int frame_h = OUTPUT_H;
-        ALLOCATE_MEM(depth_buffer, float, frame_w*frame_h); DEFAULT_ARR(depth_buffer, frame_w*frame_h, 0);
+        ALLOCATE_MEM(depth_buffer, float, frame_w*frame_h); DEFAULT_ARR(depth_buffer, frame_w*frame_h, 1);
         ALLOCATE_MEM(tag_buffer, int, frame_w*frame_h);   DEFAULT_ARR(tag_buffer, frame_w*frame_h, -1);
 
         triangle_args->buffer_w = frame_w; triangle_args->buffer_h = frame_h;
         triangle_args->depth_buffer = depth_buffer; triangle_args->tag_buffer = tag_buffer;
 
-        printf(" --- Triangle Test --- \n");
+        printf("--- Triangle Test ---\n");
+        triangle_start = clock();
         // run the triangle kernel for each surviving triangle
         for(int tri = 0; tri < final_tri_count; tri++) {
             triangle_args->tag = tri;
 
             // take only the surviving triangles from primitive assembly
-            triangle_args->triangle_verts[0] = vertex_output_buffer[surviving_triangle_index_buffer[tri].v1].coords;
-            triangle_args->triangle_verts[1] = vertex_output_buffer[surviving_triangle_index_buffer[tri].v2].coords;
-            triangle_args->triangle_verts[2] = vertex_output_buffer[surviving_triangle_index_buffer[tri].v3].coords;
+            triangle_args->triangle_verts[0] = assembled_vertex_buffer[surviving_triangle_index_buffer[tri].v1].coords;
+            triangle_args->triangle_verts[1] = assembled_vertex_buffer[surviving_triangle_index_buffer[tri].v2].coords;
+            triangle_args->triangle_verts[2] = assembled_vertex_buffer[surviving_triangle_index_buffer[tri].v3].coords;
             
             // Bounding Box
             int u_min, u_max, v_min, v_max;
@@ -227,8 +280,13 @@ int main(int argc, char** argv) {
             v_min = MIN3(triangle_args->triangle_verts[0].y, triangle_args->triangle_verts[1].y, triangle_args->triangle_verts[2].y) - .5; v_min = v_min < 0 ? 0 : v_min;
             v_max = MAX3(triangle_args->triangle_verts[0].y, triangle_args->triangle_verts[1].y, triangle_args->triangle_verts[2].y) + .5; v_max = v_max > (frame_h-1) ? (frame_h-1) : v_max;
 
-            triangle_args->bb_start[0] = u_min; triangle_args->bb_start[1] = v_min;
-            triangle_args->bb_size[0] = u_max-u_min; triangle_args->bb_size[1] = v_max-v_min;
+            triangle_args->bb_start[0] = u_min;
+            triangle_args->bb_start[1] = v_min;
+            triangle_args->bb_size[0] = (u_max - u_min + 1);
+            triangle_args->bb_size[1] = (v_max - v_min + 1);
+
+            int bb_width = triangle_args->bb_size[0];
+            int bb_height = triangle_args->bb_size[1];
 
             // Barycentric Matrix
             float m[3][3] = {
@@ -238,20 +296,23 @@ int main(int argc, char** argv) {
             };
             matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
-            run_kernel(kernel_triangle, 1, (u_max-u_min)*(v_max-v_min), (void*)triangle_args);
+            run_kernel(kernel_triangle, 1, bb_width * bb_height, (void*)triangle_args);
         }
         printf("--- Triangle Test Done ---\n");
+        triangle_end = clock();
+        triangle_ms = (double)(triangle_end - triangle_start) * 1000.0 / CLOCKS_PER_SEC;
+        printf("3. Triangle Kernel Time: %.2f ms\n", triangle_ms);
 
-        // 5. Pixel Kernel
+        /*** Stage 4: Pixel Kernel ***/
         ALLOCATE_MEM(pixel_args, pixel_arg_t, 1);
         ALLOCATE_MEM(frame_buffer, vector_t, frame_w*frame_h);
-        vector_t color_default = {30.0f, 30.0f, 30.0f};
+        vector_t color_default = {30.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f};
         DEFAULT_ARR(frame_buffer, frame_w*frame_h, color_default);
         
         pixel_args->frame_buffer = frame_buffer;
-        pixel_args->vertex_output_buffer = vertex_output_buffer;
-        pixel_args->num_verts = num_verts;
-        
+        pixel_args->assembled_vertex_buffer = assembled_vertex_buffer;
+        pixel_args->num_verts = assembled_vertex_count;
+
         // pass the culled triangles
         pixel_args->surviving_triangle_index_buffer = surviving_triangle_index_buffer; 
         pixel_args->num_tris = final_tri_count;
@@ -260,14 +321,29 @@ int main(int argc, char** argv) {
         pixel_args->depth_buffer = depth_buffer; pixel_args->tag_buffer = tag_buffer;
         pixel_args->texture_buffer = *texture;
 
+        pixel_start = clock();
         run_kernel(kernel_pixel, 1, frame_w * frame_h, (void*)pixel_args);
+        pixel_end = clock();
+        pixel_ms = (double)(pixel_end - pixel_start) * 1000.0 / CLOCKS_PER_SEC;
+        printf("4. Pixel Kernel Time: %.2f ms\n", pixel_ms);
 
-        // 6. Output Image
+        // Output Image
         int* int_color_output = malloc(sizeof(int) * frame_w * frame_h * 3);
         for(int i = 0; i < frame_w*frame_h; i++) {
-            int_color_output[i*3 + 0] = frame_buffer[i].x;
-            int_color_output[i*3 + 1] = frame_buffer[i].y;
-            int_color_output[i*3 + 2] = frame_buffer[i].z;
+            float r = frame_buffer[i].x;
+            float g = frame_buffer[i].y;
+            float b = frame_buffer[i].z;
+
+            if (r < 0.0f) r = 0.0f;
+            if (g < 0.0f) g = 0.0f;
+            if (b < 0.0f) b = 0.0f;
+            if (r > 1.0f) r = 1.0f;
+            if (g > 1.0f) g = 1.0f;
+            if (b > 1.0f) b = 1.0f;
+
+            int_color_output[i*3 + 0] = (int)(r * 255.0f + 0.5f);
+            int_color_output[i*3 + 1] = (int)(g * 255.0f + 0.5f);
+            int_color_output[i*3 + 2] = (int)(b * 255.0f + 0.5f);
         }
 
         char fname[30];
@@ -275,6 +351,10 @@ int main(int argc, char** argv) {
         createPPMFile(fname, int_color_output);
 
         free(int_color_output);
+        frame_end = clock();
+        total_ms = (double)(frame_end - frame_start) * 1000.0 / CLOCKS_PER_SEC;
+        printf("Total Frame Time: %.2f ms\n\n", total_ms);
+        printf("===== Frame %d Done =====\n\n", frame);
     }
     
     free(vertex_input_buffer);

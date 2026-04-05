@@ -29,9 +29,9 @@ void kernel_pixel(void* arg) {
 
     // Get the coords for the known triangle verticies
     vertex_t triangle_verts[3];
-    triangle_verts[0] = args->vertex_output_buffer[tri.v1];
-    triangle_verts[1] = args->vertex_output_buffer[tri.v2];
-    triangle_verts[2] = args->vertex_output_buffer[tri.v3];
+    triangle_verts[0] = args->assembled_vertex_buffer[tri.v1];
+    triangle_verts[1] = args->assembled_vertex_buffer[tri.v2];
+    triangle_verts[2] = args->assembled_vertex_buffer[tri.v3];
 
     vector_t coords[3];
     coords[0] = triangle_verts[0].coords;
@@ -42,18 +42,20 @@ void kernel_pixel(void* arg) {
     vector_t l;
     barycentric_coordinates(&l, point, coords);
 
-    // Get new texture interpolation (perspective correct interpolation)
-    float correction_factor = (l.x * triangle_verts[0].coords.z) + (l.y * triangle_verts[1].coords.z) + (l.z * triangle_verts[2].coords.z);
-    float tex_u = l.x * (triangle_verts[0].u * triangle_verts[0].coords.z) + l.y * (triangle_verts[1].u * triangle_verts[1].coords.z) + l.z * (triangle_verts[2].u * triangle_verts[2].coords.z);
-    float tex_v = l.x * (triangle_verts[0].v * triangle_verts[0].coords.z) + l.y * (triangle_verts[1].v * triangle_verts[1].coords.z) + l.z * (triangle_verts[2].v * triangle_verts[2].coords.z);
+    // Interpolate texture coordinates across the final assembled screen-space triangle.
+    // True perspective-correct interpolation would require carrying reciprocal-w from the
+    // pre-divide stage into the assembled vertex buffer. At this stage, coords.z is screen-space
+    // depth, so do not use it as a perspective correction term.
+    float interp_inv_w = l.x * triangle_verts[0].inv_w + l.y * triangle_verts[1].inv_w + l.z * triangle_verts[2].inv_w;
+    float interp_u_over_w = l.x * triangle_verts[0].u_over_w + l.y * triangle_verts[1].u_over_w + l.z * triangle_verts[2].u_over_w;
+    float interp_v_over_w = l.x * triangle_verts[0].v_over_w + l.y * triangle_verts[1].v_over_w + l.z * triangle_verts[2].v_over_w;
 
-    if (correction_factor != 0.0f) {
-        tex_u /= correction_factor;
-        tex_v /= correction_factor;
-    }
-    else {
-        tex_u = 0.0f;
-        tex_v = 0.0f;
+    float tex_u = 0.0f;
+    float tex_v = 0.0f;
+
+    if (interp_inv_w != 0.0f) {
+        tex_u = interp_u_over_w / interp_inv_w;
+        tex_v = interp_v_over_w / interp_inv_w;
     }
 
     // call Texture Mapping
@@ -62,6 +64,8 @@ void kernel_pixel(void* arg) {
     
     // simple lighting calculation using interpolated intensity
     float interp_intensity = (l.x * triangle_verts[0].intensity) + (l.y * triangle_verts[1].intensity) + (l.z * triangle_verts[2].intensity);
+    if (interp_intensity < 0.0f) interp_intensity = 0.0f;
+    if (interp_intensity > 1.0f) interp_intensity = 1.0f;
 
     // calculate final color with lighting applied
     vector_t final_color;
@@ -69,13 +73,13 @@ void kernel_pixel(void* arg) {
     final_color.y = texture_color.y * interp_intensity;
     final_color.z = texture_color.z * interp_intensity;
 
-    // clamp final color to [0, 255]
+    // clamp final color to [0, 1] because frame_buffer stores normalized float RGB values.
     if (final_color.x < 0.0f) final_color.x = 0.0f;
     if (final_color.y < 0.0f) final_color.y = 0.0f;
     if (final_color.z < 0.0f) final_color.z = 0.0f;
-    if (final_color.x > 255.0f) final_color.x = 255.0f;
-    if (final_color.y > 255.0f) final_color.y = 255.0f;
-    if (final_color.z > 255.0f) final_color.z = 255.0f;
+    if (final_color.x > 1.0f) final_color.x = 1.0f;
+    if (final_color.y > 1.0f) final_color.y = 1.0f;
+    if (final_color.z > 1.0f) final_color.z = 1.0f;
 
     // save final color to frame buffer
     args->frame_buffer[threadIdx] = final_color;
