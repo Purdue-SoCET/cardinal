@@ -176,8 +176,6 @@ class MemController(Stage):
         pc_int = inst.pc.int if isinstance(inst.pc, Bits) else int(inst.pc)
         warp_id = req_info.get("warp_id", getattr(inst, "warp", 0))
 
-        # print(f"[MemController] Starting MemReq", req_info)
-
         mem_req = MemRequest(
             addr=int(req_info["addr"]),
             size=int(req_info.get("size", 4)),
@@ -192,12 +190,16 @@ class MemController(Stage):
         mem_req.inst = inst
         mem_req.src = req_info.get("src", None)
 
+        # print(f"Setting latency as: {self.latency} for request: {mem_req}")
+        # input()
         self.inflight.append(mem_req)
 
     def _age_inflight(self) -> None:
+        print(f"[MemController] Aging inflight requests: {[ (r.addr, r.remaining) for r in self.inflight ]}")
         for req in self.inflight:
             req.remaining -= 1
-
+        print(f"[MemController] After aging: {[ (r.addr, r.remaining) for r in self.inflight ]}")
+        # input()
     def _complete_one_if_ready(self) -> None:
         """
         Complete at most one ready request (remaining <= 0) and push its response.

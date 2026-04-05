@@ -68,7 +68,7 @@ from simulator.decode.predicate_reg_file import PredicateRegFile
 
 # ── global constants ───────────────────────────────────────────────────────────
 START_PC    = 0x1000
-MEM_LATENCY = 2
+MEM_LATENCY = 6
 WARP_COUNT  = 32
 
 # ==============================================================================
@@ -501,7 +501,7 @@ def print_banks(dCache):
 def run_test(
     # program_file: Path = FILE_ROOT / "test.bin",
     # program_file: Path = FILE_ROOT / "test_binaries/predicated_halt.bin", THESE DON'T MATTER
-    program_file: Path = FILE_ROOT / "test_binaries/ldst_sequence.bin",
+    program_file: Path = FILE_ROOT / "test_binaries/saxpy.bin",
     fmt:          str  = "bin",
     verbose:      bool = True,
     start_pc:     int = 0,
@@ -559,8 +559,9 @@ def run_test(
         # print(f"tbs latch exit: {p["tbs"].ahead_latch.valid}, scheduler latch entry: {p["scheduler"].behind_latch.valid}")
         print(f"Cycle : {cycle}")
         cycle += 1
-    print("Simulation complete.")
     
+    print(f"Simulation complete in {cycle} cycles with lat {MEM_LATENCY} cycle memory latency.")
+    input()
     print_banks(p["dcache"])
     pipeline_rf.dump()
     prf.dump()
@@ -581,7 +582,7 @@ def _parse_args():
         # default=str(FILE_ROOT / "test.bin"),
         # default=str(FILE_ROOT / "test_binaries/jump.bin"),
         # default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
-        default=str(FILE_ROOT / "test_binaries/ldst_sequence.bin"),
+        default=str(FILE_ROOT / "test_binaries/saxpy.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

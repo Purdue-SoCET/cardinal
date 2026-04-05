@@ -4,10 +4,14 @@ import logging
 from bitstring import Bits
 
 from simulator.latch_forward_stage import *
+from simulator.mem.dcache import DCacheRequest, DMemResponse, LockupFreeCacheStage 
 from gpu.common.custom_enums_multi import I_Op, S_Op, H_Op, P_Op
 from simulator.execute.functional_sub_unit import FunctionalSubUnit
 
 logger = logging.getLogger(__name__)
+
+BLOCK_SIZE_WORDS = 32
+WORD_SIZE_BYTES = 4
 
 class Ldst_Fu(FunctionalSubUnit):
     def __init__(self, num, ldst_q_size=4, wb_buffer_size=1):
@@ -98,7 +102,7 @@ class Ldst_Fu(FunctionalSubUnit):
             self.ready_out = True
         
         #handle dcache packet
-        payload: dMemResponse = self.dcache_if.forward_if.pop()
+        payload: DMemResponse = self.dcache_if.forward_if.pop()
         
         if payload:
             self.dcache_if.forward_if.payload = None
@@ -133,7 +137,7 @@ class Ldst_Fu(FunctionalSubUnit):
         #send req to cache if not waiting for response
         if self.outstanding == False and self.dcache_if.ready_for_push():
             if self.halting and len(self.ldst_q) == 0:
-                halt_req = dCacheRequest(addr_val=0, rw_mode='read', size='word', halt=True)
+                halt_req = DCacheRequest(addr_val=0, rw_mode='read', size='word', halt=True)
                 self.dcache_if.push(halt_req)
                 self.outstanding = True
                 self.halting = False
@@ -233,7 +237,7 @@ class pending_mem():
                     else:
                         st_val = raw_val & 0xFFFFFFFF
 
-                return dCacheRequest(
+                return DCacheRequest(
                     addr_val=self.addrs[i],
                     rw_mode='write' if self.write else 'read',
                     size=self.size,
@@ -293,7 +297,7 @@ class pending_mem():
                     self.mshr_idx[i] = 0
                 
     
-    def parseMiss(self, payload: dMemResponse):
+    def parseMiss(self, payload: DMemResponse):
         for i in range(32):
             if self.addrs[i] == payload.address:
                 self.mshr_idx[i] = 1                                # The ldst needs to wait for the cache to retrieve the data from main memory
