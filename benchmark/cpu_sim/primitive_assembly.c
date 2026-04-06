@@ -3,7 +3,7 @@
 #define SCREEN_W 800
 #define SCREEN_H 800
 #define CLIP_EPS 1e-6f
-#define ENABLE_CLIPPING 0
+#define ENABLE_CLIPPING 1
 
 // Primitive Assembly Unit
 // 1. Read one input triangle in clip space

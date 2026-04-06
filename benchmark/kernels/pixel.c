@@ -1,6 +1,7 @@
 #include "include/kernel.h"
 #include "include/pixel.h"
 #include "../cpu_sim/include/graphics_lib.h"
+#define ENABLE_LIGHTING 1
 
 void barycentric_coordinates(vector_t* l, vector_t point, vector_t triangle_verts[3]);
 void get_texture(vector_t* col, texture_t texture, float u, float v);
@@ -63,7 +64,11 @@ void kernel_pixel(void* arg) {
     get_texture(&texture_color, args->texture_buffer, tex_u, tex_v);
     
     // simple lighting calculation using interpolated intensity
+#if ENABLE_LIGHTING
     float interp_intensity = (l.x * triangle_verts[0].intensity) + (l.y * triangle_verts[1].intensity) + (l.z * triangle_verts[2].intensity);
+#else
+    float interp_intensity = 0.7f;
+#endif
     if (interp_intensity < 0.0f) interp_intensity = 0.0f;
     if (interp_intensity > 1.0f) interp_intensity = 1.0f;
 

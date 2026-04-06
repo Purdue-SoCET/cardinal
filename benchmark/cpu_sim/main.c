@@ -54,6 +54,32 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Fallback UV generation for models that do not contain texture coordinates.
+    // Stanford bunny loads with u=v=0, so generate planar UVs from object-space x/z.
+    float min_x = 1e30f, max_x = -1e30f;
+    float min_z = 1e30f, max_z = -1e30f;
+    for (int i = 0; i < num_verts; i++) {
+        float x = vertex_input_buffer[i].coords.x;
+        float z = vertex_input_buffer[i].coords.z;
+        if (x < min_x) min_x = x;
+        if (x > max_x) max_x = x;
+        if (z < min_z) min_z = z;
+        if (z > max_z) max_z = z;
+    }
+
+    float uv_tile = 4.0f;
+    float range_x = max_x - min_x;
+    float range_z = max_z - min_z;
+    if (range_x == 0.0f) range_x = 1.0f;
+    if (range_z == 0.0f) range_z = 1.0f;
+
+    for (int i = 0; i < num_verts; i++) {
+        float x = vertex_input_buffer[i].coords.x;
+        float z = vertex_input_buffer[i].coords.z;
+        vertex_input_buffer[i].u = uv_tile * (x - min_x) / range_x;
+        vertex_input_buffer[i].v = uv_tile * (z - min_z) / range_z;
+    }
+
     float model_scale = 300.0f; // bunny = 300.0f, teapot = 1.0f
     float offset_y    = -20.0f; // bunny = -20.0f, teapot = 0.0f
 
@@ -64,6 +90,15 @@ int main(int argc, char** argv) {
     }
 
     calculate_normals(vertex_input_buffer, num_verts, triangle_index_buffer, num_tris);
+
+    texture_t loaded_texture = load_jpg("0qmf_npeu_210906.jpg", 0);
+    if (loaded_texture.color_arr == NULL) {
+        printf("Error: Failed to load JPG texture\n");
+        free(vertex_input_buffer);
+        free(triangle_index_buffer);
+        free(memory_base);
+        return 1;
+    }
 
     // number of frames to render
     int total_frames = 60;
@@ -85,19 +120,21 @@ int main(int argc, char** argv) {
         memory_ptr = memory_base;
 
         // Texture
-        const int text_w = 10, text_h = 10;
-        ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(texture_buffer, vector_t, (text_w * text_h));
-        texture->w = text_w; texture->h = text_h;
-        texture->color_arr = texture_buffer;
+        // const int text_w = 64, text_h = 64;
+        // ALLOCATE_MEM(texture, texture_t, 1);
+        // ALLOCATE_MEM(texture_buffer, vector_t, (text_w * text_h));
+        // texture->w = text_w; texture->h = text_h;
+        // texture->color_arr = texture_buffer;
 
-        const vector_t white = {1.0f, 1.0f, 1.0f};
-        const vector_t black = {0.0f, 0.0f, 0.0f};
-        for(int u = 0; u < text_w; u++) {
-            for(int v = 0; v < text_h; v++) {
-                texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? white : black;
-            }
-        }
+        // const vector_t white = {1.0f, 1.0f, 1.0f};
+        // const vector_t black = {0.0f, 0.0f, 0.0f};
+        // for(int u = 0; u < text_w; u++) {
+        //     for(int v = 0; v < text_h; v++) {
+        //         texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? white : black;
+        //     }
+        // }
+        ALLOCATE_MEM(texture, texture_t, 1);
+        *texture = loaded_texture;
 
         // Camera
         const vector_t abc[3] = { {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-OUTPUT_W/2, OUTPUT_H/2, -1500.0f} };
@@ -360,4 +397,5 @@ int main(int argc, char** argv) {
     free(vertex_input_buffer);
     free(triangle_index_buffer);
     free(memory_base);
+    free(loaded_texture.color_arr);
 }

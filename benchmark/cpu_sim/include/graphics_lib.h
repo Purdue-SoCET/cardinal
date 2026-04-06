@@ -31,6 +31,7 @@ typedef struct {
 typedef struct {
     int w, h;
     vector_t* color_arr;
+    int id;
 } texture_t;
 
 // --- Macros ---
@@ -45,6 +46,8 @@ int matrix_inversion(const float*, float*);
 int obj_parser(const char* filename, vertex_t** vertex_input_buffer, int* out_num_verts, triangle_t** triangle_index_buffer, int* out_num_tris);
 // primitive assembly: vertex data + triangle data -> assembled triangle data
 int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* triangle_index_buffer, int num_tris, vertex_t* assembled_vertex_buffer, int* assembled_vertex_count, int max_assembled_verts, triangle_t* surviving_triangle_index_buffer);
+
+texture_t load_jpg(char* FileName, int id);
 
 // math helper functions
 vector_t cross_product(vector_t v1, vector_t v2);
