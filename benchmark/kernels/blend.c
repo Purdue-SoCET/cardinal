@@ -55,7 +55,7 @@ void kernel_blend(void* arg)
 
     float pix_z = l[0]*args->pVs[0].coords.z + l[1]*args->pVs[1].coords.z + l[2]*args->pVs[2].coords.z;
 
-    if(pix_z > args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) {
+    if(pix_z < args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) {
         return;
     }
 

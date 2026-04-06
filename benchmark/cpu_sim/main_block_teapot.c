@@ -84,13 +84,13 @@ int main(int argc, char** argv) {
 
     // ---- Setup Geometry ----
 
-    const int num_verts = teapot.vertsN;
-    const int num_tris = teapot.trisN;
+    int num_verts = teapot.vertsN + 8;
+    int num_tris = teapot.trisN;
 
     ALLOCATE_MEM(verts, vertex_t, num_verts);
     ALLOCATE_MEM(tris, triangle_t, num_tris);
 
-    for (int i = 0; i < num_verts; i++) {
+    for (int i = 0; i < num_verts - 8; i++) {
         verts[i] = teapot.vertices[i]; 
     }
 
@@ -119,14 +119,52 @@ int main(int argc, char** argv) {
         float fov_radians = 90.0f * (3.14159 / 180.0f); 
         float distance = radius / sinf(fov_radians / 2.0f);
 
+    
+        int non_opaque_tris = 12;
+
+        // Front Face (Centered at Z = 40)
+        MAKE_VERTEX(verts[teapot.vertsN+0], -40, -40,  40, 0, 0); // BL
+        MAKE_VERTEX(verts[teapot.vertsN+1], -40,  40,  40, 0, 1); // TL
+        MAKE_VERTEX(verts[teapot.vertsN+2],  40, -40,  40, 1, 0); // BR
+        MAKE_VERTEX(verts[teapot.vertsN+3],  40,  40,  40, 1, 1); // TR
+
+        // Back Face (Centered at Z = -40)
+        MAKE_VERTEX(verts[teapot.vertsN+4], -40, -40, -40, 0, 1); // BL
+        MAKE_VERTEX(verts[teapot.vertsN+5], -40,  40, -40, 1, 1); // TL
+        MAKE_VERTEX(verts[teapot.vertsN+6],  40, -40, -40, 0, 0); // BR
+        MAKE_VERTEX(verts[teapot.vertsN+7],  40,  40, -40, 1, 0); // TR
+
+        ALLOCATE_MEM(non_opaque_tris_arr, triangle_t, non_opaque_tris);
+
+        MAKE_TRI(non_opaque_tris_arr[0], teapot.vertsN+0, teapot.vertsN+1, teapot.vertsN+2);
+        MAKE_TRI(non_opaque_tris_arr[1], teapot.vertsN+3, teapot.vertsN+1, teapot.vertsN+2);
+        
+        // Back of Cube
+        MAKE_TRI(non_opaque_tris_arr[6], teapot.vertsN+4, teapot.vertsN+5, teapot.vertsN+6);
+        MAKE_TRI(non_opaque_tris_arr[7], teapot.vertsN+7, teapot.vertsN+5, teapot.vertsN+6);
+
+        // Top of Cube
+        MAKE_TRI(non_opaque_tris_arr[2], teapot.vertsN+1, teapot.vertsN+3, teapot.vertsN+5);
+        MAKE_TRI(non_opaque_tris_arr[3], teapot.vertsN+7, teapot.vertsN+3, teapot.vertsN+5);
+
+        // Bottom of Cube
+        MAKE_TRI(non_opaque_tris_arr[4], teapot.vertsN+0, teapot.vertsN+2, teapot.vertsN+4);
+        MAKE_TRI(non_opaque_tris_arr[5], teapot.vertsN+6, teapot.vertsN+2, teapot.vertsN+4);
+
+        // Left of Cube
+        MAKE_TRI(non_opaque_tris_arr[8], teapot.vertsN+0, teapot.vertsN+1, teapot.vertsN+4);
+        MAKE_TRI(non_opaque_tris_arr[9], teapot.vertsN+5, teapot.vertsN+1, teapot.vertsN+4);
+
+        // Right of Cube
+        MAKE_TRI(non_opaque_tris_arr[10], teapot.vertsN+2, teapot.vertsN+3, teapot.vertsN+6);
+        MAKE_TRI(non_opaque_tris_arr[11], teapot.vertsN+7, teapot.vertsN+3, teapot.vertsN+6);
+
     // Texture
         const int text_w = 2500, text_h = 2500;
 
         // Allocation
         ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(color_map, vec4_t, (text_w * text_h));
 
-        // FIX LOAD PNG TO PUT MEM IN SHARED MEM
 
         *texture = load_png("cpu_sim/data/textures/red_0.25_alpha.png",0);
 
@@ -148,7 +186,7 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        float cam_dist = (100*1.5f + 1)/300.0f + .5f;
+        float cam_dist = (200*1.5f)/300.0f + .5f;
 
         camera_C->x = center.x; 
         camera_C->y = center.y; 
@@ -322,7 +360,7 @@ int main(int argc, char** argv) {
 
         // Running the Kernel
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
-        //run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
+        run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
     }
 
     // Checking TRIANGLE Output
@@ -397,7 +435,7 @@ int main(int argc, char** argv) {
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
-        //run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
+        run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
     if(PIXEL_DEBUG) 
@@ -436,13 +474,13 @@ int main(int argc, char** argv) {
     blend_args->color = color_output;
     blend_args->texture = *texture;  
 
-    for(int tri = 0; tri < num_tris; tri++) {
+    for(int tri = 0; tri < non_opaque_tris; tri++) {
         blend_args->tag = tri;
 
         // Collect Vertices (Added the missing,, indices!)
-        blend_args->pVs[0] = pVerts[tris[tri].v1];
-        blend_args->pVs[1] = pVerts[tris[tri].v2];
-        blend_args->pVs[2] = pVerts[tris[tri].v3];
+        blend_args->pVs[0] = pVerts[non_opaque_tris_arr[tri].v1];
+        blend_args->pVs[1] = pVerts[non_opaque_tris_arr[tri].v2];
+        blend_args->pVs[2] = pVerts[non_opaque_tris_arr[tri].v3];
 
         // Find Bounding Box (Added missing indices to pVs!)
         int u_min, u_max;
