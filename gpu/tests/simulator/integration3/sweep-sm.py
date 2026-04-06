@@ -635,7 +635,16 @@ def build_sweep_configs() -> List[Dict[str, Any]]:
     ]
     dcache_sweep = [
         DEFAULT_SM_CONFIG,
-
+        deep_update(DEFAULT_SM_CONFIG, {
+        "dcache": {
+            "num_banks": 1,
+            "num_sets_per_bank": 16,
+            "num_ways": 16,
+            "block_size_words": 32,
+            "word_size_bytes": 4,
+        },
+        "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
         # 32 KB total, 2 banks baseline
         deep_update(DEFAULT_SM_CONFIG, {
             "dcache": {
@@ -678,488 +687,121 @@ def build_sweep_configs() -> List[Dict[str, Any]]:
             "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
         }),
     ]
-    
-    icache_sweep = [
-        deep_update(DEFAULT_SM_CONFIG, {"icache": {"associativity": 1}, "sim": {"dump_root": "icache_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"icache": {"associativity": 2}, "sim": {"dump_root": "icache_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"icache": {"associativity": 4}, "sim": {"dump_root": "icache_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"icache": {"associativity": 8}, "sim": {"dump_root": "icache_sweep_dumps"}}),
+
+    dcache_set_sweep = [
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 4,
+                "num_ways": 16,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
+            },
+           "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 8,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 16,
+                "num_ways": 4,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 32,
+                "num_ways": 2,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 64,
+                "num_ways": 1,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
     ]
     
-    DCACHE_SWEEPS = {
-    "num_ways": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "SAXPY_dcache_sweeps/num_ways",
-                    "test_name": "baseline",
-                }
+    dcache_capacity_sweep = [
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 2,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
             },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 128,
-                    "num_ways": 1,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "SAXPY_dcache_sweeps/num_ways",
-                    "test_name": "ways_1",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 64,
-                    "num_ways": 2,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_ways",
-                    "test_name": "ways_2",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 32,
-                    "num_ways": 4,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_ways",
-                    "test_name": "ways_4",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 16,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_ways",
-                    "test_name": "ways_8",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 8,
-                    "num_ways": 16,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_ways",
-                    "test_name": "ways_16",
-                },
-            },
-        ),
-    ],
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
 
-    "num_sets_per_bank": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "baseline",
-                }
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 4,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
             },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 8,
-                    "num_ways": 16,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "sets_8",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 16,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "sets_16",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 32,
-                    "num_ways": 4,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "sets_32",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 64,
-                    "num_ways": 2,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "sets_64",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 128,
-                    "num_ways": 1,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_sets_per_bank",
-                    "test_name": "sets_128",
-                },
-            },
-        ),
-    ],
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
 
-    "block_size_words": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "baseline",
-                }
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 8,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
             },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 128,
-                    "num_ways": 8,
-                    "block_size_words": 4,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "block_4",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 64,
-                    "num_ways": 8,
-                    "block_size_words": 8,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "block_8",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 32,
-                    "num_ways": 8,
-                    "block_size_words": 16,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "block_16",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 16,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "block_32",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 8,
-                    "num_ways": 8,
-                    "block_size_words": 64,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/block_size_words",
-                    "test_name": "block_64",
-                },
-            },
-        ),
-    ],
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
 
-    "num_banks": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_banks",
-                    "test_name": "baseline",
-                }
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 16,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
             },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 1,
-                    "num_sets_per_bank": 32,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_banks",
-                    "test_name": "banks_1",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 16,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_banks",
-                    "test_name": "banks_2",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 4,
-                    "num_sets_per_bank": 8,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_banks",
-                    "test_name": "banks_4",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 8,
-                    "num_sets_per_bank": 4,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/num_banks",
-                    "test_name": "banks_8",
-                },
-            },
-        ),
-    ],
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
 
-    "mshr_buffer_len": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "baseline",
-                }
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 32,
+                "num_ways": 8,
+                "block_size_words": 32,
+                "word_size_bytes": 4,
             },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {"mshr_buffer_len": 1},
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "mshr_1",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {"mshr_buffer_len": 2},
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "mshr_2",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {"mshr_buffer_len": 4},
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "mshr_4",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {"mshr_buffer_len": 8},
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "mshr_8",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {"mshr_buffer_len": 16},
-                "sim": {
-                    "dump_root": "dcache_sweeps/mshr_buffer_len",
-                    "test_name": "mshr_16",
-                },
-            },
-        ),
-    ],
-
-    "cache_size": [
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "sim": {
-                    "dump_root": "dcache_sweeps/cache_size",
-                    "test_name": "baseline",
-                }
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 8,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                    "cache_size": 16384,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/cache_size",
-                    "test_name": "cache_16kb",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 16,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                    "cache_size": 32768,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/cache_size",
-                    "test_name": "cache_32kb",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 32,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                    "cache_size": 65536,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/cache_size",
-                    "test_name": "cache_64kb",
-                },
-            },
-        ),
-        deep_update(
-            DEFAULT_SM_CONFIG,
-            {
-                "dcache": {
-                    "num_banks": 2,
-                    "num_sets_per_bank": 64,
-                    "num_ways": 8,
-                    "block_size_words": 32,
-                    "cache_size": 131072,
-                },
-                "sim": {
-                    "dump_root": "dcache_sweeps/cache_size",
-                    "test_name": "cache_128kb",
-                },
-            },
-        ),
-    ],
-}
-    
-    return dcache_sweep 
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+    ]
+    return dcache_sweep + dcache_set_sweep + dcache_capacity_sweep + mem_sweep
 
 def run_sweep(
     fmt: str = "bin",
