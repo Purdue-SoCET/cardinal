@@ -83,6 +83,7 @@ class Mem:
             self.memory[byte_addr + i] = val & 0xFF
         check_data = self.read(addr, 4).uint
         print(f"[Memory] Written {check_data:08x} to base address: {addr:08x}")
+    
     def dump_on_exit(self):
         try:
             self.dump("memsim.hex")

@@ -13,6 +13,15 @@ from collections import deque
 from datetime import datetime
 from bitstring import Bits 
 
+def build_icache_config(cache_config=None):
+    cfg = dict(cache_config or {})
+    cfg.setdefault("cache_size", 32 * 1024)
+    cfg.setdefault("block_size", 64)
+    cfg.setdefault("associativity", 4)
+    cfg["num_sets"] = cfg["cache_size"] // (
+        cfg["block_size"] * cfg["associativity"]
+    )
+    return cfg
 
 class ICacheStage(Stage):
     def __init__(
@@ -33,12 +42,8 @@ class ICacheStage(Stage):
         )
 
         # Cache geometry
-        self.cache_size = cache_config.get("cache_size", 32 * 1024)
-        self.block_size = cache_config.get("block_size", 64)
-        self.assoc = cache_config.get("associativity", 4)
-        self.num_sets = self.cache_size // (self.block_size * self.assoc)
-
-        self.cache = {i: [] for i in range(self.num_sets)}
+        self.cfg = build_icache_config(cache_config)
+        self.cache = {i: [] for i in range(self.cfg["num_sets"])}
 
         self.mem_req_if = mem_req_if
         self.mem_resp_if = mem_resp_if
@@ -53,7 +58,7 @@ class ICacheStage(Stage):
     # ---------------- Cache helpers ----------------
     def _fill_cache_line(self, set_idx: int, tag: int, data_bits):
         ways = self.cache[set_idx]
-        if len(ways) < self.assoc:
+        if len(ways) < self.cfg["associativity"]:
             ways.append(ICacheEntry(tag, data_bits, valid=True))
         else:
             victim = min(ways, key=lambda w: w.last_used)
@@ -71,9 +76,9 @@ class ICacheStage(Stage):
 
     # decoding address
     def _addr_decode(self, pc_int: int):
-        block = pc_int // self.block_size
-        set_idx = block % self.num_sets
-        tag = block // self.num_sets
+        block = pc_int // self.cfg["block_size"]
+        set_idx = block % self.cfg["num_sets"]
+        tag = block // self.cfg["num_sets"]
         return set_idx, tag, block
 
     # lookup pc from the I$
@@ -150,10 +155,10 @@ class ICacheStage(Stage):
                     self.pending = True
 
                     set_idx, tag, block = self._addr_decode(pc_int)
-                    block_base = block * self.block_size
+                    block_base = block * self.cfg["block_size"]
                     self.req = {
                         "addr": block_base,
-                        "size": self.block_size,
+                        "size": self.cfg["block_size"],
                         "uuid": block,
                         "pc": pc_int,
                         "warp": fetch.warp_id,

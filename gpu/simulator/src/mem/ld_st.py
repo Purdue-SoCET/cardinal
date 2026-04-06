@@ -14,11 +14,12 @@ BLOCK_SIZE_WORDS = 32
 WORD_SIZE_BYTES = 4
 
 class Ldst_Fu(FunctionalSubUnit):
-    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1):
+    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1, block_size_words=32, word_size_bytes=4):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
         self.wb_buffer_size = wb_buffer_size
-
+        self.block_size_words = block_size_words
+        self.word_size_bytes = word_size_bytes
         self.wb_buffer = [] #completed dcache access buffer
 
         self.outstanding = False #Whether we have an outstanding dcache request
@@ -119,7 +120,7 @@ class Ldst_Fu(FunctionalSubUnit):
                     pass
                 case 'MISS_COMPLETE':
                     # logger.info("Handling dcache MISS_COMPLETE")
-                    self.ldst_q[0].parseMshrHit(payload)
+                    self.ldst_q[0].parseMshrHit(payload, self.block_size_words, self.word_size_bytes)
                 case 'FLUSH_COMPLETE':
                     self.outstanding = False
                     self.waiting_for_flush = False
@@ -280,8 +281,8 @@ class pending_mem():
                     self.instr.wdat[i] = Bits(uint = raw_val, length=32)
 
     
-    def parseMshrHit(self, payload):
-        num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+    def parseMshrHit(self, payload, block_size_words, word_size_bytes):
+        num_bytes_block = block_size_words * word_size_bytes
         block_mask = ~(num_bytes_block - 1)
         incoming_block_addr = payload.address & block_mask
 

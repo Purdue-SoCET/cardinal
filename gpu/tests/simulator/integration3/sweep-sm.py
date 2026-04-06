@@ -271,6 +271,10 @@ def build_pipeline(input_file: Path,
     )
 
     fu_config = FunctionalUnitConfig.get_default_config()
+    # update the mem branch config with the word size and block size for the Ldst FU
+    fu_config.membranchjump_config.block_size_words = cfg["dcache"]["block_size_words"]
+    fu_config.membranchjump_config.word_size_bytes = cfg["dcache"]["word_size_bytes"]
+
     fust      = fu_config.generate_fust_dict()
 
     csr_table = CsrTable()
@@ -319,13 +323,15 @@ def build_pipeline(input_file: Path,
         forward_ifs_write={"ICache_Scheduler": icache_scheduler_fwif},
     )
 
-    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
+    prf = PredicateRegFile(num_preds_per_warp=cfg["predicates"]["num_preds_per_warp"], num_warps=WARP_COUNT)
     for warp in range(WARP_COUNT):
-        for pred in range(16):
+        for pred in range(cfg["predicates"]["num_preds_per_warp"]):
             prf.reg_file[warp][pred] = [True] * 32
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
-    kernel_base_ptrs.write(0, Bits(uint=536870912, length=32))
+
+    # should i change this?
+    kernel_base_ptrs.write(0, Bits(uint=cfg["sim"]["kern_base_ptr"], length=32))
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -363,7 +369,7 @@ def build_pipeline(input_file: Path,
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
     rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
     pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf)
-
+    
     wb_stage = WritebackStage.create_pipeline_stage(
         wb_config=wb_buffer_config,
         rf_config=rf_config,
@@ -437,7 +443,7 @@ DEFAULT_SM_CONFIG = {
         "warp_count": 32,
         "bdim": 32,
         "max_cycles": 20000,
-        "test_name": "sweep_test",
+        "test_name": "vertex_shader_pranav.bin",
         "kern_base_ptr": 3889068044, # keeping this a decimal value 
         "dump_root": "sweep_dumps",
     },
@@ -461,7 +467,7 @@ DEFAULT_SM_CONFIG = {
         "hit_latency": 2,
     },
     "predicates": {
-        "num_preds_per_warp": 16,
+        "num_preds_per_warp": 32,
     },
 }
 
@@ -469,20 +475,20 @@ DEFAULT_SM_CONFIG = {
 @dataclass
 class SM:
     sm_id: int
-    program_file: Path
     fmt: str = "bin"
     config: Optional[dict] = None
 
     def __post_init__(self):
         self.config = deep_update(DEFAULT_SM_CONFIG, self.config or {})
-        self.words = load_program(self.program_file, fmt=self.fmt)
+        self.program_path = Path(f"gpu/tests/simulator/integration3/test_binaries/{self.config['sim']['test_name']}")
+        self.words = load_program(file_path=self.program_path, fmt=self.fmt)
         self.decoded_instrs = [decode_word(w) for w in self.words]
         self.num_loaded_words = len(self.words)
         self.num_decoded_words = sum(
             1 for d in self.decoded_instrs if d["opcode_enum"] is not None
         )
         self.pipeline = build_pipeline(
-            input_file=self.program_file,
+            input_file=self.program_path,
             fmt=self.fmt,
             sm_config=self.config,
             sm_id=self.sm_id,
@@ -490,11 +496,11 @@ class SM:
         self.cycle = 0
         self.finished = False
 
-        self.pipeline["tbs"].add_SM()
+        self.pipeline["tbs"].add_SM()  # add ONE SM to this TBS
         self.pipeline["tbs"].append_block(
             bdim=self.config["sim"]["bdim"],
             spc=self.config["sim"]["start_pc"],
-            apc=0x1000_0000,
+            apc=self.config["sim"]["kern_base_ptr"],
         )
 
     def tick(self):
@@ -582,16 +588,16 @@ class SM:
                 print(f"  (Bank is empty)")
         
     def dump_files(self, dump_root: Optional[Path] = None):
-        root = Path(dump_root) if dump_root else Path(self.config["sim"]["dump_root"])
+        root = Path(dump_root) if dump_root else Path("gpu/tests/simulator/integration3/sweep_dumps") / self.config["sim"]["dump_root"]
         sm_dir = root / f"sm_{self.sm_id:02d}"
-        sm_dir.mkdir(parents=True, exist_ok=True)
+        sm_dir.mkdir(parents=True,exist_ok=True)
 
         output_file = sm_dir / "output.txt"
 
         with output_file.open("w", encoding="utf-8") as f:
             with redirect_stdout(f):
                 print(f"===== SM {self.sm_id:02d} DUMP =====")
-                print(f"Program   : {self.program_file} (format={self.fmt})")
+                print(f"Program   : {self.program_path} (format={self.fmt})")
                 print(f"Finished  : {self.finished}")
                 print(f"Loaded    : {self.num_loaded_words} words")
                 print(f"Decoded   : {self.num_decoded_words} instructions")
@@ -611,30 +617,66 @@ class SM:
                 print("===== PRF =====")
                 self.pipeline["prf"].dump()
                 print()
+        
+        mem_sim_dump_file = sm_dir / "memsim.hex"
 
-        return output_file
+        self.pipeline["mem"].dump(path=mem_sim_dump_file)  # prevent automatic dump on program exit since we already dumped here
+        
+        return output_file, mem_sim_dump_file
 
 def build_sweep_configs() -> List[Dict[str, Any]]:
     # sweep_points: List[Dict[str, Any]] = []
 
     mem_sweep = [
-        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 4}, "sim": {"dump_root": "mem_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 6}, "sim": {"dump_root": "mem_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 10}, "sim": {"dump_root": "mem_sweep_dumps"}}),
-        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 14}, "sim": {"dump_root": "mem_sweep_dumps"}}),
+        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 4}, "sim": {"dump_root": "mem_pranav_vertex_shader_dump", "kern_base_ptr": 3889068044, "test_name": "vertex_shader_pranav.bin"}}), # baseline
+        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 6}, "sim": {"dump_root": "mem_pranav_vertex_shader_dump", "kern_base_ptr": 3889068044, "test_name": "vertex_shader_pranav.bin"}}), # higher latency
+        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 10}, "sim": {"dump_root": "mem_pranav_vertex_shader_dump", "kern_base_ptr": 3889068044, "test_name": "vertex_shader_pranav.bin"}}), # even higher latency
+        deep_update(DEFAULT_SM_CONFIG, {"mem": {"latency": 14}, "sim": {"dump_root": "mem_pranav_vertex_shader_dump", "kern_base_ptr": 3889068044, "test_name": "vertex_shader_pranav.bin"}}),
     ]
-    
     dcache_sweep = [
-        deep_update(DEFAULT_SM_CONFIG, {"sim": {"dump_root": "dcache_sweep_dumps_test", "test_name": "larger_associativity"}}), # more sets, smaller blocks
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_ways": 1, "num_sets_per_bank": 128}, "sim": {"dump_root": "dcache_sweep_dumps"}}), # direct-mapped with many sets
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_ways": 16, "num_sets_per_bank": 16, "block_size_words": 16}, "sim": {"dump_root": "dcache_sweep_dumps"}}), # more ways, fewer sets, smaller blocks
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_ways": 4, "num_sets_per_bank": 16, "block_size_words": 64}, "sim": {"dump_root": "dcache_sweep_dumps"}}), # bigger blocks, fewer sets
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_banks": 4, "num_ways": 4, "num_sets_per_bank": 32, "block_size_words": 16}, "sim": {"dump_root": "dcache_sweep_dumps"}}), # more banks with moderate associativity and set count
-        deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_banks": 8, "num_ways": 8, "num_sets_per_bank": 32, "block_size_words": 32}, "sim": {"dump_root": "dcache_sweep_dumps_test"}}), # fewer banks with higher associativity and larger blocks
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"num_banks": 2, "num_ways": 8, "num_sets_per_bank": 8, "block_size_words": 32}, "sim": {"dump_root": "dcache_sweep_dumps"}}), # fewer banks with higher associativity and larger blocks
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"mshr_buffer_len": 4}, "sim": {"dump_root": "dcache_sweep_dumps", "test_name": "mshr_4"}}), # more sets, smaller blocks
-        # deep_update(DEFAULT_SM_CONFIG, {"dcache": {"mshr_buffer_len": 8}, "sim": {"dump_root": "dcache_sweep_dumps", "test_name": "mshr_8"}}), # more sets, smaller blocks
-        #deep_update(DEFAULT_SM_CONFIG, {"dcache": {"mshr_buffer_len": 1}, "sim": {"dump_root": "dcache_sweep_dumps", "test_name": "mshr_1"}}), # more sets, smaller blocks
+        DEFAULT_SM_CONFIG,
+
+        # 32 KB total, 2 banks baseline
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 2,
+                "num_sets_per_bank": 16,
+                "num_ways": 8,
+                "block_size_words": 32,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        # 32 KB total, more banks, lower associativity
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 4,
+                "num_sets_per_bank": 16,
+                "num_ways": 4,
+                "block_size_words": 32,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 8,
+                "num_sets_per_bank": 16,
+                "num_ways": 2,
+                "block_size_words": 32,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
+
+        deep_update(DEFAULT_SM_CONFIG, {
+            "dcache": {
+                "num_banks": 16,
+                "num_sets_per_bank": 16,
+                "num_ways": 1,
+                "block_size_words": 32,
+            },
+            "sim": {"test_name": "vertex_shader_pranav.bin", "dump_root": "dcache_pranav_vertex_shader_dump"}
+        }),
     ]
     
     icache_sweep = [
@@ -1116,11 +1158,10 @@ def build_sweep_configs() -> List[Dict[str, Any]]:
         ),
     ],
 }
+    
     return dcache_sweep 
-#DCACHE_SWEEPS["num_ways"] + DCACHE_SWEEPS["num_sets_per_bank"] + DCACHE_SWEEPS["block_size_words"] + DCACHE_SWEEPS["num_banks"] + DCACHE_SWEEPS["mshr_buffer_len"] + DCACHE_SWEEPS["cache_size"]
 
 def run_sweep(
-    program_file: Path,
     fmt: str = "bin",
     sweep_configs: Optional[List[Dict[str, Any]]] = None,
     max_global_cycles: int = 10000,
@@ -1129,7 +1170,7 @@ def run_sweep(
     configs = sweep_configs or build_sweep_configs()
 
     sms: List[SM] = [
-        SM(sm_id=i, program_file=program_file, fmt=fmt, config=cfg)
+        SM(sm_id=i, fmt=fmt, config=cfg)
         for i, cfg in enumerate(configs)
     ]
 
@@ -1165,7 +1206,7 @@ def run_sweep(
                 "dcache_ways": sm.config["dcache"]["num_ways"],
                 "dcache_hit_latency": sm.config["dcache"]["hit_latency"],
                 "dcache_num_banks": sm.config["dcache"]["num_banks"],
-                "dump_file": str(dump_paths[sm.sm_id]),
+                "dump_file": [str(dump_paths[sm.sm_id][0]), str(dump_paths[sm.sm_id][1])]
             }
         )
 
@@ -1192,7 +1233,7 @@ def _parse_args():
     parser.add_argument(
         "program",
         nargs="?",
-        default="gpu/tests/simulator/integration3/test_binaries/vertex.bin",
+        default="gpu/tests/simulator/integration3/test_binaries/vertex_shader_pranav.bin",
     )
     parser.add_argument("--fmt", choices=["bin", "hex"], default="bin")
     parser.add_argument("--quiet", action="store_true")
@@ -1204,7 +1245,6 @@ if __name__ == "__main__":
 
     # can enter toml file of configs to be turned into a list of dicts to sweep over, or just hardcode some in build_sweep_configs()
     results = run_sweep(
-        program_file=Path(args.program),
         fmt=args.fmt,
         sweep_configs=build_sweep_configs(),
         max_global_cycles=len(build_sweep_configs()) * 100000,  # heuristic: allow 5000 cycles per config
