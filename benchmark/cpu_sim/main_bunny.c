@@ -3,16 +3,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 #include "include/kernel_run.h"
 #include "include/graphics_lib.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 // Include all needed kernels
-#include "../kernels/include/vertexShader.h"
+#include "../kernels/include/vertex.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
 #include "../kernels/include/post.h"
+#include "../kernels/include/blend.h"
 
 // Globals
 uint8_t* memory_ptr;
@@ -20,6 +20,10 @@ uint8_t* memory_ptr;
 // Defines
 #define OUTPUT_W 800 // 680
 #define OUTPUT_H 800 // 480
+
+#define X_ANGLE 0
+#define Y_ANGLE 0
+#define Z_ANGLE 0
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
@@ -115,12 +119,25 @@ int main(int argc, char** argv) {
         verts[i].coords.z *= 1000.0f; 
     }
 
+    float maxDistSq = 0;
+    for (int i = 0; i < num_verts; i++) {
+        float dx = verts[i].coords.x - center.x;
+        float dy = verts[i].coords.y - center.y;
+        float dz = verts[i].coords.z - center.z;
+        float distSq = dx*dx + dy*dy + dz*dz;
+        if (distSq > maxDistSq) maxDistSq = distSq;
+    }
+    float radius = sqrtf(maxDistSq);
+
+    float fov_radians = 90.0f * (3.14159 / 180.0f); 
+    float distance = radius / sinf(fov_radians / 2.0f);
+
     // Texture
         const int text_w = 5, text_h = 5;
 
         // Allocation
         ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(color_map, vector_t, (text_w * text_h));
+        ALLOCATE_MEM(color_map, vec4_t, (text_w * text_h));
 
         // Definition
         texture->w = text_w; texture->h = text_h;
@@ -128,20 +145,19 @@ int main(int argc, char** argv) {
         for(int u = 0; u < text_w; u++) {
             for(int v = 0; v < text_h; v++) {
                 // Make red/blue checkerboard texture
-                const vector_t red = {1.0f, 1.0f, 1.0f}; const vector_t blue = {0.0f, 0.0f, 0.0f};
+                const vec4_t red = {1.0f, 1.0f, 1.0f, 1.0f}; const vec4_t blue = {0.0f, 0.0f, 0.0f, 1.0f};
                 texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? red : blue;
             }
         }
 
-        *texture = load_jpg("build/wood_texture.jpg", 0);
+        *texture = load_png("cpu_sim/data/textures/red_0.5_alpha.png", 0);
 
     // Camera
         const vector_t abc[3] = {
             {1.0f, 0.0f, 0.0f}, 
-            {0.0f, -1.0f, 0.0f}, 
-            {-OUTPUT_W/2, OUTPUT_H/2, 150.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
         };
-
 
         const vector_t abcTranspose[3] = {
             {abc[0].x, abc[1].x, abc[2].x},
@@ -154,12 +170,32 @@ int main(int argc, char** argv) {
         ALLOCATE_MEM(cameraProjMatrix, float, 9);
 
         // Definition
-        camera_C->x = 0.0f; camera_C->y = 0.0f; camera_C->z = -100.0f; 
-        matrix_inversion((float*)abcTranspose, cameraProjMatrix);
+        float cam_dist = (100*1.5f + 1)/300.0f + .5f;
 
+        camera_C->x = center.x; 
+        camera_C->y = center.y; 
+        camera_C->z = (center.z - distance)*cam_dist; 
+
+        float aspect_ratio = (float)OUTPUT_W / (float)OUTPUT_H;
+        float f = 1.0f / tanf(fov_radians / 2.0f);
+
+        float x_scaled = f / aspect_ratio;
+        float y_scaled = f;
+
+        cameraProjMatrix[0] = x_scaled * abcTranspose[0].x; 
+        cameraProjMatrix[1] = x_scaled * abcTranspose[0].y;
+        cameraProjMatrix[2] = x_scaled * abcTranspose[0].z;
+
+        cameraProjMatrix[3] = y_scaled * abcTranspose[1].x;
+        cameraProjMatrix[4] = y_scaled * abcTranspose[1].y;
+        cameraProjMatrix[5] = y_scaled * abcTranspose[1].z;
+
+        cameraProjMatrix[6] = abcTranspose[2].x;
+        cameraProjMatrix[7] = abcTranspose[2].y;
+        cameraProjMatrix[8] = abcTranspose[2].z;
 
     // --- Vertex Kernel ---
-    ALLOCATE_MEM(vertex_args, vertexShader_arg_t, 1);
+    ALLOCATE_MEM(vertex_args, vertex_arg_t, 1);
 
     vertex_args->num_verts = num_verts;
     
@@ -168,13 +204,19 @@ int main(int argc, char** argv) {
         vertex_args->Oa = Oa;
         MAKE_VECTOR((*Oa), 0, 0, 0);
 
-        ALLOCATE_MEM(a_dist, vector_t, 1);
-        vertex_args->a_dist = a_dist;
-        MAKE_VECTOR((*a_dist), 0, 1, 0); // Rotate around y
+        // Pre-compute 3x3 rotation matrix on CPU
+        ALLOCATE_MEM(combined_matrix, float, 9);
+        vertex_args->combined_matrix = combined_matrix;
 
-        ALLOCATE_MEM(alpha_r, float, 1);
-        vertex_args->alpha_r = alpha_r;
-        *(vertex_args->alpha_r) = 3.14f * 2 * frame / 300.0f;
+        float ax = 3.14f * 2 * X_ANGLE / 300.0f; 
+        float ay = 3.14f * 2 * (Y_ANGLE + frame )/ 300.0f;
+        float az = 3.14f * 2 * Z_ANGLE / 300.0f;
+
+        build_rotation_matrix_from_euler(ax, ay, az, combined_matrix);
+
+        // Viewport Settings
+        vertex_args->viewport_w = (float)OUTPUT_W;
+        vertex_args->viewport_h = (float)OUTPUT_H;
 
     // Give geometry inputs
         vertex_args->threeDVert = verts;
@@ -190,7 +232,7 @@ int main(int argc, char** argv) {
     // Running the Kernel
     {
         int grid_dim = 1; int block_dim = num_verts;
-        run_kernel(kernel_vertexShader, grid_dim, block_dim, (void*)vertex_args);
+        run_kernel(kernel_vertex, grid_dim, block_dim, (void*)vertex_args);
     }
 
     // Checking Vertex Output
@@ -345,8 +387,8 @@ int main(int argc, char** argv) {
     ALLOCATE_MEM(pixel_args, pixel_arg_t, 1);
 
     // Setup Output
-        ALLOCATE_MEM(color_output, vector_t, frame_w*frame_h);
-        vector_t color_default = {0.6f, 0.6f, 0.6f};
+        ALLOCATE_MEM(color_output, vec4_t, frame_w*frame_h);
+        vec4_t color_default = {0.6f, 0.6f, 0.6f, 1.0f};
         DEFAULT_ARR(color_output, frame_w*frame_h, color_default);
         pixel_args->color = color_output;
 
@@ -414,7 +456,7 @@ int main(int argc, char** argv) {
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
 
-    createPPMFile(fname, int_color_output);
+    createPPMFile(fname, int_color_output, frame_w, frame_h);
     free(int_color_output);
 
     // --- Clean Up ---
