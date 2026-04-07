@@ -45,7 +45,7 @@ def main():
 
     rows.sort(key=lambda x: x[0])
 
-    with open(output_file, "w") as outfile:
+    with open(output_file, "w", newline="\n") as outfile:
         for first, second in rows:
             outfile.write(f"{format_hex(first)} {format_hex(second)}\n")
 
