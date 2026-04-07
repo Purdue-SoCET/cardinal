@@ -300,13 +300,15 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000):
         forward_ifs_write={"ICache_Scheduler": icache_scheduler_fwif},
     )
 
-    prf = PredicateRegFile(num_preds_per_warp=16, num_warps=WARP_COUNT)
+    prf = PredicateRegFile(num_preds_per_warp=32, num_warps=WARP_COUNT)
     for warp in range(WARP_COUNT):
-        for pred in range(16):
+        for pred in range(32):
             prf.reg_file[warp][pred] = [True] * 32
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
-    kernel_base_ptrs.write(0, Bits(uint=9203930, length=32))
+    # kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) # vertex
+    # kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel
+    kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) # triangle
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -531,7 +533,7 @@ def run_test(
 
     # ── initialize tbs ────────────────────────────────────────────────────────
     p["tbs"].add_SM()
-    p["tbs"].append_block(bdim=bdim, spc=start_pc, apc=0x1000_0000)
+    p["tbs"].init_kernel(kdim=1024, bdim=bdim, spc=start_pc, apc=0x1000_0000)
 
     threads = pipeline_rf.threads_per_warp
 
@@ -553,7 +555,7 @@ def run_test(
 
     cycle = 0
     print(f"Flushing pipeline")
-    while not p["scheduler"].system_finished:
+    while not p["tbs"].kern_finished:
     # while cycle < 900:
         tick_all(p)
         # print(f"tbs latch exit: {p["tbs"].ahead_latch.valid}, scheduler latch entry: {p["scheduler"].behind_latch.valid}")
@@ -581,7 +583,11 @@ def _parse_args():
         # default=str(FILE_ROOT / "test.bin"),
         # default=str(FILE_ROOT / "test_binaries/jump.bin"),
         # default=str(FILE_ROOT / "test_binaries/predicated_halt.bin"),
-        default=str(FILE_ROOT / "test_binaries/ldst_sequence.bin"),
+        # default=str(FILE_ROOT / "test_binaries/ldst_sequence.bin"),
+        # default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
+        # default=str(FILE_ROOT / "test_binaries/pixel.bin"),
+        default=str(FILE_ROOT / "test_binaries/triangle.bin"),
+        # default=str(FILE_ROOT / "test_binaries/pixel2048.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(

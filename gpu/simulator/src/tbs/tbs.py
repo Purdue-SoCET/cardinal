@@ -63,6 +63,9 @@ class ThreadBlockScheduler(Stage):
         
         # SM list, tracks availability
         self.SMs: list[SMRecord] = []
+
+        # kernel info
+        self.kern_finished = False
     
     def reset(self) -> None:
         self.block_list = []
@@ -73,6 +76,18 @@ class ThreadBlockScheduler(Stage):
         availability = self.threads_per_sm // self.min_thread_division
         self.SMs.append(SMRecord(self.threads_per_sm, self.min_thread_division))
         
+    def init_kernel(self, kdim: int, bdim: int, spc: int, apc: int) -> None:
+        self.kern_finished = False
+        while kdim > 0:
+            # last block
+            if bdim > kdim:
+                self.append_block(kdim, spc, apc)
+                kdim = 0
+            else:
+                self.append_block(bdim, spc, apc)
+                kdim -= bdim
+        return
+    
     def append_block(self, bdim: int, spc: int, apc: int = 0) -> None:
         bidx = len(self.block_list)
         self.block_list.append(ThreadBlockRecord(bidx, bdim, spc, apc))
@@ -96,6 +111,10 @@ class ThreadBlockScheduler(Stage):
         self.SMs[smidx].free_threads(self.block_list[bidx].bdim)
         self.blocks_done.append(bidx)
             
+    def kernel_finished(self):
+        if len(self.block_list) == len(self.blocks_done):
+            self.kern_finished = True
+
     def compute(self):
         for bidx in self.blocks_not_sent:
             for smidx, _ in enumerate(self.SMs):
@@ -107,5 +126,5 @@ class ThreadBlockScheduler(Stage):
         if self.forward_ifs_read["Scheduler_TBS"].payload:
             for bidx in self.forward_ifs_read["Scheduler_TBS"].pop():
                 self.finish_blk(bidx)
-        
+            self.kernel_finished()
             # self.SMs[0].working = False

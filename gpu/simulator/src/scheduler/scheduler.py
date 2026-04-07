@@ -76,11 +76,14 @@ class SchedulerStage(Stage):
         jump_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
 
-        # DELETE LATER
+        # move to halt function later
         ldst_ctrl = self.forward_ifs_read["LDST_Scheduler"].pop()
         if ldst_ctrl is not None and ldst_ctrl.get("flush_complete"):
             print("Scheduler: Received halt")
             self.system_finished = True
+            ## TODO: will need to expand for none 1024 size tb in cx02
+            self.forward_ifs_write["Scheduler_TBS"].push(list(self.csrtable.active_blks))
+            self.csrtable.reset_csr()
 
         # if im getting my odd warp EOP out of my i$
         if self.eop:
@@ -184,6 +187,9 @@ class SchedulerStage(Stage):
         # print(f"{tb_id, tb_size, start_pc}\n\n")
         base_id = 0
         self.csrtable.add_blk(tb_id)
+
+        self.halt_sent = False
+        self.system_finished = False
 
         for _ in range(math.ceil(tb_size / self.warp_size)):
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
