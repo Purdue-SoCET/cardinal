@@ -1,7 +1,9 @@
 from builtins import isinstance, print
 from dataclasses import dataclass, field
 from common.custom_enums_multi import H_Op, S_Op
-from simulator.latch_forward_stage import LatchIF, ForwardingIF, Stage, Instruction
+from simulator.interfaces import LatchIF, ForwardingIF
+from simulator.stage import Stage
+from simulator.instruction import Instruction
 from simulator.issue.regfile import RegisterFile
 from typing import Any, Optional, Callable, List, Deque, Tuple, Dict
 from collections import deque

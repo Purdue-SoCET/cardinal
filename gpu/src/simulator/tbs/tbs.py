@@ -4,7 +4,11 @@ from typing import List, Any, Optional, Dict
 from enum import Enum
 from pathlib import Path
 from bitstring import Bits
-from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, ForwardingIF, LatchIF, Stage
+from simulator.mem_types import DecodeType
+from simulator.instruction import Instruction
+from simulator.warp import WarpState, WarpGroup
+from simulator.interfaces import ForwardingIF, LatchIF
+from simulator.stage import Stage
 from simulator.scheduler.csrtable import CsrTable
 import math
 

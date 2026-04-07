@@ -6,7 +6,10 @@ from enum import Enum
 from pathlib import Path
 from bitstring import Bits
 from common.custom_enums_multi import H_Op, I_Op
-from simulator.latch_forward_stage import DecodeType, Instruction, WarpState, WarpGroup, Stage, Warp
+from simulator.mem_types import DecodeType
+from simulator.instruction import Instruction
+from simulator.warp import WarpState, WarpGroup, Warp
+from simulator.stage import Stage
 from simulator.scheduler.csrtable import CsrTable
 import math
 
@@ -186,6 +189,7 @@ class SchedulerStage(Stage):
         self.csrtable.add_blk(tb_id)
 
         for _ in range(math.ceil(tb_size / self.warp_size)):
+            
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].state = WarpState.READY
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].finished_packet = False
@@ -207,6 +211,10 @@ class SchedulerStage(Stage):
 
     def halt(self):
         # Kai Ze: only fire when at least one warp has been initialized, and only once
+        for group in self.warp_table:
+            print(group)
+            if group.halt == 1:
+                print(f"[Scheduler] Warp group {group.group_id} is halted.")
         if not self.halt_sent and self.free_warp > 0 and all(group.halt == 1 for group in self.warp_table):
                 # print("RECEIVED HALT FOR ALL WARPS, ENABLING DCACHE FLUSH.")
             self.forward_ifs_write["Scheduler_LDST"].push({"halt": True})

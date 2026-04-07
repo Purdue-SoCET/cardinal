@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cardinal-gpu"
+version = "0.1.0"
+description = "Cardinal GPU Simulator and Tools"
+requires-python = ">=3.8"
+dependencies = [
+    "bitstring>=4.0.0",
+    "pandas>=2.0.0",
+    "aenum>=3.1.0",
+    "pydantic-settings>=2.0.0",
+    "toml",
+]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+# This resolves your Pylance "reportMissingImports" issue
+include = ["src"]
+extraPaths = ["src"]
+typeCheckingMode = "basic"

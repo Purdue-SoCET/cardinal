@@ -2,10 +2,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC
 from typing import List
-from simulator.execute.functional_sub_unit import FunctionalSubUnit, Alu, Mul, Div, Sqrt, Trig, InvSqrt, Branch, Jump, Conv
-from simulator.compact_queue import CompactQueue
-from simulator.latch_forward_stage import Instruction
-from simulator.mem.ld_st import Ldst_Fu
+from simulator.execute.functional_sub_unit import FunctionalSubUnit, Branch, Jump, Ldst_Fu
+from simulator.execute.arithmetic_sub_unit import Alu, Mul, Div, Sqrt, Trig, InvSqrt, Conv
+from simulator.utils.data_structures.compact_queue import CompactQueue
+from simulator.instruction import Instruction
 
 @dataclass
 class MemBranchJumpUnitConfig:

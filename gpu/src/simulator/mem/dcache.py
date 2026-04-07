@@ -9,8 +9,17 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from collections import deque
-from simulator.latch_forward_stage import *
-from collections import deque
+from bitstring import Bits
+from simulator.interfaces import LatchIF, ForwardingIF
+from simulator.stage import Stage
+from simulator.instruction import Instruction
+from simulator.mem_types import dMemResponse
+from simulator.mem_types import (
+    MSHR_BUFFER_LEN, MSHREntry, dCacheRequest, Addr, dCacheFrame,
+    NUM_BANKS, NUM_SETS_PER_BANK, NUM_WAYS, BLOCK_SIZE_WORDS,
+    WORD_SIZE_BYTES, HIT_LATENCY, RAM_LATENCY_CYCLES,
+    UUID_SIZE, BANK_ID_BIT_LEN, SET_INDEX_BIT_LEN, BLOCK_OFF_BIT_LEN, BYTE_OFF_BIT_LEN
+)
 
 
 class MSHRBuffer:

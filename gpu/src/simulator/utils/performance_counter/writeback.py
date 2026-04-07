@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Optional, List
 from common.custom_enums_multi import Op
-from simulator.latch_forward_stage import Instruction
+from simulator.instruction import Instruction
 
 class WritebackPerfCount:
     def __init__(self, name: str):

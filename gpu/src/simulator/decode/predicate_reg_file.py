@@ -6,16 +6,18 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 
 sys.path.append(str(parent_dir))
-from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
-from simulator.mem.Memory import Mem
+from simulator.interfaces import ForwardingIF, LatchIF
+from simulator.stage import Stage
+from simulator.instruction import Instruction
+from simulator.mem_types import ICacheEntry, MemRequest, FetchRequest, DecodeType
+from simulator.mem.memory import Mem
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
 from bitstring import Bits 
 
-from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op
-from common.custom_enums import Op
+from common.custom_enums_multi import Instr_Type, R_Op, I_Op, F_Op, S_Op, B_Op, U_Op, J_Op, P_Op, H_Op, Op
 
 class PredicateRegFile():
     def __init__(self, num_preds_per_warp: int, num_warps: int):

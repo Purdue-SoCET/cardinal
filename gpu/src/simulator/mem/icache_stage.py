@@ -5,8 +5,11 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 sys.path.append(str(parent_dir))
 
-from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, Instruction, ICacheEntry, MemRequest, FetchRequest, DecodeType
-from simulator.mem.Memory import Mem
+from simulator.interfaces import ForwardingIF, LatchIF
+from simulator.stage import Stage
+from simulator.instruction import Instruction
+from simulator.mem_types import ICacheEntry, MemRequest, FetchRequest, DecodeType
+from simulator.mem.memory import Mem
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from bitstring import Bits
-from simulator.circular_buffer import CircularBuffer
-from simulator.compact_queue import CompactQueue
-from simulator.stack import Stack
+from simulator.utils.data_structures.circular_buffer import CircularBuffer
+from simulator.utils.data_structures.compact_queue import CompactQueue
+from simulator.utils.data_structures.stack import Stack
 from typing import Any, Dict, Optional, Union, List
 from common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
-from simulator.latch_forward_stage import LatchIF, Instruction
+from simulator.interfaces import LatchIF
+from simulator.instruction import Instruction
 from simulator.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
 from simulator.writeback.config import (
     WritebackBufferCount,

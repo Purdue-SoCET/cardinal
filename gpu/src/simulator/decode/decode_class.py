@@ -6,7 +6,9 @@ from pathlib import Path
 parent_dir = Path(__file__).resolve().parents[3]
 
 sys.path.append(str(parent_dir))
-from simulator.latch_forward_stage import ForwardingIF, LatchIF, Stage, PredRequest, DecodeType
+from simulator.interfaces import ForwardingIF, LatchIF
+from simulator.stage import Stage
+from simulator.mem_types import PredRequest, DecodeType
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from bitstring import Bits 

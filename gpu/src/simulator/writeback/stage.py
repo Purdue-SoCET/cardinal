@@ -8,7 +8,9 @@ from bitstring import Bits
 from common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
 from simulator.issue.regfile import RegisterFile
 from simulator.decode.predicate_reg_file import PredicateRegFile
-from simulator.latch_forward_stage import Instruction, Stage, LatchIF, ForwardingIF
+from simulator.instruction import Instruction
+from simulator.stage import Stage
+from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.writeback.writeback_buffer import WritebackBuffer
 from simulator.writeback.config import (
     WritebackBufferCount,
@@ -79,10 +81,13 @@ class WritebackStage(Stage):
     
     def _update_halt_mask_and_decrement_counter(self):
         data_to_scheduler = []
+       
         for bank_name, instr in self.values_to_writeback.items():
             if instr is None:
                 continue
+            print(instr.pc)
             if instr.opcode == H_Op.HALT:
+                print("HALT OPCODE")
                 #check if the instruction is predicated, if it is then we only want to update the halt mask for the threads that are active based on the predicate bits, if it is not predicated then we want to update the halt mask for all threads in the warp
                 pred_bits = Bits(bin=''.join(p.bin for p in instr.predicate))
                 new_mask = instr.active_mask & ~pred_bits

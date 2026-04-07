@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from simulator.latch_forward_stage import Stage, LatchIF, Instruction
+from simulator.stage import Stage
+from simulator.interfaces import LatchIF
+from simulator.instruction import Instruction
 from simulator.execute.functional_unit import MemBranchJumpUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchJumpUnit
 from typing import Dict, Optional
 

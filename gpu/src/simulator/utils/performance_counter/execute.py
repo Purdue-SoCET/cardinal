@@ -1,6 +1,6 @@
 import pandas as pd
 from common.custom_enums_multi import Op
-from simulator.latch_forward_stage import Instruction
+from simulator.instruction import Instruction
 
 class ExecutePerfCount:
     def __init__(self, name: str):

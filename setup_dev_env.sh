@@ -47,6 +47,9 @@ pip install --upgrade pip
 echo -e "${BLUE}Installing simulator package in editable mode...${NC}"
 pip install -e gpu/
 
+echo -e "${BLUE}Pulling changes from emulator git submodule...${NC}"
+git submodule update --init --recursive
+
 echo -e "${GREEN}✓ Development environment setup complete!${NC}"
 echo ""
 echo "To activate the virtual environment in the future, run:"

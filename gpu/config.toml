@@ -1,0 +1,77 @@
+# GPU Test Suite and Simulator Configuration
+
+# Test Suite Paths
+[paths]
+assembler_script = "assembler/assembler.py"
+opcodes = "assembler/opcodes.txt"
+emulator = "src/emulator/src/emulator.py"
+hex_bin_converter = "tests/final_integration/hex_bin_converter.py"
+
+# Test Directories
+[directories]
+diff_dir = "results/test_diffs"
+test_root_asm = "tests/assembly"
+test_root_bin = "tests/bin"
+expected_dir = "tests/exp"
+
+# Test Files
+[files]
+raw_asm_output = "results/raw_instr.hex"
+formatted_instr = "results/formatted_instr.hex"
+meminit = "results/meminit.hex"
+meminit_bin = "results/meminit.bin"
+emu_output = "results/memgolden.hex"
+emu_temp_output = "src/emulator/memsim.hex"
+sim_output = "results/memsim.hex"
+final_expected = "results/final_expected_combined.hex"
+temp_cmd_log = "results/temp_command_output.txt"
+
+# Test Parameters
+[test_parameters]
+default_start_pc = 0
+default_threads = 1024
+default_blocks = 1
+format = "hex"
+default_pattern = "*.s"
+
+# Simulator Configuration
+[sm]
+sm_no = 0
+num_warps = 32
+num_preds = 16
+threads_per_warp = 32
+enable_tbs = false
+kernel_base_addr = 0x0
+tb_size = 1024
+
+[memory]
+start_pc = 0x0
+latency = 2
+policy = "rr"
+
+[kernel]
+max_kernels_per_sm = 1
+kernel_id = 0x20000000
+
+[icache]
+cache_size = 32768
+block_size = 4
+associativity = 1
+
+[dcache]
+cache_size = 32768
+block_size = 4
+associativity = 1
+
+[functional_units]
+
+[writeback]
+
+[register_file]
+
+[predicate_register_file]
+
+[test]
+test_file = "test.bin"
+test_file_type = "bin"
+tb_size = 32
