@@ -16,7 +16,7 @@ def format_hex(value):
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python convert.py <input_file> <output_file>")
+        print("Usage: python sort_triangle.py <input_file> <output_file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -28,18 +28,20 @@ def main():
         for line_num, line in enumerate(infile, 1):
             if not line.strip():
                 continue
-
             parsed = parse_line(line)
             if parsed is None:
                 print(f"Skipping invalid line {line_num}: {line.strip()}")
                 continue
-
+            
             first, second = parsed
-
+            
+            # --- NEW FILTERING LOGIC ---
+            # Skip this line if the data column is exactly 0
             if second == 0:
                 continue
+            # ---------------------------
 
-            rows.append((first, second))
+            rows.append(parsed)
 
     rows.sort(key=lambda x: x[0])
 
