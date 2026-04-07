@@ -1,11 +1,19 @@
 #include "include/kernel.h"
 #include "include/pathFinder.h"
 
-void kernel_pathFinder(void* arg) {
+#ifdef GPU_SIM
+void main(void* arg)
+#else
+void kernel_pathFinder(void* arg) 
+#endif
+{
+    #ifdef GPU_SIM
+    pathfinder_arg_t* args = (pathfinder_arg_t*)argPtr();
+    int idx = blockIdx() * blockDim() + threadIdx();
+    #else
 	pathfinder_arg_t* args = (pathfinder_arg_t*)arg;
-
 	int idx = blockIdx * blockDim + threadIdx;
-	
+	#endif
     //boundry check
     if (idx >= args->width) 
         return;

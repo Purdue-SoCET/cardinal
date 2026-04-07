@@ -37,7 +37,7 @@
 #ifdef GPU_SIM
 void main(void* arg)
 #else
-void kernel_monte_carlo_pi(void* arg) {
+void kernel_monte_carlo_pi(void* arg) 
 #endif
 {
     #ifdef GPU_SIM
@@ -65,5 +65,4 @@ void kernel_monte_carlo_pi(void* arg) {
         (*args->circle_points[i]) = 1;
     }
 
-    return;
 }
