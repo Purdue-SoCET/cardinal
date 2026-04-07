@@ -5,7 +5,7 @@
 assembler_script = "assembler/assembler.py"
 opcodes = "assembler/opcodes.txt"
 emulator = "src/emulator/src/emulator.py"
-hex_bin_converter = "tests/final_integration/hex_bin_converter.py"
+hex_bin_converter = "hex_bin_converter.py"
 
 # Test Directories
 [directories]
@@ -21,7 +21,7 @@ formatted_instr = "results/formatted_instr.hex"
 meminit = "results/meminit.hex"
 meminit_bin = "results/meminit.bin"
 emu_output = "results/memgolden.hex"
-emu_temp_output = "src/emulator/memsim.hex"
+emu_temp_output = "src/emulator/src/memsim.hex"
 sim_output = "results/memsim.hex"
 final_expected = "results/final_expected_combined.hex"
 temp_cmd_log = "results/temp_command_output.txt"

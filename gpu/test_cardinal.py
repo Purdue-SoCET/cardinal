@@ -140,28 +140,29 @@ class GPUTestRunner:
             file.unlink()
     
     def run_command(self, cmd: List[str], log_file: Optional[Path] = None, 
-                   capture_output: bool = True) -> Tuple[int, str, str]:
+                   capture_output: bool = True, cwd: Optional[str] = None) -> Tuple[int, str, str]:
         """Run a shell command and return the result.
         
         Args:
             cmd: Command to run as list of strings
             log_file: Optional file to write output to
             capture_output: Whether to capture stdout/stderr
+            cwd: Optional working directory to run command in
             
         Returns:
             Tuple of (return_code, stdout, stderr)
         """
         if capture_output:
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
             if log_file:
                 log_file.write_text(result.stdout + result.stderr)
             return result.returncode, result.stdout, result.stderr
         else:
             if log_file:
                 with open(log_file, 'w') as f:
-                    result = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
+                    result = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True, cwd=cwd)
             else:
-                result = subprocess.run(cmd, text=True)
+                result = subprocess.run(cmd, text=True, cwd=cwd)
             return result.returncode, "", ""
     
     def find_test_files(self) -> List[Path]:
@@ -187,7 +188,7 @@ class GPUTestRunner:
             # Pattern includes a directory specification
             parts = pattern.split('/', 1)
             directory = parts[0]
-            file_pattern = parts[1] if len(parts) > 1 else '*'
+            file_pattern = parts[1] if len(parts) > 1 and parts[1] else '*'
             
             # Build the full search path
             search_root = test_root / directory
@@ -196,10 +197,10 @@ class GPUTestRunner:
                 return []
             
             # Search within the specified directory
-            files = sorted(search_root.rglob(file_pattern))
+            files = sorted([f for f in search_root.rglob(file_pattern) if f.is_file()])
         else:
             # No directory specified, search from test root
-            files = sorted(test_root.rglob(pattern))
+            files = sorted([f for f in test_root.rglob(pattern) if f.is_file()])
         
         if not files:
             print(f"{Colors.RED}Error:{Colors.NC} No files found matching '{self.search_pattern}'")
@@ -307,9 +308,13 @@ class GPUTestRunner:
         """
         temp_log = Path(self.settings.files.temp_cmd_log)
         
+        # Resolve emulator script path
+        emulator_script = Path(self.settings.paths.emulator)
+        emulator_dir = emulator_script.parent
+        
         cmd = [
             'python3',
-            self.settings.paths.emulator,
+            emulator_script.name,
             '-t', str(threads),
             '-b', str(blocks),
             '--start-pc', str(self.settings.test_parameters.default_start_pc),
@@ -317,12 +322,14 @@ class GPUTestRunner:
             input_file
         ]
         
-        returncode, _, _ = self.run_command(cmd, temp_log)
+        # Run emulator from its own directory so imports work
+        returncode, one, two = self.run_command(cmd, temp_log, cwd=str(emulator_dir))
         
-        # Rename memsim.hex to memgolden.hex if it exists
-        emu_memsim = Path('memsim.hex')
+        # Move memsim.hex from emulator directory to memgolden.hex
+        emu_memsim = Path(self.settings.files.emu_temp_output)
         memgolden = Path(self.settings.files.emu_output)
-        emu_memsim.rename(memgolden)
+        if emu_memsim.exists():
+            emu_memsim.rename(memgolden)
         
         return returncode == 0
     
@@ -498,8 +505,9 @@ class GPUTestRunner:
             TestResult object
         """
         base_name = bin_file.stem
-        hex_output = Path(f"{base_name}_meminit.hex")
-        bin_output = Path(f"{base_name}_sim.bin")
+        results_dir = Path(self.settings.directories.diff_dir)
+        hex_output = results_dir / f"{base_name}_meminit.hex"
+        bin_output = results_dir / f"{base_name}_sim.bin"
         
         # Convert binary to hex for emulator
         self.convert_bin_to_hex(bin_file, hex_output)
