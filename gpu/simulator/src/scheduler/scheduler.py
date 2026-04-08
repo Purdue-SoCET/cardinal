@@ -81,9 +81,17 @@ class SchedulerStage(Stage):
         if ldst_ctrl is not None and ldst_ctrl.get("flush_complete"):
             print("Scheduler: Received halt")
             self.system_finished = True
+            self.free_warp = 0
+
+            print("CSR TABLE DUMP AT HALT:")
+            self.csrtable.dump()
+            print("WARP TABLE DUMP AT HALT:")
+            self.dump()
             ## TODO: will need to expand for none 1024 size tb in cx02
             self.forward_ifs_write["Scheduler_TBS"].push(list(self.csrtable.active_blks))
             self.csrtable.reset_csr()
+            
+            # reset 
 
         # if im getting my odd warp EOP out of my i$
         if self.eop:
@@ -208,7 +216,9 @@ class SchedulerStage(Stage):
             base_id += self.warp_size
             self.free_warp += 1
         
+        print(f"CSR TABLE DUMP INITIALIZED FOR TBID#{tb_id}")
         self.csrtable.dump()
+        print(f"WARP TABLE DUMP INITIALIZED FOR TBID#{tb_id}")
         self.dump()  
 
     def halt(self):

@@ -201,7 +201,10 @@ def decode_word(raw: int) -> dict:
 #  Pipeline setup
 # ==============================================================================
 
-def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000):
+def build_pipeline(input_file: Path, 
+                   fmt: str = "bin", 
+                   start_pc: int = 0x1000,
+                   arg_ptr: int = 0) -> dict:
     """Instantiate all pipeline stages and return them as a dict."""
     # Latches
     tbs_ws_if               = LatchIF("TBS-WS Latch")
@@ -308,7 +311,7 @@ def build_pipeline(input_file: Path, fmt: str = "bin", start_pc: int = 0x1000):
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     # kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) # vertex
     # kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel
-    kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) # triangle
+    kernel_base_ptrs.write(0, Bits(uint=arg_ptr, length=32)) # triangle
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -507,7 +510,10 @@ def run_test(
     fmt:          str  = "bin",
     verbose:      bool = True,
     start_pc:     int = 0,
-    bdim:         int = 1024
+    bdim:         int = 1024,
+    kdim:         int = 1024,
+    arg_ptr:      int = 0,
+    dump_file:    Optional[str] = None
 ) -> tuple[int, int]:
     """
     Main entry point.
@@ -524,7 +530,7 @@ def run_test(
           f"{sum(1 for d in decoded_instrs if d['opcode_enum'] is not None)} decoded.")
 
     # ── build pipeline ────────────────────────────────────────────────────────
-    p = build_pipeline(program_file, fmt=fmt, start_pc=start_pc)
+    p = build_pipeline(program_file, fmt=fmt, start_pc=start_pc, arg_ptr=arg_ptr)
     pipeline_rf  = p["pipeline_rf"]
     golden_rf    = p["golden_rf"]
     csr_table    = p["csr_table"]
@@ -533,7 +539,7 @@ def run_test(
 
     # ── initialize tbs ────────────────────────────────────────────────────────
     p["tbs"].add_SM()
-    p["tbs"].init_kernel(kdim=1024, bdim=bdim, spc=start_pc, apc=0x1000_0000)
+    p["tbs"].init_kernel(kdim=kdim, bdim=bdim, spc=start_pc, apc=0x1000_0000)
 
     threads = pipeline_rf.threads_per_warp
 
@@ -566,6 +572,7 @@ def run_test(
     print_banks(p["dcache"])
     pipeline_rf.dump()
     prf.dump()
+    p["mem"].dump("gpu/tests/simulator/integration3/{dump_file}_memsim.bin".format(dump_file=program_file.stem))
 
 
 # ==============================================================================
@@ -601,16 +608,51 @@ def _parse_args():
         action="store_true",
         help="Suppress per-warp progress output.",
     )
+    parser.add_argument(
+        "--start-pc",
+        type=lambda x: int(x, 0),
+        default=0x1000,
+        help="Starting PC address for the program (used by the TBS).",
+    )
+    parser.add_argument(
+        "--bdim",
+        type=int,
+        default=1024,
+        help="Block dimension (number of threads per block) for TBS initialization.",
+    )
+    parser.add_argument(
+        "--kdim",
+        type=int,
+        default=1024,
+        help="Grid dimension (number of blocks) for TBS initialization.",
+    )
+    parser.add_argument(
+        "--arg-ptr",
+        type=lambda x: int(x, 0),
+        default=0,
+        help="Argument pointer value to write into the Kernel Base Pointers (KBP) for TBS initialization.",
+    )
+    parser.add_argument(
+        "--df", "--dump-file",
+        type=str,
+        default=None,
+        help="Optional path to dump final register file state for test verification.",
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":
     args    = _parse_args()
+
+    # NOTE: MODIFYING THIS SO I DONT HAVE TO CHANGE SHIT ALL OVER THE FILE !!
     run_test(
         program_file=Path(args.program),
         fmt=args.fmt,
         verbose=not args.quiet,
-        start_pc=0,
-        bdim=1024
+        start_pc=args.start_pc,
+        bdim=args.bdim,
+        kdim=args.kdim,
+        arg_ptr=args.arg_ptr,
+        dump_file=args.df
     )
     sys.exit(0)
 
