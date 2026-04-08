@@ -310,8 +310,8 @@ def build_pipeline(input_file: Path,
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     # kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) # vertex
-    # kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel
-    kernel_base_ptrs.write(0, Bits(uint=arg_ptr, length=32)) # triangle
+    kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel
+    # kernel_base_ptrs.write(0, Bits(uint=arg_ptr, length=32)) # triangle
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -563,6 +563,18 @@ def run_test(
     print(f"Flushing pipeline")
     while not p["tbs"].kern_finished:
     # while cycle < 900:
+        if(p["scheduler"].system_finished):
+            print_banks(p["dcache"])
+            pipeline_rf.dump()
+            pipeline_rf.reset()
+            prf.dump()
+            prf.reset(num_warps=WARP_COUNT)
+            for warp in range(WARP_COUNT):
+                for pred in range(32):
+                    prf.reg_file[warp][pred] = [True] * 32
+            print("POST RESET")
+            pipeline_rf.dump()
+            prf.dump()
         tick_all(p)
         # print(f"tbs latch exit: {p["tbs"].ahead_latch.valid}, scheduler latch entry: {p["scheduler"].behind_latch.valid}")
         print(f"Cycle : {cycle}")
@@ -572,7 +584,8 @@ def run_test(
     print_banks(p["dcache"])
     pipeline_rf.dump()
     prf.dump()
-    p["mem"].dump("gpu/tests/simulator/integration3/{dump_file}_memsim.bin".format(dump_file=program_file.stem))
+    p["mem"].dump
+    # p["mem"].dump("gpu/tests/simulator/integration3/{dump_file}_memsim.bin".format(dump_file=program_file.stem))
 
 
 # ==============================================================================
@@ -593,8 +606,8 @@ def _parse_args():
         # default=str(FILE_ROOT / "test_binaries/ldst_sequence.bin"),
         # default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
         # default=str(FILE_ROOT / "test_binaries/pixel.bin"),
-        default=str(FILE_ROOT / "test_binaries/triangle.bin"),
-        # default=str(FILE_ROOT / "test_binaries/pixel2048.bin"),
+        # default=str(FILE_ROOT / "test_binaries/triangle.bin"),
+        default=str(FILE_ROOT / "test_binaries/pixel2048.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(
@@ -611,7 +624,7 @@ def _parse_args():
     parser.add_argument(
         "--start-pc",
         type=lambda x: int(x, 0),
-        default=0x1000,
+        default=0x24,
         help="Starting PC address for the program (used by the TBS).",
     )
     parser.add_argument(
@@ -623,7 +636,7 @@ def _parse_args():
     parser.add_argument(
         "--kdim",
         type=int,
-        default=1024,
+        default=2048,
         help="Grid dimension (number of blocks) for TBS initialization.",
     )
     parser.add_argument(

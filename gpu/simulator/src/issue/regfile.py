@@ -12,7 +12,7 @@ class RegisterFile:
     regs: List[List[List[List[Bits]]]] = field(init=False)
 
     def __post_init__(self):
-        self.regs = [[[[Bits(uint=0, length=32) for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
+        self.reset()
 
     def write_warp_gran(self, warp_id: int, dest_operand: Bits, data: Bits) -> None:
         if dest_operand.uint > 0:
@@ -27,6 +27,9 @@ class RegisterFile:
     
     def read_thread_gran(self, warp_id: int, src_operand: Bits, thread_id: int) -> Any:
         return self.regs[warp_id % self.banks][warp_id // 2][src_operand.uint][thread_id]
+
+    def reset(self):
+        self.regs = [[[[Bits(uint=0, length=32) for _ in range(self.threads_per_warp)] for _ in range(self.regs_per_warp)] for _ in range(self.warps // self.banks)] for _ in range(self.banks)]
 
     def dump(self, float_regs=None, file=None):
         """

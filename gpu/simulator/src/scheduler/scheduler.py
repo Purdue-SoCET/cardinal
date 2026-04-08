@@ -82,16 +82,17 @@ class SchedulerStage(Stage):
             print("Scheduler: Received halt")
             self.system_finished = True
             self.free_warp = 0
+            self.rr_index = 0
 
             print("CSR TABLE DUMP AT HALT:")
             self.csrtable.dump()
             print("WARP TABLE DUMP AT HALT:")
             self.dump()
-            ## TODO: will need to expand for none 1024 size tb in cx02
+            ## TODO: will need to expand for non 1024 size tb in cx02
             self.forward_ifs_write["Scheduler_TBS"].push(list(self.csrtable.active_blks))
             self.csrtable.reset_csr()
             
-            # reset 
+            # TODO: plug in reset signals to the reg file and pred reg 
 
         # if im getting my odd warp EOP out of my i$
         if self.eop:
@@ -209,6 +210,7 @@ class SchedulerStage(Stage):
                 self.warp_table[self.free_warp // 2].issue = True
                 self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=0xffffffff, length=32)
                 self.warp_table[self.free_warp // 2].halt = 0
+                self.warp_table[self.free_warp // 2].last_issue_even = False
             else:
                 self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=0xffffffff, length=32)
             

@@ -24,12 +24,14 @@ class PredicateRegFile():
         self.banks = 1 # used in creation of writeback buffer (signifies number of physical banks in hardware)
         # ^^^ idk if this will ever be more than 1 but just leave this for now
 
-        # 2D structure: warp -> predicate -> [bits per thread]
-        self.reg_file = [
-            [[[True] * self.num_threads]
-              for _ in range(self.num_preds_per_warp)]
-            for _ in range(num_warps)
-        ]
+        self.reg_file: List[List[List]] = field(init=False)
+        # # 2D structure: warp -> predicate -> [bits per thread]
+        # self.reg_file = [
+        #     [[[True] * self.num_threads]
+        #       for _ in range(self.num_preds_per_warp)]
+        #     for _ in range(num_warps)
+        # ]
+        self.reset(num_warps=num_warps)
     
     def read_predicate(self, prf_rd_en: int, prf_rd_wsel: int, prf_rd_psel: int, prf_neg: int):
         "Predicate register file reads by selecting a 1 from 32 warps, 1 from 16 predicates,"
@@ -61,6 +63,13 @@ class PredicateRegFile():
         if (prf_wr_en):
             # Store just one version
             self.reg_file[prf_wr_wsel][prf_wr_psel][prf_wr_tsel] = bool(prf_wr_data.uint)
+
+    def reset(self, num_warps):
+        self.reg_file =[
+            [[[True] * self.num_threads]
+              for _ in range(self.num_preds_per_warp)]
+            for _ in range(num_warps)
+        ]
 
     def dump(self, file=None):
         """
