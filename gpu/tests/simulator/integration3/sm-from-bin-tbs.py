@@ -656,6 +656,9 @@ if __name__ == "__main__":
     )
     sys.exit(0)
 
+    # RUN WITH THIS
+    # python3 gpu/tests/simulator/integration3/sm-from-bin-tbs.py gpu/tests/simulator/integration3/test_binaries/pixel2048.bin --start-pc 36 --bdim 1024 --kdim 2048 --arg-ptr 3889319352 --df pixel2048 > /home/shay/a/sing1018/Desktop/cardinal/gpu/tests/simulator/integration3/pixel2048_output.txt
+    
     # run_ldst_test(
     #     program_file=Path(args.program),
     #     fmt=args.fmt,
