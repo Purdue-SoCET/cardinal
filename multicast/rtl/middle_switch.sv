@@ -1,19 +1,16 @@
 // middle_switch.sv
 // 3-stage Clos network – middle switch (8 inputs × 8 outputs).
 //
-// Middle switch SWITCH_ID forwards flits exclusively to egress switch
-// SWITCH_ID (direct vertical routing).  All 8 ingress switch inputs
-// arbitrate via round-robin for the single output towards egress[SWITCH_ID].
-// The remaining 7 output ports are unused/tied off; wiring is 1-to-1 in the
-// Clos sense but the spec says "routes to egress switch SWITCH_ID", so the
-// middle switch has one active output.
+// With diagonal routing from the ingress stage, input port i of middle
+// switch SWITCH_ID always carries a flit destined for egress switch
+//   e = (SWITCH_ID - i + NUM_EGRESS) % NUM_EGRESS
 //
-// For a general non-blocking Clos build-out where each middle switch m fans
-// to all 8 egress switches, the spec here constrains: middle switch m only
-// feeds egress m.  This matches the 8×8 fully-connected middle plane where
-// ingress i picks middle m to reach egress m.
+// Because each input targets a distinct egress output, there is zero
+// contention — no arbitration is needed.  The switch is a set of 8
+// independent pipeline registers, one per output port, each fed from
+// its unique fixed source input.
 //
-// Registered output, round-robin arbitration.
+// Registered outputs, back-pressure via valid/ready.
 
 `timescale 1ns/1ps
 
@@ -30,92 +27,58 @@ module middle_switch #(
   output logic  ing_ready [NUM_INGRESS],
   input  flit_t ing_flit  [NUM_INGRESS],
 
-  // ---- egress-switch outputs (8 ports, only port SWITCH_ID is active) ------
+  // ---- egress-switch outputs (8 ports, one to each egress switch) ----------
   output logic  egr_valid [NUM_EGRESS],
   input  logic  egr_ready [NUM_EGRESS],
   output flit_t egr_flit  [NUM_EGRESS]
 );
 
   // ---------------------------------------------------------------------------
-  // Output register for the single active output (egress[SWITCH_ID])
+  // Diagonal routing: input i → output e = (SWITCH_ID - i + NUM_EGRESS) % NUM_EGRESS
+  // Equivalently:     output e ← input i = (SWITCH_ID - e + NUM_INGRESS) % NUM_INGRESS
   // ---------------------------------------------------------------------------
-  logic  out_valid_q;
-  flit_t out_flit_q;
 
-  // Round-robin arbitration pointer (across NUM_INGRESS=8 inputs)
-  logic [$clog2(NUM_INGRESS)-1:0] rr_ptr_q;
-
-  // ---------------------------------------------------------------------------
-  // Combinational arbitration
-  // ---------------------------------------------------------------------------
-  logic [$clog2(NUM_INGRESS)-1:0] winner;
-  logic                            winner_vld;
-  logic [$clog2(NUM_INGRESS)-1:0] rr_ptr_nxt;
-
-  always_comb begin
-    winner     = '0;
-    winner_vld = 1'b0;
-    rr_ptr_nxt = rr_ptr_q;
-
-    for (int k = 0; k < NUM_INGRESS; k++) begin
-      automatic int idx = (rr_ptr_q + k) % NUM_INGRESS;
-      if (!winner_vld && ing_valid[idx]) begin
-        winner     = idx[$clog2(NUM_INGRESS)-1:0];
-        winner_vld = 1'b1;
-      end
-    end
-
-    // Advance pointer when the output slot is free or being consumed
-    if (winner_vld && (!out_valid_q || egr_ready[SWITCH_ID])) begin
-      rr_ptr_nxt = (winner + 1'b1) % NUM_INGRESS;
-    end
-  end
+  logic  out_valid_q [NUM_EGRESS];
+  flit_t out_flit_q  [NUM_EGRESS];
 
   // ---------------------------------------------------------------------------
-  // Registered output
+  // Registered outputs — one per egress port, fed from fixed source input
   // ---------------------------------------------------------------------------
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      out_valid_q <= 1'b0;
-      out_flit_q  <= '0;
-      rr_ptr_q    <= '0;
+      for (int e = 0; e < NUM_EGRESS; e++) begin
+        out_valid_q[e] <= 1'b0;
+        out_flit_q[e]  <= '0;
+      end
     end else begin
-      rr_ptr_q <= rr_ptr_nxt;
-
-      if (!out_valid_q || egr_ready[SWITCH_ID]) begin
-        out_valid_q <= winner_vld;
-        if (winner_vld) begin
-          out_flit_q <= ing_flit[winner];
+      for (int e = 0; e < NUM_EGRESS; e++) begin
+        automatic int src = (int'(SWITCH_ID) - e + NUM_INGRESS) % NUM_INGRESS;
+        if (!out_valid_q[e] || egr_ready[e]) begin
+          out_valid_q[e] <= ing_valid[src];
+          if (ing_valid[src])
+            out_flit_q[e] <= ing_flit[src];
         end
       end
     end
   end
 
   // ---------------------------------------------------------------------------
-  // Output tie-off: only port SWITCH_ID carries traffic
+  // Output assignments
   // ---------------------------------------------------------------------------
   always_comb begin
     for (int e = 0; e < NUM_EGRESS; e++) begin
-      if (e == SWITCH_ID) begin
-        egr_valid[e] = out_valid_q;
-        egr_flit[e]  = out_flit_q;
-      end else begin
-        egr_valid[e] = 1'b0;
-        egr_flit[e]  = '0;
-      end
+      egr_valid[e] = out_valid_q[e];
+      egr_flit[e]  = out_flit_q[e];
     end
   end
 
   // ---------------------------------------------------------------------------
-  // Back-pressure to ingress switches
-  // All inputs are ready when the single output slot is free (or consuming).
-  // The winning input is consumed; losers can be accepted next cycle.
-  // We stall all inputs while the output is full and not being consumed.
+  // Back-pressure: input i is ready when its target output slot is free
   // ---------------------------------------------------------------------------
   always_comb begin
-    automatic logic slot_free = !out_valid_q || egr_ready[SWITCH_ID];
     for (int i = 0; i < NUM_INGRESS; i++) begin
-      ing_ready[i] = slot_free;
+      automatic int e = (int'(SWITCH_ID) - i + NUM_EGRESS) % NUM_EGRESS;
+      ing_ready[i] = !out_valid_q[e] || egr_ready[e];
     end
   end
 

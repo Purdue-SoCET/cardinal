@@ -18,7 +18,7 @@ Tests:
 import sys
 from clos_network_sim import (
     ClosNetwork, SRAMBank, Flit,
-    NUM_BANKS, NUM_THREADS,
+    NUM_BANKS, NUM_THREADS, NUM_EGRESS, BANKS_PER_INGRESS, THREADS_PER_EGRESS,
     ERR_GOOD, ERR_ACCESS, ERR_UNMAPPED,
 )
 
@@ -396,6 +396,128 @@ def test_E_mshr_merge():
 
 
 # ---------------------------------------------------------------------------
+# F. SINGLE INGRESS — 4 simultaneous flits to different egress groups
+# ---------------------------------------------------------------------------
+def test_F_single_ingress_4way():
+    print("\n" + "=" * 60)
+    print("[F] SINGLE INGRESS — 4 banks simultaneous, different egress groups")
+    print("=" * 60)
+
+    net = ClosNetwork()
+
+    # Sub-test 1: banks 0-3 (ingress 0), each to a different egress group
+    # bank 0 -> thread 0  (egress 0)
+    # bank 1 -> thread 4  (egress 1)
+    # bank 2 -> thread 8  (egress 2)
+    # bank 3 -> thread 12 (egress 3)
+    batch = {
+        0: Flit.make(dest_mask=1 << 0,  data=0xF0000000),
+        1: Flit.make(dest_mask=1 << 4,  data=0xF0000001),
+        2: Flit.make(dest_mask=1 << 8,  data=0xF0000002),
+        3: Flit.make(dest_mask=1 << 12, data=0xF0000003),
+    }
+    deliveries = net.send(batch)
+
+    ok = True
+    expected = {0: 0xF0000000, 4: 0xF0000001, 8: 0xF0000002, 12: 0xF0000003}
+    for tid, dv in expected.items():
+        rxs = deliveries.get(tid, [])
+        if not rxs or rxs[0][0] != dv or rxs[0][1] != ERR_GOOD:
+            ok = False
+            failures.append(f"[F1] thread{tid}: got {rxs}, expected 0x{dv:08X}")
+    stray = {t: v for t, v in deliveries.items() if t not in expected}
+    if stray:
+        ok = False
+        failures.append(f"[F1] stray deliveries to threads {list(stray.keys())}")
+    status = PASS if ok else FAIL
+    print(f"  {status}: 4 unicasts from ingress 0 all delivered correctly")
+
+    # Sub-test 2: bank 0 sends multicast to threads 0,1 (within egress 0),
+    # banks 1-3 send unicasts to threads 4, 8, 12
+    batch2 = {
+        0: Flit.make(dest_mask=(1 << 0) | (1 << 1), data=0xF1000000),
+        1: Flit.make(dest_mask=1 << 4,               data=0xF1000001),
+        2: Flit.make(dest_mask=1 << 8,               data=0xF1000002),
+        3: Flit.make(dest_mask=1 << 12,              data=0xF1000003),
+    }
+    deliveries2 = net.send(batch2)
+
+    ok2 = True
+    expected2 = {0: 0xF1000000, 1: 0xF1000000, 4: 0xF1000001, 8: 0xF1000002, 12: 0xF1000003}
+    for tid, dv in expected2.items():
+        rxs = deliveries2.get(tid, [])
+        if not rxs or rxs[0][0] != dv or rxs[0][1] != ERR_GOOD:
+            ok2 = False
+            failures.append(f"[F2] thread{tid}: got {rxs}, expected 0x{dv:08X}")
+    stray2 = {t: v for t, v in deliveries2.items() if t not in expected2}
+    if stray2:
+        ok2 = False
+        failures.append(f"[F2] stray deliveries to threads {list(stray2.keys())}")
+    status2 = PASS if ok2 else FAIL
+    print(f"  {status2}: multicast(threads 0,1) + 3 unicasts all delivered correctly")
+
+
+# ---------------------------------------------------------------------------
+# G. ALL INGRESS — 32 simultaneous flits, all unique destinations
+# ---------------------------------------------------------------------------
+def test_G_all_ingress_32way():
+    print("\n" + "=" * 60)
+    print("[G] ALL INGRESS — 32 banks simultaneous, all unique threads")
+    print("=" * 60)
+
+    net = ClosNetwork()
+
+    # Sub-test 1: bank b -> thread b (32 unique unicasts simultaneously)
+    batch = {b: Flit.make(dest_mask=1 << b, data=0xE0000000 | b)
+             for b in range(NUM_BANKS)}
+    deliveries = net.send(batch)
+
+    ok = True
+    for b in range(NUM_BANKS):
+        rxs = deliveries.get(b, [])
+        dv  = 0xE0000000 | b
+        if not rxs or rxs[0][0] != dv or rxs[0][1] != ERR_GOOD:
+            ok = False
+            failures.append(f"[G1] thread{b}: got {rxs}, expected 0x{dv:08X}")
+    stray = {t: v for t, v in deliveries.items() if t >= NUM_BANKS}
+    if stray:
+        ok = False
+        failures.append(f"[G1] stray deliveries: {list(stray.keys())}")
+    status = PASS if ok else FAIL
+    print(f"  {status}: 32 simultaneous unicasts all delivered correctly")
+
+    # Sub-test 2: one bank per ingress group sends a full group broadcast
+    # bank 0  -> threads 0-3   (egress 0)
+    # bank 4  -> threads 4-7   (egress 1)
+    # ...
+    # bank 28 -> threads 28-31 (egress 7)
+    batch2 = {}
+    expected2 = {}
+    for g in range(NUM_EGRESS):
+        grp_mask = 0xF << (g * THREADS_PER_EGRESS)
+        bank_id  = g * BANKS_PER_INGRESS
+        dv       = 0xD0000000 | g
+        batch2[bank_id] = Flit.make(dest_mask=grp_mask, data=dv)
+        for t in range(g * THREADS_PER_EGRESS, (g + 1) * THREADS_PER_EGRESS):
+            expected2[t] = dv
+
+    deliveries2 = net.send(batch2)
+
+    ok2 = True
+    for tid, dv in expected2.items():
+        rxs = deliveries2.get(tid, [])
+        if not rxs or rxs[0][0] != dv or rxs[0][1] != ERR_GOOD:
+            ok2 = False
+            failures.append(f"[G2] thread{tid}: got {rxs}, expected 0x{dv:08X}")
+    stray2 = {t: v for t, v in deliveries2.items() if t not in expected2}
+    if stray2:
+        ok2 = False
+        failures.append(f"[G2] stray deliveries: {list(stray2.keys())}")
+    status2 = PASS if ok2 else FAIL
+    print(f"  {status2}: 8 simultaneous group-broadcasts all delivered correctly")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -409,6 +531,8 @@ if __name__ == "__main__":
     test_C_broadcast()
     test_D_errors()
     test_E_mshr_merge()
+    test_F_single_ingress_4way()
+    test_G_all_ingress_32way()
 
     print("\n" + "=" * 60)
     if failures:

@@ -407,6 +407,206 @@ module tb_clos_network;
     $display("  Done: 32 concurrent unicast sends");
   endtask
 
+  // -------------------------------------------------------------------------
+  // Helper: send N flits simultaneously (one per bank), wait for all
+  // handshakes, then assert all deliveries arrived within max_cycles.
+  // Returns the number of cycles from send to last delivery.
+  // -------------------------------------------------------------------------
+  task automatic send_simultaneous_and_check(
+    input int     bank_ids   [],
+    input flit_t  flits      [],
+    input int     max_cycles,
+    output int    cycles_taken
+  );
+    automatic int n         = bank_ids.size();
+    automatic int remaining = n;
+    automatic int t_send;
+
+    // Drive all valids on the same negedge
+    @(negedge clk);
+    for (int k = 0; k < n; k++) begin
+      bank_valid[bank_ids[k]] = 1'b1;
+      bank_flit [bank_ids[k]] = flits[k];
+    end
+
+    // Record cycle count from first posedge after assertion
+    @(posedge clk);
+    t_send = $time / 10;   // cycle number (10 ns period)
+
+    // Deassert each bank as its handshake fires
+    while (remaining > 0) begin
+      #1;
+      for (int k = 0; k < n; k++) begin
+        if (bank_valid[bank_ids[k]] && bank_ready[bank_ids[k]]) begin
+          bank_valid[bank_ids[k]] = 1'b0;
+          remaining--;
+        end
+      end
+      if (remaining > 0) @(posedge clk);
+    end
+
+    // Wait for scoreboard to drain, counting cycles
+    cycles_taken = 0;
+    for (int cyc = 0; cyc < max_cycles; cyc++) begin
+      automatic int pending = 0;
+      for (int t = 0; t < NUM_THREADS; t++) pending += int'(exp_q[t].size());
+      if (pending == 0) begin
+        cycles_taken = cyc;
+        return;
+      end
+      @(posedge clk);
+    end
+    // Timeout
+    cycles_taken = max_cycles;
+    for (int t = 0; t < NUM_THREADS; t++) begin
+      while (exp_q[t].size() > 0) begin
+        automatic exp_t e = exp_q[t].pop_front();
+        $display("  FAIL: thread%0d TIMEOUT after %0d cycles", t, max_cycles);
+        total_fail++;
+        fail_msgs.push_back($sformatf("thread%0d timeout %0d cycles", t, max_cycles));
+      end
+    end
+  endtask
+
+  // ==========================================================================
+  // Test F: Single ingress — 4 banks fire simultaneously to different threads
+  //
+  // Banks 0-3 (all on ingress switch 0) each send to a thread in a different
+  // egress group in the same cycle.  With no arbitration and no contention
+  // all 4 should arrive in exactly 3 cycles.
+  // ==========================================================================
+  task test_F_single_ingress_4way();
+    $display("\n============================================================");
+    $display("[F] SINGLE INGRESS — 4 banks simultaneous, different egress groups");
+    $display("============================================================");
+
+    // Bank 0 -> thread 0  (egress 0)
+    // Bank 1 -> thread 4  (egress 1)
+    // Bank 2 -> thread 8  (egress 2)
+    // Bank 3 -> thread 12 (egress 3)
+    begin
+      automatic int    bids[] = '{0, 1, 2, 3};
+      automatic flit_t fs[4];
+      automatic int    cyc;
+
+      fs[0] = make_flit(32'h0000_0001, 32'hF0000000);  // thread 0
+      fs[1] = make_flit(32'h0000_0010, 32'hF0000001);  // thread 4
+      fs[2] = make_flit(32'h0000_0100, 32'hF0000002);  // thread 8
+      fs[3] = make_flit(32'h0000_1000, 32'hF0000003);  // thread 12
+
+      expect_flit(32'h0000_0001, 32'hF0000000);
+      expect_flit(32'h0000_0010, 32'hF0000001);
+      expect_flit(32'h0000_0100, 32'hF0000002);
+      expect_flit(32'h0000_1000, 32'hF0000003);
+
+      send_simultaneous_and_check(bids, fs, 20, cyc);
+
+      if (cyc <= 3)
+        $display("  PASS: all 4 flits delivered in %0d cycles (<=3)", cyc);
+      else begin
+        $display("  FAIL: delivered in %0d cycles, expected <=3", cyc);
+        total_fail++;
+        fail_msgs.push_back($sformatf("[F] latency %0d cycles > 3", cyc));
+      end
+    end
+
+    // Second sub-test: same ingress, multicast flit + 3 unicasts
+    // Bank 0 -> threads 0,1 (multicast within egress 0)
+    // Bank 1 -> thread 4    (egress 1)
+    // Bank 2 -> thread 8    (egress 2)
+    // Bank 3 -> thread 12   (egress 3)
+    begin
+      automatic int    bids[] = '{0, 1, 2, 3};
+      automatic flit_t fs[4];
+      automatic int    cyc;
+
+      fs[0] = make_flit(32'h0000_0003, 32'hF1000000);  // threads 0,1
+      fs[1] = make_flit(32'h0000_0010, 32'hF1000001);  // thread 4
+      fs[2] = make_flit(32'h0000_0100, 32'hF1000002);  // thread 8
+      fs[3] = make_flit(32'h0000_1000, 32'hF1000003);  // thread 12
+
+      expect_flit(32'h0000_0003, 32'hF1000000);
+      expect_flit(32'h0000_0010, 32'hF1000001);
+      expect_flit(32'h0000_0100, 32'hF1000002);
+      expect_flit(32'h0000_1000, 32'hF1000003);
+
+      send_simultaneous_and_check(bids, fs, 20, cyc);
+
+      if (cyc <= 3)
+        $display("  PASS: multicast+3 unicast delivered in %0d cycles (<=3)", cyc);
+      else begin
+        $display("  FAIL: delivered in %0d cycles, expected <=3", cyc);
+        total_fail++;
+        fail_msgs.push_back($sformatf("[F] multicast latency %0d cycles > 3", cyc));
+      end
+    end
+  endtask
+
+  // ==========================================================================
+  // Test G: All 8 ingress switches — 4 banks each, 32 simultaneous flits
+  //
+  // Every bank fires at once, each to a unique thread.  Verifies no stalling
+  // across ingress switches and non-blocking routing through the middle stage.
+  // All 32 flits should arrive in exactly 3 cycles.
+  // ==========================================================================
+  task test_G_all_ingress_32way();
+    $display("\n============================================================");
+    $display("[G] ALL INGRESS — 32 banks simultaneous, all unique threads");
+    $display("============================================================");
+
+    begin
+      automatic int    bids[32];
+      automatic flit_t fs  [32];
+      automatic int    cyc;
+
+      // Bank b -> thread b (unique destination per bank)
+      for (int b = 0; b < NUM_BANKS; b++) begin
+        bids[b] = b;
+        fs[b]   = make_flit(NUM_THREADS'(1) << b, 32'hE0000000 | b);
+        expect_flit(NUM_THREADS'(1) << b, 32'hE0000000 | b);
+      end
+
+      send_simultaneous_and_check(bids, fs, 20, cyc);
+
+      if (cyc <= 3)
+        $display("  PASS: all 32 flits delivered in %0d cycles (<=3)", cyc);
+      else begin
+        $display("  FAIL: delivered in %0d cycles, expected <=3", cyc);
+        total_fail++;
+        fail_msgs.push_back($sformatf("[G] latency %0d cycles > 3", cyc));
+      end
+    end
+
+    // Second sub-test: 8 ingress switches each send one multicast
+    // covering all 4 threads in one egress group, simultaneously.
+    // Bank 0  -> threads 0-3   (egress 0, all 4 threads)
+    // Bank 4  -> threads 4-7   (egress 1, all 4 threads)
+    // ...
+    // Bank 28 -> threads 28-31 (egress 7, all 4 threads)
+    begin
+      automatic int    bids[8];
+      automatic flit_t fs  [8];
+      automatic int    cyc;
+
+      for (int g = 0; g < NUM_EGRESS; g++) begin
+        automatic logic [31:0] grp_mask = 32'hF << (g * THREADS_PER_EGRESS);
+        bids[g] = g * BANKS_PER_INGRESS;
+        fs[g]   = make_flit(grp_mask, 32'hD0000000 | g);
+        expect_flit(grp_mask, 32'hD0000000 | g);
+      end
+
+      send_simultaneous_and_check(bids, fs, 20, cyc);
+
+      if (cyc <= 3)
+        $display("  PASS: 8 group-broadcasts delivered in %0d cycles (<=3)", cyc);
+      else begin
+        $display("  FAIL: delivered in %0d cycles, expected <=3", cyc);
+        total_fail++;
+        fail_msgs.push_back($sformatf("[G] group-bcast latency %0d cycles > 3", cyc));
+      end
+    end
+  endtask
+
   // ==========================================================================
   // Main
   // ==========================================================================
@@ -426,6 +626,8 @@ module tb_clos_network;
     test_C_broadcast();
     test_D_errors();
     test_E_simultaneous();
+    test_F_single_ingress_4way();
+    test_G_all_ingress_32way();
 
     // Let the monitor flush any in-flight flits.
     repeat(20) @(posedge clk);

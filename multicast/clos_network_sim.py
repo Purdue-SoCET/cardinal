@@ -236,12 +236,11 @@ class IngressSwitch:
                     egress_mask |= (1 << t)
 
                 if flit.dest_mask & egress_mask:
-                    # Need to reach egress_id -> forward to middle switch egress_id
-                    # (In a real Clos, routing is more involved; here each middle
-                    #  switch connects to all egress switches, so we use middle
-                    #  switch index == egress switch index for simplicity.)
+                    # Diagonal routing: ingress s sends egress group e via
+                    # middle switch (s + e) % NUM_MIDDLE.
+                    m = (self.switch_id + egress_id) % NUM_MIDDLE
                     sub_flit = flit.copy_for_dest(egress_mask)
-                    output[egress_id].append(sub_flit)
+                    output[m].append(sub_flit)
 
         return output
 
@@ -251,19 +250,27 @@ class IngressSwitch:
 # ---------------------------------------------------------------------------
 class MiddleSwitch:
     """
-    Collects flits from all ingress switches (one per ingress).
-    Forwards each flit to the egress switch indicated by its index.
-    (middle switch m routes to egress switch m.)
+    Collects flits from all 8 ingress switches.
+    Routes each flit to the correct egress switch based on dest_mask —
+    whichever nibble of dest_mask is non-zero determines the target egress.
     """
     def __init__(self, switch_id: int):
-        self.switch_id = switch_id   # also the target egress switch id
+        self.switch_id = switch_id
 
-    def process(self, flits: List[Optional[Flit]]) -> List[Flit]:
+    def process(self, flits: List[Optional[Flit]]) -> Dict[int, List[Flit]]:
         """
         Input : flits[i] = flit arriving from ingress switch i (or None).
-        Output: list of flits to pass to the associated egress switch.
+        Output: dict { egress_id -> [flits] } routed by dest_mask nibble.
         """
-        return [f for f in flits if f is not None]
+        output: Dict[int, List[Flit]] = {e: [] for e in range(NUM_EGRESS)}
+        for f in flits:
+            if f is None:
+                continue
+            for e in range(NUM_EGRESS):
+                if (f.dest_mask >> (e * THREADS_PER_EGRESS)) & ((1 << THREADS_PER_EGRESS) - 1):
+                    output[e].append(f)
+                    break
+        return output
 
 
 # ---------------------------------------------------------------------------
@@ -337,8 +344,9 @@ class ClosNetwork:
         egress_inputs: List[List[Flit]] = [[] for _ in range(NUM_EGRESS)]
 
         for m, mid_sw in enumerate(self.middle):
-            mid_output = mid_sw.process(middle_inputs[m])
-            egress_inputs[m].extend(mid_output)   # middle m -> egress m
+            mid_output = mid_sw.process(middle_inputs[m])  # dict {egress_id: [flits]}
+            for e, flits in mid_output.items():
+                egress_inputs[e].extend(flits)   # middle m -> any egress e
 
         # --- Stage 3: Egress ---
         deliveries: Dict[int, List[Tuple[int, int]]] = {}

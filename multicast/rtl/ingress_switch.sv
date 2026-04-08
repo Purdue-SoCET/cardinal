@@ -1,14 +1,15 @@
 // ingress_switch.sv
 // 3-stage Clos network – ingress switch (4 inputs × 8 outputs).
 //
-// Each of the 4 bank-facing input ports receives a flit whose dest_mask
-// spans all 32 threads.  The switch maps middle-switch index m (0-7) to
-// egress-switch m, which serves threads [m*4 +: 4].  For each output port m
-// the flit is replicated when any of the four bits dest_mask[m*4 +: 4] is set;
-// the copy's dest_mask is masked to only those four bits so downstream stages
-// can strip unneeded bits early.
+// Each bank input carries at most one flit per cycle. The arbiter above
+// guarantees no two banks target the same egress group in the same cycle,
+// so each output port receives at most one flit — no arbitration needed.
 //
-// Arbitration: per-output round-robin across the 4 input ports.
+// For each bank input, the flit is replicated to every output port whose
+// egress group appears in dest_mask (diagonal routing: ingress s sends
+// egress group e via output port (s+e) % NUM_MIDDLE).  Each copy has its
+// dest_mask masked to only the 4 bits for that egress group.
+//
 // All outputs are registered (one pipeline stage).
 
 `timescale 1ns/1ps
@@ -33,89 +34,53 @@ module ingress_switch #(
 );
 
   // ---------------------------------------------------------------------------
-  // Internal pipeline registers
+  // Output registers — one per middle switch output port
   // ---------------------------------------------------------------------------
-  logic              out_valid_q [NUM_MIDDLE];
-  flit_t             out_flit_q  [NUM_MIDDLE];
+  logic  out_valid_q [NUM_MIDDLE];
+  flit_t out_flit_q  [NUM_MIDDLE];
 
   // ---------------------------------------------------------------------------
-  // Per-output arbitration state (round-robin pointer)
+  // Combinational: for each output port m, find which bank (if any) targets it.
+  // Output m serves egress group e_m = (m - SWITCH_ID + NUM_MIDDLE) % NUM_MIDDLE.
+  // At most one bank can target each egress group per cycle (arbiter guarantee).
   // ---------------------------------------------------------------------------
-  logic [$clog2(BANKS_PER_INGRESS)-1:0] rr_ptr_q [NUM_MIDDLE];
-
-  // ---------------------------------------------------------------------------
-  // Combinational arbitration
-  // ---------------------------------------------------------------------------
-  // For each output m, determine which input wins this cycle.
-
-  // Which inputs want to send to output m?
-  logic [BANKS_PER_INGRESS-1:0] req [NUM_MIDDLE];
+  logic  in_valid  [NUM_MIDDLE];
+  flit_t in_flit   [NUM_MIDDLE];
 
   always_comb begin
     for (int m = 0; m < NUM_MIDDLE; m++) begin
+      automatic int e_m = (m - int'(SWITCH_ID) + NUM_MIDDLE) % NUM_MIDDLE;
+      automatic logic [THREADS_PER_EGRESS-1:0] grp_mask =
+        {THREADS_PER_EGRESS{1'b1}} << (e_m * THREADS_PER_EGRESS);
+
+      in_valid[m] = 1'b0;
+      in_flit[m]  = '0;
+
       for (int i = 0; i < BANKS_PER_INGRESS; i++) begin
-        // input i wants output m if it is valid and dest_mask covers that group
-        req[m][i] = bank_valid[i] &&
-                    (|(bank_flit[i].dest_mask[m*THREADS_PER_EGRESS +: THREADS_PER_EGRESS]));
-      end
-    end
-  end
-
-  // ---------------------------------------------------------------------------
-  // Per-output round-robin grant + output mux
-  // ---------------------------------------------------------------------------
-  // Next-pointer and winner for each output
-  logic [$clog2(BANKS_PER_INGRESS)-1:0] winner     [NUM_MIDDLE];
-  logic                                  winner_vld [NUM_MIDDLE];
-  logic [$clog2(BANKS_PER_INGRESS)-1:0] rr_ptr_nxt [NUM_MIDDLE];
-
-  always_comb begin
-    for (int m = 0; m < NUM_MIDDLE; m++) begin
-      winner[m]     = '0;
-      winner_vld[m] = 1'b0;
-      rr_ptr_nxt[m] = rr_ptr_q[m];
-
-      // Priority scan starting from rr_ptr_q[m]
-      for (int k = 0; k < BANKS_PER_INGRESS; k++) begin
-        automatic int idx = (rr_ptr_q[m] + k) % BANKS_PER_INGRESS;
-        if (!winner_vld[m] && req[m][idx]) begin
-          winner[m]     = idx[$clog2(BANKS_PER_INGRESS)-1:0];
-          winner_vld[m] = 1'b1;
+        if (bank_valid[i] && |(bank_flit[i].dest_mask & grp_mask)) begin
+          in_valid[m]           = 1'b1;
+          in_flit[m]            = bank_flit[i];
+          in_flit[m].dest_mask  = bank_flit[i].dest_mask & {{(NUM_THREADS-THREADS_PER_EGRESS){1'b0}}, grp_mask};
         end
       end
-
-      // Advance pointer only when output port can accept (not stalled)
-      if (winner_vld[m] && (!out_valid_q[m] || mid_ready[m])) begin
-        rr_ptr_nxt[m] = (winner[m] + 1'b1) % BANKS_PER_INGRESS;
-      end
     end
   end
 
   // ---------------------------------------------------------------------------
-  // Registered outputs and RR pointer update
+  // Registered outputs
   // ---------------------------------------------------------------------------
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       for (int m = 0; m < NUM_MIDDLE; m++) begin
         out_valid_q[m] <= 1'b0;
         out_flit_q[m]  <= '0;
-        rr_ptr_q[m]    <= '0;
       end
     end else begin
       for (int m = 0; m < NUM_MIDDLE; m++) begin
-        rr_ptr_q[m] <= rr_ptr_nxt[m];
-
         if (!out_valid_q[m] || mid_ready[m]) begin
-          // Slot is free (or being consumed this cycle)
-          out_valid_q[m] <= winner_vld[m];
-          if (winner_vld[m]) begin
-            // Mask dest_mask to only the 4 bits relevant to egress switch m
-            out_flit_q[m]           <= bank_flit[winner[m]];
-            out_flit_q[m].dest_mask <=
-              bank_flit[winner[m]].dest_mask &
-              ({ {(NUM_THREADS - THREADS_PER_EGRESS){1'b0}},
-                 {THREADS_PER_EGRESS{1'b1}} } << (m * THREADS_PER_EGRESS));
-          end
+          out_valid_q[m] <= in_valid[m];
+          if (in_valid[m])
+            out_flit_q[m] <= in_flit[m];
         end
       end
     end
@@ -132,35 +97,21 @@ module ingress_switch #(
   end
 
   // ---------------------------------------------------------------------------
-  // Back-pressure to banks
-  // A bank input is ready when NONE of its pending output ports are stalled.
-  // Conservatively, a bank is ready when every output to which it could send
-  // is either not being targeted or has room.  We use a simple approximation:
-  // the bank is ready if at least one output that it targets is free.
-  // For correctness we stall the bank whenever any output it won last cycle
-  // is backpressured.  The simplest safe approach: always accept unless all
-  // outputs targeted by this bank are stalled.
+  // Back-pressure: a bank is ready when all output ports it targets are free.
   // ---------------------------------------------------------------------------
   always_comb begin
     for (int i = 0; i < BANKS_PER_INGRESS; i++) begin
-      automatic logic any_output_free = 1'b0;
+      automatic logic all_free = 1'b1;
       for (int m = 0; m < NUM_MIDDLE; m++) begin
-        if (bank_valid[i] &&
-            (|(bank_flit[i].dest_mask[m*THREADS_PER_EGRESS +: THREADS_PER_EGRESS]))) begin
-          if (!out_valid_q[m] || mid_ready[m]) begin
-            any_output_free = 1'b1;
-          end
-        end else begin
-          // This output is not targeted – don't factor it in
-          any_output_free = any_output_free;
+        automatic int e_m = (m - int'(SWITCH_ID) + NUM_MIDDLE) % NUM_MIDDLE;
+        automatic logic [THREADS_PER_EGRESS-1:0] grp_mask =
+          {THREADS_PER_EGRESS{1'b1}} << (e_m * THREADS_PER_EGRESS);
+        if (bank_valid[i] && |(bank_flit[i].dest_mask & grp_mask)) begin
+          if (out_valid_q[m] && !mid_ready[m])
+            all_free = 1'b0;
         end
       end
-      // If input has no valid target bits, assert ready (drop idle cycles)
-      if (!bank_valid[i] || !(|(bank_flit[i].dest_mask))) begin
-        bank_ready[i] = 1'b1;
-      end else begin
-        bank_ready[i] = any_output_free;
-      end
+      bank_ready[i] = all_free;
     end
   end
 
