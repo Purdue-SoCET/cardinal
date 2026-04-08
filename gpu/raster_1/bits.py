@@ -41,10 +41,3 @@ class Bits():
     def getFloats(self):
         intCon = self.getInt()
         return struct.unpack('!f', struct.pack('!I', intCon))[0]
-
-'''
-val = '0001'
-#val = val[::-1]
-myBits = Bits(32, val)
-print(myBits.getBits())
-'''

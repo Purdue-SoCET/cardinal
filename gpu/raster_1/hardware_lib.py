@@ -15,8 +15,8 @@ class Table():
 class vertexTable(Table):
     def __init__(self, size : int = 12, blockSize : int = 64):
         super().__init__(size, blockSize)
-        self.refCount = [0] * size
-        self.valid = [0] * size
+        self.refCount = [Bits(size = 5)] * size
+        self.valid = [Bits(size = 1)] * size
 
     def getRefCount(self, index):
         return self.refCount[index]
