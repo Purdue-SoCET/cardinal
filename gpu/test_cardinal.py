@@ -83,7 +83,7 @@ class TestResult:
 class GPUTestRunner:
     """Main test runner class."""
     
-    def __init__(self, src: str, truth: str, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None):
+    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None):
         """Initialize the test runner.
         
         Args:
@@ -96,10 +96,10 @@ class GPUTestRunner:
             enable_cycle_limit: If True, enforce a max cycle limit
             max_cycles: Maximum cycles to run (only used if enable_cycle_limit is True)
         """
-        # Validate arguments
-        if src not in ("assembly", "bin"):
+        # Validate arguments only if running tests
+        if src is not None and src not in ("assembly", "bin"):
             raise ValueError(f"Invalid src: {src}. Must be 'assembly' or 'bin'")
-        if truth not in ("emu", "exp"):
+        if truth is not None and truth not in ("emu", "exp"):
             raise ValueError(f"Invalid truth: {truth}. Must be 'emu' or 'exp'")
         
         self.src = src
@@ -116,22 +116,24 @@ class GPUTestRunner:
         if self.clean:
             self._clean_results()
         
-        # Determine test root based on source type
-        if src == "assembly":
-            self.test_root = self.settings.directories.test_root_asm
-            file_ext = ".s"
-        else:  # bin
-            self.test_root = self.settings.directories.test_root_bin
-            file_ext = ".bin"
-        
-        # Use provided pattern or default
-        self.search_pattern = search_pattern or self.settings.test_parameters.default_pattern
-        
-        # Append file extension if needed
-        if not self.search_pattern.endswith(file_ext) and '/' not in self.search_pattern:
-            # Only append extension if it's not a directory pattern
-            if not self.search_pattern.endswith('/'):
-                self.search_pattern += file_ext
+        # Only set up test paths if running tests
+        if src is not None:
+            # Determine test root based on source type
+            if src == "assembly":
+                self.test_root = self.settings.directories.test_root_asm
+                file_ext = ".s"
+            else:  # bin
+                self.test_root = self.settings.directories.test_root_bin
+                file_ext = ".bin"
+            
+            # Use provided pattern or default
+            self.search_pattern = search_pattern or self.settings.test_parameters.default_pattern
+            
+            # Append file extension if needed
+            if not self.search_pattern.endswith(file_ext) and '/' not in self.search_pattern:
+                # Only append extension if it's not a directory pattern
+                if not self.search_pattern.endswith('/'):
+                    self.search_pattern += file_ext
         
         # Setup results directory (for all output files)
         self.results_dir = Path("results")
@@ -851,11 +853,11 @@ def main():
     )
     
     parser.add_argument(
-        '--src', choices=['assembly', 'bin'], required=True,
+        '--src', choices=['assembly', 'bin'], required=False,
         help='Source file type: assembly (.s files) or bin (.bin files)'
     )
     parser.add_argument(
-        '--truth', choices=['emu', 'exp'], required=True,
+        '--truth', choices=['emu', 'exp'], required=False,
         help='Ground truth source: emu (emulator) or exp (expected files)'
     )
     parser.add_argument(
@@ -884,6 +886,23 @@ def main():
     )
     
     args = parser.parse_args()
+    
+    # If --clean is specified alone, just clean and exit
+    if args.clean and args.src is None and args.truth is None:
+        try:
+            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
+            runner._clean_results()
+            print(f"{Colors.GREEN}Results directory cleaned.{Colors.NC}")
+            return 0
+        except Exception as e:
+            print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
+            return 1
+    
+    # Otherwise, require --src and --truth
+    if args.src is None or args.truth is None:
+        parser.error("--src and --truth are required (unless using --clean alone)")
     
     try:
         runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
