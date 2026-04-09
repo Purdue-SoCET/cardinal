@@ -370,16 +370,12 @@ class SM:
         self.finished = self.pipeline["scheduler"].system_finished
     
     def finalize(self):
-        """Finalize simulation and output performance counter data.
-        
-        Note: Currently incomplete - the telemeter framework has issues with
-        finalizing collected data. This is called but doesn't produce output
-        at the moment. Enable perf_counter.enabled=true in config.toml to
-        collect data once the framework is fully debugged.
-        """
+        """Finalize simulation and output performance counter data."""
         if self.telemeter:
             try:
                 self.telemeter.finalize()
+                print(f"Performance counter data written to {self.config.perf_counter.output_dir}/")
             except Exception as e:
-                # Silently fail - perf counter framework not yet fully working
-                pass
+                print(f"Error finalizing performance counters: {e}")
+                import traceback
+                traceback.print_exc()

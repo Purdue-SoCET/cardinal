@@ -20,10 +20,43 @@ class ExecutePerfCount(PerfCounterBase):
             self.overflow_counts[instr.opcode] = self.overflow_counts.get(instr.opcode, 0) + 1
 
     def _extra_summary(self) -> dict[str, Any]:
+        """Convert instruction and overflow counts to JSON-serializable format for Parquet export.
+        
+        Converts Op enum keys to strings and filters out None values with warnings.
+        """
+        # Convert instruction counts: Op enum -> string, filter out None
+        instr_counts_str = {}
+        if None in self.instruction_counts:
+            print(f"Warning: {self.unit_name} has instruction_counts[None]={self.instruction_counts[None]}, filtering out")
+        for opcode, count in self.instruction_counts.items():
+            if opcode is None:
+                continue
+            if count is None:
+                print(f"Warning: {self.unit_name} instruction_counts[{opcode}] is None, filtering out")
+                continue
+            opcode_str = opcode.name if hasattr(opcode, 'name') else str(opcode)
+            instr_counts_str[opcode_str] = count
+        
+        # Convert overflow counts: Op enum -> string, filter out None
+        overflow_counts_str = {}
+        if None in self.overflow_counts:
+            print(f"Warning: {self.unit_name} has overflow_counts[None]={self.overflow_counts[None]}, filtering out")
+        for opcode, count in self.overflow_counts.items():
+            if opcode is None:
+                continue
+            if count is None:
+                print(f"Warning: {self.unit_name} overflow_counts[{opcode}] is None, filtering out")
+                continue
+            opcode_str = opcode.name if hasattr(opcode, 'name') else str(opcode)
+            overflow_counts_str[opcode_str] = count
+        
+        # Polars can't handle empty dicts, so represent them as strings
+        instr_summary = str(instr_counts_str) if instr_counts_str else "no_instructions"
+        overflow_summary = str(overflow_counts_str) if overflow_counts_str else "no_overflows"
         
         return {
-            "instruction_counts": self.instruction_counts,
-            "overflow_counts": self.overflow_counts,
+            "instruction_summary": instr_summary,
+            "overflow_summary": overflow_summary,
         }
     
     def increment(self, instr: Instruction, ready_out: bool = True, ex_wb_interface_ready: bool = True) -> None:

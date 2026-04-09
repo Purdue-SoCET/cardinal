@@ -78,7 +78,7 @@ tb_size = 32
 
 # Performance Counter and Telemetry Configuration
 [perf_counter]
-enabled = false
+enabled = true
 trace_enabled = false
 trace_start_cycle = 0
 trace_end_cycle = 0
