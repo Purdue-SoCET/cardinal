@@ -102,7 +102,7 @@ class SM:
             # Fallback to summary only
             perf_config = PerfConfig.summary_only()
         
-        return Telemeter(perf_config, output_dir=str(output_dir))
+        return Telemeter(perf_config, output_dir=str(output_dir), output_prefix=perf_cfg.output_prefix)
     
     def _build_pipeline(self) -> dict:
         """Instantiate all pipeline stages and return them as a dict."""

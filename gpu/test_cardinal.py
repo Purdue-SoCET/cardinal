@@ -344,13 +344,13 @@ class GPUTestRunner:
         
         Args:
             input_file: Input binary file
-            test_name: Optional test name for perf_data directory (e.g., "beq.bin")
+            test_name: Optional test name for perf data (e.g., "beq.bin")
             
         Returns:
             True if successful
         """
         try:
-            # Create a copy of settings and customize perf_counter output_dir for this test
+            # Create a copy of settings and customize perf_counter output settings for this test
             if test_name is None:
                 test_file_path = Path(input_file)
                 test_name = f"{test_file_path.stem}.{test_file_path.suffix.lstrip('.')}"
@@ -358,7 +358,10 @@ class GPUTestRunner:
             # Make a mutable copy of settings for this run
             import copy
             settings = copy.deepcopy(self.settings)
+            # Set output_dir to test-specific subdirectory
             settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
+            # Set output_prefix to include test name in the filename
+            settings.perf_counter.output_prefix = test_name
             
             # Create SM instance with simulator config
             sm = SM(

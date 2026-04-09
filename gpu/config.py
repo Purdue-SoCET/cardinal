@@ -125,6 +125,7 @@ class PerformanceCounterConfig(BaseModel):
     trace_start_cycle: int = 0
     trace_end_cycle: int = 0
     output_dir: str = "results/perf_data"
+    output_prefix: str = ""  # Prefix for output filenames (e.g., test name)
     summary_only: bool = True
     enabled_units: list[str] = Field(default_factory=list)  # empty = all units
     buffer_limit: int = 100_000

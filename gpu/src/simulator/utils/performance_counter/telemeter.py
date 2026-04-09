@@ -69,10 +69,11 @@ class Telemeter:
                  does not exist.
     """
 
-    def __init__(self, config: PerfConfig, output_dir: str = "perf_out") -> None:
+    def __init__(self, config: PerfConfig, output_dir: str = "perf_out", output_prefix: str = "") -> None:
         self.config = config
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_prefix = output_prefix  # Prefix for output filenames (e.g., test name)
 
         # Registered PerfCounterBase instances keyed by unit name
         self._units: Dict[str, PerfCounterBase] = {}
@@ -500,7 +501,9 @@ class Telemeter:
         # Collect summaries from all registered units
         rows = [unit.finalize() for unit in self._units.values()]
         df = pl.from_dicts(rows)
-        summary_path = self.output_dir / "perf_summary.parquet"
+        # Use output_prefix in filename if provided
+        filename = f"{self.output_prefix}_perf_summary.parquet" if self.output_prefix else "perf_summary.parquet"
+        summary_path = self.output_dir / filename
         df.write_parquet(str(summary_path))
 
     # ------------------------------------------------------------------
