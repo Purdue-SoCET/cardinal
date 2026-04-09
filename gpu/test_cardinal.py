@@ -83,7 +83,7 @@ class TestResult:
 class GPUTestRunner:
     """Main test runner class."""
     
-    def __init__(self, src: str, truth: str, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None):
+    def __init__(self, src: str, truth: str, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None):
         """Initialize the test runner.
         
         Args:
@@ -91,6 +91,7 @@ class GPUTestRunner:
             truth: Truth type ("emu" or "exp")
             search_pattern: Optional file pattern to search for
             config_path: Optional path to config file
+            clean: If True, clean results/ directory before running
             skip_cleanup: If True, skip cleanup after tests run
             enable_cycle_limit: If True, enforce a max cycle limit
             max_cycles: Maximum cycles to run (only used if enable_cycle_limit is True)
@@ -103,12 +104,17 @@ class GPUTestRunner:
         
         self.src = src
         self.truth = truth
+        self.clean = clean
         self.skip_cleanup = skip_cleanup
         self.enable_cycle_limit = enable_cycle_limit
         self.max_cycles = max_cycles or 100000
         self.settings = get_settings(config_path)
         self.pass_count = 0
         self.fail_count = 0
+        
+        # Clean results directory if requested
+        if self.clean:
+            self._clean_results()
         
         # Determine test root based on source type
         if src == "assembly":
@@ -721,6 +727,16 @@ class GPUTestRunner:
                 (self.diff_dir / f"{test_id}_meminit.hex").write_text(meminit.read_text())
             return TestResult(base_name, False, threads, blocks, str(error_log))
     
+    def _clean_results(self) -> None:
+        """Clean the results/ directory completely."""
+        results_dir = Path(self.settings.directories.diff_dir).parent
+        if results_dir.exists():
+            import shutil
+            print(f"Cleaning {results_dir}...")
+            shutil.rmtree(results_dir)
+            results_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Cleaned {results_dir}")
+    
     def cleanup(self) -> None:
         """Clean up intermediate files."""
         files_to_remove = [
@@ -833,6 +849,10 @@ def main():
         help='Path to config file (default: config.toml)'
     )
     parser.add_argument(
+        '--clean', action='store_true',
+        help='Clean results/ directory before running tests'
+    )
+    parser.add_argument(
         '--skip-cleanup', action='store_true',
         help='Skip cleanup after tests run (keep all output files for inspection)'
     )
@@ -848,7 +868,7 @@ def main():
     args = parser.parse_args()
     
     try:
-        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
+        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
         sys.exit(runner.run())
     except Exception as e:
         print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)
