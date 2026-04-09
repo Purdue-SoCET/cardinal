@@ -29,7 +29,7 @@ temp_cmd_log = "results/temp_command_output.txt"
 # Test Parameters
 [test_parameters]
 default_start_pc = 0
-default_threads = 1024
+default_threads = 32
 default_blocks = 1
 format = "hex"
 default_pattern = "*.s"
@@ -37,12 +37,12 @@ default_pattern = "*.s"
 # Simulator Configuration
 [sm]
 sm_no = 0
-num_warps = 32
+num_warps = 1
 num_preds = 16
 threads_per_warp = 32
 enable_tbs = false
 kernel_base_addr = 0x0
-tb_size = 1024
+tb_size = 32
 
 [memory]
 start_pc = 0x0
@@ -78,7 +78,7 @@ tb_size = 32
 
 # Performance Counter and Telemetry Configuration
 [perf_counter]
-enabled = false
+enabled = true
 trace_enabled = false
 trace_start_cycle = 0
 trace_end_cycle = 0

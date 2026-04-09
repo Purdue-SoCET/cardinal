@@ -16,7 +16,7 @@ class ExecutePerfCount(PerfCounterBase):
         else:
             self.instruction_counts[None] = self.instruction_counts.get(None, 0) + 1
 
-        if overflow:
+        if overflow and instr is not None:
             self.overflow_counts[instr.opcode] = self.overflow_counts.get(instr.opcode, 0) + 1
 
     def _extra_summary(self) -> dict[str, Any]:

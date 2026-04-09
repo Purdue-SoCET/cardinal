@@ -22,8 +22,6 @@ class FunctionalSubUnit(ABC):
 
         if telemeter:
             telemeter.register_unit(self.perf_count)
-        else:
-            print(f"Warning: No telemeter provided for {self.name}. Performance data will not be recorded.")
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
         self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
