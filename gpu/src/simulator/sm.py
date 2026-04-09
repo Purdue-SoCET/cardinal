@@ -368,4 +368,18 @@ class SM:
         
         self.cycle += 1
         self.finished = self.pipeline["scheduler"].system_finished
+    
+    def finalize(self):
+        """Finalize simulation and output performance counter data.
         
+        Note: Currently incomplete - the telemeter framework has issues with
+        finalizing collected data. This is called but doesn't produce output
+        at the moment. Enable perf_counter.enabled=true in config.toml to
+        collect data once the framework is fully debugged.
+        """
+        if self.telemeter:
+            try:
+                self.telemeter.finalize()
+            except Exception as e:
+                # Silently fail - perf counter framework not yet fully working
+                pass

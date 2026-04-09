@@ -369,6 +369,9 @@ class GPUTestRunner:
             if self.enable_cycle_limit and cycle >= self.max_cycles:
                 print(f"{Colors.YELLOW}Warning:{Colors.NC} Simulation hit max cycle limit of {self.max_cycles}")
             
+            # Finalize performance counter collection
+            sm.finalize()
+            
             # Dump register file to output
             sm.pipeline["mem"].dump(path=str(self.settings.files.sim_output))
             #pipeline_rf = sm.pipeline.get('pipeline_rf')
