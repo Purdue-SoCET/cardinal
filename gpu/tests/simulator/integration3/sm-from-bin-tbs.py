@@ -266,8 +266,11 @@ def build_pipeline(input_file: Path,
         forward_ifs_read={
             "Scheduler_TBS": scheduler_tbs_fwif
         },
-        forward_ifs_write=None
+        forward_ifs_write=None,
+        input_file=input_file
     )
+    tbs.add_SM()
+    tbs.load()
 
     scheduler_stage = SchedulerStage(
         name="Scheduler_Stage",
@@ -310,8 +313,9 @@ def build_pipeline(input_file: Path,
 
     kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
     # kernel_base_ptrs.write(0, Bits(uint=3889068044, length=32)) # vertex
-    kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel
-    # kernel_base_ptrs.write(0, Bits(uint=arg_ptr, length=32)) # triangle
+    # kernel_base_ptrs.write(0, Bits(uint=3889028536, length=32)) # pixel 1024
+    kernel_base_ptrs.write(0, Bits(uint=3888956928, length=32)) # triangle
+    # kernel_base_ptrs.write(0, Bits(uint=3889319352, length=32)) # pixel 2048
 
     decode_stage = DecodeStage(
         name="Decode Stage",
@@ -538,8 +542,6 @@ def run_test(
     prf = p["prf"]
 
     # ── initialize tbs ────────────────────────────────────────────────────────
-    p["tbs"].add_SM()
-    p["tbs"].init_kernel(kdim=kdim, bdim=bdim, spc=start_pc, apc=0x1000_0000)
 
     threads = pipeline_rf.threads_per_warp
 
@@ -606,8 +608,8 @@ def _parse_args():
         # default=str(FILE_ROOT / "test_binaries/ldst_sequence.bin"),
         # default=str(FILE_ROOT / "test_binaries/vertex_shader_pranav.bin"),
         # default=str(FILE_ROOT / "test_binaries/pixel.bin"),
-        # default=str(FILE_ROOT / "test_binaries/triangle.bin"),
-        default=str(FILE_ROOT / "test_binaries/pixel2048.bin"),
+        default=str(FILE_ROOT / "test_binaries/triangle.bin"),
+        # default=str(FILE_ROOT / "test_binaries/pixel2048.bin"),
         help="Path to the program file (.bin or .hex).",
     )
     parser.add_argument(
@@ -636,7 +638,7 @@ def _parse_args():
     parser.add_argument(
         "--kdim",
         type=int,
-        default=2048,
+        default=1024,
         help="Grid dimension (number of blocks) for TBS initialization.",
     )
     parser.add_argument(

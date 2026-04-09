@@ -48,7 +48,7 @@ class ThreadBlockScheduler(Stage):
     """
     
     
-    def __init__(self, *args, threads_per_sm: int = 1024, min_thread_division: int = 32, **kwargs):
+    def __init__(self, *args, threads_per_sm: int = 1024, min_thread_division: int = 32, input_file: Path, **kwargs):
         super().__init__(*args, **kwargs)
         assert self.behind_latch is None
 
@@ -64,17 +64,43 @@ class ThreadBlockScheduler(Stage):
         # SM list, tracks availability
         self.SMs: list[SMRecord] = []
 
+        # input file
+        self.input_file: Path = input_file
+
         # kernel info
         self.kern_finished = False
+
+    def load(self):
+        """
+        values usage:
+        values[0] = start pc
+        values[1] = bdim (threads per block)
+        values[2] = gdim (blocks per grid/kernel) CURRENTLY NOT IN USE
+        values[3] = kdim (threads per kernel)
+        values[4] = argument pc IMPLEMENTED ELSEWHERE RIGHT NOW
+        values[5] = argument size (bytes to fetch from argument struct) CURRENTLY NOT IN USE
+        """
+        values: list[int] = []
+
+        with self.input_file.open("r") as file:
+            lines: list[str] = [next(file).strip() for _ in range(9)]
+
+            for line in lines[3:9]:
+                parts: list[str] = line.split()
+
+                raw: str = parts[1]
+
+                if raw.startswith("0x") or raw.startswith("0X"):
+                    values.append(int(raw, 16))
+                else:
+                    values.append(int(raw, 2))
+
+        self.init_kernel(kdim=values[3], bdim=values[1], spc=values[0], apc=values[4])
     
     def reset(self) -> None:
         self.block_list = []
         self.blocks_not_sent = []
         self.blocks_done = []
-
-    def add_SM(self) -> None:
-        availability = self.threads_per_sm // self.min_thread_division
-        self.SMs.append(SMRecord(self.threads_per_sm, self.min_thread_division))
         
     def init_kernel(self, kdim: int, bdim: int, spc: int, apc: int) -> None:
         self.kern_finished = False
@@ -88,6 +114,10 @@ class ThreadBlockScheduler(Stage):
                 kdim -= bdim
         return
     
+    def add_SM(self) -> None:
+        availability = self.threads_per_sm // self.min_thread_division
+        self.SMs.append(SMRecord(self.threads_per_sm, self.min_thread_division))
+
     def append_block(self, bdim: int, spc: int, apc: int = 0) -> None:
         bidx = len(self.block_list)
         self.block_list.append(ThreadBlockRecord(bidx, bdim, spc, apc))
