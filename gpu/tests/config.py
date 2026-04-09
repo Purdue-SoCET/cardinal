@@ -40,13 +40,24 @@ class FilesConfig(BaseModel):
     temp_cmd_log: str
 
 
+class ModeConfig(BaseModel):
+    """Configuration for a specific test mode."""
+    file_extension: str
+    default_pattern: str
+    threads: Optional[int] = None
+    blocks: Optional[int] = None
+
+
 class TestParametersConfig(BaseModel):
     """Test execution parameters."""
     default_start_pc: int
     default_threads: int
     default_blocks: int
     format: str
-    default_pattern: str
+    mode1: ModeConfig
+    mode2: ModeConfig
+    mode3: ModeConfig
+    mode4: ModeConfig
 
 
 # ============================================================================
@@ -59,9 +70,6 @@ class SMConfig(BaseModel):
     num_warps: int = 32
     num_preds: int = 16
     threads_per_warp: int = 32
-    enable_tbs: bool = True
-    kernel_base_addr: int = 9203930
-    tb_size: int = 32
 
 
 class MemoryConfig(BaseModel):
@@ -116,19 +124,6 @@ class TestConfig(BaseModel):
     test_file: str = "test.bin"
     test_file_type: str = "bin"
     tb_size: int = 1024
-
-
-class PerformanceCounterConfig(BaseModel):
-    """Performance counter and telemetry configuration."""
-    enabled: bool = False
-    trace_enabled: bool = False
-    trace_start_cycle: int = 0
-    trace_end_cycle: int = 0
-    output_dir: str = "results/perf_data"
-    summary_only: bool = True
-    enabled_units: list[str] = Field(default_factory=list)  # empty = all units
-    buffer_limit: int = 100_000
-    flight_recorder_enabled: bool = False
 
 
 # ============================================================================
@@ -190,7 +185,6 @@ class Settings(BaseSettings):
     register_file: RegisterFileConfig = Field(default_factory=RegisterFileConfig)
     predicate_register_file: PredicateRegisterFileConfig = Field(default_factory=PredicateRegisterFileConfig)
     test: TestConfig
-    perf_counter: PerformanceCounterConfig = Field(default_factory=PerformanceCounterConfig)
     
     @classmethod
     def settings_customise_sources(

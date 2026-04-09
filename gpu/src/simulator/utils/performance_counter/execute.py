@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Any
 from common.custom_enums_multi import Op
 from simulator.instruction import Instruction
 from simulator.utils.performance_counter.perf_counter_base import PerfCounterBase
@@ -9,7 +10,7 @@ class ExecutePerfCount(PerfCounterBase):
         self.instruction_counts: dict[Op, int] = {}
         self.overflow_counts: dict[Op, int] = {}
 
-    def _record_unit_cycle(self, *, instr: Instruction, overflow: bool, **kwargs) -> None:
+    def _record_unit_cycle(self, *, instr: Instruction = None, overflow: bool = False, **kwargs) -> None:
         if instr is not None:
             self.instruction_counts[instr.opcode] = self.instruction_counts.get(instr.opcode, 0) + 1
         else:

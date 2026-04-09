@@ -93,7 +93,7 @@ class FunctionalSubUnit(ABC):
         )
 
 class Ldst_Fu(FunctionalSubUnit):
-    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1):
+    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1, telemeter=None):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
         self.wb_buffer_size = wb_buffer_size
@@ -106,7 +106,7 @@ class Ldst_Fu(FunctionalSubUnit):
         self.halting = False
         self.waiting_for_flush = False
 
-        super().__init__(num)
+        super().__init__(num, telemeter=telemeter)
 
         #Manually instantiate interfaces while doing integration
         self.dcache_if = LatchIF()
@@ -381,8 +381,8 @@ class Branch(FunctionalSubUnit):
     SUPPORTED_OPS = [
         B_Op.BEQ, B_Op.BNE, H_Op.HALT
     ]
-    def __init__(self, num: int):
-        super().__init__(num=num)
+    def __init__(self, num: int, telemeter=None):
+        super().__init__(num=num, telemeter=telemeter)
         self.data = None
     
     def compute(self):
@@ -447,8 +447,8 @@ class Jump(FunctionalSubUnit):
     SUPPORTED_OPS = [
         P_Op.JPNZ, J_Op.JAL, I_Op.JALR
     ]
-    def __init__(self, num: int, schedule_if: ForwardingIF = None):
-        super().__init__(num=num)
+    def __init__(self, num: int, schedule_if: ForwardingIF = None, telemeter=None):
+        super().__init__(num=num, telemeter=telemeter)
 
         self.schedule_if = schedule_if
         self.data = None

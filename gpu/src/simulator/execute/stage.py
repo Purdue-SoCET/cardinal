@@ -68,7 +68,7 @@ class FunctionalUnitConfig:
         return fust
 
 class ExecuteStage(Stage):
-    def __init__(self, config: FunctionalUnitConfig, fust: Dict[str, bool]):
+    def __init__(self, config: FunctionalUnitConfig, fust: Dict[str, bool], telemeter=None):
         super().__init__(name="Execute_Stage")
       
         self.behind_latch = LatchIF(name="IS_EX_Latch")
@@ -79,17 +79,18 @@ class ExecuteStage(Stage):
         self.cycle = 0
 
         self.fust = fust
+        self.telemeter = telemeter
 
         functional_units_list = []
 
         for i in range(config.int_unit_count):
-            functional_units_list.append(IntUnit(config=config.int_config, num=i))
+            functional_units_list.append(IntUnit(config=config.int_config, num=i, telemeter=telemeter))
         for i in range(config.fp_unit_count):
-            functional_units_list.append(FpUnit(config=config.fp_config, num=i))
+            functional_units_list.append(FpUnit(config=config.fp_config, num=i, telemeter=telemeter))
         for i in range(config.special_unit_count):
-            functional_units_list.append(SpecialUnit(config=config.special_config, num=i))
+            functional_units_list.append(SpecialUnit(config=config.special_config, num=i, telemeter=telemeter))
         for i in range(config.membranchjump_unit_count):
-            functional_units_list.append(MemBranchJumpUnit(config=config.membranchjump_config, num=i))
+            functional_units_list.append(MemBranchJumpUnit(config=config.membranchjump_config, num=i, telemeter=telemeter))
 
         self.functional_units = {fu.name: fu for fu in functional_units_list}
 
@@ -143,8 +144,8 @@ class ExecuteStage(Stage):
  
 
     @classmethod
-    def create_pipeline_stage(cls, functional_unit_config: FunctionalUnitConfig, fust: Dict[str, bool]) -> ExecuteStage:
+    def create_pipeline_stage(cls, functional_unit_config: FunctionalUnitConfig, fust: Dict[str, bool], telemeter=None) -> ExecuteStage:
         # execute stage
-        ex_stage = ExecuteStage(config=functional_unit_config, fust=fust)
+        ex_stage = ExecuteStage(config=functional_unit_config, fust=fust, telemeter=telemeter)
 
         return ex_stage

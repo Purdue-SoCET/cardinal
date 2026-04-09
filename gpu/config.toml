@@ -75,3 +75,15 @@ associativity = 1
 test_file = "test.bin"
 test_file_type = "bin"
 tb_size = 32
+
+# Performance Counter and Telemetry Configuration
+[perf_counter]
+enabled = false
+trace_enabled = false
+trace_start_cycle = 0
+trace_end_cycle = 0
+output_dir = "results/perf_data"
+summary_only = true
+enabled_units = []  # empty = all units
+buffer_limit = 100000
+flight_recorder_enabled = false

@@ -25,6 +25,7 @@ from simulator.mem.mem_controller import MemController
 from simulator.mem.memory import Mem
 from simulator.decode.decode_class import DecodeStage
 from simulator.decode.predicate_reg_file import PredicateRegFile
+from simulator.utils.performance_counter import PerfConfig, Telemeter
 try:
     from simulator.tbs.tbs import ThreadBlockScheduler
     TBS_AVAILABLE = True
@@ -65,8 +66,43 @@ class SM:
         self.cycle = 0
         self.finished = False
         
+        # Initialize Telemeter based on configuration
+        self.telemeter = self._create_telemeter()
+        
         # Build the pipeline
         self.pipeline = self._build_pipeline()
+    
+    def _create_telemeter(self) -> Telemeter:
+        """Create and configure the Telemeter based on PerfCounterConfig."""
+        perf_cfg = self.config.perf_counter
+        
+        if not perf_cfg.enabled:
+            # Return disabled telemeter
+            return Telemeter(PerfConfig.disabled())
+        
+        # Create output directory if it doesn't exist
+        output_dir = Path(perf_cfg.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Build enabled units set
+        enabled_units = set(perf_cfg.enabled_units) if perf_cfg.enabled_units else set()
+        
+        if perf_cfg.summary_only:
+            # Summary only mode
+            perf_config = PerfConfig.summary_only()
+        elif perf_cfg.trace_enabled:
+            # Full trace mode
+            perf_config = PerfConfig.full_trace(
+                start=perf_cfg.trace_start_cycle,
+                end=perf_cfg.trace_end_cycle,
+                enabled_units=enabled_units,
+                buffer_limit=perf_cfg.buffer_limit,
+            )
+        else:
+            # Fallback to summary only
+            perf_config = PerfConfig.summary_only()
+        
+        return Telemeter(perf_config, output_dir=str(output_dir))
     
     def _build_pipeline(self) -> dict:
         """Instantiate all pipeline stages and return them as a dict."""
@@ -224,7 +260,8 @@ class SM:
 
         ex_stage = ExecuteStage.create_pipeline_stage(
             functional_unit_config=fu_config,
-            fust=fust
+            fust=fust,
+            telemeter=self.telemeter
         )
         ex_stage.behind_latch = is_ex_latch
         ex_stage.functional_units["MemBranchJumpUnit_0"].subunits["Jump_0"].schedule_if = (

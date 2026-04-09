@@ -19,8 +19,8 @@ class ArithmeticSubUnit(FunctionalSubUnit):
         float: [],
     }
 
-    def __init__(self, latency: int, num: int, type_: type):
-        super().__init__(num=num)
+    def __init__(self, latency: int, num: int, type_: type, telemeter=None):
+        super().__init__(num=num, telemeter=telemeter)
         self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
         self.latency = latency
 
@@ -148,11 +148,11 @@ class Alu(ArithmeticSubUnit):
         ]
     }
 
-    def __init__(self, latency: int, num: int, type_: type):
+    def __init__(self, latency: int, num: int, type_: type, telemeter=None):
         if type_ != int and type_ != float:
             raise ValueError("ALU only supports integer and float operations.")
 
-        super().__init__(latency=latency, num=num, type_=type_)
+        super().__init__(latency=latency, num=num, type_=type_, telemeter=telemeter)
 
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry
@@ -278,11 +278,11 @@ class Mul(ArithmeticSubUnit):
         float: [R_Op.MULF],
     }
 
-    def __init__(self, latency: int, num: int, type_: type):
+    def __init__(self, latency: int, num: int, type_: type, telemeter=None):
         if type_ not in [int, float]:
             raise ValueError("MUL only supports integer and floating-point operations.")
 
-        super().__init__(latency=latency, type_=type_, num=num)
+        super().__init__(latency=latency, type_=type_, num=num, telemeter=telemeter)
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry
         instr = self.pipeline.queue[-1]
@@ -332,11 +332,11 @@ class Div(ArithmeticSubUnit):
         float: [R_Op.DIVF],
     }
 
-    def __init__(self, latency: int, num: int, type_: type):
+    def __init__(self, latency: int, num: int, type_: type, telemeter=None):
         if type_ not in [int, float]:
             raise ValueError("DIV only supports integer and floating-point operations.")
 
-        super().__init__(latency=latency, type_=type_, num=num)
+        super().__init__(latency=latency, type_=type_, num=num, telemeter=telemeter)
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry
         instr = self.pipeline.queue[-1]
@@ -395,13 +395,13 @@ class Conv(ArithmeticSubUnit):
         float: [F_Op.ITOF, F_Op.FTOI]
     }
 
-    def __init__(self, latency: int, num: int, type_: type = float):
+    def __init__(self, latency: int, num: int, type_: type = float, telemeter=None):
         
         # converstion unit will be considered float since it requires float hardware for all operations, even if int is involved
         if type_ != float:
             raise ValueError("Conversion unit only supports floating-point operations.")
 
-        super().__init__(latency=latency, num=num, type_=type_)
+        super().__init__(latency=latency, num=num, type_=type_, telemeter=telemeter)
 
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry
@@ -450,11 +450,11 @@ class Sqrt(ArithmeticSubUnit):
     }
     # No opcode yet for SQRT, could be added later so keeping this here in the meantime
 
-    def __init__(self, latency: int, num: int, type_: type = float):
+    def __init__(self, latency: int, num: int, type_: type = float, telemeter=None):
         if type_ != float:
             raise ValueError("SQRT only supports floating-point operations.")
 
-        super().__init__(latency=latency, type_=type_, num=num)
+        super().__init__(latency=latency, type_=type_, num=num, telemeter=telemeter)
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry
         instr = self.pipeline.queue[-1]
@@ -486,11 +486,11 @@ class Trig(ArithmeticSubUnit):
         float: [F_Op.SIN, F_Op.COS],
     }
 
-    def __init__(self, latency: int, num: int, type_: type = float):
+    def __init__(self, latency: int, num: int, type_: type = float, telemeter=None):
         if type_ != float:
             raise ValueError("TRIG only supports floating-point operations.")
 
-        super().__init__(latency=latency, type_=type_, num=num)
+        super().__init__(latency=latency, type_=type_, num=num, telemeter=telemeter)
         
         # Pre-compute CORDIC constants based on latency
         self._theta_table = [math.atan2(1, 2**i) for i in range(latency)]
@@ -576,11 +576,11 @@ class InvSqrt(ArithmeticSubUnit):
         float: [F_Op.ISQRT],
     }
 
-    def __init__(self, latency: int, num: int, type_: type = float):
+    def __init__(self, latency: int, num: int, type_: type = float, telemeter=None):
         if type_ != float:
             raise ValueError("InvSqrt only supports floating-point operations.")
 
-        super().__init__(latency=latency, type_=type_, num=num)
+        super().__init__(latency=latency, type_=type_, num=num, telemeter=telemeter)
     
     def compute(self):
         # Use current_instr if pipeline is empty (latency=1), else use last queue entry

@@ -121,46 +121,46 @@ class FunctionalUnit(ABC):
         return out_data
 
 class MemBranchJumpUnit(FunctionalUnit):
-    def __init__(self, config: MemBranchJumpUnitConfig, num: int):
+    def __init__(self, config: MemBranchJumpUnitConfig, num: int, telemeter=None):
         subunits = []
         for i in range(config.ldst_count):
-            subunits.append(Branch(num=i * (num + 1)))
-            subunits.append(Jump(num=i * (num + 1)))
-            subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1)))
+            subunits.append(Branch(num=i * (num + 1), telemeter=telemeter))
+            subunits.append(Jump(num=i * (num + 1), telemeter=telemeter))
+            subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1), telemeter=telemeter))
         super().__init__(subunits=subunits, num=num)
     
 class IntUnit(FunctionalUnit):
-    def __init__(self, config: IntUnitConfig, num: int):
+    def __init__(self, config: IntUnitConfig, num: int, telemeter=None):
         subunits = []
         for i in range(config.alu_count):
-            subunits.append(Alu(latency=config.alu_latency, type_=int, num=i * (num + 1)))
+            subunits.append(Alu(latency=config.alu_latency, type_=int, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.mul_count):
-            subunits.append(Mul(latency=config.mul_latency, type_=int, num=i * (num + 1)))
+            subunits.append(Mul(latency=config.mul_latency, type_=int, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.div_count):
-            subunits.append(Div(latency=config.div_latency, type_=int, num=i * (num + 1)))
+            subunits.append(Div(latency=config.div_latency, type_=int, num=i * (num + 1), telemeter=telemeter))
         super().__init__(subunits=subunits, num=num)
 
 class FpUnit(FunctionalUnit):
-    def __init__(self, config: FpUnitConfig, num: int):
+    def __init__(self, config: FpUnitConfig, num: int, telemeter=None):
         subunits = []
         for i in range(config.alu_count):
-            subunits.append(Alu(latency=config.alu_latency, type_=float, num=i * (num + 1)))
+            subunits.append(Alu(latency=config.alu_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.mul_count):
-            subunits.append(Mul(latency=config.mul_latency, type_=float, num=i * (num + 1)))
+            subunits.append(Mul(latency=config.mul_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.div_count):
-            subunits.append(Div(latency=config.div_latency, type_=float, num=i * (num + 1)))
+            subunits.append(Div(latency=config.div_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.sqrt_count):
-            subunits.append(Sqrt(latency=config.sqrt_latency, type_=float, num=i * (num + 1)))
+            subunits.append(Sqrt(latency=config.sqrt_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         super().__init__(subunits=subunits, num=num)
 
 class SpecialUnit(FunctionalUnit):
-    def __init__(self, config: SpecialUnitConfig, num: int):
+    def __init__(self, config: SpecialUnitConfig, num: int, telemeter=None):
         subunits = []
         for i in range(config.trig_count):
-            subunits.append(Trig(latency=config.trig_latency, type_=float, num=i * (num + 1)))
+            subunits.append(Trig(latency=config.trig_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.inv_sqrt_count):
-            subunits.append(InvSqrt(latency=config.inv_sqrt_latency, type_=float, num=i * (num + 1)))
+            subunits.append(InvSqrt(latency=config.inv_sqrt_latency, type_=float, num=i * (num + 1), telemeter=telemeter))
         for i in range(config.conv_count):
-            subunits.append(Conv(latency=config.conv_latency, num=i * (num + 1)))
+            subunits.append(Conv(latency=config.conv_latency, num=i * (num + 1), telemeter=telemeter))
 
         super().__init__(subunits=subunits, num=num)
