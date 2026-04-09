@@ -82,7 +82,7 @@ enabled = true
 trace_enabled = false
 trace_start_cycle = 0
 trace_end_cycle = 0
-output_dir = "results/perf_out"
+output_dir = "results/perf_data"
 summary_only = true
 enabled_units = []  # empty = all units
 buffer_limit = 100000

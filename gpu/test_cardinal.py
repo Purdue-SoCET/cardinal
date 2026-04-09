@@ -339,21 +339,32 @@ class GPUTestRunner:
         
         return returncode == 0
     
-    def run_simulator(self, input_file: str) -> bool:
+    def run_simulator(self, input_file: str, test_name: str = None) -> bool:
         """Run the simulator using SM class.
         
         Args:
             input_file: Input binary file
+            test_name: Optional test name for perf_data directory (e.g., "beq.bin")
             
         Returns:
             True if successful
         """
         try:
+            # Create a copy of settings and customize perf_counter output_dir for this test
+            if test_name is None:
+                test_file_path = Path(input_file)
+                test_name = f"{test_file_path.stem}.{test_file_path.suffix.lstrip('.')}"
+            
+            # Make a mutable copy of settings for this run
+            import copy
+            settings = copy.deepcopy(self.settings)
+            settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
+            
             # Create SM instance with simulator config
             sm = SM(
                 test_file=Path(input_file),
                 test_file_type="bin",
-                config=self.settings
+                config=settings
             )
             
             # Run simulation - sm.pipeline is a dict with all stages
@@ -471,8 +482,9 @@ class GPUTestRunner:
         # Run emulator
         self.run_emulator(self.settings.files.meminit, threads, blocks)
         
-        # Run simulator
-        self.run_simulator(self.settings.files.meminit_bin)
+        # Run simulator (pass test name for perf_data directory)
+        test_name = f"{base_name}.s"
+        self.run_simulator(self.settings.files.meminit_bin, test_name=test_name)
         
         # Compare outputs
         test_id = f"{base_name}_t{threads}_b{blocks}"
@@ -538,8 +550,9 @@ class GPUTestRunner:
         ]
         self.run_command(cmd)
         
-        # Run simulator
-        self.run_simulator(str(bin_output))
+        # Run simulator (pass original test file name for perf_data directory)
+        test_name = f"{bin_file.stem}.{bin_file.suffix.lstrip('.')}"
+        self.run_simulator(str(bin_output), test_name=test_name)
         
         # Compare outputs
         test_id = f"{base_name}_t{threads}_b{blocks}"
@@ -595,8 +608,9 @@ class GPUTestRunner:
         hex_output = Path(f"{base_name}_meminit.hex")
         self.convert_bin_to_hex(bin_file, hex_output)
         
-        # Run simulator
-        self.run_simulator(str(bin_file))
+        # Run simulator (pass test name for perf_data directory)
+        test_name = f"{bin_file.stem}.{bin_file.suffix.lstrip('.')}"
+        self.run_simulator(str(bin_file), test_name=test_name)
         
         # Locate expected file (recursive search)
         expected_dir = Path(self.settings.directories.expected_dir)
@@ -676,8 +690,9 @@ class GPUTestRunner:
         threads = self.settings.test_parameters.default_threads
         blocks = self.settings.test_parameters.default_blocks
         
-        # Run simulator
-        self.run_simulator(self.settings.files.meminit_bin)
+        # Run simulator (pass test name for perf_data directory)
+        test_name = f"{base_name}.s"
+        self.run_simulator(self.settings.files.meminit_bin, test_name=test_name)
         
         # Locate expected file (recursive search)
         expected_dir = Path(self.settings.directories.expected_dir)
