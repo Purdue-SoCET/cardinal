@@ -27,4 +27,7 @@ Thumbs.db
 *.txt
 *.hex
 *.egg-info/
-test_results/
+results/
+
+# Configuration files
+config.toml
