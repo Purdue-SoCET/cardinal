@@ -2,6 +2,8 @@ from math import ceil
 from pathlib import Path
 import sys
 from collections import deque
+from typing import Any
+
 from bits import Bits
 from fixedpoint import FixedPoint
 import math
@@ -16,9 +18,12 @@ from src.base_class import Stage, LatchIF, ForwardingIF, simple_instruction
 from src.simple_isa import R_Op, I_Op, S_Op
 
 
-class texture_stage_1(Stage):
-    def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
+class texture_stage(Stage):
+    def __init__(self, name: str, input_if: LatchIF, output_if: LatchIF, mem_in_if: LatchIF,
+                 mem_out_if: LatchIF):
         super().__init__(name, input_if, output_if)
+        self.mem_behind_latch = mem_in_if
+        self.mem_ahead_latch = mem_out_if
         self.mid_trilinear = 0
         self.input_data = 0
 
@@ -27,18 +32,88 @@ class texture_stage_1(Stage):
         self.HALF_TEXEL = FixedPoint(0.5, **self.fp_kwargs)
 
 
+
+        #input buffer stuff
+        self.input_buffer = [{"quads": [[(0, 0), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0), (0, 0)],
+                                        [(0, 0), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0), (0, 0)]],
+                              "filter mode": "", "clamp mode": "", "tex id": 0, "stale": 1},
+                             {"quads": [[(0, 0), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0), (0, 0)],
+                                        [(0, 0), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0), (0, 0)]],
+                              "filter mode": "", "clamp mode": "", "tex id": 0, "stale": 1}
+                             ]
+        self.next_free = 0
+
+        #current buffer quad select
+        self.current_quad = 0
+        self.current_row = 0
+
+        #header file
+        self.headers = [{"width" : 0, "height": 0, "base": 0, "mip levels": 0} for _ in range(128)]
+
+        #buffer to represent latency
+        self.address_stage_latency = []
+
     def compute(self):
-        if not self.mid_trilinear:
-            self.input_data = self.behind_latch.pop()  # Get data from the behind latch
-            if self.input_data is None:
-                return  # No data to process
+
+
+
+
+        #memory runs (this method doesn't do any of that
+        #run cycle of address generation portion of TMU (pre memory)
+        if self.mem_behind_latch.read:
+            pass
+            #progress latency buffer forward by one and run front end calculations
+            self._latency_step()
+            #buffer progress
+            self._progress_front()
+
+            #front end calculation progress
+
+
+        #last, check if next 8 quads can be sent to the start buffer
+
+        pass
+
+    def _pop_if_ready(self):
+
+        pass
+
+    def _latency_step(self):
+        # Create a temporary list to hold items that are still waiting
+        updated_latency = []
+
+        for item in self.address_stage_latency:
+            item[1] -= 1  # Decrement latency
+
+            if item[1] == 0:
+                # Latency is 0, push to latch (do NOT add to updated list)
+                self.mem_behind_latch.push(item[0])
+            else:
+                # Latency > 0, keep it for the next cycle
+                updated_latency.append(item)
+
+        # Replace the old list with the updated one
+        self.address_stage_latency = updated_latency
+
+
+    def _progress_front(self):
+        # check if next data is stale. If yes, return. Else read into method and compute
+        if (self.input_buffer[self.current_row]["stale"]):
+            return
+
+        filter_mode = self.input_buffer[self.current_row]["filter mode"]
+        current_quad = self.input_buffer[self.current_row]["quads"][self.current_quad]
+        clamp_mode = self.input_buffer[self.current_row]["clamp mode"]
+        header = self.headers[self.input_buffer[self.current_row]["tex id"]]
+
+
 
         #unnormalizing UV values
-        tex_width = FixedPoint(self.input_data["width"], **self.fp_texargs)
-        tex_height = FixedPoint(self.input_data["height"], **self.fp_texargs)
+        tex_width = FixedPoint(header["width"], **self.fp_texargs)
+        tex_height = FixedPoint(header["height"], **self.fp_texargs)
 
         unnorm_vals = []
-        for u_float, v_float in self.input_data["UVs"]:
+        for u_float, v_float in current_quad:
             u_fp = FixedPoint(u_float, **self.fp_kwargs)
             v_fp = FixedPoint(v_float, **self.fp_kwargs)
 
@@ -57,35 +132,30 @@ class texture_stage_1(Stage):
 
         #mip map LOD calculation
 
-        #have to figure out the best way to do this, since the fixed point library doesnt support square root
-        dx_sq = dUdx ** 2
-        dy_sq = dVdx ** 2
+        # 1. Absolute Values (Hardware cost: 0 gates, just strip/flip the sign bit)
+        abs_dUdx = abs(dUdx)
+        abs_dVdx = abs(dVdx)
+        abs_dUdy = abs(dUdy)
+        abs_dVdy = abs(dVdy)
 
-        dy2_sq = dUdy ** 2
-        dy2_sq_v = dVdy ** 2
+        # 2. Maximums (Hardware cost: simple comparators and multiplexers)
+        # Find the maximum footprint in the X direction
+        Lx = abs_dUdx if abs_dUdx > abs_dVdx else abs_dVdx
 
-        # 3. Sum of squares
-        sum_sq_x = dx_sq + dy_sq
-        sum_sq_y = dy2_sq + dy2_sq_v
+        # Find the maximum footprint in the Y direction
+        Ly = abs_dUdy if abs_dUdy > abs_dVdy else abs_dVdy
 
-        # 4. The Square Root Bridge
-        # Cast to float -> apply math.sqrt -> cast back to S16.16 FixedPoint
-        Lx_float = math.sqrt(float(sum_sq_x))
-        Ly_float = math.sqrt(float(sum_sq_y))
-
-        Lx = FixedPoint(Lx_float, **self.fp_kwargs)
-        Ly = FixedPoint(Ly_float, **self.fp_kwargs)
-
+        # 3. Final Phi
+        # The ideal LOD is based on whichever direction is stretched the most
         phi = Lx if Lx > Ly else Ly
 
         LOD = self.estimate_lod(phi)
 
         #clamp lod
-        LOD = min(LOD, self.input_data["mip_levels"])
+        LOD = min(LOD, header["mip_levels"])
         LOD_frac = FixedPoint(LOD, **self.fp_kwargs)
 
         #mip level conversions
-        filter_mode = self.input_data["filter"]
         if self.mid_trilinear:  # round up lod
             mip_level = math.ceil(LOD)
         elif filter_mode == "trilinear":
@@ -94,12 +164,11 @@ class texture_stage_1(Stage):
             mip_level = round(float(LOD))
 
         # mip width, height, and base address calculations
-        base = self.input_data["base"]
+        base = header["base"]
         mip_width = tex_width >> int(mip_level)
         mip_height = tex_height >> int(mip_level)
 
         #clamping
-        clamp_mode = self.input_data["clamp"]
         texel_requests = []
         for pixel in unnorm_vals:
             #scale u and v values according to current mip level
@@ -157,22 +226,16 @@ class texture_stage_1(Stage):
             })
         output_packet = {"texels": texel_requests, "mip ratio": LOD_frac, "filter mode": filter_mode,
                          "mip width": mip_w_int, "mip height": mip_h_int, "base address": base}
-
-        if self.mid_trilinear:
-            self.mid_trilinear = 0
-        elif filter_mode == "trilinear":
+        self.address_stage_latency.append([output_packet,9])
+        if filter_mode == "trilinear" and not self.mid_trilinear:
             self.mid_trilinear = 1
-
-        return output_packet
-
-
-
-
-
-
-
-
-
+        else:
+            self.mid_trilinear = 0
+            self.current_quad += 1
+            if self.current_quad == 4:
+                self.input_buffer[self.current_row]["stale"] = 1
+                self.current_quad = 0
+                self.current_row = not self.current_row
 
 
 
@@ -209,7 +272,7 @@ def setup_stage():
     simple_ahead_latch = LatchIF(name="SimpleAheadLatch")
 
     # instantiate a simple stage
-    simple_stage_instance = texture_stage_1(name="tex control stage",
+    simple_stage_instance = texture_stage(name="tex control stage",
                                          input_if=simple_behind_latch,
                                          output_if=simple_ahead_latch)
 
