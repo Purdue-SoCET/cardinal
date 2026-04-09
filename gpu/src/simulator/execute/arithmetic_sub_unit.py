@@ -20,14 +20,33 @@ class ArithmeticSubUnit(FunctionalSubUnit):
     }
 
     def __init__(self, latency: int, num: int, type_: type, telemeter=None):
-        super().__init__(num=num, telemeter=telemeter)
-        self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
-        self.latency = latency
-
         if type_ not in [int, float]:
             raise ValueError(f"Unsupported type '{type_}' for FunctionalSubUnit. Must be {int} or {float}.")
 
+        # Set type first since parent __init__ uses self.name which may be overridden by subclasses
         self.type_ = type_
+        self.latency = latency
+        
+        # Call parent init - this sets self.name and creates perf_count
+        # For base ArithmeticSubUnit, the name will be "ArithmeticSubUnit_<num>"
+        # Subclasses will override self.name in their own __init__ after calling super()
+        super().__init__(num=num, telemeter=telemeter)
+        
+        # Update the name to include the type information
+        # This also needs to update the perf_count name if it was already registered
+        self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
+        
+        # Update perf_count name to match the new unit name
+        self.perf_count.name = self.name
+        
+        # Re-register with telemeter under the correct name if telemeter exists
+        if telemeter and self.name != f"{self.__class__.__name__}_{num}":
+            # Remove old registration and add new one
+            old_name = f"{self.__class__.__name__}_{num}"
+            if old_name in telemeter._units:
+                del telemeter._units[old_name]
+            telemeter.register_unit(self.perf_count)
+
         self._overflow_pending = False
 
         self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
@@ -47,9 +66,12 @@ class ArithmeticSubUnit(FunctionalSubUnit):
         else:
             in_data = None
 
+        instr = None
+
         if self.ex_wb_interface.ready_for_push():
-            if isinstance(in_data, Instruction):
-                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
+            instr = in_data
+            if isinstance(instr, Instruction):
+                instr.mark_fu_enter(self.name, self.perf_count.total_cycles)
 
             out_data = self.pipeline.advance(in_data)
 
@@ -63,11 +85,11 @@ class ArithmeticSubUnit(FunctionalSubUnit):
 
         elif self.latency > 1 and not self.pipeline.is_full:
             out_data = False
+            instr = in_data
+            if isinstance(instr, Instruction):
+                instr.mark_fu_enter(self.name, self.perf_count.total_cycles)
 
-            if isinstance(in_data, Instruction):
-                in_data.mark_fu_enter(self.name, self.perf_count.total_cycles)
-
-            self.pipeline.compact(in_data)
+            self.pipeline.compact(instr)
 
             if isinstance(behind_latch, LatchIF):
                 behind_latch.pop()
@@ -76,7 +98,7 @@ class ArithmeticSubUnit(FunctionalSubUnit):
             self.ready_out = False            
 
         self._record_cycle(
-            instr=in_data,
+            instr=instr,
             ready_out=self.ready_out,
             ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
             overflow=self._overflow_pending,
