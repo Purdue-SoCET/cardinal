@@ -1,0 +1,60 @@
+import os
+import matplotlib.pyplot as plt
+
+# Triangle shader LD/ST queue sweep data from SM12-SM15
+ldst_q_size = [2, 4, 8, 16]
+cycles = [237163, 237163, 237163, 237163]
+
+out_dir = "gpu/tests/simulator/integration3/plots/plot_triangle_shader"
+os.makedirs(out_dir, exist_ok=True)
+out_path = os.path.join(out_dir, "ldst_sweep_cycles.png")
+
+x_labels = [f"{size} Entries" for size in ldst_q_size]
+
+fig, ax = plt.subplots(figsize=(15, 8.5))
+ax.plot(range(len(ldst_q_size)), cycles, marker='o', linewidth=2.0, markersize=7)
+
+ax.set_title(
+    "Triangle Shader LD/ST Queue Sweep: Cycles vs LD/ST Queue Size",
+    fontsize=18,
+    fontweight='bold',
+    pad=20
+)
+ax.set_xlabel(
+    "LD/ST queue size",
+    fontsize=14,
+    fontweight='bold',
+    labelpad=14
+)
+ax.set_ylabel(
+    "Cycles",
+    fontsize=14,
+    fontweight='bold',
+    labelpad=12
+)
+
+ax.set_xticks(range(len(x_labels)))
+ax.set_xticklabels(x_labels, fontsize=12, fontweight='bold')
+ax.tick_params(axis='y', labelsize=12)
+for label in ax.get_yticklabels():
+    label.set_fontweight('bold')
+
+ax.set_ylim(min(cycles) - 1000, max(cycles) + 1000)
+ax.margins(x=0.08)
+
+for i, val in enumerate(cycles):
+    ax.annotate(
+        str(val),
+        (i, val),
+        textcoords="offset points",
+        xytext=(0, 10),
+        ha='center',
+        fontsize=12,
+        fontweight='bold'
+    )
+
+fig.tight_layout(pad=3.0)
+fig.savefig(out_path, dpi=200, bbox_inches="tight")
+plt.close(fig)
+
+print(out_path)

@@ -17,6 +17,7 @@ class IssueStage(Stage):
         ahead_latch=None,
         forward_ifs_read: Optional[Dict[str, ForwardingIF]] = None,
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
+        fifo_buffer_depth=4 # NOTE: ADDING FIFO BUFFER DEPTH HERE
     ):
         super().__init__(
             name=name,
@@ -37,7 +38,7 @@ class IssueStage(Stage):
         self.fust = fust
 
         self.num_iBuffer = 16
-        self.num_entries = 4
+        self.num_entries = fifo_buffer_depth # param
         # --- iBuffer: 16 warpGroups × 4-deep FIFO each ---
         self.iBuffer: List[List[Optional[Instruction]]] = [
             [None for _ in range(self.num_entries)] for _ in range(self.num_iBuffer)

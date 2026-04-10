@@ -11,7 +11,7 @@ from .gpu_model import *
 from .regfile import *
 from .latch_forward_stage import *
 from .backend import *
-from .base_class import *
+# from .base_class import *
 from .circular_buffer import *
 from .compact_queue import *
 from .stack import *

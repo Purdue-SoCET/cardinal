@@ -76,11 +76,23 @@ class SchedulerStage(Stage):
         jump_ctrl = self.forward_ifs_read["Branch_Scheduler"].pop()
         writeback_ctrl = self.forward_ifs_read["Writeback_Scheduler"].pop()
 
-        # DELETE LATER
+        # move to halt function later
         ldst_ctrl = self.forward_ifs_read["LDST_Scheduler"].pop()
         if ldst_ctrl is not None and ldst_ctrl.get("flush_complete"):
             print("Scheduler: Received halt")
             self.system_finished = True
+            self.free_warp = 0
+            self.rr_index = 0
+
+            print("CSR TABLE DUMP AT HALT:")
+            self.csrtable.dump()
+            print("WARP TABLE DUMP AT HALT:")
+            self.dump()
+            ## TODO: will need to expand for non 1024 size tb in cx02
+            self.forward_ifs_write["Scheduler_TBS"].push(list(self.csrtable.active_blks))
+            self.csrtable.reset_csr()
+            
+            # TODO: plug in reset signals to the reg file and pred reg 
 
         # if im getting my odd warp EOP out of my i$
         if self.eop:
@@ -185,6 +197,9 @@ class SchedulerStage(Stage):
         base_id = 0
         self.csrtable.add_blk(tb_id)
 
+        self.halt_sent = False
+        self.system_finished = False
+
         for _ in range(math.ceil(tb_size / self.warp_size)):
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].state = WarpState.READY
@@ -195,6 +210,7 @@ class SchedulerStage(Stage):
                 self.warp_table[self.free_warp // 2].issue = True
                 self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=0xffffffff, length=32)
                 self.warp_table[self.free_warp // 2].halt = 0
+                self.warp_table[self.free_warp // 2].last_issue_even = False
             else:
                 self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=0xffffffff, length=32)
             
@@ -202,7 +218,9 @@ class SchedulerStage(Stage):
             base_id += self.warp_size
             self.free_warp += 1
         
+        print(f"CSR TABLE DUMP INITIALIZED FOR TBID#{tb_id}")
         self.csrtable.dump()
+        print(f"WARP TABLE DUMP INITIALIZED FOR TBID#{tb_id}")
         self.dump()  
 
     def halt(self):

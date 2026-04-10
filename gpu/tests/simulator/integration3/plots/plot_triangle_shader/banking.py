@@ -1,0 +1,65 @@
+import os
+import matplotlib.pyplot as plt
+
+# Triangle shader banking sweep data from SM16-SM20
+banks = [1, 2, 4, 8, 16]
+ways_per_bank = [16, 8, 4, 2, 1]
+cycles = [323671, 237163, 241289, 231848, 230165]
+
+x_labels = [
+    f"{banks_i} bank, {ways_i}-way" if banks_i == 1 else f"{banks_i} banks, {ways_i}-way"
+    for banks_i, ways_i in zip(banks, ways_per_bank)
+]
+
+out_dir = "gpu/tests/simulator/integration3/plots/plot_triangle_shader"
+os.makedirs(out_dir, exist_ok=True)
+out_path = os.path.join(out_dir, "banking_sweep_cycles.png")
+
+fig = plt.figure(figsize=(15, 8.5))
+ax = fig.add_subplot(111)
+
+ax.plot(range(len(banks)), cycles, marker='o', linewidth=2.0, markersize=7)
+ax.set_title(
+    "Triangle Shader Banking Sweep: Cycles vs Banks and Associativity per Bank",
+    fontsize=18,
+    fontweight='bold',
+    pad=20
+)
+ax.set_xlabel(
+    "D$ banking / associativity per bank",
+    fontsize=14,
+    fontweight='bold',
+    labelpad=14
+)
+ax.set_ylabel(
+    "Cycles",
+    fontsize=14,
+    fontweight='bold',
+    labelpad=12
+)
+
+ax.set_xticks(range(len(x_labels)))
+ax.set_xticklabels(x_labels, fontsize=12, fontweight='bold', rotation=18, ha='right')
+ax.tick_params(axis='y', labelsize=12)
+for label in ax.get_yticklabels():
+    label.set_fontweight('bold')
+
+ax.set_ylim(min(cycles) - 10000, max(cycles) + 30000)
+ax.margins(x=0.08)
+
+for i, val in enumerate(cycles):
+    ax.annotate(
+        str(val),
+        (i, val),
+        textcoords="offset points",
+        xytext=(0, 10),
+        ha='center',
+        fontsize=12,
+        fontweight='bold'
+    )
+
+fig.tight_layout(pad=3.0)
+fig.savefig(out_path, dpi=200, bbox_inches="tight")
+plt.close(fig)
+
+print(out_path)

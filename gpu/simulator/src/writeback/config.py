@@ -98,7 +98,7 @@ class WritebackBufferConfig:
             count_scheme=WritebackBufferCount.BUFFER_PER_FSU,
             size_scheme=WritebackBufferSize.FIXED,
             structure=WritebackBufferStructure.QUEUE,
-            primary_policy=WritebackBufferPolicy.CAPACITY_PRIORITY,
+            primary_policy=WritebackBufferPolicy.CAPACITY_PRIORITY, 
             secondary_policy=WritebackBufferPolicy.AGE_PRIORITY,
             size=8,
             fsu_priority=None
