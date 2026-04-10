@@ -33,11 +33,11 @@ extern int threadIdx();
 extern int argPtr();
 
 #define mod(a, b) ((a) - (b)*((a)/(b)))
-/*
+
 #define threadIdx (threadIdx())
 #define blockDim (blockDim())
 #define blockIdx (blockIdx())
-*/
+
 
 #endif
 

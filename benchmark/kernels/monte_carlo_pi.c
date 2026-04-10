@@ -50,19 +50,16 @@ void kernel_monte_carlo_pi(void* arg)
     int i = blockIdx * blockDim + threadIdx;
     #endif
     
-    if (i >= args->num_points) {
-        return;
+    if (i < args->num_points) {
+        float rand_x = 0.0;
+        float rand_y = 0.0;
+
+        GET_RANDOM_PAIR(i + args->base_seed, args->base_seed, rand_x, rand_y);
+
+        float origin_dist = rand_x * rand_x + rand_y * rand_y;
+
+        if (origin_dist <= 1.0){
+            (*args->circle_points[i]) = 1;
+        }
     }
-
-    float rand_x = 0.0;
-    float rand_y = 0.0;
-
-    GET_RANDOM_PAIR(i + args->base_seed, args->base_seed, rand_x, rand_y);
-
-    float origin_dist = rand_x * rand_x + rand_y * rand_y;
-
-    if (origin_dist <= 1.0){
-        (*args->circle_points[i]) = 1;
-    }
-
 }
