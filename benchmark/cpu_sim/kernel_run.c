@@ -13,8 +13,8 @@ int threadIdx; // Current thread in the block
 void run_kernel(kernel_ptr_t kernel, int grid_dim, int block_dim, void* args) {
     blockDim = block_dim;
     // Iterate through grids
-    for(blockIdx = 0; blockIdx < grid_dim; blockIdx++) {
-        for(threadIdx = 0; threadIdx < block_dim; threadIdx++) {
+    for(blockIdx = 0; blockIdx < (grid_dim); blockIdx++) {
+        for(threadIdx = 0; threadIdx < (block_dim); threadIdx++) {
             // printf("Launching kernel %d\n", threadIdx);
             kernel(args);
         }

@@ -292,28 +292,3 @@ texture_t load_png(char* FileName, int id) {
     
     return tex;
 }
-
-
-void dump_memory(const char* filename, uint8_t* host_memory_ptr, uint32_t simulated_base_address, size_t num_bytes) {
-    FILE* file = fopen(filename, "w");
-    if (file == NULL) {
-        fprintf(stderr, "Error: Could not open %s for writing.\n", filename);
-        return;
-    }
-
-    uint32_t* memory_words = (uint32_t*) host_memory_ptr;
-    size_t num_words = num_bytes / sizeof(uint32_t);
-
-    for (size_t i = 0; i < num_words; i++) {
-        uint32_t value = memory_words[i];
-        
-        if (value != 0) {
-            // Calculate the simulated physical address for this specific word
-            uint32_t current_address = simulated_base_address + (i * sizeof(uint32_t));
-            
-            fprintf(file, "0x%08X %08X\n", current_address, value);
-        }
-    }
-
-    fclose(file);
-}

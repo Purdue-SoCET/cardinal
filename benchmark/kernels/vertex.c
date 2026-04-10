@@ -3,18 +3,19 @@
 #include "include/graphics_lib.h"
 
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_vertex()
 #else
 void kernel_vertex(void* arg)
 #endif
 {
+
     #ifdef GPU_SIM
     vertex_arg_t* args = (vertex_arg_t*) argPtr();
-    int i = blockIdx() * blockDim() + threadIdx();
     #else
     vertex_arg_t* args = (vertex_arg_t*) arg;
-    int i = blockIdx * blockDim + threadIdx;
     #endif
+    int i = (blockIdx * blockDim) + threadIdx;
+
 
     if(i < args->num_verts) 
     {
