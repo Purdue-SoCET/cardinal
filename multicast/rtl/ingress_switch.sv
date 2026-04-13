@@ -1,14 +1,21 @@
 // ingress_switch.sv
 // 3-stage Clos network – ingress switch (4 inputs × 8 outputs).
 //
-// Each bank input carries at most one flit per cycle. The arbiter above
-// guarantees no two banks target the same egress group in the same cycle,
-// so each output port receives at most one flit — no arbitration needed.
+// Diagonal routing: ingress s sends egress group e via middle switch
+//   m = (s + e) & (NUM_MIDDLE - 1)
 //
-// For each bank input, the flit is replicated to every output port whose
-// egress group appears in dest_mask (diagonal routing: ingress s sends
-// egress group e via output port (s+e) % NUM_MIDDLE).  Each copy has its
-// dest_mask masked to only the 4 bits for that egress group.
+// For each middle output port m, the egress group it serves is:
+//   e_m = (m - SWITCH_ID + NUM_MIDDLE) & (NUM_MIDDLE - 1)
+//       = (m + NUM_MIDDLE - SWITCH_ID) & (NUM_MIDDLE - 1)
+//
+// Since NUM_MIDDLE and THREADS_PER_EGRESS are powers of 2, all index
+// arithmetic uses bitwise AND and shifts — no modulus or multiply.
+// With genvar + localparam the egress-group bit range for each output
+// port collapses to a compile-time constant, so the part-select is pure
+// wiring with zero logic gates.
+//
+// Arbitration: the arbiter above guarantees at most one bank per ingress
+// targets any given egress group per cycle, so no arbitration is needed here.
 //
 // All outputs are registered (one pipeline stage).
 
@@ -40,79 +47,80 @@ module ingress_switch #(
   flit_t out_flit_q  [NUM_MIDDLE];
 
   // ---------------------------------------------------------------------------
-  // Combinational: for each output port m, find which bank (if any) targets it.
-  // Output m serves egress group e_m = (m - SWITCH_ID + NUM_MIDDLE) % NUM_MIDDLE.
-  // At most one bank can target each egress group per cycle (arbiter guarantee).
+  // Combinational routing + registered outputs — one generate block per
+  // middle output port m.
+  //
+  // For port m:
+  //   E_M    = egress group served  (compile-time constant)
+  //   GRP_LO = LSB of that group's bits in dest_mask (compile-time constant)
+  //
+  // The part-select [GRP_LO +: THREADS_PER_EGRESS] is therefore a fixed wire
+  // slice — the synthesiser sees it as simple bit selection, no logic.
   // ---------------------------------------------------------------------------
-  logic  in_valid  [NUM_MIDDLE];
-  flit_t in_flit   [NUM_MIDDLE];
+  generate
+    for (genvar m = 0; m < NUM_MIDDLE; m++) begin : gen_mid_port
 
-  always_comb begin
-    for (int m = 0; m < NUM_MIDDLE; m++) begin
-      automatic int e_m = (m - int'(SWITCH_ID) + NUM_MIDDLE) % NUM_MIDDLE;
-      automatic logic [THREADS_PER_EGRESS-1:0] grp_mask =
-        {THREADS_PER_EGRESS{1'b1}} << (e_m * THREADS_PER_EGRESS);
+      localparam int unsigned E_M    = (m + NUM_MIDDLE - SWITCH_ID) & (NUM_MIDDLE - 1);
+      localparam int unsigned GRP_LO = E_M << $clog2(THREADS_PER_EGRESS);
 
-      in_valid[m] = 1'b0;
-      in_flit[m]  = '0;
+      // -- Combinational: find which bank (if any) targets this port ----------
+      logic  in_valid;
+      flit_t in_flit;
 
-      for (int i = 0; i < BANKS_PER_INGRESS; i++) begin
-        if (bank_valid[i] && |(bank_flit[i].dest_mask & grp_mask)) begin
-          in_valid[m]           = 1'b1;
-          in_flit[m]            = bank_flit[i];
-          in_flit[m].dest_mask  = bank_flit[i].dest_mask & {{(NUM_THREADS-THREADS_PER_EGRESS){1'b0}}, grp_mask};
+      always_comb begin
+        in_valid = 1'b0;
+        in_flit  = '0;
+        for (int i = 0; i < BANKS_PER_INGRESS; i++) begin
+          if (bank_valid[i] && |bank_flit[i].dest_mask[GRP_LO +: THREADS_PER_EGRESS]) begin
+            in_valid                                          = 1'b1;
+            in_flit                                           = bank_flit[i];
+            in_flit.dest_mask                                 = '0;
+            in_flit.dest_mask[GRP_LO +: THREADS_PER_EGRESS]  =
+                bank_flit[i].dest_mask[GRP_LO +: THREADS_PER_EGRESS];
+          end
         end
       end
-    end
-  end
 
-  // ---------------------------------------------------------------------------
-  // Registered outputs
-  // ---------------------------------------------------------------------------
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      for (int m = 0; m < NUM_MIDDLE; m++) begin
-        out_valid_q[m] <= 1'b0;
-        out_flit_q[m]  <= '0;
-      end
-    end else begin
-      for (int m = 0; m < NUM_MIDDLE; m++) begin
-        if (!out_valid_q[m] || mid_ready[m]) begin
-          out_valid_q[m] <= in_valid[m];
-          if (in_valid[m])
-            out_flit_q[m] <= in_flit[m];
+      // -- Pipeline register --------------------------------------------------
+      always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          out_valid_q[m] <= 1'b0;
+          out_flit_q[m]  <= '0;
+        end else if (!out_valid_q[m] || mid_ready[m]) begin
+          out_valid_q[m] <= in_valid;
+          if (in_valid)
+            out_flit_q[m] <= in_flit;
         end
       end
+
+      // -- Output assignment --------------------------------------------------
+      assign mid_valid[m] = out_valid_q[m];
+      assign mid_flit[m]  = out_flit_q[m];
+
     end
-  end
+  endgenerate
 
   // ---------------------------------------------------------------------------
-  // Output assignments
+  // Back-pressure: bank i is ready when every middle port it targets is free.
+  // Each bank can span multiple egress groups (multicast), so we check all 8.
   // ---------------------------------------------------------------------------
-  always_comb begin
-    for (int m = 0; m < NUM_MIDDLE; m++) begin
-      mid_valid[m] = out_valid_q[m];
-      mid_flit[m]  = out_flit_q[m];
-    end
-  end
+  generate
+    for (genvar i = 0; i < BANKS_PER_INGRESS; i++) begin : gen_bank_ready
 
-  // ---------------------------------------------------------------------------
-  // Back-pressure: a bank is ready when all output ports it targets are free.
-  // ---------------------------------------------------------------------------
-  always_comb begin
-    for (int i = 0; i < BANKS_PER_INGRESS; i++) begin
-      automatic logic all_free = 1'b1;
-      for (int m = 0; m < NUM_MIDDLE; m++) begin
-        automatic int e_m = (m - int'(SWITCH_ID) + NUM_MIDDLE) % NUM_MIDDLE;
-        automatic logic [THREADS_PER_EGRESS-1:0] grp_mask =
-          {THREADS_PER_EGRESS{1'b1}} << (e_m * THREADS_PER_EGRESS);
-        if (bank_valid[i] && |(bank_flit[i].dest_mask & grp_mask)) begin
-          if (out_valid_q[m] && !mid_ready[m])
-            all_free = 1'b0;
+      always_comb begin
+        bank_ready[i] = 1'b1;
+        for (int m = 0; m < NUM_MIDDLE; m++) begin
+          // E_M and GRP_LO are functions of the loop variable m and the
+          // compile-time SWITCH_ID — synthesised as constant selectors.
+          automatic int unsigned e_m    = (m + NUM_MIDDLE - SWITCH_ID) & (NUM_MIDDLE - 1);
+          automatic int unsigned grp_lo = e_m << $clog2(THREADS_PER_EGRESS);
+          if (bank_valid[i] && |bank_flit[i].dest_mask[grp_lo +: THREADS_PER_EGRESS])
+            if (out_valid_q[m] && !mid_ready[m])
+              bank_ready[i] = 1'b0;
         end
       end
-      bank_ready[i] = all_free;
+
     end
-  end
+  endgenerate
 
 endmodule : ingress_switch

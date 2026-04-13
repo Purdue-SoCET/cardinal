@@ -93,10 +93,10 @@ module tb_clos_network;
       @(posedge clk); #1;
       for (int t = 0; t < NUM_THREADS; t++) begin
         if (thread_valid[t] && thread_ready[t]) begin
-          // thread_flit[t] = flit[38:0]
-          //   data  at [38:7]  (THREAD_FLIT_W-1 downto ERR_W+5 = 38 downto 7)
-          //   error at [ 1:0]  (ERR_W-1        downto 0        =  1 downto 0)
-          automatic logic [DATA_W-1:0] rx_data  = thread_flit[t][THREAD_FLIT_W-1 : ERR_W+5];
+          // thread_flit[t] = flit[33:0] = {data[31:0], error[1:0]}
+          //   data  at [33:2]  (THREAD_FLIT_W-1 downto ERR_W = 33 downto 2)
+          //   error at [ 1:0]  (ERR_W-1         downto 0     =  1 downto 0)
+          automatic logic [DATA_W-1:0] rx_data  = thread_flit[t][THREAD_FLIT_W-1 : ERR_W];
           automatic logic [ERR_W-1:0]  rx_err   = thread_flit[t][ERR_W-1:0];
 
           if (exp_q[t].size() == 0) begin

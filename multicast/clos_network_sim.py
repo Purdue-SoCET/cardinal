@@ -7,14 +7,13 @@ Architecture:
   - 8 middle  switches  (8 inputs  x 8 outputs)
   - 8 egress  switches  (8 inputs  x 4 outputs)
 
-Flit format [70:0]:
-  [70:39] = destination bitmask (32 bits, one bit per thread)
-  [38:7]  = read data (32 bits)
-  [6:2]   = reserved / unused
-  [1:0]   = error code  00=good  01=access violation
+Flit format [65:0]:
+  [65:34] = destination bitmask (32 bits, one bit per thread)
+  [33: 2] = read data (32 bits)
+  [ 1: 0] = error code  00=good  01=access violation
                         10=hardware ECC error  11=unmapped
 
-thread_rx_flit [38:0]: dest-bitmask stripped; only data + error delivered to thread
+thread_rx_flit [33:0]: dest-bitmask stripped; {data[31:0], error[1:0]}
 """
 
 from __future__ import annotations
@@ -50,19 +49,17 @@ ERR_NAMES = {ERR_GOOD: "GOOD", ERR_ACCESS: "ACCESS_VIOLATION",
 @dataclass
 class Flit:
     """
-    Represents a 71-bit flit travelling through the network.
+    Represents a 66-bit flit travelling through the network.
 
-    dest_mask : 32-bit bitmask, bit i set => thread i is a destination
-    data      : 32-bit read payload
-    error     : 2-bit error code
-    _reserved : 5-bit reserved field [6:2] (kept but unused)
+    dest_mask : 32-bit bitmask, bit i set => thread i is a destination [65:34]
+    data      : 32-bit read payload                                     [33: 2]
+    error     : 2-bit error code                                        [ 1: 0]
 
     thread_rx_flit view: (data, error) — dest_mask stripped at egress output.
     """
-    dest_mask : int = 0          # bits [70:39]
-    data      : int = 0          # bits [38:7]
-    error     : int = ERR_GOOD   # bits [1:0]
-    _reserved : int = 0          # bits [6:2]  reserved
+    dest_mask : int = 0          # bits [65:34]
+    data      : int = 0          # bits [33: 2]
+    error     : int = ERR_GOOD   # bits [ 1: 0]
 
     # --- convenience constructors ---
 
@@ -75,22 +72,20 @@ class Flit:
     # --- bit-field packing / unpacking (for reference correctness) ---
 
     def pack(self) -> int:
-        """Pack into a 71-bit integer."""
-        return ((self.dest_mask & 0xFFFF_FFFF) << 39 |
-                (self.data      & 0xFFFF_FFFF) <<  7 |
-                (self._reserved & 0x1F)         <<  2 |
+        """Pack into a 66-bit integer."""
+        return ((self.dest_mask & 0xFFFF_FFFF) << 34 |
+                (self.data      & 0xFFFF_FFFF) <<  2 |
                 (self.error     & 0x3))
 
     @staticmethod
     def unpack(bits: int) -> "Flit":
-        """Unpack from a 71-bit integer."""
-        return Flit(dest_mask = (bits >> 39) & 0xFFFF_FFFF,
-                    data      = (bits >>  7) & 0xFFFF_FFFF,
-                    _reserved = (bits >>  2) & 0x1F,
+        """Unpack from a 66-bit integer."""
+        return Flit(dest_mask = (bits >> 34) & 0xFFFF_FFFF,
+                    data      = (bits >>  2) & 0xFFFF_FFFF,
                     error     = (bits      ) & 0x3)
 
     def thread_rx(self) -> Tuple[int, int]:
-        """Return (data, error) as seen by a receiving thread [38:0] view."""
+        """Return (data, error) as seen by a receiving thread [33:0] view."""
         return (self.data, self.error)
 
     def copy_for_dest(self, subset_mask: int) -> "Flit":
@@ -122,55 +117,26 @@ class MSHRTable:
     """
     Per-bank MSHR table.
 
+    Coalescing happens upstream in hardware before the response enters the
+    network — entries arrive here with dest_mask already fully formed.
+
     Supports:
-      - allocate(address, thread_id)  -> entry_id
-      - merge   (address, thread_id)  -> True if merged into existing entry
+      - allocate(address, dest_mask) -> entry_id
       - complete(entry_id, data, err) -> Flit ready for multicast
+      - free(entry_id)
     """
     def __init__(self, bank_id: int, num_entries: int = 16):
-        self.bank_id    = bank_id
+        self.bank_id     = bank_id
         self.num_entries = num_entries
-        self._table: Dict[int, MSHREntry] = {}   # address -> entry
-        self._id_map: Dict[int, int]      = {}   # entry_id -> address
+        self._table: Dict[int, MSHREntry] = {}
         self._next_id = 0
 
-    def lookup(self, address: int) -> Optional[int]:
-        """Return entry_id if address already has an outstanding miss, else None."""
-        for eid, addr in self._id_map.items():
-            if addr == address:
-                return eid
-        return None
-
-    def allocate(self, address: int, thread_id: int) -> int:
-        """Allocate a new MSHR entry; return its entry_id."""
+    def allocate(self, address: int, dest_mask: int) -> int:
+        """Allocate a new MSHR entry with a pre-coalesced dest_mask."""
         eid = self._next_id
         self._next_id += 1
-        entry = MSHREntry(address=address,
-                          dest_mask=(1 << thread_id))
-        self._table[eid]  = entry
-        self._id_map[eid] = address
+        self._table[eid] = MSHREntry(address=address, dest_mask=dest_mask)
         return eid
-
-    def merge(self, address: int, thread_id: int) -> Optional[int]:
-        """
-        If address is already in MSHR, merge thread_id into dest_mask.
-        Returns entry_id if merged, else None.
-        """
-        eid = self.lookup(address)
-        if eid is not None:
-            self._table[eid].dest_mask |= (1 << thread_id)
-            return eid
-        return None
-
-    def request(self, address: int, thread_id: int) -> Tuple[int, bool]:
-        """
-        High-level: merge if possible, otherwise allocate.
-        Returns (entry_id, was_merged).
-        """
-        eid = self.merge(address, thread_id)
-        if eid is not None:
-            return eid, True
-        return self.allocate(address, thread_id), False
 
     def complete(self, entry_id: int, data: int,
                  error: int = ERR_GOOD) -> Optional[Flit]:
@@ -181,26 +147,10 @@ class MSHRTable:
         entry.data      = data
         entry.error     = error
         entry.completed = True
-        flit = Flit.make(dest_mask=entry.dest_mask, data=data, error=error)
-        return flit
+        return Flit.make(dest_mask=entry.dest_mask, data=data, error=error)
 
     def free(self, entry_id: int) -> None:
         self._table.pop(entry_id, None)
-        self._id_map.pop(entry_id, None)
-
-
-# ---------------------------------------------------------------------------
-# Switch helpers
-# ---------------------------------------------------------------------------
-
-def _egress_id_for_thread(thread_id: int) -> int:
-    """Which egress switch serves this thread?"""
-    return thread_id // THREADS_PER_EGRESS   # 0-7
-
-
-def _ingress_id_for_bank(bank_id: int) -> int:
-    """Which ingress switch does this bank connect to?"""
-    return bank_id // BANKS_PER_INGRESS      # 0-7
 
 
 # ---------------------------------------------------------------------------
@@ -226,19 +176,14 @@ class IngressSwitch:
         for flit in flits:
             if flit is None:
                 continue
-            # Determine which egress switches are needed
+            # Determine which egress switches are needed.
+            # Diagonal routing: ingress s sends egress group e via middle (s+e) & (N-1).
+            # egress_mask for group e = 0xF << (e << 2)  (4 threads per group, shift by log2(4)=2)
             for egress_id in range(NUM_EGRESS):
-                # Thread bits served by this egress switch
-                lo = egress_id * THREADS_PER_EGRESS
-                hi = lo + THREADS_PER_EGRESS
-                egress_mask = 0
-                for t in range(lo, hi):
-                    egress_mask |= (1 << t)
-
+                lo          = egress_id << 2          # egress_id * THREADS_PER_EGRESS
+                egress_mask = 0xF << lo               # 4-bit mask for this group
                 if flit.dest_mask & egress_mask:
-                    # Diagonal routing: ingress s sends egress group e via
-                    # middle switch (s + e) % NUM_MIDDLE.
-                    m = (self.switch_id + egress_id) % NUM_MIDDLE
+                    m = (self.switch_id + egress_id) & (NUM_MIDDLE - 1)
                     sub_flit = flit.copy_for_dest(egress_mask)
                     output[m].append(sub_flit)
 
@@ -267,7 +212,7 @@ class MiddleSwitch:
             if f is None:
                 continue
             for e in range(NUM_EGRESS):
-                if (f.dest_mask >> (e * THREADS_PER_EGRESS)) & ((1 << THREADS_PER_EGRESS) - 1):
+                if (f.dest_mask >> (e << 2)) & 0xF:   # e << 2 == e * THREADS_PER_EGRESS
                     output[e].append(f)
                     break
         return output
@@ -306,57 +251,142 @@ class ClosNetwork:
     """
     3-stage Clos network connecting 32 SRAM banks to 32 threads.
 
-    send(flits_from_banks) -> deliveries
-      flits_from_banks : dict { bank_id -> Flit }
-      deliveries       : dict { thread_id -> list of (data, error) }
+    Pipelined interface:
+      tick(flits_from_banks) -> deliveries
+        All three stages advance simultaneously each clock cycle:
+          - Ingress: processes new flits_from_banks -> fills _pipe_ing_to_mid
+          - Middle:  processes _pipe_ing_to_mid     -> fills _pipe_mid_to_egr
+          - Egress:  processes _pipe_mid_to_egr     -> returns deliveries
+        First delivery appears on the 3rd tick after injection.
+
+    Legacy interface:
+      send(flits_from_banks) -> deliveries
+        Resets pipeline, injects one batch, drains two empty cycles,
+        returns deliveries from the egress cycle. Backward-compatible.
     """
 
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
         self.ingress = [IngressSwitch(i) for i in range(NUM_INGRESS)]
         self.middle  = [MiddleSwitch(i)  for i in range(NUM_MIDDLE)]
         self.egress  = [EgressSwitch(i)  for i in range(NUM_EGRESS)]
+        self.verbose = verbose
+        self._cycle  = 0
+
+        # Pipeline registers — inter-stage state held between ticks
+        self._pipe_ing_to_mid: List[List[Flit]] = [[] for _ in range(NUM_MIDDLE)]
+        self._pipe_mid_to_egr: List[List[Flit]] = [[] for _ in range(NUM_EGRESS)]
+
+    def _reset_pipeline(self) -> None:
+        """Clear all pipeline registers (flush in-flight flits)."""
+        self._pipe_ing_to_mid = [[] for _ in range(NUM_MIDDLE)]
+        self._pipe_mid_to_egr = [[] for _ in range(NUM_EGRESS)]
+        self._cycle = 0
+
+    @staticmethod
+    def _mask_threads(mask: int) -> List[int]:
+        return [i for i in range(NUM_THREADS) if (mask >> i) & 1]
+
+    def tick(self, flits_from_banks: Dict[int, Flit]) -> Dict[int, List[Tuple[int, int]]]:
+        """
+        Advance the network by one clock cycle.
+
+        All three stages read from the *current* pipeline registers and compute
+        their outputs simultaneously, then the registers are updated atomically.
+
+          Egress  reads  _pipe_mid_to_egr  -> returns deliveries this cycle
+          Middle  reads  _pipe_ing_to_mid  -> new _pipe_mid_to_egr next cycle
+          Ingress reads  flits_from_banks  -> new _pipe_ing_to_mid next cycle
+        """
+        self._cycle += 1
+        v = self.verbose
+
+        ing_active = bool(flits_from_banks)
+        mid_active = any(self._pipe_ing_to_mid)
+        egr_active = any(self._pipe_mid_to_egr)
+
+        if v and (ing_active or mid_active or egr_active):
+            print(f"    [Cycle {self._cycle}]")
+
+        # --- Stage 3: Egress (reads current _pipe_mid_to_egr) ---
+        deliveries: Dict[int, List[Tuple[int, int]]] = {}
+
+        if v and egr_active:
+            print(f"      Stage 3 - EGRESS:")
+        for e, eg_sw in enumerate(self.egress):
+            flits_in = self._pipe_mid_to_egr[e]
+            if v and flits_in:
+                for f in flits_in:
+                    print(f"        Egress {e}: dest=0x{f.dest_mask:08X}  "
+                          f"data=0x{f.data:08X}  threads={self._mask_threads(f.dest_mask)}")
+            for tid, rx in eg_sw.process(flits_in).items():
+                deliveries.setdefault(tid, []).append(rx)
+                if v:
+                    print(f"          -> Thread {tid:2d}: data=0x{rx[0]:08X}  err={ERR_NAMES[rx[1]]}")
+
+        # --- Stage 2: Middle (reads current _pipe_ing_to_mid) ---
+        new_mid_to_egr: List[List[Flit]] = [[] for _ in range(NUM_EGRESS)]
+
+        if v and mid_active:
+            print(f"      Stage 2 - MIDDLE:")
+        for m, mid_sw in enumerate(self.middle):
+            flits_in = self._pipe_ing_to_mid[m]
+            if v and flits_in:
+                print(f"        Middle {m}: {len(flits_in)} flit(s)")
+                for f in flits_in:
+                    print(f"          flit: dest=0x{f.dest_mask:08X}  data=0x{f.data:08X}  "
+                          f"threads={self._mask_threads(f.dest_mask)}")
+            for e, flits in mid_sw.process(flits_in).items():
+                new_mid_to_egr[e].extend(flits)
+                if v and flits:
+                    for f in flits:
+                        print(f"          -> Egress {e}: dest=0x{f.dest_mask:08X}  data=0x{f.data:08X}")
+
+        # --- Stage 1: Ingress (processes new inputs) ---
+        new_ing_to_mid: List[List[Flit]] = [[] for _ in range(NUM_MIDDLE)]
+
+        if v and ing_active:
+            print(f"      Stage 1 - INGRESS:")
+        for ingress_id, ing_sw in enumerate(self.ingress):
+            bank_flits: List[Optional[Flit]] = [
+                flits_from_banks.get(ingress_id * BANKS_PER_INGRESS + lb)
+                for lb in range(BANKS_PER_INGRESS)
+            ]
+            active = [(ingress_id * BANKS_PER_INGRESS + lb, bank_flits[lb])
+                      for lb in range(BANKS_PER_INGRESS) if bank_flits[lb] is not None]
+
+            ing_output = ing_sw.process(bank_flits)
+            for m, flit_list in enumerate(ing_output):
+                new_ing_to_mid[m].extend(flit_list)
+
+            if v and active:
+                print(f"        Ingress {ingress_id}:")
+                for bank_id, f in active:
+                    print(f"          Bank {bank_id:2d}: dest=0x{f.dest_mask:08X}  "
+                          f"data=0x{f.data:08X}  err={ERR_NAMES[f.error]}  "
+                          f"threads={self._mask_threads(f.dest_mask)}")
+                for m, flit_list in enumerate(ing_output):
+                    for sf in flit_list:
+                        egress_grp = (m - ingress_id) % NUM_MIDDLE
+                        print(f"          -> Middle {m}: dest=0x{sf.dest_mask:08X}  "
+                              f"threads={self._mask_threads(sf.dest_mask)}  "
+                              f"(for Egress {egress_grp})")
+
+        # Advance pipeline registers atomically
+        self._pipe_ing_to_mid = new_ing_to_mid
+        self._pipe_mid_to_egr = new_mid_to_egr
+
+        return deliveries
 
     def send(self, flits_from_banks: Dict[int, Flit]) -> Dict[int, List[Tuple[int, int]]]:
         """
-        Route a batch of flits (one dict entry per bank) through the network.
-        Returns deliveries: thread_id -> list of (data, error) tuples.
-        (A thread may receive more than one flit in a batch.)
+        Legacy single-batch interface (backward-compatible with existing tests).
+        Resets the pipeline, injects one batch, drains two empty cycles, and
+        returns deliveries from the egress (3rd) cycle.
         """
-        # --- Stage 1: Ingress ---
-        # middle_inputs[m] = list of flits arriving at middle switch m
-        middle_inputs: List[List[Optional[Flit]]] = [[] for _ in range(NUM_MIDDLE)]
-
-        for ingress_id, ing_sw in enumerate(self.ingress):
-            # Gather flits from the 4 banks feeding this ingress switch
-            bank_flits: List[Optional[Flit]] = []
-            for local_bank in range(BANKS_PER_INGRESS):
-                bank_id = ingress_id * BANKS_PER_INGRESS + local_bank
-                bank_flits.append(flits_from_banks.get(bank_id))
-
-            ing_output = ing_sw.process(bank_flits)   # ing_output[m] = flits for middle m
-            for m in range(NUM_MIDDLE):
-                # Each middle switch gets one "slot" per ingress; we may have
-                # multiple flits if the ingress has multiple active banks.
-                middle_inputs[m].extend(ing_output[m])
-
-        # --- Stage 2: Middle ---
-        # egress_inputs[e] = list of flits arriving at egress switch e
-        egress_inputs: List[List[Flit]] = [[] for _ in range(NUM_EGRESS)]
-
-        for m, mid_sw in enumerate(self.middle):
-            mid_output = mid_sw.process(middle_inputs[m])  # dict {egress_id: [flits]}
-            for e, flits in mid_output.items():
-                egress_inputs[e].extend(flits)   # middle m -> any egress e
-
-        # --- Stage 3: Egress ---
-        deliveries: Dict[int, List[Tuple[int, int]]] = {}
-
-        for e, eg_sw in enumerate(self.egress):
-            eg_deliveries = eg_sw.process(egress_inputs[e])
-            for tid, rx in eg_deliveries.items():
-                deliveries.setdefault(tid, []).append(rx)
-
-        return deliveries
+        self._reset_pipeline()
+        self.tick(flits_from_banks)   # cycle 1: ingress -> _pipe_ing_to_mid
+        self.tick({})                  # cycle 2: middle  -> _pipe_mid_to_egr
+        return self.tick({})           # cycle 3: egress  -> deliveries
 
 
 # ---------------------------------------------------------------------------
@@ -364,61 +394,26 @@ class ClosNetwork:
 # ---------------------------------------------------------------------------
 @dataclass
 class SRAMBank:
-    """Simple SRAM bank with address-mapped storage and MSHR."""
-    bank_id : int
-    memory  : Dict[int, int] = field(default_factory=dict)
-    mshr    : MSHRTable = field(init=False)
-    valid_range: Tuple[int, int] = (0, 0xFFFF)   # inclusive address range
-
-    def __post_init__(self):
-        self.mshr = MSHRTable(self.bank_id)
+    """Simple SRAM bank with address-mapped storage."""
+    bank_id     : int
+    memory      : Dict[int, int]    = field(default_factory=dict)
+    valid_range : Tuple[int, int]   = (0, 0xFFFF)   # inclusive address range
 
     def write(self, address: int, data: int) -> None:
         self.memory[address] = data & 0xFFFF_FFFF
 
-    def read_request(self, address: int,
-                     thread_id: int) -> Tuple[Optional[Flit], bool]:
+    def read(self, address: int, dest_mask: int) -> Flit:
         """
-        Simulate a read request from thread_id to address.
-
-        Returns (flit_or_None, was_mshr_merged).
-          - If address is valid and not in MSHR: allocate MSHR entry,
-            immediately 'complete' it (no real latency in this sim) -> Flit.
-          - If address is valid and already in MSHR: merge thread -> no new Flit yet.
-          - If address is unmapped: return error Flit immediately.
+        Return a response Flit for the given address and pre-coalesced dest_mask.
+        Coalescing of multiple thread requests into dest_mask is the caller's
+        responsibility — this bank just reads and wraps the result.
         """
-        # Address range check
         lo, hi = self.valid_range
         if not (lo <= address <= hi):
-            flit = Flit.make(dest_mask=(1 << thread_id),
-                             data=0,
-                             error=ERR_UNMAPPED)
-            return flit, False
-
-        eid, merged = self.mshr.request(address, thread_id)
-        if merged:
-            # Another thread already requested this; MSHR merged them.
-            # No new flit until the original request completes.
-            return None, True
-
-        # Perform the read (instant in this functional sim)
-        data  = self.memory.get(address, 0)
-        flit  = self.mshr.complete(eid, data, ERR_GOOD)
-        self.mshr.free(eid)
-        return flit, False
-
-    def complete_mshr(self, address: int, data: int,
-                      error: int = ERR_GOOD) -> Optional[Flit]:
-        """
-        Explicitly complete an MSHR entry (e.g. after a merged request
-        finishes).  Returns the multicast Flit covering all merged threads.
-        """
-        eid = self.mshr.lookup(address)
-        if eid is None:
-            return None
-        flit = self.mshr.complete(eid, data, error)
-        self.mshr.free(eid)
-        return flit
+            return Flit.make(dest_mask=dest_mask, data=0, error=ERR_UNMAPPED)
+        return Flit.make(dest_mask=dest_mask,
+                         data=self.memory.get(address, 0),
+                         error=ERR_GOOD)
 
 
 # ---------------------------------------------------------------------------
@@ -459,13 +454,11 @@ def test_1_basic_unicast():
     banks = [SRAMBank(i) for i in range(NUM_BANKS)]
 
     banks[0].write(0x0010, 0xDEADBEEF)
-    flit, _ = banks[0].read_request(0x0010, thread_id=7)
-    assert flit is not None
+    flit = banks[0].read(0x0010, dest_mask=1 << 7)
 
     deliveries = route_flits(net, {0: flit})
     assert_delivered(deliveries, 7, 0xDEADBEEF, test_name="Test1")
 
-    # No other threads should receive anything
     other = {t: v for t, v in deliveries.items() if t != 7}
     assert not other, f"Unexpected deliveries: {other}"
     print("  PASSED")
@@ -487,13 +480,11 @@ def test_2_multi_bank_unicast():
     flits: Dict[int, Flit] = {}
     for bank_id, addr, data, tid in scenarios:
         banks[bank_id].write(addr, data)
-        flit, _ = banks[bank_id].read_request(addr, thread_id=tid)
-        assert flit is not None
-        flits[bank_id] = flit
+        flits[bank_id] = banks[bank_id].read(addr, dest_mask=1 << tid)
 
     deliveries = route_flits(net, flits)
 
-    for bank_id, addr, data, tid in scenarios:
+    for _, _, data, tid in scenarios:
         assert_delivered(deliveries, tid, data, test_name="Test2")
     print("  PASSED")
 
@@ -529,7 +520,6 @@ def test_4_broadcast():
     """Test 4: Broadcast – bank 10 -> all 32 threads."""
     print("Test 4: Broadcast (bank 10 -> all 32 threads)")
     net      = ClosNetwork()
-    banks    = [SRAMBank(i) for i in range(NUM_BANKS)]
     data_val = 0xFFFF0000
     all_mask = (1 << NUM_THREADS) - 1
 
@@ -544,12 +534,10 @@ def test_4_broadcast():
 def test_5_error_propagation():
     """Test 5: Unmapped address returns error flit to correct thread."""
     print("Test 5: Error propagation (unmapped address -> thread 15)")
-    net   = ClosNetwork()
-    banks = [SRAMBank(i, valid_range=(0x0000, 0x00FF)) for i in range(NUM_BANKS)]
+    net  = ClosNetwork()
+    bank = SRAMBank(2, valid_range=(0x0000, 0x00FF))
 
-    # Address 0x1000 is outside valid_range -> ERR_UNMAPPED
-    flit, _ = banks[2].read_request(0x1000, thread_id=15)
-    assert flit is not None, "Expected an error flit"
+    flit = bank.read(0x1000, dest_mask=1 << 15)   # outside range -> ERR_UNMAPPED
     assert flit.error == ERR_UNMAPPED
 
     deliveries = route_flits(net, {2: flit})
@@ -557,46 +545,26 @@ def test_5_error_propagation():
     print("  PASSED")
 
 
-def test_6_mshr_merge():
-    """Test 6: MSHR merge – two threads request same address, single multicast response."""
-    print("Test 6: MSHR merge (threads 3 and 5 both request bank 0 address 0x0020)")
-    net   = ClosNetwork()
-    banks = [SRAMBank(i) for i in range(NUM_BANKS)]
-
+def test_6_mshr_multicast():
+    """Test 6: MSHR multicast – pre-coalesced dest_mask delivers to both threads."""
+    print("Test 6: MSHR multicast (threads 3 and 5, bank 0 address 0x0020)")
+    net      = ClosNetwork()
     data_val = 0xCAFEBABE
-    banks[0].write(0x0020, data_val)
 
-    # Thread 3 requests first -> allocates MSHR entry, gets a flit back
-    flit_t3, merged_t3 = banks[0].read_request(0x0020, thread_id=3)
-    assert not merged_t3, "First request should not be merged"
-    assert flit_t3 is not None
+    # Coalescing already happened upstream; allocate with the combined mask.
+    mshr = MSHRTable(bank_id=0)
+    eid  = mshr.allocate(0x0020, dest_mask=(1 << 3) | (1 << 5))
+    flit = mshr.complete(eid, data_val, ERR_GOOD)
+    mshr.free(eid)
 
-    # Thread 5 requests same address -> MSHR is freed after first complete above.
-    # To properly test merging we need to hold the entry open.
-    # Re-implement: allocate manually, merge second, then complete once.
+    assert flit is not None
+    assert (flit.dest_mask >> 3) & 1, "Thread 3 must be in dest_mask"
+    assert (flit.dest_mask >> 5) & 1, "Thread 5 must be in dest_mask"
 
-    bank = banks[0]
-    bank.mshr = MSHRTable(0)                       # fresh MSHR
-    eid1, merged1 = bank.mshr.request(0x0020, thread_id=3)
-    assert not merged1
-
-    eid2, merged2 = bank.mshr.request(0x0020, thread_id=5)
-    assert merged2, "Second request to same address should merge"
-    assert eid2 == eid1, "Merged entry should share the same entry id"
-
-    # Now complete: single response, dest_mask covers both threads
-    merged_flit = bank.mshr.complete(eid1, data_val, ERR_GOOD)
-    bank.mshr.free(eid1)
-
-    assert merged_flit is not None
-    assert (merged_flit.dest_mask >> 3) & 1, "Thread 3 must be in dest_mask"
-    assert (merged_flit.dest_mask >> 5) & 1, "Thread 5 must be in dest_mask"
-
-    deliveries = route_flits(net, {0: merged_flit})
+    deliveries = route_flits(net, {0: flit})
     assert_delivered(deliveries, 3, data_val, test_name="Test6-T3")
     assert_delivered(deliveries, 5, data_val, test_name="Test6-T5")
 
-    # Only threads 3 and 5 should receive it
     stray = {t: v for t, v in deliveries.items() if t not in (3, 5)}
     assert not stray, f"Stray deliveries: {stray}"
     print("  PASSED")
@@ -608,24 +576,16 @@ def test_7_throughput():
     net   = ClosNetwork()
     banks = [SRAMBank(i) for i in range(NUM_BANKS)]
 
-    # Each bank sends to the thread with id = bank_id (one-to-one mapping)
-    expected: Dict[int, int] = {}
-    flits:    Dict[int, Flit] = {}
-
+    flits: Dict[int, Flit] = {}
     for bank_id in range(NUM_BANKS):
-        thread_id = bank_id                      # thread i served by bank i
-        data_val  = 0xA0000000 | bank_id
+        data_val = 0xA0000000 | bank_id
         banks[bank_id].write(bank_id * 4, data_val)
-        flit, _ = banks[bank_id].read_request(bank_id * 4, thread_id=thread_id)
-        assert flit is not None
-        flits[bank_id]        = flit
-        expected[thread_id]   = data_val
+        flits[bank_id] = banks[bank_id].read(bank_id * 4, dest_mask=1 << bank_id)
 
     deliveries = route_flits(net, flits)
 
     for tid in range(NUM_THREADS):
-        assert_delivered(deliveries, tid, expected[tid], test_name="Test7")
-
+        assert_delivered(deliveries, tid, 0xA0000000 | tid, test_name="Test7")
     assert len(deliveries) == NUM_THREADS, (
         f"Expected {NUM_THREADS} thread deliveries, got {len(deliveries)}")
     print("  PASSED")
@@ -668,7 +628,7 @@ def main():
     print()
     test_5_error_propagation()
     print()
-    test_6_mshr_merge()
+    test_6_mshr_multicast()
     print()
     test_7_throughput()
     print()

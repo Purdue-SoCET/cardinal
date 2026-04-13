@@ -1,14 +1,17 @@
 // middle_switch.sv
 // 3-stage Clos network – middle switch (8 inputs × 8 outputs).
 //
-// With diagonal routing from the ingress stage, input port i of middle
-// switch SWITCH_ID always carries a flit destined for egress switch
-//   e = (SWITCH_ID - i + NUM_EGRESS) % NUM_EGRESS
+// Diagonal routing from the ingress stage guarantees that input port i
+// always carries a flit destined for exactly one egress output:
+//   egress = (SWITCH_ID - i + NUM_EGRESS) & (NUM_EGRESS - 1)
 //
-// Because each input targets a distinct egress output, there is zero
-// contention — no arbitration is needed.  The switch is a set of 8
-// independent pipeline registers, one per output port, each fed from
-// its unique fixed source input.
+// Equivalently, egress output port e is fed by a fixed source input:
+//   src = (SWITCH_ID - e + NUM_INGRESS) & (NUM_INGRESS - 1)
+//       = (SWITCH_ID + NUM_INGRESS - e) & (NUM_INGRESS - 1)
+//
+// Because SRC is a compile-time constant for each output port e
+// (via genvar + localparam), the input selection is pure wiring —
+// no mux logic, just a wire rename.  No arbitration is needed.
 //
 // Registered outputs, back-pressure via valid/ready.
 
@@ -34,52 +37,39 @@ module middle_switch #(
 );
 
   // ---------------------------------------------------------------------------
-  // Diagonal routing: input i → output e = (SWITCH_ID - i + NUM_EGRESS) % NUM_EGRESS
-  // Equivalently:     output e ← input i = (SWITCH_ID - e + NUM_INGRESS) % NUM_INGRESS
+  // One pipeline register per egress output port.
+  // For each port e, SRC is the fixed ingress input that feeds it —
+  // a compile-time constant, so the assignment is a pure wire connection.
+  //
+  // Each SRC value is unique across all e (bijection), so ing_ready[SRC]
+  // is driven by exactly one generate iteration — no multiple-driver conflict.
   // ---------------------------------------------------------------------------
+  generate
+    for (genvar e = 0; e < NUM_EGRESS; e++) begin : gen_egr_port
 
-  logic  out_valid_q [NUM_EGRESS];
-  flit_t out_flit_q  [NUM_EGRESS];
+      localparam int unsigned SRC = (SWITCH_ID + NUM_INGRESS - e) & (NUM_INGRESS - 1);
 
-  // ---------------------------------------------------------------------------
-  // Registered outputs — one per egress port, fed from fixed source input
-  // ---------------------------------------------------------------------------
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      for (int e = 0; e < NUM_EGRESS; e++) begin
-        out_valid_q[e] <= 1'b0;
-        out_flit_q[e]  <= '0;
-      end
-    end else begin
-      for (int e = 0; e < NUM_EGRESS; e++) begin
-        automatic int src = (int'(SWITCH_ID) - e + NUM_INGRESS) % NUM_INGRESS;
-        if (!out_valid_q[e] || egr_ready[e]) begin
-          out_valid_q[e] <= ing_valid[src];
-          if (ing_valid[src])
-            out_flit_q[e] <= ing_flit[src];
+      logic  out_valid_q;
+      flit_t out_flit_q;
+
+      // -- Pipeline register --------------------------------------------------
+      always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          out_valid_q <= 1'b0;
+          out_flit_q  <= '0;
+        end else if (!out_valid_q || egr_ready[e]) begin
+          out_valid_q <= ing_valid[SRC];
+          if (ing_valid[SRC])
+            out_flit_q <= ing_flit[SRC];
         end
       end
-    end
-  end
 
-  // ---------------------------------------------------------------------------
-  // Output assignments
-  // ---------------------------------------------------------------------------
-  always_comb begin
-    for (int e = 0; e < NUM_EGRESS; e++) begin
-      egr_valid[e] = out_valid_q[e];
-      egr_flit[e]  = out_flit_q[e];
-    end
-  end
+      // -- Output and back-pressure assignments (pure wires) ------------------
+      assign egr_valid[e]   = out_valid_q;
+      assign egr_flit[e]    = out_flit_q;
+      assign ing_ready[SRC] = !out_valid_q || egr_ready[e];
 
-  // ---------------------------------------------------------------------------
-  // Back-pressure: input i is ready when its target output slot is free
-  // ---------------------------------------------------------------------------
-  always_comb begin
-    for (int i = 0; i < NUM_INGRESS; i++) begin
-      automatic int e = (int'(SWITCH_ID) - i + NUM_EGRESS) % NUM_EGRESS;
-      ing_ready[i] = !out_valid_q[e] || egr_ready[e];
     end
-  end
+  endgenerate
 
 endmodule : middle_switch

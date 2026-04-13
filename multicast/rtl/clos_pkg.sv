@@ -6,10 +6,10 @@ package clos_pkg;
   // ---------------------------------------------------------------------------
   // Flit field widths
   // ---------------------------------------------------------------------------
-  parameter int unsigned FLIT_W   = 71;   // total flit width [70:0]
-  parameter int unsigned DEST_W   = 32;   // destination bitmask width [70:39]
-  parameter int unsigned DATA_W   = 32;   // read-data width [38:7]
-  parameter int unsigned ERR_W    = 2;    // error-code width [1:0]
+  parameter int unsigned FLIT_W   = 66;   // total flit width [65:0]
+  parameter int unsigned DEST_W   = 32;   // destination bitmask [65:34]
+  parameter int unsigned DATA_W   = 32;   // read-data           [33: 2]
+  parameter int unsigned ERR_W    = 2;    // error-code          [ 1: 0]
 
   // ---------------------------------------------------------------------------
   // Network sizing
@@ -24,22 +24,17 @@ package clos_pkg;
 
   // ---------------------------------------------------------------------------
   // Flit layout
-  //   [70:39] dest_mask  (DEST_W  = 32 bits)
-  //   [38: 7] data       (DATA_W  = 32 bits)
-  //   [ 6: 2] reserved   (5 bits)
-  //   [ 1: 0] error      (ERR_W   =  2 bits)
+  //   [65:34] dest_mask  (DEST_W = 32 bits)
+  //   [33: 2] data       (DATA_W = 32 bits)
+  //   [ 1: 0] error      (ERR_W  =  2 bits)
   // ---------------------------------------------------------------------------
   typedef struct packed {
-    logic [DEST_W-1:0] dest_mask;   // [70:39]
-    logic [DATA_W-1:0] data;        // [38: 7]
-    logic [4:0]        reserved;    // [ 6: 2]
+    logic [DEST_W-1:0] dest_mask;   // [65:34]
+    logic [DATA_W-1:0] data;        // [33: 2]
     logic [ERR_W-1:0]  error;       // [ 1: 0]
-  } flit_t;                         // 71 bits total
+  } flit_t;                         // 66 bits total
 
-  // Egress output to threads: dest field stripped → [38:0]
-  // {data[31:0], error[1:0]} packed as [38:0]
-  // data occupies [38:7] and error occupies [1:0] in the original flit,
-  // so the thread-facing word is just flit[38:0].
-  parameter int unsigned THREAD_FLIT_W = 39;  // DATA_W + 5(reserved) + ERR_W
+  // Thread-facing word: dest stripped → flit[33:0] = {data[31:0], error[1:0]}
+  parameter int unsigned THREAD_FLIT_W = 34;   // DATA_W + ERR_W
 
 endpackage : clos_pkg
