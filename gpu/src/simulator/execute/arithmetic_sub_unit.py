@@ -220,9 +220,11 @@ class Alu(ArithmeticSubUnit):
             match instr.opcode:
                 # case R_Op.ADD | I_Op.ADDI:
                 case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF | U_Op.AUIPC:
-                    result = a + b            
+                    result = a + b
+                    print(f"Bruh: {a} + {b} = {result}")
                     # Check for signed overflow
                     if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI and (result > 2147483647 or result < -2147483648):
+                        print(f"Overflow detected: {a} + {b} = {result}")
                         overflow_detected = True
                 case R_Op.SUB | I_Op.SUBI | R_Op.SUBF:
                     result = a - b

@@ -341,6 +341,23 @@ class GPUTestRunner:
         
         return returncode == 0
     
+    def _capture_stdout_to_file(self, test_name: str) -> Tuple[Path, any]:
+        """Create a debug log file for test stdout capture.
+        
+        Args:
+            test_name: Name of the test for the log filename
+            
+        Returns:
+            Tuple of (log_file_path, original_stdout)
+        """
+        debug_dir = Path("results/debug")
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create a log file with the test name
+        log_file = debug_dir / f"{test_name}_debug.log"
+        
+        return log_file, sys.stdout
+    
     def run_simulator(self, input_file: str, test_name: str = None) -> bool:
         """Run the simulator using SM class.
         
@@ -357,54 +374,68 @@ class GPUTestRunner:
                 test_file_path = Path(input_file)
                 test_name = f"{test_file_path.stem}.{test_file_path.suffix.lstrip('.')}"
             
-            # Make a mutable copy of settings for this run
-            import copy
-            settings = copy.deepcopy(self.settings)
-            # Set output_dir to test-specific subdirectory
-            settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
-            # Set output_prefix to include test name in the filename
-            settings.perf_counter.output_prefix = test_name
+            # Set up debug logging
+            debug_file, original_stdout = self._capture_stdout_to_file(test_name)
+            debug_file_handle = open(debug_file, 'w')
             
-            # Create SM instance with simulator config
-            sm = SM(
-                test_file=Path(input_file),
-                test_file_type="bin",
-                config=settings
-            )
+            # Redirect stdout to capture print statements
+            sys.stdout = debug_file_handle
             
-            # Run simulation - sm.pipeline is a dict with all stages
-            # Need to tick through until completion
-            cycle = 0
-            max_cycles = self.max_cycles if self.enable_cycle_limit else float('inf')
-            
-            while cycle < max_cycles:
-                # Check if scheduler indicates completion
-                if hasattr(sm.pipeline.get('scheduler'), 'system_finished'):
-                    if sm.pipeline['scheduler'].system_finished:
-                        break
+            try:
+                # Make a mutable copy of settings for this run
+                import copy
+                settings = copy.deepcopy(self.settings)
+                # Set output_dir to test-specific subdirectory
+                settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
+                # Set output_prefix to include test name in the filename
+                settings.perf_counter.output_prefix = test_name
                 
-                # Tick all pipeline stages
-                sm.tick()
+                # Create SM instance with simulator config
+                sm = SM(
+                    test_file=Path(input_file),
+                    test_file_type="bin",
+                    config=settings
+                )
                 
-                cycle += 1
-            
-            if self.enable_cycle_limit and cycle >= self.max_cycles:
-                print(f"{Colors.YELLOW}Warning:{Colors.NC} Simulation hit max cycle limit of {self.max_cycles}")
-            
-            # Finalize performance counter collection
-            sm.finalize()
-            
-            # Dump register file to output
-            sm.pipeline["mem"].dump(path=str(self.settings.files.sim_output))
-            #pipeline_rf = sm.pipeline.get('pipeline_rf')
-            #if pipeline_rf:
-            #    pipeline_rf.dump(str(self.settings.files.sim_output))
-            #else:
-            #    print(f"{Colors.RED}Error:{Colors.NC} Could not find pipeline_rf in SM")
-            #    return False
-            
-            return True
+                # Run simulation - sm.pipeline is a dict with all stages
+                # Need to tick through until completion
+                cycle = 0
+                max_cycles = self.max_cycles if self.enable_cycle_limit else float('inf')
+                
+                while cycle < max_cycles:
+                    # Check if scheduler indicates completion
+                    if hasattr(sm.pipeline.get('scheduler'), 'system_finished'):
+                        if sm.pipeline['scheduler'].system_finished:
+                            break
+                    
+                    # Tick all pipeline stages
+                    sm.tick()
+                    
+                    cycle += 1
+                
+                if self.enable_cycle_limit and cycle >= self.max_cycles:
+                    print(f"Warning: Simulation hit max cycle limit of {self.max_cycles}")
+                
+                # Finalize performance counter collection
+                sm.finalize()
+                
+                # Dump register file to output
+                sm.pipeline["mem"].dump(path=str(self.settings.files.sim_output))
+                
+                return True
+            finally:
+                # Always restore stdout and close the debug file
+                sys.stdout = original_stdout
+                debug_file_handle.close()
+                print(f"Debug output written to {debug_file}")
+                
         except Exception as e:
+            # Make sure to restore stdout before printing error
+            if 'original_stdout' in locals():
+                sys.stdout = original_stdout
+            if 'debug_file_handle' in locals():
+                debug_file_handle.close()
+                
             print(f"{Colors.RED}Simulator error:{Colors.NC} {e}")
             import traceback
             traceback.print_exc()
