@@ -52,8 +52,6 @@ class ArithmeticSubUnit(FunctionalSubUnit):
                 del telemeter._units[old_name]
             telemeter.register_unit(self.perf_count)
 
-        self._overflow_pending = False
-
         self.ex_wb_interface = LatchIF(name=f"{self.name}_EX_WB_Interface")
 
         # the way stages are connected in the SM class, we need (latency - 1) latches
@@ -106,9 +104,7 @@ class ArithmeticSubUnit(FunctionalSubUnit):
             instr=instr,
             ready_out=self.ready_out,
             ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
-            overflow=self._overflow_pending,
         )
-        self._overflow_pending = False
         
         return out_data # return data to the Exectute stage so that all results can be collected and sent to WB stage together
     
@@ -193,7 +189,7 @@ class Alu(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"ALU does not support operation {instr.opcode} for type {self.type_}")
 
-        overflow_detected = False
+        overflow_threads = []  # Track which thread lanes have overflow
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -228,13 +224,15 @@ class Alu(ArithmeticSubUnit):
                     # Check for signed overflow using range checking
                     if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI:
                         if result > MAX_INT32 or result < MIN_INT32:
-                            overflow_detected = True
+                            overflow_threads.append(i)
+                            print(f"Overflow detected in ADD/ADDI: {a} + {b} = {result}")
                 case R_Op.SUB | I_Op.SUBI | R_Op.SUBF:
                     result = a - b
                     # Check for signed overflow using range checking
                     if instr.opcode == R_Op.SUB:
                         if result > MAX_INT32 or result < MIN_INT32:
-                            overflow_detected = True
+                            overflow_threads.append(i)
+                            print(f"Overflow detected in SUB/SUBI: {a} - {b} = {result}")
                 case R_Op.AND:
                     result = a & b
                 case R_Op.OR | I_Op.ORI:
@@ -253,24 +251,24 @@ class Alu(ArithmeticSubUnit):
                     result = a << b
                     # Check for shift overflow (shift amount >= 32)
                     if b >= 32 or b < 0:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                 case R_Op.SRL | I_Op.SRLI:
                     result = (a % 0x100000000) >> b
                     # Check for shift overflow
                     if b >= 32 or b < 0:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                 case R_Op.SRA | I_Op.SRAI:
                     result = a >> b
                     # Check for shift overflow
                     if b >= 32 or b < 0:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                 case R_Op.SLTF:
                     if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     result = int(a < b)
                 case R_Op.SGEF:
                     if math.isinf(a) or math.isnan(a) or math.isinf(b) or math.isnan(b):
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     result = int(a >= b)
                 # case U_Op.AUIPC:
                 #     # result = (b + ((a & 0xFFFFF) << 12)) & 0xFFFFFFFF
@@ -295,8 +293,14 @@ class Alu(ArithmeticSubUnit):
             else:
                 raise ValueError(f"Opcode {instr.opcode} doesnt have an output type listed in {self.__class__.__name__}.OUTPUT_TYPE.")
         
-        if overflow_detected:
-            self._overflow_pending = True
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr, 
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
 
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -324,7 +328,7 @@ class Mul(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"MUL does not support operation {instr.opcode} for type {self.type_}")
 
-        overflow_detected = False
+        overflow_threads = []
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -336,7 +340,7 @@ class Mul(ArithmeticSubUnit):
                     result = a * b
                     # Check for signed overflow using range checking
                     if result > MAX_INT32 or result < MIN_INT32:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
                 case R_Op.MULF:
                     a = instr.rdat1[i].float
@@ -344,13 +348,19 @@ class Mul(ArithmeticSubUnit):
                     result = a * b
                     # Check for floating-point overflow
                     if math.isinf(result) or math.isnan(result):
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in MUL.")
         
-        if overflow_detected:
-            self._overflow_pending = True
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr,
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -378,7 +388,7 @@ class Div(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"DIV does not support operation {instr.opcode} for type {self.type_}")
 
-        overflow_detected = False
+        overflow_threads = []
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -389,12 +399,12 @@ class Div(ArithmeticSubUnit):
                     b = instr.rdat2[i].int
                     if b == 0:
                         result = 0
-                        overflow_detected = True  # Division by zero
+                        overflow_threads.append(i)  # Division by zero
                     else:
                         result = a // b
                         # Check for division overflow (MIN_INT / -1)
                         if a == -2147483648 and b == -1:
-                            overflow_detected = True
+                            overflow_threads.append(i)
                     # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.DIVF:
@@ -402,19 +412,25 @@ class Div(ArithmeticSubUnit):
                     b = instr.rdat2[i].float
                     if b == 0.0:
                         result = 0.0
-                        overflow_detected = True  # Division by zero
+                        overflow_threads.append(i)  # Division by zero
                     else:
                         result = a / b
                         # Check for floating-point overflow
                         if math.isinf(result) or math.isnan(result):
-                            overflow_detected = True
+                            overflow_threads.append(i)
                     # print(f"[EX: DIV] {a} / {b} = ", result)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in DIV.")
         
-        if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr,
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -444,7 +460,7 @@ class Conv(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"Conversion does not support operation {instr.opcode}")
 
-        overflow_detected = False
+        overflow_threads = []
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -455,20 +471,26 @@ class Conv(ArithmeticSubUnit):
                     result = float(a)
                     # Check for overflow (exceeding max float or min float)
                     if result > 3.4028235e+38 or result < -3.4028235e+38:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     instr.wdat[i] = Bits(length=32, float=result)
                 case F_Op.FTOI:
                     a = instr.rdat1[i].float
                     result = int(a)
                     # Check for overflow (exceeding max int or min int)
                     if result > 2147483647 or result < -2147483648:
-                        overflow_detected = True
+                        overflow_threads.append(i)
                     instr.wdat[i] = Bits(length=32, int=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Conversion.")
         
-        if overflow_detected:
-            self.perf_count.increment_overflow(instr.opcode)
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr,
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -572,7 +594,7 @@ class Trig(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"TRIG does not support operation {instr.opcode} for type {self.type_}")
 
-        overflow_detected = False
+        overflow_threads = []
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -590,12 +612,18 @@ class Trig(ArithmeticSubUnit):
             
             # Check for invalid results (inf or nan)
             if math.isinf(result) or math.isnan(result):
-                overflow_detected = True
+                overflow_threads.append(i)
             
             instr.wdat[i] = Bits(length=32, float=result)
         
-        if overflow_detected:
-            self._overflow_pending = True
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr,
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()
@@ -623,7 +651,7 @@ class InvSqrt(ArithmeticSubUnit):
         if instr.opcode not in self.SUPPORTED_OPS[self.type_]:
             raise ValueError(f"InvSqrt does not support operation {instr.opcode} for type {self.type_}")
 
-        overflow_detected = False
+        overflow_threads = []
         for i in range(32):
             if instr.predicate[i].bin == "0":
                 continue
@@ -633,7 +661,7 @@ class InvSqrt(ArithmeticSubUnit):
                     a = instr.rdat1[i].float
                     if a <= 0.0:
                         result = 0.0
-                        overflow_detected = True  # Invalid input
+                        overflow_threads.append(i)  # Invalid input
                     else:
                         # Fast inverse square root algorithm (Quake III)
                         # Convert float to int representation for bit manipulation
@@ -658,14 +686,20 @@ class InvSqrt(ArithmeticSubUnit):
                         
                         # Check for invalid results
                         if math.isinf(result) or math.isnan(result):
-                            overflow_detected = True
+                            overflow_threads.append(i)
                     
                     instr.wdat[i] = Bits(length=32, float=result)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in InvSqrt for type {self.type_}.")
         
-        if overflow_detected:
-            self._overflow_pending = True
+        if overflow_threads:
+            # Record overflow immediately with the instruction that caused it
+            self.perf_count._record_unit_cycle(
+                instr=instr,
+                overflow=True,
+                pc=instr.pc.uint,
+                overflow_thread_count=len(overflow_threads)
+            )
         
         if self.latency == 1:
             self.single_cycle_latency_compute_tick()

@@ -2,9 +2,37 @@
 
 from pathlib import Path
 from typing import Optional, Any, Tuple, Type, Dict
+from enum import Enum
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 import toml
+
+
+# ============================================================================
+# Enum Definitions for Type-Safe Configuration
+# ============================================================================
+
+class WritebackBufferCountScheme(str, Enum):
+    """Buffer counting scheme options."""
+    BUFFER_PER_FSU = "buffer_per_fsu"
+    BUFFER_PER_BANK = "buffer_per_bank"
+
+class WritebackBufferSizeScheme(str, Enum):
+    """Buffer size scheme options."""
+    FIXED = "fixed"
+    VARIABLE = "variable"
+
+class WritebackBufferStructure(str, Enum):
+    """Buffer structure options."""
+    QUEUE = "queue"
+    STACK = "stack"
+    CIRCULAR = "circular"
+
+class WritebackBufferPolicy(str, Enum):
+    """Buffer eviction policy options."""
+    CAPACITY_PRIORITY = "capacity_priority"
+    AGE_PRIORITY = "age_priority"
+    FSU_PRIORITY = "fsu_priority"
 
 
 # ============================================================================
@@ -91,24 +119,119 @@ class DCacheConfig(BaseModel):
     associativity: int = 1
 
 
+class IntUnitConfigSettings(BaseModel):
+    """Integer unit configuration."""
+    alu_count: int = Field(default=1, description="Number of integer ALUs")
+    mul_count: int = Field(default=1, description="Number of integer multipliers")
+    div_count: int = Field(default=1, description="Number of integer dividers")
+    alu_latency: int = Field(default=1, description="Integer ALU latency in cycles")
+    mul_latency: int = Field(default=2, description="Integer multiply latency in cycles")
+    div_latency: int = Field(default=17, description="Integer divide latency in cycles")
+
+
+class FpUnitConfigSettings(BaseModel):
+    """Floating-point unit configuration."""
+    alu_count: int = Field(default=1, description="Number of floating-point ALUs")
+    mul_count: int = Field(default=1, description="Number of floating-point multipliers")
+    div_count: int = Field(default=1, description="Number of floating-point dividers")
+    sqrt_count: int = Field(default=1, description="Number of square root units")
+    alu_latency: int = Field(default=1, description="FP ALU latency in cycles")
+    mul_latency: int = Field(default=4, description="FP multiply latency in cycles")
+    div_latency: int = Field(default=24, description="FP divide latency in cycles")
+    sqrt_latency: int = Field(default=20, description="FP square root latency in cycles")
+
+
+class SpecialUnitConfigSettings(BaseModel):
+    """Special unit configuration."""
+    trig_count: int = Field(default=1, description="Number of trigonometric units")
+    inv_sqrt_count: int = Field(default=1, description="Number of inverse square root units")
+    conv_count: int = Field(default=1, description="Number of conversion units")
+    trig_latency: int = Field(default=16, description="Trigonometric operations latency in cycles")
+    inv_sqrt_latency: int = Field(default=12, description="Inverse sqrt latency in cycles")
+    conv_latency: int = Field(default=1, description="Conversion operations latency in cycles")
+
+
+class MemBranchJumpUnitConfigSettings(BaseModel):
+    """Memory/Branch/Jump unit configuration."""
+    ldst_count: int = Field(default=1, description="Number of load/store units")
+    branch_count: int = Field(default=1, description="Number of branch units")
+    jump_count: int = Field(default=1, description="Number of jump units")
+    ldst_buffer_size: int = Field(default=1, description="Writeback buffer size for LDST units")
+    ldst_queue_size: int = Field(default=4, description="Queue size for LDST units")
+
+
 class FunctionalUnitsConfig(BaseModel):
     """Functional units configuration."""
-    pass
+    int_unit_count: int = Field(default=1, description="Number of integer execution units")
+    fp_unit_count: int = Field(default=1, description="Number of FP execution units")
+    special_unit_count: int = Field(default=1, description="Number of special execution units")
+    membranchjump_unit_count: int = Field(default=1, description="Number of memory/branch/jump units")
+    
+    # Nested unit configurations
+    int_unit: IntUnitConfigSettings = Field(default_factory=IntUnitConfigSettings)
+    fp_unit: FpUnitConfigSettings = Field(default_factory=FpUnitConfigSettings)
+    special_unit: SpecialUnitConfigSettings = Field(default_factory=SpecialUnitConfigSettings)
+    membranchjump_unit: MemBranchJumpUnitConfigSettings = Field(default_factory=MemBranchJumpUnitConfigSettings)
+
+
+class WritebackBufferConfig(BaseModel):
+    """Writeback buffer configuration."""
+    count_scheme: WritebackBufferCountScheme = Field(
+        default=WritebackBufferCountScheme.BUFFER_PER_FSU,
+        description="Buffer counting scheme: buffer_per_fsu or buffer_per_bank"
+    )
+    size_scheme: WritebackBufferSizeScheme = Field(
+        default=WritebackBufferSizeScheme.FIXED,
+        description="Size scheme: fixed (single size for all) or variable (per-FSU sizes)"
+    )
+    structure: WritebackBufferStructure = Field(
+        default=WritebackBufferStructure.QUEUE,
+        description="Buffer structure: queue, stack, or circular"
+    )
+    primary_policy: WritebackBufferPolicy = Field(
+        default=WritebackBufferPolicy.CAPACITY_PRIORITY,
+        description="Primary eviction policy: capacity_priority, age_priority, or fsu_priority"
+    )
+    secondary_policy: WritebackBufferPolicy = Field(
+        default=WritebackBufferPolicy.AGE_PRIORITY,
+        description="Secondary eviction policy: capacity_priority, age_priority, or fsu_priority"
+    )
+    size: int = Field(
+        default=8,
+        description="Buffer size (fixed) or default size (variable)"
+    )
+    variable_sizes: Optional[Dict[str, int]] = Field(
+        default=None,
+        description="Per-FSU buffer sizes when using variable size scheme"
+    )
+    fsu_priorities: Optional[Dict[str, int]] = Field(
+        default=None,
+        description="FSU priority mapping when using fsu_priority policy"
+    )
 
 
 class WritebackConfig(BaseModel):
-    """Writeback buffer configuration."""
-    pass
+    """Writeback stage configuration."""
+    buffer_config: WritebackBufferConfig = Field(
+        default_factory=WritebackBufferConfig,
+        description="Writeback buffer configuration"
+    )
 
 
 class RegisterFileConfig(BaseModel):
     """Register file configuration."""
-    pass
+    num_banks: int = Field(
+        default=4,
+        description="Number of register file banks"
+    )
 
 
 class PredicateRegisterFileConfig(BaseModel):
     """Predicate register file configuration."""
-    pass
+    num_banks: int = Field(
+        default=2,
+        description="Number of predicate register file banks"
+    )
 
 
 class TestConfig(BaseModel):

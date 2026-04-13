@@ -9,8 +9,9 @@ class ExecutePerfCount(PerfCounterBase):
         super().__init__(name)
         self.instruction_counts: dict[Op, int] = {}
         self.overflow_counts: dict[Op, int] = {}
+        self.overflow_details: list[dict[str, Any]] = []  # Track PC and thread count for each overflow
 
-    def _record_unit_cycle(self, *, instr: Instruction = None, overflow: bool = False, **kwargs) -> None:
+    def _record_unit_cycle(self, *, instr: Instruction, overflow: bool = False, pc: int = None, overflow_thread_count: int = None, **kwargs) -> None:
         if instr is not None:
             self.instruction_counts[instr.opcode] = self.instruction_counts.get(instr.opcode, 0) + 1
         else:
@@ -18,6 +19,12 @@ class ExecutePerfCount(PerfCounterBase):
 
         if overflow and instr is not None:
             self.overflow_counts[instr.opcode] = self.overflow_counts.get(instr.opcode, 0) + 1
+            # Record overflow details for later reporting
+            self.overflow_details.append({
+                'opcode': instr.opcode.name if hasattr(instr.opcode, 'name') else str(instr.opcode),
+                'pc': pc if pc is not None else 0,
+                'thread_count': overflow_thread_count if overflow_thread_count is not None else 1,
+            })
 
     def _extra_summary(self) -> dict[str, Any]:
         """Convert instruction and overflow counts to JSON-serializable format for Parquet export.
@@ -54,9 +61,18 @@ class ExecutePerfCount(PerfCounterBase):
         instr_summary = str(instr_counts_str) if instr_counts_str else "no_instructions"
         overflow_summary = str(overflow_counts_str) if overflow_counts_str else "no_overflows"
         
+        # Format overflow details: list of dicts with opcode, pc, and thread count
+        overflow_details_str = "no_overflows"
+        if self.overflow_details:
+            overflow_details_str = str([
+                {'op': d['opcode'], 'pc': d['pc'], 'num_threads': d['thread_count']} 
+                for d in self.overflow_details
+            ])
+        
         return {
             "instruction_summary": instr_summary,
             "overflow_summary": overflow_summary,
+            "overflow_details": overflow_details_str,
         }
     
     def increment(self, instr: Instruction, ready_out: bool = True, ex_wb_interface_ready: bool = True) -> None:
@@ -78,11 +94,4 @@ class ExecutePerfCount(PerfCounterBase):
         
         if instr is not None and ready_out:
             self.utilization_cycles += 1
-    
-    def increment_overflow(self, opcode: Op) -> None:
-        """Increment overflow counter for a specific operation"""
-        if opcode in self.overflow:
-            self.overflow[opcode] += 1
-        else:
-            self.overflow[opcode] = 1
     

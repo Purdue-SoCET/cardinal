@@ -12,6 +12,7 @@ from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.instruction import Instruction
 from simulator.mem_types import DecodeType
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
+from simulator.execute.functional_unit import MemBranchJumpUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
 from simulator.issue.regfile import RegisterFile
 from simulator.issue.stage import IssueStage
@@ -104,6 +105,147 @@ class SM:
         
         return Telemeter(perf_config, output_dir=str(output_dir), output_prefix=perf_cfg.output_prefix)
     
+    def _build_functional_unit_config(self) -> FunctionalUnitConfig:
+        """Build FunctionalUnitConfig from Settings.functional_units configuration.
+        
+        Converts the nested functional unit configuration from the Settings object
+        into the structured FunctionalUnitConfig format used by the functional units.
+        
+        Returns
+        -------
+        FunctionalUnitConfig
+            Structured configuration with all sub-configs
+        """
+        fu_cfg = self.config.functional_units
+        
+        # Create individual unit configs from nested settings
+        int_config = IntUnitConfig(
+            alu_count=fu_cfg.int_unit.alu_count,
+            mul_count=fu_cfg.int_unit.mul_count,
+            div_count=fu_cfg.int_unit.div_count,
+            alu_latency=fu_cfg.int_unit.alu_latency,
+            mul_latency=fu_cfg.int_unit.mul_latency,
+            div_latency=fu_cfg.int_unit.div_latency,
+        )
+        
+        fp_config = FpUnitConfig(
+            alu_count=fu_cfg.fp_unit.alu_count,
+            mul_count=fu_cfg.fp_unit.mul_count,
+            div_count=fu_cfg.fp_unit.div_count,
+            sqrt_count=fu_cfg.fp_unit.sqrt_count,
+            alu_latency=fu_cfg.fp_unit.alu_latency,
+            mul_latency=fu_cfg.fp_unit.mul_latency,
+            div_latency=fu_cfg.fp_unit.div_latency,
+            sqrt_latency=fu_cfg.fp_unit.sqrt_latency,
+        )
+        
+        special_config = SpecialUnitConfig(
+            trig_count=fu_cfg.special_unit.trig_count,
+            inv_sqrt_count=fu_cfg.special_unit.inv_sqrt_count,
+            conv_count=fu_cfg.special_unit.conv_count,
+            trig_latency=fu_cfg.special_unit.trig_latency,
+            inv_sqrt_latency=fu_cfg.special_unit.inv_sqrt_latency,
+            conv_latency=fu_cfg.special_unit.conv_latency,
+        )
+        
+        membranchjump_config = MemBranchJumpUnitConfig(
+            ldst_count=fu_cfg.membranchjump_unit.ldst_count,
+            branch_count=fu_cfg.membranchjump_unit.branch_count,
+            jump_count=fu_cfg.membranchjump_unit.jump_count,
+            ldst_buffer_size=fu_cfg.membranchjump_unit.ldst_buffer_size,
+            ldst_queue_size=fu_cfg.membranchjump_unit.ldst_queue_size,
+        )
+        
+        # Create and return the FunctionalUnitConfig
+        return FunctionalUnitConfig(
+            int_unit_count=fu_cfg.int_unit_count,
+            fp_unit_count=fu_cfg.fp_unit_count,
+            special_unit_count=fu_cfg.special_unit_count,
+            membranchjump_unit_count=fu_cfg.membranchjump_unit_count,
+            int_config=int_config,
+            fp_config=fp_config,
+            special_config=special_config,
+            membranchjump_config=membranchjump_config,
+        )
+    
+    def _build_writeback_configs(self):
+        """Build writeback configs from Settings.
+        
+        Returns
+        -------
+        tuple of (WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig)
+            Writeback configuration objects
+        """
+        from simulator.writeback.config import (
+            WritebackBufferConfig as WritebackBufferConfigImpl,
+            WritebackBufferCount,
+            WritebackBufferSize,
+            WritebackBufferStructure,
+            WritebackBufferPolicy,
+            RegisterFileConfig as RegisterFileConfigImpl,
+            PredicateRegisterFileConfig as PredicateRegisterFileConfigImpl,
+        )
+        
+        wb_cfg = self.config.writeback.buffer_config
+        rf_cfg = self.config.register_file
+        pred_rf_cfg = self.config.predicate_register_file
+        
+        # Map pydantic enum values to implementation enum values
+        count_scheme_map = {
+            "buffer_per_fsu": WritebackBufferCount.BUFFER_PER_FSU,
+            "buffer_per_bank": WritebackBufferCount.BUFFER_PER_BANK,
+        }
+        size_scheme_map = {
+            "fixed": WritebackBufferSize.FIXED,
+            "variable": WritebackBufferSize.VARIABLE,
+        }
+        structure_map = {
+            "stack": WritebackBufferStructure.STACK,
+            "queue": WritebackBufferStructure.QUEUE,
+            "circular": WritebackBufferStructure.CIRCULAR,
+        }
+        policy_map = {
+            "age_priority": WritebackBufferPolicy.AGE_PRIORITY,
+            "capacity_priority": WritebackBufferPolicy.CAPACITY_PRIORITY,
+            "fsu_priority": WritebackBufferPolicy.FSU_PRIORITY,
+        }
+        
+        # Convert pydantic enums (which are strings) to implementation enums
+        count_scheme = count_scheme_map[wb_cfg.count_scheme.value]
+        size_scheme = size_scheme_map[wb_cfg.size_scheme.value]
+        structure = structure_map[wb_cfg.structure.value]
+        primary_policy = policy_map[wb_cfg.primary_policy.value]
+        secondary_policy = policy_map[wb_cfg.secondary_policy.value]
+        
+        # Determine size configuration based on scheme
+        if size_scheme == WritebackBufferSize.VARIABLE and wb_cfg.variable_sizes:
+            size_config = wb_cfg.variable_sizes
+        else:
+            size_config = wb_cfg.size
+        
+        # Create WritebackBufferConfig
+        wb_buffer_config = WritebackBufferConfigImpl(
+            count_scheme=count_scheme,
+            size_scheme=size_scheme,
+            structure=structure,
+            primary_policy=primary_policy,
+            secondary_policy=secondary_policy,
+            size=size_config,
+            fsu_priority=wb_cfg.fsu_priorities,
+        )
+        
+        # Create RegisterFileConfig
+        reg_file_config = RegisterFileConfigImpl(
+            num_banks=rf_cfg.num_banks
+        )
+        
+        # Create PredicateRegisterFileConfig
+        pred_reg_file_config = PredicateRegisterFileConfigImpl(
+            num_banks=pred_rf_cfg.num_banks
+        )
+        
+        return wb_buffer_config, reg_file_config, pred_reg_file_config
+    
     def _build_pipeline(self) -> dict:
         """Instantiate all pipeline stages and return them as a dict."""
         enable_tbs = self.config.sm.enable_tbs
@@ -175,10 +317,10 @@ class SM:
             mem_resp_if=mem_dcache_latch
         )
 
-        fu_config = FunctionalUnitConfig.get_default_config()
-        # update the mem branch config with the word size and block size for the Ldst FU
-        fu_config.membranchjump_config.block_size_words = 4  # Standard
-        fu_config.membranchjump_config.word_size_bytes = 4  # Standard 32-bit word
+        fu_config = self._build_functional_unit_config()
+        # Note: block_size_words and word_size_bytes are deprecated and not used by Ldst_Fu
+        # fu_config.membranchjump_config.block_size_words = 4  # Standard
+        # fu_config.membranchjump_config.word_size_bytes = 4  # Standard 32-bit word
 
         fust      = fu_config.generate_fust_dict()
 
@@ -276,10 +418,8 @@ class SM:
             ldst_sched_if=ldst_scheduler_fwif,
         )
 
-        wb_buffer_config = WritebackBufferConfig.get_default_config()
+        wb_buffer_config, rf_config, pred_reg_file_config = self._build_writeback_configs()
         wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
-        rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
-        pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf)
         
         wb_stage = WritebackStage.create_pipeline_stage(
             wb_config=wb_buffer_config,

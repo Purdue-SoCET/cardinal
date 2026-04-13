@@ -1,3 +1,11 @@
+"""
+Writeback configuration classes.
+
+NOTE: This file is now primarily for backward compatibility.
+All configuration is now managed through the top-level config.py and config.toml files.
+The actual configuration classes are still defined here for use by the writeback module.
+"""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
@@ -145,11 +153,3 @@ class PredicateRegisterFileConfig:
     def get_config_from_pred_reg_file(cls, pred_reg_file) -> PredicateRegisterFileConfig:
         """Create config from PredicateRegFile instance."""
         return cls(num_banks=pred_reg_file.banks)
-
-# def generate_register_file_bank_enum(regfile_config: RegisterFileConfig, pred_regfile_config: PredicateRegisterFileConfig) -> Enum:
-#     """Dynamically generate an Enum for register file banks based on the number of banks."""
-#     members = (
-#         {f'PREDICATE_REGISTER_FILE_BANK_{i}': f'pred_regfile_bank_{i}' for i in range(pred_regfile_config.num_banks)}
-#         | {f'REGISTER_FILE_BANK_{i}': f'regfile_bank_{i}' for i in range(regfile_config.num_banks)}
-#     )
-#     return Enum('RegisterFileBank', members)

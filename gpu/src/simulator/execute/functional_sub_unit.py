@@ -6,6 +6,7 @@ from bitstring import Bits
 from simulator.utils.performance_counter.telemeter import Telemeter
 from common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op, U_Op, S_Op
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
+from simulator.utils.performance_counter.ldst import LdstPerfCount
 from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.instruction import Instruction
 from simulator.mem.dMemPackets import dMemResponse
@@ -103,8 +104,16 @@ class Ldst_Fu(FunctionalSubUnit):
         # Trackers for halt instruction
         self.halting = False
         self.waiting_for_flush = False
+        
+        # Performance counter cycle tracking
+        self.current_cycle = 0
 
         super().__init__(num, telemeter=telemeter)
+        
+        # Use LdstPerfCount instead of ExecutePerfCount
+        self.perf_count = LdstPerfCount(name=self.name)
+        if telemeter:
+            telemeter.register_unit(self.perf_count)
 
         #Manually instantiate interfaces while doing integration
         self.dcache_if = LatchIF()
@@ -209,7 +218,10 @@ class Ldst_Fu(FunctionalSubUnit):
         #move mem_req to wb_buffer if finished
         if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
             print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
-            self.wb_buffer.append(self.ldst_q.pop(0).instr)
+            completed_instr = self.ldst_q.pop(0).instr
+            # Record instruction completion for latency tracking
+            self.perf_count.record_instruction_completion(completed_instr, self.current_cycle)
+            self.wb_buffer.append(completed_instr)
         
         #send req to cache if not waiting for response
         if self.outstanding == False and self.dcache_if.ready_for_push():
@@ -233,6 +245,18 @@ class Ldst_Fu(FunctionalSubUnit):
             # self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
+        
+        # Record performance metrics this cycle
+        current_instr = self.ldst_q[0].instr if len(self.ldst_q) > 0 else None
+        self.perf_count.record_cycle(
+            is_stalled=not self.ready_out,
+            is_busy=current_instr is not None,
+            instr=current_instr,
+            cycle=self.current_cycle,
+        )
+        
+        # Increment cycle counter for next iteration
+        self.current_cycle += 1
     
         return return_instr
 
