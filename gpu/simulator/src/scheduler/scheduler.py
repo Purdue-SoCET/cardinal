@@ -106,6 +106,7 @@ class SchedulerStage(Stage):
         gto_init = self.unissued.pop(0)
         self.oldest.append(gto_init)
 
+        temp_tb_size = tb_size
         for _ in range(math.ceil(tb_size / self.warp_size)):
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].pc = start_pc
             self.warp_table[self.free_warp // 2].warps[self.free_warp % 2].state = WarpState.READY
@@ -114,11 +115,24 @@ class SchedulerStage(Stage):
             if self.free_warp % 2 == 0:
                 # TODO: CHECK THIS SHIT AFTER U FINISH COLLISION
                 self.warp_table[self.free_warp // 2].issue = True
-                self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=0xffffffff, length=32)
+                if temp_tb_size - 32 >= 0:
+                    self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=0xffffffff, length=32)
+                else:
+                    mask_even = 0
+                    for i in range(32):
+                        mask_even |= (i < temp_tb_size) << i
+                    self.warp_table[self.free_warp // 2].halt_mask_even = Bits(uint=mask_even, length=32)
                 self.warp_table[self.free_warp // 2].halt = 0
                 self.warp_table[self.free_warp // 2].last_issue_even = False
             else:
-                self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=0xffffffff, length=32)
+                if temp_tb_size - 32 == 0:
+                    self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=0xffffffff, length=32)
+                else:
+                    mask_odd = 0
+                    for i in range(32):
+                        mask_odd |= (i < temp_tb_size) << i
+                    self.warp_table[self.free_warp // 2].halt_mask_odd = Bits(uint=mask_odd, length=32)
+            temp_tb_size -= 32
             
             self.csrtable.write_data(self.free_warp, base_id, tb_id, tb_size)
             base_id += self.warp_size
