@@ -33,11 +33,12 @@ class ArithmeticSubUnit(FunctionalSubUnit):
         super().__init__(num=num, telemeter=telemeter)
         
         # Update the name to include the type information
-        # This also needs to update the perf_count name if it was already registered
+        # This also needs to update the perf_count unit_name if it was already registered
         self.name = f"{self.__class__.__name__}_{type_.__name__}_{num}"
         
-        # Update perf_count name to match the new unit name
-        self.perf_count.name = self.name
+        # Update perf_count unit_name to match the new unit name
+        # CRITICAL: Must update unit_name, not name (unit_name is what telemeter uses as the dict key)
+        self.perf_count.unit_name = self.name
         
         # Re-register with telemeter under the correct name if telemeter exists
         if telemeter and self.name != f"{self.__class__.__name__}_{num}":
