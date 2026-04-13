@@ -221,16 +221,18 @@ class Alu(ArithmeticSubUnit):
                 # case R_Op.ADD | I_Op.ADDI:
                 case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF | U_Op.AUIPC:
                     result = a + b
-                    print(f"Bruh: {a} + {b} = {result}")
                     # Check for signed overflow
-                    if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI and (result > 2147483647 or result < -2147483648):
-                        print(f"Overflow detected: {a} + {b} = {result}")
-                        overflow_detected = True
+                    # Overflow occurs when operands have same sign but result has opposite sign
+                    if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI:
+                        if (a > 0 and b > 0 and result < 0) or (a < 0 and b < 0 and result > 0):
+                            overflow_detected = True
                 case R_Op.SUB | I_Op.SUBI | R_Op.SUBF:
                     result = a - b
                     # Check for signed overflow
-                    if instr.opcode == R_Op.SUB and (result > 2147483647 or result < -2147483648):
-                        overflow_detected = True
+                    # Overflow occurs when: positive - negative = negative, or negative - positive = positive
+                    if instr.opcode == R_Op.SUB:
+                        if (a > 0 and b < 0 and result < 0) or (a < 0 and b > 0 and result > 0):
+                            overflow_detected = True
                 case R_Op.AND:
                     result = a & b
                 case R_Op.OR | I_Op.ORI:
