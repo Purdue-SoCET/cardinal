@@ -5,7 +5,7 @@ START:
     ; load initial values
     lli   x4, 0xFFF                     ; change this to alter b in (y = b + TID)
     lmi   x4, 0xFFF
-    lui   x4, 0x7F
+    lui   x4, 0x7F                      ; load INT_32_MAX into x4
 
     ; set max thread count
     lli   x5, 32                        ; MAX_THREADS = 32
@@ -23,7 +23,7 @@ START:
     add   x9, x7, x8, 2             ; base + (tid*stride)
 
     ; compute op (y = a + b): x10 = x4 + TID
-    add   x10, x4, x3, 2
+    add   x10, x4, x3, 2            ; this should cause overflow for TID >= 1 since x4 is set to INT_32_MAX
 
     ; store result
     sw    x10, x9, 0, 2

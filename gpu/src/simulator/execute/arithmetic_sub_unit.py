@@ -9,6 +9,10 @@ from simulator.utils.data_structures.compact_queue import CompactQueue
 from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
 from simulator.utils.performance_counter.telemeter import Telemeter
 
+# 32-bit signed integer limits
+MIN_INT32 = -(2**31)      # -2147483648
+MAX_INT32 = 2**31 - 1     # 2147483647
+
 class ArithmeticSubUnitPipeline(CompactQueue):
     def __init__(self, latency: int):
         super().__init__(length=latency, type_=Instruction)
@@ -221,17 +225,15 @@ class Alu(ArithmeticSubUnit):
                 # case R_Op.ADD | I_Op.ADDI:
                 case R_Op.ADD | I_Op.ADDI | C_Op.CSRR | R_Op.ADDF | U_Op.AUIPC:
                     result = a + b
-                    # Check for signed overflow
-                    # Overflow occurs when operands have same sign but result has opposite sign
+                    # Check for signed overflow using range checking
                     if instr.opcode == R_Op.ADD or instr.opcode == I_Op.ADDI:
-                        if (a > 0 and b > 0 and result < 0) or (a < 0 and b < 0 and result > 0):
+                        if result > MAX_INT32 or result < MIN_INT32:
                             overflow_detected = True
                 case R_Op.SUB | I_Op.SUBI | R_Op.SUBF:
                     result = a - b
-                    # Check for signed overflow
-                    # Overflow occurs when: positive - negative = negative, or negative - positive = positive
+                    # Check for signed overflow using range checking
                     if instr.opcode == R_Op.SUB:
-                        if (a > 0 and b < 0 and result < 0) or (a < 0 and b > 0 and result > 0):
+                        if result > MAX_INT32 or result < MIN_INT32:
                             overflow_detected = True
                 case R_Op.AND:
                     result = a & b
@@ -332,8 +334,8 @@ class Mul(ArithmeticSubUnit):
                     a = instr.rdat1[i].int
                     b = instr.rdat2[i].int
                     result = a * b
-                    # Check for signed overflow
-                    if result > 2147483647 or result < -2147483648:
+                    # Check for signed overflow using range checking
+                    if result > MAX_INT32 or result < MIN_INT32:
                         overflow_detected = True
                     instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
                 case R_Op.MULF:
