@@ -19,6 +19,11 @@ Arguments:
                           
   pattern                 Optional search pattern for test files
                           (e.g., "*.s", "saxpy*", "unit/", "program/*.bin")
+  
+  --debug-file FILE       Write debug output to results/debug/<FILE>
+  
+  --debug-dual-output     Write debug output to both terminal and file
+                          (use with --debug-file)
 
 Examples:
   # Test assembly files against emulator output (compile & compare)
@@ -38,10 +43,24 @@ Examples:
   
   # Test specific pattern
   python3 test_cardinal.py --src assembly --truth emu saxpy*
+  
+  # Test with debug output to file only
+  python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log
+  
+  # Test with debug output to both terminal and file
+  python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log --debug-dual-output
 
 Debugging:
   If a test fails, check the 'test_diffs/' directory for detailed
   logs, expected vs. actual hex dumps, and diff results.
+  
+  Thread Count Validation:
+  The test runner validates that thread counts are consistent across:
+  1. Directory structure (e.g., pixel/t1024/ -> 1024 threads)
+  2. Expected file path (e.g., program/pixel/t1024/pixel.hex -> 1024 threads)
+  3. MMIO configuration in meminit (when TBS is enabled)
+  
+  If thread counts don't match, the test fails with a validation error.
 """
 
 import argparse
@@ -51,6 +70,8 @@ import sys
 from pathlib import Path
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
+import io
+from contextlib import redirect_stdout, redirect_stderr
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -70,6 +91,47 @@ class Colors:
     NC = '\033[0m'  # No Color
 
 
+class DebugLogger:
+    """Handles debug output to both terminal and file."""
+    
+    def __init__(self, debug_file: Optional[Path] = None, dual_output: bool = False):
+        """Initialize debug logger.
+        
+        Args:
+            debug_file: Optional file to write debug output to
+            dual_output: If True, write to both terminal and file; if False, only write to file
+        """
+        self.debug_file = debug_file
+        self.dual_output = dual_output
+        self.file_handle = None
+        
+        if self.debug_file:
+            self.debug_file.parent.mkdir(parents=True, exist_ok=True)
+            self.file_handle = open(self.debug_file, 'w')
+    
+    def write(self, message: str):
+        """Write a debug message.
+        
+        Args:
+            message: Message to write
+        """
+        if self.dual_output or not self.debug_file:
+            print(message)
+        
+        if self.debug_file and self.file_handle:
+            self.file_handle.write(message + '\n')
+            self.file_handle.flush()
+    
+    def close(self):
+        """Close debug file."""
+        if self.file_handle:
+            self.file_handle.close()
+    
+    def __del__(self):
+        """Cleanup on deletion."""
+        self.close()
+
+
 @dataclass
 class TestResult:
     """Result of a test execution."""
@@ -83,7 +145,7 @@ class TestResult:
 class GPUTestRunner:
     """Main test runner class."""
     
-    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None):
+    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None, debug_file: Optional[Path] = None, debug_dual_output: bool = False):
         """Initialize the test runner.
         
         Args:
@@ -95,6 +157,8 @@ class GPUTestRunner:
             skip_cleanup: If True, skip cleanup after tests run
             enable_cycle_limit: If True, enforce a max cycle limit
             max_cycles: Maximum cycles to run (only used if enable_cycle_limit is True)
+            debug_file: Optional path to debug output file (in results/debug/)
+            debug_dual_output: If True, write debug output to both terminal and file
         """
         # Validate arguments only if running tests
         if src is not None and src not in ("assembly", "bin"):
@@ -111,6 +175,14 @@ class GPUTestRunner:
         self.settings = get_settings(config_path)
         self.pass_count = 0
         self.fail_count = 0
+        self.debug_dual_output = debug_dual_output
+        
+        # Setup debug logger
+        if debug_file:
+            debug_path = Path("results/debug") / debug_file
+        else:
+            debug_path = None
+        self.debug_logger = DebugLogger(debug_path, debug_dual_output)
         
         # Clean results directory if requested
         if self.clean:
@@ -254,8 +326,203 @@ class GPUTestRunner:
                 if line:
                     f_out.write(f"0x{i*4:08x} 0x{line}\n")
     
-    def create_meminit(self, base_name: str, dir_name: Path) -> None:
+    def extract_thread_count_from_path(self, file_path: Path) -> Optional[int]:
+        """Extract thread count from new directory structure.
+        
+        New structure: <test_name>/t<num_threads>/<test_name>.bin
+        Example: pixel/t1024/pixel.bin -> returns 1024
+        
+        Args:
+            file_path: Path to test file
+            
+        Returns:
+            Thread count if found in path, None otherwise
+        """
+        # Check parent directory name for pattern t<digits>
+        parent_name = file_path.parent.name
+        if parent_name.startswith('t') and parent_name[1:].isdigit():
+            return int(parent_name[1:])
+        return None
+    
+    def find_expected_file_for_binary(self, bin_file: Path, threads: int = None, blocks: int = None) -> Optional[Path]:
+        """Find expected output file for a binary test file.
+        
+        Supports two expected file naming conventions:
+        
+        1. New structure (program tests):
+           Binary: tests/bin/program/<test_name>/t<threads>/<test_name>.bin
+           Expected: tests/exp/program/<test_name>/t<threads>/<test_name>.hex
+        
+        2. Old structure (unit tests):
+           Binary: tests/bin/unit/.../<test_name>.bin
+           Expected: tests/exp/unit/.../<test_name>_exp_t<threads>_b<blocks>.hex
+        
+        Args:
+            bin_file: Path to binary file
+            threads: Number of threads (extracted from path if not provided)
+            blocks: Number of blocks
+            
+        Returns:
+            Path to expected file if found, None otherwise
+        """
+        base_name = bin_file.stem
+        expected_dir = Path(self.settings.directories.expected_dir)
+        
+        # Extract thread count from path if not provided
+        if threads is None:
+            extracted = self.extract_thread_count_from_path(bin_file)
+            if extracted:
+                threads = extracted
+            else:
+                threads = self.settings.test_parameters.default_threads
+        
+        if blocks is None:
+            blocks = self.settings.test_parameters.default_blocks
+        
+        # Try new structure first: program/<test_name>/t<threads>/<test_name>.hex
+        # For new structure, the path is: bin/program/<test_name>/t<threads>/<test_name>.bin
+        # So parent.parent.name would be the test_name
+        if "program" in str(bin_file) and bin_file.parent.name.startswith('t'):
+            test_name = bin_file.parent.parent.name
+            new_structure_file = expected_dir / "program" / test_name / f"t{threads}" / f"{base_name}.hex"
+            if new_structure_file.exists():
+                return new_structure_file
+        
+        # Fall back to old structure: <test_name>_exp_t<threads>_b<blocks>.hex
+        old_structure_filename = f"{base_name}_exp_t{threads}_b{blocks}.hex"
+        for match in expected_dir.rglob(old_structure_filename):
+            return match
+        
+        return None
+    
+    def extract_thread_count_from_expected_file(self, expected_file: Path) -> Optional[int]:
+        """Extract thread count from expected file path.
+        
+        Handles both new and old expected file structures:
+        - New: tests/exp/program/<test_name>/t<threads>/<test_name>.hex
+        - Old: <test_name>_exp_t<threads>_b<blocks>.hex
+        
+        Args:
+            expected_file: Path to expected file
+            
+        Returns:
+            Thread count if found, None otherwise
+        """
+        # Try new structure first: parent directory name should be t<threads>
+        parent_name = expected_file.parent.name
+        if parent_name.startswith('t') and parent_name[1:].isdigit():
+            return int(parent_name[1:])
+        
+        # Try old structure: filename format _exp_t<threads>_b<blocks>
+        filename = expected_file.name
+        if '_exp_t' in filename:
+            # Extract threads from pattern: _exp_t<threads>_b
+            try:
+                parts = filename.split('_exp_t')
+                if len(parts) > 1:
+                    thread_part = parts[1].split('_b')[0]
+                    if thread_part.isdigit():
+                        return int(thread_part)
+            except (IndexError, ValueError):
+                pass
+        
+        return None
+    
+    def extract_mmio_thread_count(self, meminit_file: Path) -> Optional[int]:
+        """Extract thread count from MMIO in meminit file.
+        
+        MMIO register at address 0x18 (line 6 in hex format) contains total threads.
+        Format: line number corresponds to address (each line = 4 bytes)
+        
+        Args:
+            meminit_file: Path to meminit hex file
+            
+        Returns:
+            Total threads from MMIO 0x18, or None if not found
+        """
+        if not meminit_file.exists():
+            return None
+        
+        try:
+            lines = meminit_file.read_text().strip().split('\n')
+            # MMIO 0x18 is at address 0x18 = 24 bytes
+            # Each line = 4 bytes (one 32-bit value)
+            # Line 0 = addr 0x00, Line 1 = addr 0x04, ..., Line 6 = addr 0x18
+            if len(lines) > 6:
+                # Parse the value at address 0x18 (7th line, index 6)
+                mmio_line = lines[6].split()
+                if len(mmio_line) >= 2:
+                    # Value is in hex format (0xXXXXXXXX)
+                    total_threads = int(mmio_line[1], 16) if mmio_line[1].startswith('0x') else int(mmio_line[1], 16)
+                    return total_threads
+        except (IndexError, ValueError) as e:
+            self.debug_logger.write(f"Warning: Failed to extract MMIO thread count: {e}")
+        
+        return None
+    
+    def validate_thread_count_consistency(self, bin_file: Path, expected_file: Optional[Path] = None, meminit_file: Optional[Path] = None) -> Tuple[bool, str]:
+        """Validate thread count consistency across directory structure, MMIO, and expected file.
+        
+        Checks that the thread count from the directory structure matches:
+        1. The thread count in the expected file (if provided)
+        2. The thread count in MMIO (if provided and TBS enabled)
+        
+        Args:
+            bin_file: Path to binary test file
+            expected_file: Optional path to expected output file
+            meminit_file: Optional path to meminit file (for MMIO extraction)
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+            - is_valid: True if all thread counts match, False otherwise
+            - error_message: Description of any mismatches
+        """
+        # Extract thread count from directory structure
+        dir_threads = self.extract_thread_count_from_path(bin_file)
+        if dir_threads is None:
+            # No thread count in directory structure, validation not applicable
+            return True, ""
+        
+        errors = []
+        
+        # Check expected file thread count
+        if expected_file and expected_file.exists():
+            exp_threads = self.extract_thread_count_from_expected_file(expected_file)
+            if exp_threads is not None and exp_threads != dir_threads:
+                errors.append(
+                    f"Thread count mismatch: directory path has {dir_threads} threads but "
+                    f"expected file '{expected_file.name}' has {exp_threads} threads"
+                )
+        
+        # Check MMIO thread count (if TBS enabled and meminit provided)
+        if self.settings.sm.enable_tbs and meminit_file:
+            mmio_threads = self.extract_mmio_thread_count(meminit_file)
+            if mmio_threads is not None and mmio_threads != dir_threads:
+                errors.append(
+                    f"Thread count mismatch: directory path has {dir_threads} threads but "
+                    f"MMIO register (0x18) in meminit has {mmio_threads} threads"
+                )
+        
+        if errors:
+            error_msg = " | ".join(errors)
+            return False, error_msg
+        
+        return True, ""
+
         """Create memory initialization file.
+        
+        This file combines instruction code with optional data and MMIO configuration.
+        
+        Structure:
+            - Lines 0x00-0x20: MMIO registers (when TBS enabled)
+                0x0C: Kernel entry point
+                0x10: Threads per block
+                0x14: Number of blocks
+                0x18: Total threads
+                0x1C: Kernel arguments address
+                0x20: Kernel argument size
+            - Lines 0x24+: Instruction code
+            - Additional lines: Data section (from *_data.hex if present)
         
         Args:
             base_name: Base name of the test file
@@ -358,11 +625,24 @@ class GPUTestRunner:
         
         return log_file, sys.stdout
     
-    def run_simulator(self, input_file: str, test_name: str = None) -> bool:
+    def run_simulator(self, input_file: str, test_name: Optional[str] = None) -> bool:
         """Run the simulator using SM class.
         
+        Supports both TBS-enabled and TBS-disabled modes:
+        
+        When enable_tbs = false (default):
+            - Uses kernel parameters from config.toml (sm.tb_size, memory.start_pc)
+            - Simple single-block execution model
+        
+        When enable_tbs = true:
+            - Reads kernel parameters from MMIO memory-mapped I/O in meminit file
+            - Addresses: 0x0C (entry point), 0x10 (threads_per_block), 0x14 (num_blocks), 
+              0x18 (total_threads), 0x1C (args_address), 0x20 (args_size)
+            - Falls back to config.toml MMIO defaults if values not found in meminit
+            - Enables dynamic thread block scheduling
+        
         Args:
-            input_file: Input binary file
+            input_file: Input binary file (meminit.bin format)
             test_name: Optional test name for perf data (e.g., "beq.bin")
             
         Returns:
@@ -553,7 +833,11 @@ class GPUTestRunner:
             return TestResult(base_name, False, threads, blocks, str(error_log))
     
     def test_binary_mode(self, bin_file: Path) -> TestResult:
-        """Test a single binary file.
+        """Test a single binary file against emulator output.
+        
+        Supports new directory structure with thread counts:
+        - New: tests/bin/program/<test_name>/t<threads>/<test_name>.bin
+        - Old: tests/bin/unit/.../<test_name>.bin
         
         Args:
             bin_file: Path to binary file
@@ -569,8 +853,9 @@ class GPUTestRunner:
         # Convert binary to hex for emulator
         self.convert_bin_to_hex(bin_file, hex_output)
         
-        # Get thread/block counts
-        threads = self.settings.test_parameters.default_threads
+        # Extract thread/block counts (from directory structure if available)
+        extracted_threads = self.extract_thread_count_from_path(bin_file)
+        threads = extracted_threads if extracted_threads else self.settings.test_parameters.default_threads
         blocks = self.settings.test_parameters.default_blocks
         
         # Run emulator
@@ -628,6 +913,10 @@ class GPUTestRunner:
     def test_binary_with_expected(self, bin_file: Path) -> TestResult:
         """Test a binary file against pre-generated expected output.
         
+        Supports both old and new expected file structures:
+        - New: tests/exp/program/<test_name>/t<threads>/<test_name>.hex
+        - Old: tests/exp/unit/.../<test_name>_exp_t<threads>_b<blocks>.hex
+        
         Args:
             bin_file: Path to binary file
             
@@ -636,8 +925,9 @@ class GPUTestRunner:
         """
         base_name = bin_file.stem
         
-        # Get thread/block counts
-        threads = self.settings.test_parameters.default_threads
+        # Extract thread count from directory structure if available
+        extracted_threads = self.extract_thread_count_from_path(bin_file)
+        threads = extracted_threads if extracted_threads else self.settings.test_parameters.default_threads
         blocks = self.settings.test_parameters.default_blocks
         
         # Convert binary to hex for memory initialization
@@ -648,19 +938,25 @@ class GPUTestRunner:
         test_name = f"{bin_file.stem}.{bin_file.suffix.lstrip('.')}"
         self.run_simulator(str(bin_file), test_name=test_name)
         
-        # Locate expected file (recursive search)
-        expected_dir = Path(self.settings.directories.expected_dir)
-        expected_filename = f"{base_name}_exp_t{threads}_b{blocks}.hex"
-        
-        # Search recursively for the file
-        expected_file = None
-        for match in expected_dir.rglob(expected_filename):
-            expected_file = match
-            break
+        # Find expected file using new unified method
+        expected_file = self.find_expected_file_for_binary(bin_file, threads, blocks)
         
         if expected_file is None:
-            print(f"{Colors.YELLOW}[SKIP]{Colors.NC}     {base_name} (Missing expected file: {expected_filename})")
+            old_format_name = f"{base_name}_exp_t{threads}_b{blocks}.hex"
+            print(f"{Colors.YELLOW}[SKIP]{Colors.NC}     {base_name} (Missing expected file: {old_format_name})")
             return TestResult(base_name, True, threads, blocks)  # Skip doesn't count as fail
+        
+        # Validate thread count consistency
+        meminit_file = Path(f"{base_name}_meminit.hex") if hex_output.exists() else None
+        is_valid, error_msg = self.validate_thread_count_consistency(bin_file, expected_file, meminit_file)
+        
+        if not is_valid:
+            # Thread count mismatch - log error and fail test
+            error_log = self.diff_dir / f"{base_name}_t{threads}_b{blocks}_validation.log"
+            error_log.write_text(f"THREAD COUNT VALIDATION ERROR:\n{error_msg}\n")
+            self.debug_logger.write(f"{Colors.RED}[ERROR]{Colors.NC} {base_name}: {error_msg}")
+            print(f"{Colors.RED}[FAIL]{Colors.NC}     {base_name} (Thread count validation failed)")
+            return TestResult(base_name, False, threads, blocks, str(error_log))
         
         # Compare outputs
         test_id = f"{base_name}_t{threads}_b{blocks}"
@@ -862,6 +1158,9 @@ class GPUTestRunner:
         if not self.skip_cleanup:
             self.cleanup()
         
+        # Close debug logger
+        self.debug_logger.close()
+        
         # Print summary
         print("=" * 40)
         print("Summary")
@@ -915,13 +1214,21 @@ def main():
         '--max-cycles', type=int, default=100000,
         help='Maximum number of cycles to simulate (only used with --enable-cycle-limit, default: 100000)'
     )
+    parser.add_argument(
+        '--debug-file', type=str, default=None,
+        help='Write debug output to results/debug/<debug_file_name> (or to both terminal and file if --debug-dual-output is set)'
+    )
+    parser.add_argument(
+        '--debug-dual-output', action='store_true',
+        help='Write debug output to both terminal and debug file (use with --debug-file)'
+    )
     
     args = parser.parse_args()
     
     # If --clean is specified alone, just clean and exit
     if args.clean and args.src is None and args.truth is None:
         try:
-            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
+            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output)
             runner._clean_results()
             print(f"{Colors.GREEN}Results directory cleaned.{Colors.NC}")
             return 0
@@ -936,7 +1243,7 @@ def main():
         parser.error("--src and --truth are required (unless using --clean alone)")
     
     try:
-        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles)
+        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output)
         sys.exit(runner.run())
     except Exception as e:
         print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)
