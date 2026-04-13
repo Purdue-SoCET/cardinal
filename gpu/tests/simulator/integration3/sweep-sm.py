@@ -58,6 +58,7 @@ from simulator.latch_forward_stage import (
 )
 from simulator.execute.stage import ExecuteStage, FunctionalUnitConfig
 from simulator.writeback.stage import WritebackStage, WritebackBufferConfig, RegisterFileConfig, PredicateRegisterFileConfig
+from simulator.writeback.config import WritebackBufferCount, WritebackBufferSize
 from simulator.issue.regfile import RegisterFile
 from simulator.issue.stage import IssueStage
 from simulator.scheduler.csrtable import CsrTable
@@ -373,7 +374,16 @@ def build_pipeline(input_file: Path,
     )
 
     wb_buffer_config = WritebackBufferConfig.get_default_config()
+        # count_scheme=WritebackBufferCount.BUFFER_PER_FSU,
+        # size_scheme=WritebackBufferSize.FIXED,
+        # structure=WritebackBufferStructure.QUEUE,
+        # primary_policy=WritebackBufferPolicy.CAPACITY_PRIORITY, 
+        # secondary_policy=WritebackBufferPolicy.AGE_PRIORITY,
+        # size=8,
+        # fsu_priority=None
     wb_buffer_config.size = cfg["writeback"]["size"] # update the size as needed, configurable, set default to 8. This is lowk convoluted k.ough and we need a get defaul config from the writebacl
+    wb_buffer_config.count_scheme = cfg["writeback"]["count_scheme"]
+    wb_buffer_config.size_scheme = cfg["writeback"]["size_scheme"]
     wb_buffer_config.validate_config(fsu_names=list(fust.keys()))
     rf_config = RegisterFileConfig.get_config_from_reg_file(reg_file=pipeline_rf)
     pred_reg_file_config = PredicateRegisterFileConfig.get_config_from_pred_reg_file(pred_reg_file=prf)
@@ -456,8 +466,8 @@ DEFAULT_SIM_CONFIG = {
         "bdim": 1024,
         "kdim": 1024,
         "max_cycles": 20000,
-        "test_name": "triangle.bin",
-        "kern_base_ptr": 3888956928,#triangle arg ptr # pixel arg ptr 3889028536, # keeping this a decimal value 
+        "test_name": "pixel1024.bin",
+        "kern_base_ptr": 3889028536,#triangle arg ptr # pixel arg ptr 3889028536, # keeping this a decimal value 
         "dump_root": "sweep_dumps",
     },
     "mem": {
@@ -469,7 +479,9 @@ DEFAULT_SIM_CONFIG = {
         "fifo_buffer_depth": 4
     },
     "writeback": {
-        "size": 8
+        "size": 8,
+        "count_scheme": WritebackBufferCount.BUFFER_PER_FSU,
+        "size_scheme": WritebackBufferSize.FIXED
     },
     "ldst": {
         "q_size": 4
@@ -738,10 +750,10 @@ def build_sweep_configs() -> List[Dict[str, Any]]:
     ]
 
     writeback_sweep = [
-        deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 4}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
-        deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 8}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
-        deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 16}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
-        deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 32}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
+        #deep_update(DEFAULT_SIM_CONFIG, {"sim": {"dump_root": "writeback_countcfg_pixel1024_dump"}}),
+        deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"count_scheme": WritebackBufferCount.BUFFER_PER_BANK}, "sim": {"dump_root": "writeback_countcfg_pixel1024_dump"}}),
+        # deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 16}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
+        # deep_update(DEFAULT_SIM_CONFIG, {"writeback": {"size": 32}, "sim": {"dump_root": "writeback_triangle1024_dump"}}),
     ]
 
     ldst_sweep = [
@@ -915,14 +927,14 @@ def build_sweep_configs() -> List[Dict[str, Any]]:
     ]
 
     return (
-        default
-        + mem_sweep
-        + issue_sweep
-        + writeback_sweep
-        + ldst_sweep
-        + dcache_banks_sweep
-        + dcache_set_sweep
-        + dcache_set_capacity_sweep
+        # default
+        # + mem_sweep
+        # + issue_sweep
+        writeback_sweep
+        # + ldst_sweep
+        # + dcache_banks_sweep
+        # + dcache_set_sweep
+        # + dcache_set_capacity_sweep
     )
 
 def run_sweep(
