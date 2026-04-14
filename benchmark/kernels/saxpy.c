@@ -2,22 +2,19 @@
 #include "include/saxpy.h"
 
 #ifdef GPU_SIM
-void main(void* arg) 
+void kernel_saxpy() 
 #else
 void kernel_saxpy(void* arg)
 #endif
 {
     #ifdef GPU_SIM
     saxpy_arg_t* args = (saxpy_arg_t*) argPtr();
-
-    // Calculate the global thread index
-    int i = blockIdx() * blockDim() + threadIdx();
     #else
     saxpy_arg_t* args = (saxpy_arg_t*) arg;
+    #endif
 
     // Calculate the global thread index
     int i = blockIdx * blockDim + threadIdx;
-    #endif
 
     // Perform the calculation if the index is within bounds
     if (i < args->n) {

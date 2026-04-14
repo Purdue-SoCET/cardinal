@@ -2,15 +2,12 @@ from pathlib import Path
 
 # --- Configuration ---
 compiled = {
-    "vs": "compiled/vs.bin",
-    "tri": "compiled/tri.bin",
-    "pix": "compiled/pix.bin"
+    "saxpy": "compiled/saxpy.bin",
 }
 
-args_sizes = {"vs": 0x28, "tri": 108, "pix": 0x34} 
-block_dims = {"vs": 8, "tri": [12,12,10,12,10,12,30,30,8,10,8,10], "pix": 1024} #[81,81,65,85,65,85,289,289,65,85,65,85]
-# [12,12,10,12,10,12,30,30,8,10,8,10]
-grid_dims  = {"vs": 1, "tri": [1]*12, "pix": 2} #[40,40,29,39,29,39,154,154,29,39,29,39]
+args_sizes = {"saxpy": 0x0C} 
+block_dims = {"saxpy": 1024} 
+grid_dims  = {"saxpy": 1} 
 big_endian_values = False
 
 ARGS_BASE_ADDR = 0x00100000 
@@ -89,24 +86,9 @@ for j in range(2):
     is_input = (j == 0)
     mode_str = "Input" if is_input else "Output"
     
-    # --- 1. Vertex Stage ---
-    v_prefix = f"vertex{mode_str}"
-    stitch_system_memory("vs", DUMP_FOLDER, f"build/{v_prefix}_memDump_{block_dims["vs"]}.txt", 
-                         v_prefix, is_input, block_dims["vs"], grid_dims["vs"], 
-                         args_addr, args_sizes["vs"])
+    s_prefix = f"saxpy{mode_str}"
+    stitch_system_memory("saxpy", DUMP_FOLDER, f"build/{s_prefix}_memDump_{block_dims["saxpy"]}.txt", 
+                         s_prefix, is_input, block_dims["saxpy"], grid_dims["saxpy"], 
+                         args_addr, args_sizes["saxpy"])
 
-    # --- 2. Triangle Stage ---
-    # We assume each triangle has its own dump file (triangleInput0, triangleInput1...)
-    t_prefix_base = f"triangle{mode_str}"
-    args_addr += args_sizes["vs"] # Vertex stage args come first, then triangle stage
-    for i in range(12):
-        stitch_system_memory("tri", DUMP_FOLDER, f"build/{t_prefix_base}{i}_memDump_{grid_dims["tri"][i]}_{block_dims["tri"][i]}.txt", 
-                             f"{t_prefix_base}{i}", is_input, block_dims["tri"][i], grid_dims["tri"][i], 
-                             args_addr, args_sizes["tri"])
-
-    # --- 3. Pixel Stage ---
-    p_prefix = f"pixel{mode_str}"
-    args_addr += args_sizes["tri"] # Triangle stage args come after vertex stage
-    stitch_system_memory("pix", DUMP_FOLDER, f"build/{p_prefix}_memDump_{block_dims["pix"]}.txt", 
-                         p_prefix, is_input, block_dims["pix"], grid_dims["pix"], 
-                         args_addr, args_sizes["pix"])
+  
