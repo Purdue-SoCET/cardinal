@@ -103,7 +103,8 @@ void dump_memory(const char* filename, uint8_t* host_memory_ptr, uint32_t simula
     for (size_t i = 0; i < num_words; i++) {
         uint32_t value = memory_words[i];
         
-        if (value != 0) {
+        //if (value != 0) 
+        {
             uint32_t flipped_value = ((value << 24) & 0xFF000000) | // Move byte 0 to 3
                                      ((value <<  8) & 0x00FF0000) | // Move byte 1 to 2
                                      ((value >>  8) & 0x0000FF00) | // Move byte 2 to 1

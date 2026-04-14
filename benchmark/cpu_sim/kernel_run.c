@@ -39,6 +39,7 @@ void createPPMFile(char* fileName, int* pixels, int width, int height) {
     for(int i = 0; i < height; i++){     // Top to Bottom
         for(int j = 0; j < width; j++){ // Left to Right
             int idx = width * 3 * i + 3 * j;
+            /*
                 sprintf(R, "%d", pixels[idx + 0]);
                 sprintf(G, "%d", pixels[idx + 1]);
                 sprintf(B, "%d", pixels[idx + 2]);
@@ -48,6 +49,8 @@ void createPPMFile(char* fileName, int* pixels, int width, int height) {
                 fputs(" ", file);
                 fputs(B, file);
                 fputs("\n", file);
+            */
+                fprintf(file, "%d %d %d\n", pixels[idx + 0], pixels[idx + 1], pixels[idx + 2]);
         }
     }
     fclose(file);

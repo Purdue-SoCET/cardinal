@@ -20,7 +20,7 @@ typedef struct {
 
 
 #ifdef GPU_SIM
-void main(void*);
+void kernel_vertex();
 #else
 void kernel_vertex(void*);
 #endif

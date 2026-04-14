@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
 
         if(OUTPUT_ARGS_DEBUG){
-            printf("Tri %d, Threads: %d\n", tri, block_dim);
+            printf("Tri %d, Blocks: %d, Threads: %d\n", tri, grid_dim, block_dim);
             size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
             size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
             char filename_args[50];
@@ -459,6 +459,12 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
+        ALLOCATE_HEAP(my_zero_vertex, vertex_t, num_verts);
+        my_zero_vertex = 0;
+
+
+        pixel_args->threeDVertTrans = my_zero_vertex;
+
     if(INPUT_ARGS_DEBUG){
         //print_pixel_args("build/pixelInput.txt", pixel_args); 
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
@@ -471,6 +477,7 @@ int main(int argc, char** argv) {
         float total_threads = frame_w * frame_h;
         int grid_dim = (int)ceil(total_threads / 1024.0); 
         int block_dim = total_threads > 1024 ? 1024 : (int)total_threads;
+        printf("Pixel Kernel: Blocks: %d, Threads: %d\n", grid_dim, block_dim);
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 

@@ -25,7 +25,7 @@ typedef struct {
 } triangle_arg_t;
 
 #ifdef GPU_SIM
-void main(void*);
+void kernel_triangle();
 #else
 void kernel_triangle(void*);
 #endif
