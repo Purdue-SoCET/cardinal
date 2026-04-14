@@ -27,9 +27,29 @@ void kernel_vertexShader(void* arg)
         float selAxis[3] = {0.0, 0.0, 0.0};
 
         // Find the dimension with the smallest absolute value in the rotation axis
-        float absX = (args->a_dist->x < 0) ? -args->a_dist->x : args->a_dist->x;
-        float absY = (args->a_dist->y < 0) ? -args->a_dist->y : args->a_dist->y;
-        float absZ = (args->a_dist->z < 0) ? -args->a_dist->z : args->a_dist->z;
+        float absX;
+        if(args->a_dist->x < 0){
+            absX = -args->a_dist->x;
+        }
+        else {
+            absX = args->a_dist->x;
+        }
+
+        float absY;
+        if(args->a_dist->y < 0){
+            absY = -args->a_dist->y;
+        }
+        else {
+            absY = args->a_dist->y;
+        }
+
+        float absZ;
+        if(args->a_dist->z < 0){
+            absZ = -args->a_dist->z;
+        }
+        else {
+            absZ = args->a_dist->z;
+        }
 
         if (absX < absY && absX < absZ) {
             selAxis[0] = 1.0; // Use X-axis if rotation axis is mostly YZ
