@@ -3,6 +3,8 @@
 #include "include/kernel_run.h"
 #include "../kernels/include/gemm.h"
 
+#define MATRIX_SIZE 32 // two matrix 32x32 and 32x32 multiplied, 1024 threads total
+
 static void generate_float_matrix(float* m, int rows, int cols) {
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
@@ -56,9 +58,9 @@ void save_text(float* data, int M, int N, const char* filename) {
 }
 
 int main(void) {
-	const int M = 512;
-	const int N = 512;
-	const int K = 512;
+	const int M = MATRIX_SIZE;
+	const int N = MATRIX_SIZE;
+	const int K = MATRIX_SIZE;
 
     //allocating space  
 	float* A = (float*)malloc(sizeof(float) * M * K);
@@ -84,8 +86,9 @@ int main(void) {
 
     //kernel 
 	int total = M * N;
-	int block_dim = 128;
+	int block_dim = 1024;
 	int grid_dim = (total + block_dim - 1) / block_dim;
+	printf("Launching kernel: %d, grid_dim: %d, block_dim: %d\n", total, grid_dim, block_dim);
 
     run_kernel(kernel_gemm, grid_dim, block_dim, (void*)&args);
 
