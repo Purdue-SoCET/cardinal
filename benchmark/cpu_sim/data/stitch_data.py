@@ -1,17 +1,55 @@
 from pathlib import Path
+import argparse
+import re
+
+def parse_dimensions(file_path):
+    """
+    Parses a text file and returns two separate lists for 
+    Grid Dimensions and Block Dimensions.
+    """
+    grid_dims = []
+    block_dims = []
+    
+    pattern = r"Grid Dim:\s*(\d+),\s*Block Dim:\s*(\d+)"
+    
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                match = re.search(pattern, line)
+                if match:
+                    grid_dims.append(int(match.group(1)))
+                    block_dims.append(int(match.group(2)))
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return [], []
+    
+    return grid_dims, block_dims
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("vs_t", type=str)  
+parser.add_argument("tri_t", type=str)
+parser.add_argument("pix_t", type=str)
+parser.add_argument("--big_endian", type=bool)
+
+args = parser.parse_args()
+
+vs_grid, vs_block = parse_dimensions(args.vs_t)
+tri_grid, tri_block = parse_dimensions(args.tri_t)
+pix_grid, pix_block = parse_dimensions(args.pix_t)
 
 # --- Configuration ---
 compiled = {
-    "vs": "compiled/vs.bin",
-    "tri": "compiled/tri.bin",
-    "pix": "compiled/pix.bin"
+    "vs": "compiled/vertex.bin",
+    "tri": "compiled/triangle.bin",
+    "pix": "compiled/pixel.bin"
 }
 
 args_sizes = {"vs": 0x28, "tri": 108, "pix": 0x34} 
-block_dims = {"vs": 8, "tri": [12,12,10,12,10,12,30,30,8,10,8,10], "pix": 1024} #[81,81,65,85,65,85,289,289,65,85,65,85]
+block_dims = {"vs": vs_block, "tri": tri_block, "pix": pix_block} #[81,81,65,85,65,85,289,289,65,85,65,85]
 # [12,12,10,12,10,12,30,30,8,10,8,10]
-grid_dims  = {"vs": 1, "tri": [1]*12, "pix": 2} #[40,40,29,39,29,39,154,154,29,39,29,39]
-big_endian_values = False
+grid_dims  = {"vs": vs_grid, "tri": tri_grid, "pix": pix_grid} #[40,40,29,39,29,39,154,154,29,39,29,39]
+big_endian_values = args.big_endian if args.big_endian is not None else False
 
 ARGS_BASE_ADDR = 0x00100000 
 DUMP_FOLDER = "build/mem_dump"
@@ -91,8 +129,8 @@ for j in range(2):
     
     # --- 1. Vertex Stage ---
     v_prefix = f"vertex{mode_str}"
-    stitch_system_memory("vs", DUMP_FOLDER, f"build/{v_prefix}_memDump_{block_dims["vs"]}.txt", 
-                         v_prefix, is_input, block_dims["vs"], grid_dims["vs"], 
+    stitch_system_memory("vs", DUMP_FOLDER, f"build/{v_prefix}_memDump_{block_dims["vs"][0]}.txt", 
+                         v_prefix, is_input, block_dims["vs"][0], grid_dims["vs"][0], 
                          args_addr, args_sizes["vs"])
 
     # --- 2. Triangle Stage ---
@@ -107,6 +145,6 @@ for j in range(2):
     # --- 3. Pixel Stage ---
     p_prefix = f"pixel{mode_str}"
     args_addr += args_sizes["tri"] # Triangle stage args come after vertex stage
-    stitch_system_memory("pix", DUMP_FOLDER, f"build/{p_prefix}_memDump_{block_dims["pix"]}.txt", 
-                         p_prefix, is_input, block_dims["pix"], grid_dims["pix"], 
+    stitch_system_memory("pix", DUMP_FOLDER, f"build/{p_prefix}_memDump_{block_dims["pix"][0]}.txt", 
+                         p_prefix, is_input, block_dims["pix"][0], grid_dims["pix"][0], 
                          args_addr, args_sizes["pix"])
