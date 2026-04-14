@@ -20,8 +20,8 @@
 uint8_t* memory_ptr;
 
 // Defines
-#define OUTPUT_W 800
-#define OUTPUT_H 800
+#define OUTPUT_W 400
+#define OUTPUT_H 400
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
@@ -183,8 +183,6 @@ int main(int argc, char** argv) {
     float fov_radians = 90.0f * (3.14159 / 180.0f); 
     float distance = radius / sinf(fov_radians / 2.0f);
 
-
-
     // Texture
         const int text_w = 10, text_h = 10;
 
@@ -297,6 +295,9 @@ int main(int argc, char** argv) {
     {
         int grid_dim = 1; int block_dim = num_verts;
         run_kernel(kernel_vertex, grid_dim, block_dim, (void*)vertex_args);
+        FILE* file_thread = fopen("build/threads/vertexThreads.txt", "w");
+        fprintf(file_thread, "Grid Dim: %d, Block Dim: %d\n", grid_dim, block_dim);
+        fclose(file_thread);
     }
 
     if(OUTPUT_ARGS_DEBUG){
@@ -338,6 +339,8 @@ int main(int argc, char** argv) {
         triangle_args->depth_buff = zbuff;
         triangle_args->tag_buff = tbuff;
 
+    
+    FILE* file_thread = fopen("build/threads/triangleThreads.txt", "w");
     // Setup and launch each triangle kernel
     for(int tri = 0; tri < num_tris; tri++) {
         // Set Tag
@@ -390,6 +393,7 @@ int main(int argc, char** argv) {
         int grid_dim = (int)ceil(total_threads / 1024.0); 
         int block_dim = total_threads > 1024.0 ? 1024 : (int)total_threads;
         run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
+        fprintf(file_thread, "Grid Dim: %d, Block Dim: %d\n", grid_dim, block_dim);
 
         if(OUTPUT_ARGS_DEBUG){
             printf("Tri %d, Blocks: %d, Threads: %d\n", tri, grid_dim, block_dim);
@@ -404,6 +408,7 @@ int main(int argc, char** argv) {
             dump_memory(filename_heap, memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
         }
     }
+    fclose(file_thread);
 
     // Checking TRIANGLE Output
     if(TRIANGLE_DEBUG) 
@@ -459,11 +464,6 @@ int main(int argc, char** argv) {
 
         pixel_args->texture = *texture;
 
-        ALLOCATE_HEAP(my_zero_vertex, vertex_t, num_verts);
-        my_zero_vertex = 0;
-
-
-        pixel_args->threeDVertTrans = my_zero_vertex;
 
     if(INPUT_ARGS_DEBUG){
         //print_pixel_args("build/pixelInput.txt", pixel_args); 
@@ -479,6 +479,10 @@ int main(int argc, char** argv) {
         int block_dim = total_threads > 1024 ? 1024 : (int)total_threads;
         printf("Pixel Kernel: Blocks: %d, Threads: %d\n", grid_dim, block_dim);
         run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
+        FILE* file_thread = fopen("build/threads/pixelThreads.txt", "w");
+        fprintf(file_thread, "Grid Dim: %d, Block Dim: %d\n", grid_dim, block_dim);
+        fclose(file_thread);
+
     }
 
     if(OUTPUT_ARGS_DEBUG){
