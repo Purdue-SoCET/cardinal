@@ -76,7 +76,7 @@ from contextlib import redirect_stdout, redirect_stderr
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from config import get_settings
+from config import get_settings, ProgramConfig
 
 # Import SM class from simulator
 from simulator.sm import SM
@@ -132,6 +132,79 @@ class DebugLogger:
         self.close()
 
 
+class SimulatorOutputCapture:
+    """Captures simulator stdout/stderr with optional dual output to terminal and file."""
+    
+    def __init__(self, output_file: Optional[Path] = None, dual_output: bool = False):
+        """Initialize simulator output capture.
+        
+        Args:
+            output_file: Optional file to write simulator output to
+            dual_output: If True, also print to terminal (in addition to file)
+        """
+        self.output_file = output_file
+        self.dual_output = dual_output
+        self.file_handle = None
+        self.original_stdout = None
+        self.original_stderr = None
+        
+        if self.output_file:
+            self.output_file.parent.mkdir(parents=True, exist_ok=True)
+            self.file_handle = open(self.output_file, 'w')
+    
+    def start_capture(self):
+        """Start capturing stdout/stderr."""
+        self.original_stdout = sys.stdout
+        self.original_stderr = sys.stderr
+        
+        if self.dual_output and self.output_file:
+            # Create a tee-like wrapper that writes to both file and original stdout
+            sys.stdout = self._TeeOutput(self.file_handle, self.original_stdout)
+            sys.stderr = self._TeeOutput(self.file_handle, self.original_stderr)
+        elif self.output_file:
+            # File only
+            sys.stdout = self.file_handle
+            sys.stderr = self.file_handle
+        # else: no capture, keep original stdout/stderr
+    
+    def stop_capture(self):
+        """Stop capturing and restore original stdout/stderr."""
+        if self.original_stdout:
+            sys.stdout = self.original_stdout
+        if self.original_stderr:
+            sys.stderr = self.original_stderr
+        
+        if self.file_handle:
+            self.file_handle.flush()
+    
+    def close(self):
+        """Close the output file."""
+        self.stop_capture()
+        if self.file_handle:
+            self.file_handle.close()
+    
+    def __del__(self):
+        """Cleanup on deletion."""
+        self.close()
+    
+    class _TeeOutput:
+        """Helper class that writes to both file and terminal."""
+        def __init__(self, file_handle, terminal):
+            self.file = file_handle
+            self.terminal = terminal
+        
+        def write(self, message):
+            self.file.write(message)
+            self.terminal.write(message)
+        
+        def flush(self):
+            self.file.flush()
+            self.terminal.flush()
+        
+        def isatty(self):
+            return self.terminal.isatty()
+
+
 @dataclass
 class TestResult:
     """Result of a test execution."""
@@ -145,7 +218,7 @@ class TestResult:
 class GPUTestRunner:
     """Main test runner class."""
     
-    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None, debug_file: Optional[Path] = None, debug_dual_output: bool = False):
+    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None, debug_file: Optional[Path] = None, debug_dual_output: bool = False, enable_simulator_output: bool = False, simulator_output_file: Optional[str] = None):
         """Initialize the test runner.
         
         Args:
@@ -159,6 +232,8 @@ class GPUTestRunner:
             max_cycles: Maximum cycles to run (only used if enable_cycle_limit is True)
             debug_file: Optional path to debug output file (in results/debug/)
             debug_dual_output: If True, write debug output to both terminal and file
+            enable_simulator_output: If True, capture and display simulator print statements
+            simulator_output_file: Optional file to save simulator output (use with enable_simulator_output)
         """
         # Validate arguments only if running tests
         if src is not None and src not in ("assembly", "bin"):
@@ -172,6 +247,8 @@ class GPUTestRunner:
         self.skip_cleanup = skip_cleanup
         self.enable_cycle_limit = enable_cycle_limit
         self.max_cycles = max_cycles or 100000
+        self.enable_simulator_output = enable_simulator_output
+        self.simulator_output_file = simulator_output_file
         self.settings = get_settings(config_path)
         self.pass_count = 0
         self.fail_count = 0
@@ -654,12 +731,16 @@ class GPUTestRunner:
                 test_file_path = Path(input_file)
                 test_name = f"{test_file_path.stem}.{test_file_path.suffix.lstrip('.')}"
             
-            # Set up debug logging
-            debug_file, original_stdout = self._capture_stdout_to_file(test_name)
-            debug_file_handle = open(debug_file, 'w')
+            # Set up output capture for simulator print statements
+            output_file = None
+            if self.enable_simulator_output and self.simulator_output_file:
+                output_file = Path("results/debug") / self.simulator_output_file
+            else:
+                # Always capture to a file in debug directory
+                output_file = Path("results/debug") / f"{test_name}_simulator.log"
             
-            # Redirect stdout to capture print statements
-            sys.stdout = debug_file_handle
+            output_capture = SimulatorOutputCapture(output_file, dual_output=self.enable_simulator_output)
+            output_capture.start_capture()
             
             try:
                 # Make a mutable copy of settings for this run
@@ -704,44 +785,121 @@ class GPUTestRunner:
                 
                 return True
             finally:
-                # Always restore stdout and close the debug file
-                sys.stdout = original_stdout
-                debug_file_handle.close()
-                print(f"Debug output written to {debug_file}")
+                # Always restore stdout and close the capture
+                output_capture.stop_capture()
+                output_capture.close()
+                if self.enable_simulator_output:
+                    print(f"Simulator output written to {output_file}")
                 
         except Exception as e:
             # Make sure to restore stdout before printing error
-            if 'original_stdout' in locals():
-                sys.stdout = original_stdout
-            if 'debug_file_handle' in locals():
-                debug_file_handle.close()
+            if 'output_capture' in locals():
+                output_capture.stop_capture()
+                output_capture.close()
                 
             print(f"{Colors.RED}Simulator error:{Colors.NC} {e}")
             import traceback
             traceback.print_exc()
             return False
     
-    def prepare_expected_file_with_instructions(self, expected_file: Path, meminit_file: Path, output_file: Path) -> None:
-        """Prepare expected file by prepending instructions (meminit) to it.
+    def filter_hex_by_address_range(self, hex_file: Path, start_addr: int, end_addr: int, output_file: Path) -> None:
+        """Filter hex file to only include addresses within the specified range.
         
-        The expected files only contain register state changes, not instructions.
-        This method combines the meminit (instructions) with the expected output
-        for proper comparison with the simulator's full output.
+        Addresses are filtered to include only those between start_addr and end_addr (inclusive).
+        If start_addr > end_addr (config error), use all addresses.
+        If end_addr extends beyond the last address in the file, the actual end becomes the last address.
         
         Args:
-            expected_file: Path to original expected file (register changes only)
-            meminit_file: Path to meminit file (instructions)
-            output_file: Path to write combined file
+            hex_file: Input hex file with address/value pairs
+            start_addr: Start address (inclusive)
+            end_addr: End address (inclusive)
+            output_file: Output file with filtered addresses
         """
-        # Read both files
-        meminit_content = meminit_file.read_text() if meminit_file.exists() else ""
-        expected_content = expected_file.read_text() if expected_file.exists() else ""
+        lines = []
+        all_lines = []
         
-        # Combine: instructions first, then expected register changes
-        combined_content = meminit_content + expected_content
+        try:
+            # First pass: collect all lines and addresses
+            with open(hex_file, 'r') as f:
+                for line in f:
+                    line_stripped = line.strip()
+                    if not line_stripped:
+                        continue
+                    
+                    parts = line_stripped.split()
+                    if len(parts) < 2:
+                        continue
+                    
+                    try:
+                        addr = int(parts[0], 16)
+                        all_lines.append((addr, line_stripped))
+                    except ValueError:
+                        # Skip malformed lines
+                        continue
+            
+            if not all_lines:
+                # No valid lines found
+                output_file.write_text("")
+                return
+            
+            # If start > end (config error), just use all lines
+            if start_addr > end_addr:
+                filtered_lines = all_lines
+            else:
+                # Get actual address range from file
+                max_addr_in_file = max(a for a, _ in all_lines)
+                
+                # Adjust end_addr if it extends beyond the file (as per user requirement)
+                # If end_addr >= max_addr in file, use max_addr as the end
+                actual_end = min(end_addr, max_addr_in_file)
+                
+                # Filter lines that fall within the range
+                filtered_lines = [
+                    (addr, line) for addr, line in all_lines
+                    if start_addr <= addr <= actual_end
+                ]
+            
+            # Write filtered output
+            output_file.write_text(''.join(line + "\n" for _, line in filtered_lines))
+            
+        except Exception as e:
+            print(f"Error filtering hex file {hex_file}: {e}")
+            # Write empty file on error
+            output_file.write_text("")
+    
+    def prepare_outputs_with_address_filtering(self, 
+                                              program_config: Optional['ProgramConfig'],
+                                              expected_file: Path, 
+                                              sim_output_file: Path,
+                                              filtered_expected: Path,
+                                              filtered_sim: Path) -> None:
+        """Prepare output files by filtering to address range if program config is available.
         
-        # Write combined file
-        output_file.write_text(combined_content)
+        Args:
+            program_config: Program configuration with address range, or None to skip filtering
+            expected_file: Path to expected output file
+            sim_output_file: Path to simulator output file
+            filtered_expected: Output path for filtered expected file
+            filtered_sim: Output path for filtered simulator file
+        """
+        if program_config:
+            # Filter both files to the specified address range
+            self.filter_hex_by_address_range(
+                expected_file,
+                program_config.diff_start_addr,
+                program_config.diff_end_addr,
+                filtered_expected
+            )
+            self.filter_hex_by_address_range(
+                sim_output_file,
+                program_config.diff_start_addr,
+                program_config.diff_end_addr,
+                filtered_sim
+            )
+        else:
+            # No filtering, just copy files
+            filtered_expected.write_text(expected_file.read_text())
+            filtered_sim.write_text(sim_output_file.read_text())
     
     def compare_outputs(self, expected_file: Path, actual_file: Path, error_log: Path) -> bool:
         """Compare expected and actual output files.
@@ -930,69 +1088,105 @@ class GPUTestRunner:
         threads = extracted_threads if extracted_threads else self.settings.test_parameters.default_threads
         blocks = self.settings.test_parameters.default_blocks
         
+        self.debug_logger.write(f"[TEST] Starting: {base_name} (t={threads}, b={blocks})")
+        
         # Convert binary to hex for memory initialization
+        self.debug_logger.write(f"[STEP] Converting binary to hex: {bin_file}")
         hex_output = Path(f"{base_name}_meminit.hex")
         self.convert_bin_to_hex(bin_file, hex_output)
+        self.debug_logger.write(f"[STEP] Binary conversion complete")
         
         # Run simulator (pass test name for perf_data directory)
+        self.debug_logger.write(f"[STEP] Running simulator...")
         test_name = f"{bin_file.stem}.{bin_file.suffix.lstrip('.')}"
         self.run_simulator(str(bin_file), test_name=test_name)
+        self.debug_logger.write(f"[STEP] Simulator complete")
         
         # Find expected file using new unified method
+        self.debug_logger.write(f"[STEP] Finding expected file...")
         expected_file = self.find_expected_file_for_binary(bin_file, threads, blocks)
         
         if expected_file is None:
             old_format_name = f"{base_name}_exp_t{threads}_b{blocks}.hex"
+            self.debug_logger.write(f"[SKIP] Expected file not found: {old_format_name}")
             print(f"{Colors.YELLOW}[SKIP]{Colors.NC}     {base_name} (Missing expected file: {old_format_name})")
             return TestResult(base_name, True, threads, blocks)  # Skip doesn't count as fail
         
+        self.debug_logger.write(f"[STEP] Expected file found: {expected_file}")
+        
         # Validate thread count consistency
+        self.debug_logger.write(f"[STEP] Validating thread count consistency...")
         meminit_file = Path(f"{base_name}_meminit.hex") if hex_output.exists() else None
         is_valid, error_msg = self.validate_thread_count_consistency(bin_file, expected_file, meminit_file)
         
         if not is_valid:
             # Thread count mismatch - log error and fail test
+            self.debug_logger.write(f"[VALIDATION ERROR] {error_msg}")
             error_log = self.diff_dir / f"{base_name}_t{threads}_b{blocks}_validation.log"
             error_log.write_text(f"THREAD COUNT VALIDATION ERROR:\n{error_msg}\n")
             self.debug_logger.write(f"{Colors.RED}[ERROR]{Colors.NC} {base_name}: {error_msg}")
             print(f"{Colors.RED}[FAIL]{Colors.NC}     {base_name} (Thread count validation failed)")
             return TestResult(base_name, False, threads, blocks, str(error_log))
         
-        # Compare outputs
+        self.debug_logger.write(f"[STEP] Thread count validation passed")
+        
+        # Load program configuration if available
+        self.debug_logger.write(f"[STEP] Loading program configuration...")
+        program_config_path = bin_file.parent / "program_config.toml"
+        program_config = self.settings.read_program_config(program_config_path)
+        if program_config:
+            self.debug_logger.write(f"[STEP] Program config loaded: start={hex(program_config.diff_start_addr)}, end={hex(program_config.diff_end_addr)}")
+        else:
+            self.debug_logger.write(f"[STEP] No program config found, will use full output")
+        
+        # Compare outputs with address filtering
+        self.debug_logger.write(f"[STEP] Comparing outputs...")
         test_id = f"{base_name}_t{threads}_b{blocks}"
         error_log = self.diff_dir / f"{test_id}_error.log"
         
         sim_output = Path(self.settings.files.sim_output)
         
-        # Prepare expected file with instructions prepended
-        expected_with_instr = self.diff_dir / f"{test_id}_exp_full.hex"
-        self.prepare_expected_file_with_instructions(expected_file, hex_output, expected_with_instr)
+        # Prepare filtered output files
+        filtered_exp_file = self.diff_dir / f"{test_id}_exp_filtered.hex"
+        filtered_sim_file = self.diff_dir / f"{test_id}_sim_filtered.hex"
+        self.prepare_outputs_with_address_filtering(
+            program_config,
+            expected_file,
+            sim_output,
+            filtered_exp_file,
+            filtered_sim_file
+        )
         
-        if self.compare_outputs(expected_with_instr, sim_output, error_log):
+        if self.compare_outputs(filtered_exp_file, filtered_sim_file, error_log):
             # Test passed
+            self.debug_logger.write(f"[PASS] {base_name} outputs match")
             if not self.skip_cleanup:
                 # Clean up all artifacts
                 if error_log.exists():
                     error_log.unlink()
                 if hex_output.exists():
                     hex_output.unlink()
-                if expected_with_instr.exists():
-                    expected_with_instr.unlink()
+                if filtered_exp_file.exists():
+                    filtered_exp_file.unlink()
+                if filtered_sim_file.exists():
+                    filtered_sim_file.unlink()
             else:
                 # Save artifacts for inspection
-                (self.diff_dir / f"{test_id}_exp.hex").write_text(expected_with_instr.read_text())
-                (self.diff_dir / f"{test_id}_sim.hex").write_text(sim_output.read_text())
+                (self.diff_dir / f"{test_id}_exp.hex").write_text(filtered_exp_file.read_text())
+                (self.diff_dir / f"{test_id}_sim.hex").write_text(filtered_sim_file.read_text())
                 if hex_output.exists():
                     (self.diff_dir / f"{test_id}_meminit.hex").write_text(hex_output.read_text())
             return TestResult(base_name, True, threads, blocks)
         else:
             # Test failed - save artifacts for debugging
-            (self.diff_dir / f"{test_id}_exp.hex").write_text(expected_with_instr.read_text())
-            (self.diff_dir / f"{test_id}_sim.hex").write_text(sim_output.read_text())
+            self.debug_logger.write(f"[FAIL] {base_name} outputs do not match")
+            (self.diff_dir / f"{test_id}_exp.hex").write_text(filtered_exp_file.read_text())
+            (self.diff_dir / f"{test_id}_sim.hex").write_text(filtered_sim_file.read_text())
             if hex_output.exists():
                 (self.diff_dir / f"{test_id}_meminit.hex").write_text(hex_output.read_text())
                 hex_output.unlink()
             return TestResult(base_name, False, threads, blocks, str(error_log))
+
     
     def test_assembly_with_expected(self, asm_file: Path) -> TestResult:
         """Test an assembly file against pre-generated expected output.
@@ -1222,13 +1416,21 @@ def main():
         '--debug-dual-output', action='store_true',
         help='Write debug output to both terminal and debug file (use with --debug-file)'
     )
+    parser.add_argument(
+        '--enable-simulator-output', action='store_true',
+        help='Display simulator print statements to terminal (and optionally to file)'
+    )
+    parser.add_argument(
+        '--simulator-output-file', type=str, default=None,
+        help='Save simulator output to results/debug/<file> (use with --enable-simulator-output for dual output)'
+    )
     
     args = parser.parse_args()
     
     # If --clean is specified alone, just clean and exit
     if args.clean and args.src is None and args.truth is None:
         try:
-            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output)
+            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output, args.enable_simulator_output, args.simulator_output_file)
             runner._clean_results()
             print(f"{Colors.GREEN}Results directory cleaned.{Colors.NC}")
             return 0
@@ -1243,7 +1445,7 @@ def main():
         parser.error("--src and --truth are required (unless using --clean alone)")
     
     try:
-        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output)
+        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output, args.enable_simulator_output, args.simulator_output_file)
         sys.exit(runner.run())
     except Exception as e:
         print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)

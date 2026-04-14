@@ -530,6 +530,7 @@ class LockupFreeCacheStage(Stage):
         # --- 1. Check for memory responses
         if (self.mem_resp_if.valid):
             resp = self.mem_resp_if.pop()
+            print(f"Cache: Received memory response: {resp}")
             if (resp):
                 target_bank_id = resp.warp_id
                 if resp.packet:
@@ -632,6 +633,8 @@ class LockupFreeCacheStage(Stage):
                  
                 self.output_buffer.append(response)
                 self.flushing = False # Stop checking
+                for bank in self.banks:
+                    bank.state = 'START' # Reset the state of each bank to START so they can accept new requests after flush
 
         # --- 4. Handle new inputs ---
         if self.pending_request is None and not self.flushing:    # if not handling any request

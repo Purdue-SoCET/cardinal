@@ -57,7 +57,7 @@ default_start_pc = 0
 
 # Type: int, Range: 1-32 (must be power of 2)
 # Number of threads per warp/block
-default_threads = 32
+default_threads = 1024
 
 # Type: int, Range: 1+
 # Number of thread blocks
@@ -82,26 +82,66 @@ sm_no = 0
 
 # Type: int, Range: 1-32
 # Number of warps this SM can execute simultaneously
-num_warps = 1
+num_warps = 32
 
 # Type: int
 # Number of predicate registers for conditional execution
-num_preds = 16
+num_preds = 32
 
 # Type: int, Options: 32
 threads_per_warp = 32
 
 # Type: bool
 # Enable Thread Block Scheduler (TBS)
-enable_tbs = false
+enable_tbs = true
 
 # Type: hex address
 # Base address where kernel code is loaded into memory
-kernel_base_addr = 0x0
+# Only read if enable_tbs = false, otherwise kernel entry point is read from MMIO
+kernel_pointer_addr = 0xE7CDDDB8
 
 # Type: int
 # Number of threads in a thread block
-tb_size = 32
+tb_size = 1024
+
+# ════════════════════════════════════════════════════════════════════════════
+# MEMORY-MAPPED I/O (MMIO) CONFIGURATION FOR THREAD BLOCK SCHEDULER
+# ════════════════════════════════════════════════════════════════════════════
+# Configuration for kernel launch parameters stored in MMIO when TBS is enabled.
+# When enable_tbs = false, these values in config.toml are used.
+# When enable_tbs = true, values are read from the meminit file at MMIO addresses:
+#   0x0C: Kernel Entry Point
+#   0x10: Threads Per Block  
+#   0x14: Number of Blocks
+#   0x18: Total Threads
+#   0x1C: Kernel Arguments Address
+#   0x20: Kernel Argument Size
+# See: MMIO_details.md for more information
+
+[mmio]
+# Type: hex address, Default: 0x0
+# Virtual address of kernel entry point
+kernel_entry_point = 0x0
+
+# Type: int, Default: 32
+# Number of threads per block
+threads_per_block = 32
+
+# Type: int, Default: 1
+# Number of blocks in the grid
+num_blocks = 1
+
+# Type: int, Default: 32
+# Total threads across all blocks
+total_threads = 32
+
+# Type: hex address, Default: 0x20000000
+# Virtual address of kernel arguments structure
+# kernel_args_address = 0xE7CDDDB8 #DUPLICATE
+
+# Type: int, Default: 0
+# Size in bytes of kernel arguments to fetch
+kernel_args_size = 0
 
 # ════════════════════════════════════════════════════════════════════════════
 # MEMORY SYSTEM CONFIGURATION
@@ -128,7 +168,7 @@ max_kernels_per_sm = 1
 
 # Type: hex address
 # Location in memory where data writes and reads should start at
-kernel_id = 0x20000000
+# kernel_id = 0xE7CDDDB8 DUPLICATE
 
 # ════════════════════════════════════════════════════════════════════════════
 # CACHE CONFIGURATION

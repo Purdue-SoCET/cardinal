@@ -341,7 +341,7 @@ class Mul(ArithmeticSubUnit):
                     # Check for signed overflow using range checking
                     if result > MAX_INT32 or result < MIN_INT32:
                         overflow_threads.append(i)
-                    instr.wdat[i] = Bits(length=32, int=result & 0xFFFFFFFF)
+                    instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case R_Op.MULF:
                     a = instr.rdat1[i].float
                     b = instr.rdat2[i].float
@@ -479,7 +479,7 @@ class Conv(ArithmeticSubUnit):
                     # Check for overflow (exceeding max int or min int)
                     if result > 2147483647 or result < -2147483648:
                         overflow_threads.append(i)
-                    instr.wdat[i] = Bits(length=32, int=result)
+                    instr.wdat[i] = Bits(length=32, uint=result & 0xFFFFFFFF)
                 case _:
                     raise ValueError(f"Unsupported operation {instr.opcode} in Conversion.")
         
@@ -674,7 +674,7 @@ class InvSqrt(ArithmeticSubUnit):
                         i_bits = 0x5f3759df - (i_bits >> 1)
                         
                         # Convert back to float using Bits
-                        y = Bits(length=32, int=i_bits).float
+                        y = Bits(length=32, uint=i_bits).float
                         
                         # Newton-Raphson iterations based on latency
                         # More iterations = more accuracy, simulating more cycles

@@ -116,6 +116,12 @@ python3 test_cardinal.py --src assembly --truth emu --enable-cycle-limit --max-c
 # Use custom config
 python3 test_cardinal.py --src assembly --truth emu --config custom.toml
 
+# Debug with output to file only
+python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log
+
+# Debug with output to both terminal and file
+python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log --debug-dual-output
+
 # Combine options
 python3 test_cardinal.py --src assembly --truth exp unit/ --skip-cleanup --enable-cycle-limit --max-cycles 50000
 ```
@@ -197,27 +203,34 @@ enable_tbs = false
 --skip-cleanup              Don't delete artifacts after passing
 --enable-cycle-limit        Enforce max cycles
 --max-cycles N              Max cycles (default: 100000)
+--debug-file FILE           Write debug output to results/debug/FILE
+--debug-dual-output         Print debug output to both terminal and file (use with --debug-file)
 -h, --help                  Show help
 ```
 
 ## File Organization
 
+**New Structure (Program Tests with Thread Metadata):**
 ```
 tests/
-├── assembly/
-│   ├── unit/          # Unit tests
-│   ├── program/       # Program tests
-│   └── benchmarks/    # Benchmark tests
-├── bin/               # Pre-compiled binaries
-│   ├── unit/
-│   ├── program/
-│   └── benchmarks/
-└── exp/               # Expected outputs
-    ├── test_t32_b1_exp.hex
-    └── ...
+├── bin/program/          # Pre-compiled binary tests with thread counts
+│   └── <test_name>/
+│       └── t<threads>/
+│           └── <test_name>.bin
+├── exp/program/          # Expected outputs with thread counts
+│   └── <test_name>/
+│       └── t<threads>/
+│           └── <test_name>.hex
+├── bin/unit/             # Unit tests (legacy structure)
+│   └── <category>/
+│       └── <test_name>.bin
+└── exp/unit/             # Expected outputs for unit tests
+    └── <category>/
+        └── <test_name>_exp_t<threads>_b<blocks>.hex
 
 results/
-├── test_diffs/        # Per-test detailed results
+├── debug/                # Debug output files (if --debug-file used)
+├── test_diffs/           # Per-test detailed results
 ├── meminit.hex
 ├── memgolden.hex
 └── memsim.hex
@@ -256,6 +269,33 @@ test.bin               # Specific file
    ```bash
    python3 test_cardinal.py --src assembly --truth emu --enable-cycle-limit --max-cycles 5000
    ```
+
+5. **Enable debug logging to investigate issues:**
+   ```bash
+   # File-only debug output
+   python3 test_cardinal.py --src bin --truth exp --debug-file debug.log
+   
+   # Debug output to both terminal and file
+   python3 test_cardinal.py --src bin --truth exp --debug-file debug.log --debug-dual-output
+   ```
+
+## Thread Count Validation
+
+⚠️ **IMPORTANT:** The test suite validates that thread counts match across:
+1. **Directory structure** (e.g., `t1024` → 1024 threads)
+2. **Expected file path** (e.g., `program/pixel/t1024/pixel.hex` → 1024 threads)
+3. **MMIO configuration** (when TBS enabled)
+
+**If thread counts don't match:**
+- Test is marked as **FAILED**
+- Error logged to `results/test_diffs/<test_name>_validation.log`
+- Error message shown in console and debug output (if enabled)
+
+**Example mismatch error:**
+```
+[FAIL]     pixel (Thread count validation failed)
+THREAD COUNT MISMATCH: directory has 1024 threads but expected file has 512 threads
+```
 
 ---
 

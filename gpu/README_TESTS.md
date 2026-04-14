@@ -143,9 +143,89 @@ python3 test_cardinal.py --src bin --truth emu --enable-cycle-limit --max-cycles
 # Use custom config file
 python3 test_cardinal.py --src assembly --truth emu --config custom_config.toml
 
+# Enable debug output to file only
+python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log
+
+# Enable debug output to both terminal and file
+python3 test_cardinal.py --src bin --truth exp --debug-file test_debug.log --debug-dual-output
+
 # Combine multiple options
-python3 test_cardinal.py --src assembly --truth exp unit/ --skip-cleanup --enable-cycle-limit --max-cycles 50000
+# Combine multiple options
+python3 test_cardinal.py --src assembly --truth exp unit/ --skip-cleanup --enable-cycle-limit --max-cycles 50000 --debug-file combined.log
 ```
+
+---
+
+## Test Directory Structure
+
+The test suite supports two directory structures:
+
+### New Structure (Program Tests)
+```
+tests/
+├── bin/program/
+│   └── <test_name>/
+│       └── t<num_threads>/
+│           └── <test_name>.bin
+└── exp/program/
+    └── <test_name>/
+        └── t<num_threads>/
+            └── <test_name>.hex
+```
+
+**Example:** `tests/bin/program/pixel/t1024/pixel.bin`
+
+### Old Structure (Unit Tests)
+```
+tests/
+├── bin/unit/
+│   └── <category>/
+│       └── <test_name>.bin
+└── exp/unit/
+    └── <category>/
+        └── <test_name>_exp_t<threads>_b<blocks>.hex
+```
+
+**Example:** `tests/bin/unit/b_type/beq.bin`
+
+---
+
+## Thread Count Validation
+
+The test suite automatically validates that thread counts are consistent across:
+
+1. **Directory Structure** - Thread count from path (e.g., `t1024` → 1024 threads)
+2. **Expected File Path** - Thread count from expected output file location/name
+3. **MMIO Configuration** - Thread count from kernel parameters (when TBS enabled)
+
+### Validation Behavior
+
+**When validation passes:**
+- Test proceeds normally
+- No additional output or delay
+
+**When validation fails:**
+- Test is marked as **FAILED**
+- Error message saved to `results/test_diffs/<test_name>_validation.log`
+- Message printed to console and debug file (if enabled)
+
+### Example Validation Error
+
+```
+[FAIL]     pixel (Thread count validation failed)
+
+THREAD COUNT VALIDATION ERROR:
+Thread count mismatch: directory path has 1024 threads but 
+expected file 'pixel.hex' has 512 threads
+```
+
+### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Directory thread count (t1024) doesn't match expected file name/path (t512) | Mismatched test metadata | Rename directory or expected file to match |
+| MMIO register value (0x18) differs from directory thread count | MMIO configuration error | Update meminit file or config.toml |
+| Thread count extracted differently from old vs new structure | Structure mismatch | Ensure consistent naming conventions |
 
 ---
 
@@ -824,6 +904,36 @@ python3 test_cardinal.py --src assembly --truth emu \
 ```
 
 **Use when:** Testing different hardware configurations or parameters
+
+### Debug Logging
+
+Capture detailed debug output for test analysis:
+
+```bash
+# Write debug output to file only
+python3 test_cardinal.py --src bin --truth exp --debug-file test_run.log
+
+# Write debug output to both terminal and file
+python3 test_cardinal.py --src bin --truth exp --debug-file test_run.log --debug-dual-output
+```
+
+**Options:**
+- `--debug-file FILE` - Filename for debug output (written to `results/debug/FILE`)
+- `--debug-dual-output` - Print to both terminal and file (use with `--debug-file`)
+
+**Default:** No debug output (normal operation)
+
+**Debug output includes:**
+- Thread count validation messages
+- Configuration details
+- Test execution logs
+- Error details
+
+**Use when:**
+- Debugging test failures
+- Analyzing thread count mismatches
+- Investigating configuration issues
+- Recording test execution for later review
 
 ---
 

@@ -36,8 +36,66 @@ class WritebackBufferPolicy(str, Enum):
 
 
 # ============================================================================
-# Test Suite Configuration Classes
+# Memory-Mapped I/O (MMIO) Configuration for Thread Block Scheduler
 # ============================================================================
+
+class MMIOConfig(BaseModel):
+    """Memory-mapped I/O configuration for kernel launch parameters.
+    
+    Used when Thread Block Scheduler (TBS) is enabled. These values are read
+    from the meminit file at specific memory addresses instead of config.toml.
+    
+    MMIO Memory Map:
+        0x00: Control Register (Start/Reset GPU)
+        0x04: Status Register (Done/Idle/Error)
+        0x08: Device ID Register
+        0x0C: Kernel Entry Point (start PC)
+        0x10: Block Register (threads per block)
+        0x14: Grid Register (number of blocks)
+        0x18: Total Threads Register (total threads)
+        0x1C: Kernel Arguments Address Register
+        0x20: Kernel Argument Size Register
+    """
+    # Default values when TBS is disabled or meminit doesn't provide them
+    kernel_entry_point: int = Field(
+        default=0x0,
+        description="Virtual address of kernel entry point (from MMIO 0x0C)"
+    )
+    threads_per_block: int = Field(
+        default=32,
+        description="Threads per block dimension (from MMIO 0x10)"
+    )
+    num_blocks: int = Field(
+        default=1,
+        description="Number of blocks/grid dimension (from MMIO 0x14)"
+    )
+    total_threads: int = Field(
+        default=32,
+        description="Total threads across all blocks (from MMIO 0x18)"
+    )
+    kernel_args_address: int = Field(
+        default=0x20000000,
+        description="Virtual address of kernel arguments (from MMIO 0x1C)"
+    )
+    kernel_args_size: int = Field(
+        default=0,
+        description="Size in bytes of kernel arguments (from MMIO 0x20)"
+    )
+
+
+class ProgramConfig(BaseModel):
+    """Program-specific configuration for test output filtering.
+    
+    Defines the address range that contains the actual program results.
+    Only values within this range are compared during test validation.
+    """
+    diff_start_addr: int = Field(
+        description="Start address of the output address space (hex format)"
+    )
+    diff_end_addr: int = Field(
+        description="End address of the output address space (hex format)"
+    )
+
 
 class PathsConfig(BaseModel):
     """Path configuration for various scripts and tools."""
@@ -82,13 +140,24 @@ class TestParametersConfig(BaseModel):
 # ============================================================================
 
 class SMConfig(BaseModel):
-    """Streaming Multiprocessor configuration."""
+    """Streaming Multiprocessor configuration.
+    
+    When enable_tbs=False (default):
+        - Uses kernel parameters from this config (tb_size, memory.start_pc)
+        - Simple single-block kernel execution model
+    
+    When enable_tbs=True:
+        - Kernel parameters are read from MMIO in the meminit file
+        - Parameters configured in [mmio] section are used as fallbacks
+        - Enables Thread Block Scheduler for dynamic block scheduling
+        - See MMIOConfig for MMIO register mapping
+    """
     sm_no: int = 0
-    num_warps: int = 32
+    num_warps: int = 1
     num_preds: int = 16
     threads_per_warp: int = 32
-    enable_tbs: bool = True
-    kernel_base_addr: int = 9203930
+    enable_tbs: bool = False
+    kernel_pointer_addr: int = 0x0
     tb_size: int = 32
 
 
@@ -102,7 +171,7 @@ class MemoryConfig(BaseModel):
 class KernelConfig(BaseModel):
     """Kernel configuration."""
     max_kernels_per_sm: int = 1
-    kernel_id: int = 9203930
+    kernel_id: int = 0x20000000
 
 
 class ICacheConfig(BaseModel):
@@ -134,7 +203,7 @@ class FpUnitConfigSettings(BaseModel):
     alu_count: int = Field(default=1, description="Number of floating-point ALUs")
     mul_count: int = Field(default=1, description="Number of floating-point multipliers")
     div_count: int = Field(default=1, description="Number of floating-point dividers")
-    sqrt_count: int = Field(default=1, description="Number of square root units")
+    sqrt_count: int = Field(default=0, description="Number of square root units")
     alu_latency: int = Field(default=1, description="FP ALU latency in cycles")
     mul_latency: int = Field(default=4, description="FP multiply latency in cycles")
     div_latency: int = Field(default=24, description="FP divide latency in cycles")
@@ -157,7 +226,7 @@ class MemBranchJumpUnitConfigSettings(BaseModel):
     branch_count: int = Field(default=1, description="Number of branch units")
     jump_count: int = Field(default=1, description="Number of jump units")
     ldst_buffer_size: int = Field(default=1, description="Writeback buffer size for LDST units")
-    ldst_queue_size: int = Field(default=4, description="Queue size for LDST units")
+    ldst_queue_size: int = Field(default=1, description="Queue size for LDST units")
 
 
 class FunctionalUnitsConfig(BaseModel):
@@ -221,7 +290,7 @@ class WritebackConfig(BaseModel):
 class RegisterFileConfig(BaseModel):
     """Register file configuration."""
     num_banks: int = Field(
-        default=4,
+        default=2,
         description="Number of register file banks"
     )
 
@@ -229,7 +298,7 @@ class RegisterFileConfig(BaseModel):
 class PredicateRegisterFileConfig(BaseModel):
     """Predicate register file configuration."""
     num_banks: int = Field(
-        default=2,
+        default=1,
         description="Number of predicate register file banks"
     )
 
@@ -238,12 +307,12 @@ class TestConfig(BaseModel):
     """Test configuration."""
     test_file: str = "test.bin"
     test_file_type: str = "bin"
-    tb_size: int = 1024
+    tb_size: int = 32
 
 
 class PerformanceCounterConfig(BaseModel):
     """Performance counter and telemetry configuration."""
-    enabled: bool = False
+    enabled: bool = True
     trace_enabled: bool = False
     trace_start_cycle: int = 0
     trace_end_cycle: int = 0
@@ -313,6 +382,7 @@ class Settings(BaseSettings):
     writeback: WritebackConfig = Field(default_factory=WritebackConfig)
     register_file: RegisterFileConfig = Field(default_factory=RegisterFileConfig)
     predicate_register_file: PredicateRegisterFileConfig = Field(default_factory=PredicateRegisterFileConfig)
+    mmio: MMIOConfig = Field(default_factory=MMIOConfig)
     test: TestConfig
     perf_counter: PerformanceCounterConfig = Field(default_factory=PerformanceCounterConfig)
     
@@ -385,6 +455,121 @@ class Settings(BaseSettings):
             "block_size": self.icache.block_size,
             "associativity": self.icache.associativity,
         }
+    
+    def read_mmio_from_meminit(self, meminit_path: Path) -> MMIOConfig:
+        """Read MMIO configuration from meminit file.
+        
+        When TBS is enabled, kernel parameters are stored in memory-mapped I/O
+        locations instead of config.toml. This method reads those values from
+        the meminit hex file.
+        
+        MMIO addresses:
+            0x0C: Kernel Entry Point
+            0x10: Threads Per Block
+            0x14: Number of Blocks
+            0x18: Total Threads
+            0x1C: Kernel Arguments Address
+            0x20: Kernel Arguments Size
+        
+        Args:
+            meminit_path: Path to meminit hex file
+            
+        Returns:
+            MMIOConfig populated with values from memory
+            
+        Raises:
+            FileNotFoundError: If meminit file doesn't exist
+            ValueError: If hex file is malformed
+        """
+        if not meminit_path.exists():
+            raise FileNotFoundError(f"Meminit file not found: {meminit_path}")
+        
+        # MMIO address to field mapping
+        mmio_map = {
+            0x0C: 'kernel_entry_point',
+            0x10: 'threads_per_block',
+            0x14: 'num_blocks',
+            0x18: 'total_threads',
+            0x1C: 'kernel_args_address',
+            0x20: 'kernel_args_size',
+        }
+        
+        mmio_values = {}
+        
+        try:
+            with open(meminit_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    
+                    parts = line.split()
+                    if len(parts) < 2:
+                        continue
+                    
+                    try:
+                        addr = int(parts[0], 16)
+                        value = int(parts[1], 16)
+                        
+                        # Check if this address is in MMIO range
+                        if addr in mmio_map:
+                            mmio_values[mmio_map[addr]] = value
+                    except (ValueError, IndexError):
+                        # Skip malformed lines
+                        continue
+        except Exception as e:
+            raise ValueError(f"Error reading meminit file {meminit_path}: {e}")
+        
+        # Create MMIOConfig with values from meminit, falling back to defaults
+        return MMIOConfig(
+            kernel_entry_point=mmio_values.get('kernel_entry_point', self.mmio.kernel_entry_point),
+            threads_per_block=mmio_values.get('threads_per_block', self.mmio.threads_per_block),
+            num_blocks=mmio_values.get('num_blocks', self.mmio.num_blocks),
+            total_threads=mmio_values.get('total_threads', self.mmio.total_threads),
+            kernel_args_address=mmio_values.get('kernel_args_address', self.mmio.kernel_args_address),
+            kernel_args_size=mmio_values.get('kernel_args_size', self.mmio.kernel_args_size),
+        )
+    
+    def read_program_config(self, program_config_path: Path) -> Optional[ProgramConfig]:
+        """Read program-specific configuration from program_config.toml.
+        
+        This file defines the address space to compare during test validation.
+        
+        Args:
+            program_config_path: Path to program_config.toml file
+            
+        Returns:
+            ProgramConfig instance if file exists, None otherwise
+        """
+        if not program_config_path.exists():
+            return None
+        
+        try:
+            config_data = toml.load(program_config_path)
+            
+            # The file should have a section with diff_start_addr and diff_end_addr
+            # Look for any section that contains these keys
+            for section_name, section_data in config_data.items():
+                if isinstance(section_data, dict):
+                    diff_start_addr = section_data.get('diff_start_addr')
+                    diff_end_addr = section_data.get('diff_end_addr')
+                    
+                    if diff_start_addr is not None and diff_end_addr is not None:
+                        # Handle both string (hex) and int formats
+                        if isinstance(diff_start_addr, str):
+                            diff_start_addr = int(diff_start_addr, 16)
+                        if isinstance(diff_end_addr, str):
+                            diff_end_addr = int(diff_end_addr, 16)
+                        
+                        return ProgramConfig(
+                            diff_start_addr=diff_start_addr,
+                            diff_end_addr=diff_end_addr
+                        )
+            
+            return None
+        except Exception as e:
+            print(f"Error reading program config {program_config_path}: {e}")
+            return None
 
 
 # ============================================================================

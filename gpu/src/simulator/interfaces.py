@@ -20,7 +20,7 @@ class ForwardingIF:
         self.wait = bool(flag)
 
     def __repr__(self) -> str:
-        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+        return (f"<{self.name} wait={self.wait} "
             f"payload={self.payload!r}>")
             
 @dataclass
@@ -65,5 +65,5 @@ class LatchIF:
         self.valid = False
     
     def __repr__(self) -> str: # idk if we need this or not
-        return (f"<{self.name} valid={self.valid} wait={self.wait} "
+        return (f"<{self.name} valid={self.valid}"
                 f"payload={self.payload!r}>")

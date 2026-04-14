@@ -27,11 +27,7 @@ from simulator.mem.memory import Mem
 from simulator.decode.decode_class import DecodeStage
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.utils.performance_counter import PerfConfig, Telemeter
-try:
-    from simulator.tbs.tbs import ThreadBlockScheduler
-    TBS_AVAILABLE = True
-except ImportError:
-    TBS_AVAILABLE = False
+from simulator.tbs.tbs import ThreadBlockScheduler
 from config import Settings, get_settings
 
 class SM:
@@ -290,12 +286,9 @@ class SM:
         # Use the single num_preds parameter for both modes
         num_preds = self.config.sm.num_preds
         
-        # Use the single kernel_base_addr parameter for both modes
-        kernel_addr = self.config.sm.kernel_base_addr
-        
         # Initialize memory
         mem = Mem(start_pc=start_pc, input_file=str(self.test_file), fmt=self.test_file_type)
-
+                
         # Memory controller
         memc = MemController(
             name="Mem_Controller",
@@ -329,8 +322,6 @@ class SM:
         # Create TBS only if enabled
         tbs = None
         if enable_tbs:
-            if not TBS_AVAILABLE:
-                raise ImportError("ThreadBlockScheduler not available. Cannot enable TBS mode.")
             scheduler_tbs_fwif = forwarding_ifs["scheduler_tbs_fwif"]
             tbs = ThreadBlockScheduler(
                 name="Thread_Block_Scheduler",
@@ -339,8 +330,16 @@ class SM:
                 forward_ifs_read={
                     "Scheduler_TBS": scheduler_tbs_fwif
                 },
-                forward_ifs_write=None
+                forward_ifs_write=None,
+                input_file=self.test_file
             )
+
+            tbs.add_SM() 
+            kernel_pointer_addr = tbs.load()
+        else:
+            # No-TBS mode: manually push thread block info to the scheduler
+            tbs_ws_if.push([0, tb_size, start_pc])  # [kernel_id, tb_size, start_pc]
+            kernel_pointer_addr = self.config.sm.kernel_pointer_addr
 
         # Build scheduler forward_ifs_write based on TBS mode
         scheduler_fwif_write = {"Scheduler_LDST": scheduler_ldst_fwif}
@@ -383,7 +382,7 @@ class SM:
                 prf.reg_file[warp][pred] = [True] * self.config.sm.threads_per_warp
 
         kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
-        kernel_base_ptrs.write(0, Bits(uint=kernel_addr, length=32))
+        kernel_base_ptrs.write(0, Bits(uint=kernel_pointer_addr, length=32))
 
         decode_stage = DecodeStage(
             name="Decode Stage",
@@ -453,16 +452,7 @@ class SM:
         decode_scheduler_fwif.push(filler_decode)
         issue_scheduler_fwif.push(filler_issue)
         branch_scheduler_fwif.payload    = None
-        writeback_scheduler_fwif.payload = None
-        
-        # Bootstrap thread block initialization
-        if enable_tbs:
-            # TBS manages the thread block, but we still need to push to latch initially
-            # (This was a workaround, now handled by TBS)
-            pass
-        else:
-            # No-TBS mode: manually push thread block info to the scheduler
-            tbs_ws_if.push([0, tb_size, start_pc])  # [kernel_id, tb_size, start_pc]
+        writeback_scheduler_fwif.payload = None        
 
         pipeline_dict = {
             "scheduler":   scheduler_stage,

@@ -422,7 +422,7 @@ class DecodeStage(Stage):
         # TODO: ADD LOGIC HERE TO SET inst.target_regfile TO "pred_regfile" IF THE INSTRUCTION WRITES TO PRED REG FILE
         if inst.opcode is B_Op.BEQ or inst.opcode is B_Op.BNE or inst.opcode is P_Op.PRLW:
             inst.target_regfile = "pred_regfile"
-            inst.target_bank = 1 # for now, just hardcoding all pred reg file writes to go to bank 1 and all int/float reg file writes to go to bank 0, but this can be changed later if we want more flexible mapping of logical register files to physical banks
+            inst.target_bank = 0 # for now, just hardcoding all pred reg file writes to go to bank 1 and all int/float reg file writes to go to bank 0, but this can be changed later if we want more flexible mapping of logical register files to physical banks
         else:
             if inst.warp_id % 2 == 0:
                 inst.target_bank = 0
