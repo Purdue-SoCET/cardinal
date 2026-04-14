@@ -1,7 +1,7 @@
 """Configuration management for GPU tests and simulator using pydantic-settings."""
 
 from pathlib import Path
-from typing import Optional, Any, Tuple, Type, Dict
+from typing import Optional, Any, Tuple, Type, Dict, ClassVar
 from enum import Enum
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
@@ -186,6 +186,15 @@ class DCacheConfig(BaseModel):
     cache_size: int = 32768
     block_size: int = 4
     associativity: int = 1
+    num_banks: int = 2
+    num_sets_per_bank: int = 16
+    num_ways: int = 8
+    block_size_words: int = 32
+    word_size_bytes: int = 4
+    uuid_size: int = 8
+    mshr_buffer_len: int = 16
+    hit_latency: int = 2
+    ram_latency_cycles: int = 200
 
 
 class IntUnitConfigSettings(BaseModel):
@@ -365,6 +374,7 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',
         extra='ignore'
     )
+    custom_toml_file: ClassVar[Optional[Path]] = None
     
     # Test suite configuration
     paths: PathsConfig
@@ -397,8 +407,8 @@ class Settings(BaseSettings):
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         """Customize settings sources to include TOML."""
         toml_file = Path(__file__).parent / 'config.toml'
-        if hasattr(settings_cls, '_custom_toml_file'):
-            toml_file = getattr(settings_cls, '_custom_toml_file')
+        if getattr(settings_cls, 'custom_toml_file', None) is not None:
+            toml_file = settings_cls.custom_toml_file
         return (
             init_settings,
             TomlConfigSettingsSource(settings_cls, toml_file),
@@ -417,7 +427,7 @@ class Settings(BaseSettings):
         """
         if config_path is not None:
             class CustomSettings(cls):
-                _custom_toml_file = config_path
+                custom_toml_file: ClassVar[Optional[Path]] = Path(config_path)
             return CustomSettings()
         return cls()
     
@@ -454,6 +464,23 @@ class Settings(BaseSettings):
             "cache_size": self.icache.cache_size,
             "block_size": self.icache.block_size,
             "associativity": self.icache.associativity,
+        }
+
+    def to_dcache_dict(self) -> Dict[str, Any]:
+        """Convert dcache config to dictionary format expected by LockupFreeCacheStage."""
+        return {
+            "cache_size": self.dcache.cache_size,
+            "block_size": self.dcache.block_size,
+            "associativity": self.dcache.associativity,
+            "num_banks": self.dcache.num_banks,
+            "num_sets_per_bank": self.dcache.num_sets_per_bank,
+            "num_ways": self.dcache.num_ways,
+            "block_size_words": self.dcache.block_size_words,
+            "word_size_bytes": self.dcache.word_size_bytes,
+            "uuid_size": self.dcache.uuid_size,
+            "mshr_buffer_len": self.dcache.mshr_buffer_len,
+            "hit_latency": self.dcache.hit_latency,
+            "ram_latency_cycles": self.dcache.ram_latency_cycles,
         }
     
     def read_mmio_from_meminit(self, meminit_path: Path) -> MMIOConfig:

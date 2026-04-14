@@ -64,6 +64,7 @@ Debugging:
 """
 
 import argparse
+import csv
 import os
 import subprocess
 import sys
@@ -71,6 +72,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 import io
+import toml
 from contextlib import redirect_stdout, redirect_stderr
 
 # Add paths for imports
@@ -171,17 +173,20 @@ class SimulatorOutputCapture:
         """Stop capturing and restore original stdout/stderr."""
         if self.original_stdout:
             sys.stdout = self.original_stdout
+            self.original_stdout = None
         if self.original_stderr:
             sys.stderr = self.original_stderr
+            self.original_stderr = None
         
-        if self.file_handle:
+        if self.file_handle and not self.file_handle.closed:
             self.file_handle.flush()
     
     def close(self):
         """Close the output file."""
         self.stop_capture()
-        if self.file_handle:
+        if self.file_handle and not self.file_handle.closed:
             self.file_handle.close()
+        self.file_handle = None
     
     def __del__(self):
         """Cleanup on deletion."""
@@ -218,29 +223,30 @@ class TestResult:
 class GPUTestRunner:
     """Main test runner class."""
     
-    def __init__(self, src: Optional[str] = None, truth: Optional[str] = None, search_pattern: Optional[str] = None, config_path: Optional[Path] = None, clean: bool = False, skip_cleanup: bool = False, enable_cycle_limit: bool = False, max_cycles: Optional[int] = None, debug_file: Optional[Path] = None, debug_dual_output: bool = False, enable_simulator_output: bool = False, simulator_output_file: Optional[str] = None):
-        """Initialize the test runner.
-        
-        Args:
-            src: Source type ("assembly" or "bin")
-            truth: Truth type ("emu" or "exp")
-            search_pattern: Optional file pattern to search for
-            config_path: Optional path to config file
-            clean: If True, clean results/ directory before running
-            skip_cleanup: If True, skip cleanup after tests run
-            enable_cycle_limit: If True, enforce a max cycle limit
-            max_cycles: Maximum cycles to run (only used if enable_cycle_limit is True)
-            debug_file: Optional path to debug output file (in results/debug/)
-            debug_dual_output: If True, write debug output to both terminal and file
-            enable_simulator_output: If True, capture and display simulator print statements
-            simulator_output_file: Optional file to save simulator output (use with enable_simulator_output)
-        """
-        # Validate arguments only if running tests
+    def __init__(
+        self,
+        src: Optional[str] = None,
+        truth: Optional[str] = None,
+        search_pattern: Optional[str] = None,
+        config_path: Optional[Path] = None,
+        clean: bool = False,
+        skip_cleanup: bool = False,
+        enable_cycle_limit: bool = False,
+        max_cycles: Optional[int] = None,
+        debug_file: Optional[Path] = None,
+        debug_dual_output: bool = False,
+        enable_simulator_output: bool = False,
+        simulator_output_file: Optional[str] = None,
+        sweep: bool = False,
+        sweep_config: Optional[Path] = None,
+        sweep_inputs: Optional[List[str]] = None,
+    ):
+        """Initialize the test runner."""
         if src is not None and src not in ("assembly", "bin"):
             raise ValueError(f"Invalid src: {src}. Must be 'assembly' or 'bin'")
         if truth is not None and truth not in ("emu", "exp"):
             raise ValueError(f"Invalid truth: {truth}. Must be 'emu' or 'exp'")
-        
+
         self.src = src
         self.truth = truth
         self.clean = clean
@@ -253,49 +259,46 @@ class GPUTestRunner:
         self.pass_count = 0
         self.fail_count = 0
         self.debug_dual_output = debug_dual_output
-        
-        # Setup debug logger
+
+        self.sweep = sweep
+        self.sweep_config = sweep_config
+        self.sweep_inputs = sweep_inputs or []
+
+        self.last_sim_cycles = 0
+        self.last_sim_finished = False
+
         if debug_file:
             debug_path = Path("results/debug") / debug_file
         else:
             debug_path = None
         self.debug_logger = DebugLogger(debug_path, debug_dual_output)
-        
-        # Clean results directory if requested
+
         if self.clean:
             self._clean_results()
-        
-        # Only set up test paths if running tests
+
         if src is not None:
-            # Determine test root based on source type
             if src == "assembly":
                 self.test_root = self.settings.directories.test_root_asm
                 file_ext = ".s"
-            else:  # bin
+            else:
                 self.test_root = self.settings.directories.test_root_bin
                 file_ext = ".bin"
-            
-            # Use provided pattern or default
+
             self.search_pattern = search_pattern or self.settings.test_parameters.default_pattern
-            
-            # Append file extension if needed
+
             if not self.search_pattern.endswith(file_ext) and '/' not in self.search_pattern:
-                # Only append extension if it's not a directory pattern
                 if not self.search_pattern.endswith('/'):
                     self.search_pattern += file_ext
-        
-        # Setup results directory (for all output files)
+
         self.results_dir = Path("results")
         self.results_dir.mkdir(exist_ok=True)
-        
-        # Setup diff directory
+
         self.diff_dir = Path(self.settings.directories.diff_dir)
         self.diff_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Clean previous diff files
+
         for file in self.diff_dir.glob('*'):
             file.unlink()
-    
+
     def run_command(self, cmd: List[str], log_file: Optional[Path] = None, 
                    capture_output: bool = True, cwd: Optional[str] = None) -> Tuple[int, str, str]:
         """Run a shell command and return the result.
@@ -321,49 +324,38 @@ class GPUTestRunner:
             else:
                 result = subprocess.run(cmd, text=True, cwd=cwd)
             return result.returncode, "", ""
-    
-    def find_test_files(self) -> List[Path]:
-        """Find all test files matching the search pattern.
         
-        The search_pattern can be:
-        - A file pattern: "*.s", "saxpy*", "test.bin"
-        - A directory pattern: "unit/", "program/"
-        - A combination: "unit/*.s", "program/saxpy*"
-        
-        Returns:
-            List of paths to test files
-        """
+    def find_test_files_for_pattern(self, pattern: str) -> List[Path]:
+        """Find all test files matching a specific pattern."""
         test_root = Path(self.test_root)
         if not test_root.exists():
             print(f"{Colors.RED}Error:{Colors.NC} Test root directory '{test_root}' does not exist")
             return []
-        
-        pattern = self.search_pattern
-        
-        # Check if pattern starts with a directory (no wildcards in first part before /)
+
         if '/' in pattern:
-            # Pattern includes a directory specification
             parts = pattern.split('/', 1)
             directory = parts[0]
             file_pattern = parts[1] if len(parts) > 1 and parts[1] else '*'
-            
-            # Build the full search path
+
             search_root = test_root / directory
             if not search_root.exists():
                 print(f"{Colors.RED}Error:{Colors.NC} Directory '{directory}' not found in test root")
                 return []
-            
-            # Search within the specified directory
+
             files = sorted([f for f in search_root.rglob(file_pattern) if f.is_file()])
         else:
-            # No directory specified, search from test root
             files = sorted([f for f in test_root.rglob(pattern) if f.is_file()])
-        
+
         if not files:
-            print(f"{Colors.RED}Error:{Colors.NC} No files found matching '{self.search_pattern}'")
-        
+            print(f"{Colors.RED}Error:{Colors.NC} No files found matching '{pattern}'")
+
         return files
-    
+
+
+    def find_test_files(self) -> List[Path]:
+        """Find all test files matching the runner search pattern."""
+        return self.find_test_files_for_pattern(self.search_pattern)
+
     def run_assembler(self, asm_file: Path) -> Tuple[bool, Optional[str]]:
         """Run the assembler on a source file.
         
@@ -702,106 +694,98 @@ class GPUTestRunner:
         
         return log_file, sys.stdout
     
-    def run_simulator(self, input_file: str, test_name: Optional[str] = None) -> bool:
-        """Run the simulator using SM class.
-        
-        Supports both TBS-enabled and TBS-disabled modes:
-        
-        When enable_tbs = false (default):
-            - Uses kernel parameters from config.toml (sm.tb_size, memory.start_pc)
-            - Simple single-block execution model
-        
-        When enable_tbs = true:
-            - Reads kernel parameters from MMIO memory-mapped I/O in meminit file
-            - Addresses: 0x0C (entry point), 0x10 (threads_per_block), 0x14 (num_blocks), 
-              0x18 (total_threads), 0x1C (args_address), 0x20 (args_size)
-            - Falls back to config.toml MMIO defaults if values not found in meminit
-            - Enables dynamic thread block scheduling
-        
-        Args:
-            input_file: Input binary file (meminit.bin format)
-            test_name: Optional test name for perf data (e.g., "beq.bin")
-            
-        Returns:
-            True if successful
-        """
+    def run_simulator(
+        self,
+        input_file: str,
+        test_name: Optional[str] = None,
+        config_path: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
+    ) -> bool:
+        """Run the simulator using SM class."""
         try:
-            # Create a copy of settings and customize perf_counter output settings for this test
             if test_name is None:
                 test_file_path = Path(input_file)
                 test_name = f"{test_file_path.stem}.{test_file_path.suffix.lstrip('.')}"
-            
-            # Set up output capture for simulator print statements
-            output_file = None
+
+            if output_dir is not None:
+                output_dir.mkdir(parents=True, exist_ok=True)
+
             if self.enable_simulator_output and self.simulator_output_file:
-                output_file = Path("results/debug") / self.simulator_output_file
+                output_file = (output_dir / self.simulator_output_file) if output_dir else (Path("results/debug") / self.simulator_output_file)
             else:
-                # Always capture to a file in debug directory
-                output_file = Path("results/debug") / f"{test_name}_simulator.log"
-            
+                log_dir = output_dir if output_dir else Path("results/debug")
+                log_dir.mkdir(parents=True, exist_ok=True)
+                output_file = log_dir / f"{test_name}_simulator.log"
+
             output_capture = SimulatorOutputCapture(output_file, dual_output=self.enable_simulator_output)
             output_capture.start_capture()
-            
+
             try:
-                # Make a mutable copy of settings for this run
                 import copy
-                settings = copy.deepcopy(self.settings)
-                # Set output_dir to test-specific subdirectory
-                settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
-                # Set output_prefix to include test name in the filename
+
+                if config_path is None:
+                    settings = copy.deepcopy(self.settings)
+                else:
+                    settings = copy.deepcopy(get_settings(config_path))
+
+                if output_dir is not None:
+                    settings.perf_counter.output_dir = str(output_dir / "perf_data")
+                else:
+                    settings.perf_counter.output_dir = f"results/perf_data/{test_name}"
+
                 settings.perf_counter.output_prefix = test_name
-                
-                # Create SM instance with simulator config
+
                 sm = SM(
                     test_file=Path(input_file),
                     test_file_type="bin",
-                    config=settings
+                    config=settings,
                 )
-                
-                # Run simulation - sm.pipeline is a dict with all stages
-                # Need to tick through until completion
+
                 cycle = 0
                 max_cycles = self.max_cycles if self.enable_cycle_limit else float('inf')
-                
+
                 while cycle < max_cycles:
-                    # Check if scheduler indicates completion
                     if hasattr(sm.pipeline.get('scheduler'), 'system_finished'):
                         if sm.pipeline['scheduler'].system_finished:
                             break
-                    
-                    # Tick all pipeline stages
+
                     sm.tick()
-                    
                     cycle += 1
-                
+
                 if self.enable_cycle_limit and cycle >= self.max_cycles:
                     print(f"Warning: Simulation hit max cycle limit of {self.max_cycles}")
-                
-                # Finalize performance counter collection
+
                 sm.finalize()
-                
-                # Dump register file to output
-                sm.pipeline["mem"].dump(path=str(self.settings.files.sim_output))
-                
+
+                self.last_sim_cycles = cycle
+                self.last_sim_finished = sm.finished
+
+                if output_dir is not None:
+                    sim_output_path = output_dir / "memsim.hex"
+                else:
+                    sim_output_path = Path(self.settings.files.sim_output)
+
+                sm.pipeline["mem"].dump(path=str(sim_output_path))
                 return True
             finally:
-                # Always restore stdout and close the capture
                 output_capture.stop_capture()
                 output_capture.close()
                 if self.enable_simulator_output:
                     print(f"Simulator output written to {output_file}")
-                
+
         except Exception as e:
-            # Make sure to restore stdout before printing error
+            self.last_sim_cycles = 0
+            self.last_sim_finished = False
+
             if 'output_capture' in locals():
                 output_capture.stop_capture()
                 output_capture.close()
-                
+
             print(f"{Colors.RED}Simulator error:{Colors.NC} {e}")
             import traceback
             traceback.print_exc()
             return False
-    
+
     def filter_hex_by_address_range(self, hex_file: Path, start_addr: int, end_addr: int, output_file: Path) -> None:
         """Filter hex file to only include addresses within the specified range.
         
@@ -1186,7 +1170,6 @@ class GPUTestRunner:
                 (self.diff_dir / f"{test_id}_meminit.hex").write_text(hex_output.read_text())
                 hex_output.unlink()
             return TestResult(base_name, False, threads, blocks, str(error_log))
-
     
     def test_assembly_with_expected(self, asm_file: Path) -> TestResult:
         """Test an assembly file against pre-generated expected output.
@@ -1307,12 +1290,167 @@ class GPUTestRunner:
                 if file.name.endswith('_exp_full.hex'):
                     file.unlink()
     
+    def load_sweep_cases(self) -> Tuple[Path, List[dict]]:
+        """Load sweep case definitions from a TOML file."""
+        if self.sweep_config is None:
+            raise ValueError("Sweep mode requires --sweep-config")
+
+        sweep_spec = toml.load(self.sweep_config)
+        output_root = Path(sweep_spec.get("output_root", "results/sweeps"))
+        if not output_root.is_absolute():
+            output_root = (self.sweep_config.parent / output_root).resolve()
+
+        raw_cases = sweep_spec.get("cases", [])
+        if not raw_cases:
+            raise ValueError(f"No [[cases]] entries found in {self.sweep_config}")
+
+        cases = []
+        for raw_case in raw_cases:
+            case_id = raw_case.get("id")
+            config_value = raw_case.get("config")
+            if not case_id or not config_value:
+                raise ValueError("Each [[cases]] entry must define both 'id' and 'config'")
+
+            config_path = Path(config_value)
+            if not config_path.is_absolute():
+                config_path = (self.sweep_config.parent / config_path).resolve()
+
+            cases.append({
+                "id": case_id,
+                "config_path": config_path,
+            })
+
+        return output_root, cases
+
+    def prepare_sweep_input(self, test_file: Path) -> Tuple[bool, Optional[Path], Optional[str]]:
+        """Prepare the simulator input for a sweep case."""
+        if self.src == "bin":
+            return True, test_file, None
+
+        if self.src == "assembly":
+            base_name = test_file.stem
+            dir_name = test_file.parent
+
+            success, error = self.run_assembler(test_file)
+            if not success:
+                return False, None, error
+
+            self.format_instructions()
+            self.create_meminit(base_name, dir_name)
+            self.convert_hex_to_bin()
+            return True, Path(self.settings.files.meminit_bin), None
+
+        return False, None, f"Unsupported src '{self.src}' for sweep mode"
+
+    def run_sweep(self) -> int:
+        """Run simulator sweeps over one or more inputs and case configs."""
+        output_root, cases = self.load_sweep_cases()
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        patterns = self.sweep_inputs or [self.search_pattern]
+        test_files: List[Path] = []
+        for pattern in patterns:
+            test_files.extend(self.find_test_files_for_pattern(pattern))
+
+        test_files = sorted(set(test_files))
+        if not test_files:
+            return 1
+
+        summary_rows = []
+
+        print("=" * 40)
+        print("      Starting GPU Sweep")
+        print(f"      Source:      {self.src}")
+        print(f"      Root:        {self.test_root}")
+        print(f"      Inputs:      {patterns}")
+        print(f"      Cases:       {len(cases)}")
+        print(f"      Output Root: {output_root}")
+        print("=" * 40)
+
+        for test_file in test_files:
+            prep_ok, sim_input, prep_error = self.prepare_sweep_input(test_file)
+            if not prep_ok or sim_input is None:
+                print(f"{Colors.RED}[FAIL]{Colors.NC}     {test_file.name} (prepare failed)")
+                self.fail_count += 1
+                summary_rows.append({
+                    "test_name": test_file.name,
+                    "case_id": "PREPARE",
+                    "config_path": "",
+                    "cycles": 0,
+                    "finished": False,
+                    "passed": False,
+                    "output_dir": "",
+                    "error": prep_error or "Unknown prepare error",
+                })
+                continue
+
+            for case in cases:
+                case_id = case["id"]
+                case_config = case["config_path"]
+                run_dir = output_root / test_file.stem / case_id
+                run_name = f"{test_file.stem}_{case_id}"
+                run_dir.mkdir(parents=True, exist_ok=True)
+                (run_dir / "config.toml").write_text(case_config.read_text())
+
+                ok = self.run_simulator(
+                    input_file=str(sim_input),
+                    test_name=run_name,
+                    config_path=case_config,
+                    output_dir=run_dir,
+                )
+
+                passed = ok and self.last_sim_finished
+                if passed:
+                    print(f"{Colors.GREEN}[PASS]{Colors.NC}     {test_file.name} :: {case_id} ({self.last_sim_cycles} cycles)")
+                    self.pass_count += 1
+                else:
+                    print(f"{Colors.RED}[FAIL]{Colors.NC}     {test_file.name} :: {case_id} ({self.last_sim_cycles} cycles)")
+                    self.fail_count += 1
+
+                summary_rows.append({
+                    "test_name": test_file.name,
+                    "case_id": case_id,
+                    "config_path": str(case_config),
+                    "cycles": self.last_sim_cycles,
+                    "finished": self.last_sim_finished,
+                    "passed": passed,
+                    "output_dir": str(run_dir),
+                    "error": "" if ok else "Simulator run failed",
+                })
+
+        summary_csv = output_root / "summary.csv"
+        with open(summary_csv, "w", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "test_name",
+                    "case_id",
+                    "config_path",
+                    "cycles",
+                    "finished",
+                    "passed",
+                    "output_dir",
+                    "error",
+                ],
+            )
+            writer.writeheader()
+            writer.writerows(summary_rows)
+
+        self.debug_logger.close()
+
+        print("=" * 40)
+        print("Sweep Summary")
+        print(f"Passed:  {Colors.GREEN}{self.pass_count}{Colors.NC}")
+        print(f"Failed:  {Colors.RED}{self.fail_count}{Colors.NC}")
+        print(f"Summary: {summary_csv}")
+
+        return 0 if self.fail_count == 0 else 1
+
     def run(self) -> int:
-        """Run all tests.
-        
-        Returns:
-            Exit code (0 for success, 1 for failure)
-        """
+        """Run tests or sweep mode."""
+        if self.sweep:
+            return self.run_sweep()
+
         print("=" * 40)
         print("      Starting GPU System Tests")
         print(f"      Source:  {self.src}")
@@ -1320,13 +1458,11 @@ class GPUTestRunner:
         print(f"      Root:    {self.test_root}")
         print(f"      Pattern: {self.search_pattern}")
         print("=" * 40)
-        
-        # Find test files
+
         test_files = self.find_test_files()
         if not test_files:
             return 1
-        
-        # Run tests based on src/truth combination
+
         for test_file in test_files:
             if self.src == "assembly" and self.truth == "emu":
                 result = self.test_assembly_mode(test_file)
@@ -1339,34 +1475,29 @@ class GPUTestRunner:
             else:
                 print(f"{Colors.RED}Error:{Colors.NC} Invalid src/truth combination: {self.src}/{self.truth}")
                 return 1
-            
-            # Print result
+
             if result.passed:
                 print(f"{Colors.GREEN}[PASS]{Colors.NC}     {result.name} (t={result.threads}, b={result.blocks})")
                 self.pass_count += 1
             else:
                 print(f"{Colors.RED}[FAIL]{Colors.NC}     {result.name} (t={result.threads}, b={result.blocks})")
                 self.fail_count += 1
-        
-        # Cleanup
+
         if not self.skip_cleanup:
             self.cleanup()
-        
-        # Close debug logger
+
         self.debug_logger.close()
-        
-        # Print summary
+
         print("=" * 40)
         print("Summary")
         print(f"Passed:  {Colors.GREEN}{self.pass_count}{Colors.NC}")
         print(f"Failed:  {Colors.RED}{self.fail_count}{Colors.NC}")
-        
+
         if self.fail_count > 0:
             print(f"Check '{self.diff_dir}/' for logs and generated assembly.")
             return 1
-        
-        return 0
 
+        return 0
 
 def main():
     """Main entry point."""
@@ -1375,7 +1506,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
-    
+
     parser.add_argument(
         '--src', choices=['assembly', 'bin'], required=False,
         help='Source file type: assembly (.s files) or bin (.bin files)'
@@ -1424,13 +1555,29 @@ def main():
         '--simulator-output-file', type=str, default=None,
         help='Save simulator output to results/debug/<file> (use with --enable-simulator-output for dual output)'
     )
-    
+    parser.add_argument(
+        '--sweep', action='store_true',
+        help='Run sweep mode using a list of real per-case config TOML files'
+    )
+    parser.add_argument(
+        '--sweep-config', type=Path, default=None,
+        help='Path to sweep case definition TOML'
+    )
+    parser.add_argument(
+        '--sweep-inputs', nargs='+', default=None,
+        help='One or more test file patterns/paths for sweep mode (e.g. unit/ program/pixel/)'
+    )
+
     args = parser.parse_args()
-    
-    # If --clean is specified alone, just clean and exit
-    if args.clean and args.src is None and args.truth is None:
+
+    if args.clean and args.src is None and args.truth is None and not args.sweep:
         try:
-            runner = GPUTestRunner(None, None, None, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output, args.enable_simulator_output, args.simulator_output_file)
+            runner = GPUTestRunner(
+                None, None, None, args.config, args.clean, args.skip_cleanup,
+                args.enable_cycle_limit, args.max_cycles, args.debug_file,
+                args.debug_dual_output, args.enable_simulator_output,
+                args.simulator_output_file
+            )
             runner._clean_results()
             print(f"{Colors.GREEN}Results directory cleaned.{Colors.NC}")
             return 0
@@ -1439,20 +1586,54 @@ def main():
             import traceback
             traceback.print_exc()
             return 1
-    
-    # Otherwise, require --src and --truth
+
+    if args.sweep:
+        if args.src is None:
+            parser.error("--src is required with --sweep")
+        if args.sweep_config is None:
+            parser.error("--sweep-config is required with --sweep")
+
+        try:
+            runner = GPUTestRunner(
+                src=args.src,
+                truth=None,
+                search_pattern=args.pattern,
+                config_path=args.config,
+                clean=args.clean,
+                skip_cleanup=args.skip_cleanup,
+                enable_cycle_limit=args.enable_cycle_limit,
+                max_cycles=args.max_cycles,
+                debug_file=args.debug_file,
+                debug_dual_output=args.debug_dual_output,
+                enable_simulator_output=args.enable_simulator_output,
+                simulator_output_file=args.simulator_output_file,
+                sweep=True,
+                sweep_config=args.sweep_config,
+                sweep_inputs=args.sweep_inputs,
+            )
+            sys.exit(runner.run())
+        except Exception as e:
+            print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
     if args.src is None or args.truth is None:
-        parser.error("--src and --truth are required (unless using --clean alone)")
-    
+        parser.error("--src and --truth are required (unless using --clean alone or --sweep)")
+
     try:
-        runner = GPUTestRunner(args.src, args.truth, args.pattern, args.config, args.clean, args.skip_cleanup, args.enable_cycle_limit, args.max_cycles, args.debug_file, args.debug_dual_output, args.enable_simulator_output, args.simulator_output_file)
+        runner = GPUTestRunner(
+            args.src, args.truth, args.pattern, args.config, args.clean,
+            args.skip_cleanup, args.enable_cycle_limit, args.max_cycles,
+            args.debug_file, args.debug_dual_output,
+            args.enable_simulator_output, args.simulator_output_file
+        )
         sys.exit(runner.run())
     except Exception as e:
         print(f"{Colors.RED}Error:{Colors.NC} {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

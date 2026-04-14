@@ -15,6 +15,8 @@ class MemBranchJumpUnitConfig:
     
     ldst_buffer_size: int
     ldst_queue_size: int
+    block_size_words: int = 32
+    word_size_bytes: int = 4
 
     @classmethod
     def get_default_config(cls) -> MemBranchJumpUnitConfig:
@@ -23,7 +25,9 @@ class MemBranchJumpUnitConfig:
             branch_count=1,
             jump_count=1,
             ldst_buffer_size=1,
-            ldst_queue_size=4
+            ldst_queue_size=4,
+            block_size_words=32,
+            word_size_bytes=4,
         )
 
 @dataclass
@@ -126,7 +130,16 @@ class MemBranchJumpUnit(FunctionalUnit):
         for i in range(config.ldst_count):
             subunits.append(Branch(num=i * (num + 1), telemeter=telemeter))
             subunits.append(Jump(num=i * (num + 1), telemeter=telemeter))
-            subunits.append(Ldst_Fu(wb_buffer_size=config.ldst_buffer_size, ldst_q_size=config.ldst_queue_size, num=i * (num + 1), telemeter=telemeter))
+            subunits.append(
+                Ldst_Fu(
+                    wb_buffer_size=config.ldst_buffer_size,
+                    ldst_q_size=config.ldst_queue_size,
+                    block_size_words=config.block_size_words,
+                    word_size_bytes=config.word_size_bytes,
+                    num=i * (num + 1),
+                    telemeter=telemeter,
+                )
+            )
         super().__init__(subunits=subunits, num=num)
     
 class IntUnit(FunctionalUnit):

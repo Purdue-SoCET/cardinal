@@ -307,13 +307,13 @@ class SM:
             behind_latch=lsu_dcache_latch,
             forward_ifs_write={"DCache_LSU_Resp": dcache_lsu_forward},
             mem_req_if=dcache_mem_latch,
-            mem_resp_if=mem_dcache_latch
+            mem_resp_if=mem_dcache_latch,
+            cache_config=self.config.to_dcache_dict(),
         )
 
         fu_config = self._build_functional_unit_config()
-        # Note: block_size_words and word_size_bytes are deprecated and not used by Ldst_Fu
-        # fu_config.membranchjump_config.block_size_words = 4  # Standard
-        # fu_config.membranchjump_config.word_size_bytes = 4  # Standard 32-bit word
+        fu_config.membranchjump_config.block_size_words = self.config.dcache.block_size_words
+        fu_config.membranchjump_config.word_size_bytes = self.config.dcache.word_size_bytes
 
         fust      = fu_config.generate_fust_dict()
 

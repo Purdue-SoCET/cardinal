@@ -10,7 +10,7 @@ from simulator.utils.performance_counter.ldst import LdstPerfCount
 from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.instruction import Instruction
 from simulator.mem.dMemPackets import dMemResponse
-from simulator.mem_types import dCacheRequest, BLOCK_SIZE_WORDS, WORD_SIZE_BYTES
+from simulator.mem_types import dCacheRequest
 
 logger = logging.getLogger(__name__)
 
@@ -92,10 +92,20 @@ class FunctionalSubUnit(ABC):
         )
 
 class Ldst_Fu(FunctionalSubUnit):
-    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1, telemeter=None):
+    def __init__(
+        self,
+        num,
+        ldst_q_size=4,
+        wb_buffer_size=1,
+        block_size_words=32,
+        word_size_bytes=4,
+        telemeter=None,
+    ):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
         self.wb_buffer_size = wb_buffer_size
+        self.block_size_words = block_size_words
+        self.word_size_bytes = word_size_bytes
 
         self.wb_buffer = [] #completed dcache access buffer
 
@@ -167,9 +177,9 @@ class Ldst_Fu(FunctionalSubUnit):
             if instr != None:
                 print(f"LDST_FU: Accepting instruction from latch pc: {instr.pc}")
                 print(f"Servicing instruction: op: {instr.opcode} rd: {instr.rd} rs1: {instr.rs1} rs2: {instr.rs2} rdat1: {instr.rdat1} rdat2: {instr.rdat2}")
-                pm = pending_mem(instr)
+                pm = pending_mem(instr, self.block_size_words, self.word_size_bytes)
                 print(f"Formatting the instr into a pending mem type..: {pm.__dict__}")
-                self.ldst_q.append(pending_mem(instr))
+                self.ldst_q.append(pm)
         
         # Accept halt signal from the scheduler
         if self.sched_ldst_if.payload != None:
@@ -261,8 +271,10 @@ class Ldst_Fu(FunctionalSubUnit):
         return return_instr
 
 class pending_mem():
-    def __init__(self, instr) -> None:
+    def __init__(self, instr, block_size_words=32, word_size_bytes=4) -> None:
         self.instr: Instruction = instr
+        self.block_size_words = block_size_words
+        self.word_size_bytes = word_size_bytes
         self.finished_idx: List[int] = [0 for i in range(32)]
         self.write: bool
         self.mshr_idx: List[int] = [0 for i in range(32)]
@@ -378,7 +390,7 @@ class pending_mem():
 
     
     def parseMshrHit(self, payload):
-        num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+        num_bytes_block = self.block_size_words * self.word_size_bytes
         block_mask = ~(num_bytes_block - 1)
         incoming_block_addr = payload.address & block_mask
 

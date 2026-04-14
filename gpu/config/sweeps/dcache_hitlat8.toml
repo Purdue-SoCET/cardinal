@@ -1,0 +1,148 @@
+# ════════════════════════════════════════════════════════════════════════════
+# GPU SIMULATOR CONFIGURATION FILE
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Sweep case: dcache hit latency = 8 cycles
+#
+
+[paths]
+assembler_script = "assembler/assembler.py"
+opcodes = "assembler/opcodes.txt"
+emulator = "src/emulator/src/emulator.py"
+hex_bin_converter = "hex_bin_converter.py"
+
+[directories]
+diff_dir = "results/test_diffs"
+test_root_asm = "tests/assembly"
+test_root_bin = "tests/bin"
+expected_dir = "tests/exp"
+
+[files]
+raw_asm_output = "results/raw_instr.hex"
+formatted_instr = "results/formatted_instr.hex"
+meminit = "results/meminit.hex"
+meminit_bin = "results/meminit.bin"
+emu_output = "results/memgolden.hex"
+emu_temp_output = "src/emulator/src/memsim.hex"
+sim_output = "results/memsim.hex"
+final_expected = "results/final_expected_combined.hex"
+temp_cmd_log = "results/temp_command_output.txt"
+
+[test_parameters]
+default_start_pc = 0
+default_threads = 1024
+default_blocks = 1
+format = "hex"
+default_pattern = "*.s"
+
+[sm]
+sm_no = 0
+num_warps = 32
+num_preds = 32
+threads_per_warp = 32
+enable_tbs = true
+kernel_pointer_addr = 0xE7CDDDB8
+tb_size = 1024
+
+[mmio]
+kernel_entry_point = 0x0
+threads_per_block = 32
+num_blocks = 1
+total_threads = 32
+kernel_args_size = 0
+
+[memory]
+start_pc = 0x0
+latency = 2
+policy = "rr"
+
+[kernel]
+max_kernels_per_sm = 1
+
+[icache]
+cache_size = 32768
+block_size = 4
+associativity = 1
+
+[dcache]
+cache_size = 32768
+block_size = 4
+associativity = 1
+num_banks = 2
+num_sets_per_bank = 16
+num_ways = 8
+block_size_words = 32
+word_size_bytes = 4
+uuid_size = 8
+mshr_buffer_len = 16
+hit_latency = 8
+ram_latency_cycles = 200
+
+[functional_units]
+int_unit_count = 1
+fp_unit_count = 1
+special_unit_count = 1
+membranchjump_unit_count = 1
+
+[functional_units.int_unit]
+alu_count = 1
+mul_count = 1
+div_count = 1
+alu_latency = 1
+mul_latency = 2
+div_latency = 17
+
+[functional_units.fp_unit]
+alu_count = 1
+mul_count = 1
+div_count = 1
+sqrt_count = 0
+alu_latency = 1
+mul_latency = 4
+div_latency = 24
+sqrt_latency = 20
+
+[functional_units.special_unit]
+trig_count = 1
+inv_sqrt_count = 1
+conv_count = 1
+trig_latency = 16
+inv_sqrt_latency = 12
+conv_latency = 1
+
+[functional_units.membranchjump_unit]
+ldst_count = 1
+branch_count = 1
+jump_count = 1
+ldst_buffer_size = 1
+ldst_queue_size = 1
+
+[writeback.buffer_config]
+count_scheme = "buffer_per_fsu"
+size_scheme = "fixed"
+structure = "queue"
+primary_policy = "capacity_priority"
+secondary_policy = "age_priority"
+size = 8
+
+[register_file]
+num_banks = 2
+
+[predicate_register_file]
+num_banks = 1
+
+[test]
+test_file = "test.bin"
+test_file_type = "bin"
+tb_size = 32
+
+[perf_counter]
+enabled = true
+trace_enabled = false
+trace_start_cycle = 0
+trace_end_cycle = 0
+output_dir = "results/perf_data"
+summary_only = true
+enabled_units = []
+buffer_limit = 100000
+flight_recorder_enabled = false
