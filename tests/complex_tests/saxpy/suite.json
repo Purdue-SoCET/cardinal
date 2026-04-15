@@ -1,0 +1,176 @@
+{
+  "suite_name": "SAXPY Kernel Verification Suite",
+  "shared_config": {
+    "asm_source": {
+      "source": "tests/complex_tests/saxpy/saxpy.s"
+    },
+    "c_source": {
+      "source": "benchmark/kernels/saxpy.c",
+      "compiler_flags": "-O2 -DGPU_SIM"
+    }
+  },
+  "tests": [
+    {
+      "name": "SAXPY Standard - 1024 (ASM)",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate 1K Elements",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 1024 --scalar 2.0 --seed 42 --out_exp exp_std.hex"
+        },
+        {
+          "type": "asm_source",
+          "name": "Execute Kernel",
+          "execution": {
+            "threads": 1024,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_std.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_std.hex",
+        "float_tolerance": 0.0001
+      }
+    },
+    {
+      "name": "SAXPY C-Kernel Verification",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate C-Test Data",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 512 --scalar 3.14 --seed 777 --out_exp exp_c.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Compile and Execute C Kernel",
+          "execution": {
+            "threads": 512,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_c.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_c.hex",
+        "float_tolerance": 0.001
+      }
+    },
+    {
+      "name": "SAXPY Large - 2048",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate 2K Elements",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 2048 --scalar 5.5 --seed 123 --out_exp exp_large.hex"
+        },
+        {
+          "type": "asm_source",
+          "name": "Execute Kernel",
+          "execution": {
+            "threads": 2048,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_large.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_large.hex",
+        "float_tolerance": 0.001
+      }
+    },
+    {
+      "name": "SAXPY Very Large - 32x1024=32768",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate 32K Elements",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 32768 --scalar 5.5 --seed 123 --out_exp exp_vlarge.hex"
+        },
+        {
+          "type": "asm_source",
+          "name": "Execute Kernel",
+          "execution": {
+            "threads": 1024,
+            "blocks": 32,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_vlarge.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_vlarge.hex",
+        "float_tolerance": 0.001
+      }
+    },
+    {
+      "name": "SAXPY Scaled Edge Case",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate High Scalar Data",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 512 --scalar 128.75 --seed 999 --out_exp exp_edge.hex"
+        },
+        {
+          "type": "asm_source",
+          "name": "Execute Kernel",
+          "execution": {
+            "threads": 512,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_edge.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_edge.hex",
+        "float_tolerance": 0.005
+      }
+    },
+    {
+      "name": "SAXPY - more threads than elements",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Generate 512 elements with Pi Scalar",
+          "command": "python3 ../../../tests/complex_tests/saxpy/gen_saxpy.py --elements 512 --scalar 3.14159 --seed 999 --out_exp exp_thread_overflow.hex"
+        },
+        {
+          "type": "asm_source",
+          "name": "Execute Kernel",
+          "execution": {
+            "threads": 1024,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "saxpy_data.hex"
+            ],
+            "produces_mem": "actual_thread_overflow.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "exp_thread_overflow.hex",
+        "float_tolerance": 0.005
+      }
+    }
+  ]
+}
