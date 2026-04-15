@@ -1,0 +1,1092 @@
+mkdir -p build/
+mkdir -p build/output/
+gcc -DCPU_SIM -Wall -Wextra -g -o build/cpu_sim.out cpu_sim/main.c cpu_sim/primitive_assembly.c cpu_sim/obj_parser.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c kernels/vertexShader.c kernels/triangle.c kernels/pixel.c -lm
+cpu_sim/main.c:42:14: warning: unused parameter 'argc' [-Wunused-parameter]
+   42 | int main(int argc, char** argv) {
+      |              ^
+cpu_sim/main.c:42:27: warning: unused parameter 'argv' [-Wunused-parameter]
+   42 | int main(int argc, char** argv) {
+      |                           ^
+2 warnings generated.
+./build/cpu_sim.out
+Obj Parser: Loaded 35947 vertices, 69451 triangles from stanford-bunny.obj
+===== Frame 0 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.27 ms
+2. Primitive Assembly Time: 31.02 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24395
+Assembled Vertices: 73185
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 100.49 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 65.69 ms
+Total Frame Time: 377.87 ms
+
+===== Frame 0 Done =====
+
+===== Frame 1 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 29.98 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25024
+Assembled Vertices: 75072
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 101.93 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 51.60 ms
+Total Frame Time: 362.47 ms
+
+===== Frame 1 Done =====
+
+===== Frame 2 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.82 ms
+2. Primitive Assembly Time: 31.14 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25564
+Assembled Vertices: 76692
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 101.05 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 50.69 ms
+Total Frame Time: 362.28 ms
+
+===== Frame 2 Done =====
+
+===== Frame 3 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.81 ms
+2. Primitive Assembly Time: 30.95 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25633
+Assembled Vertices: 76899
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 100.96 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 49.63 ms
+Total Frame Time: 359.34 ms
+
+===== Frame 3 Done =====
+
+===== Frame 4 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.85 ms
+2. Primitive Assembly Time: 31.39 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25711
+Assembled Vertices: 77133
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 100.44 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 47.68 ms
+Total Frame Time: 355.20 ms
+
+===== Frame 4 Done =====
+
+===== Frame 5 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.87 ms
+2. Primitive Assembly Time: 32.07 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 26028
+Assembled Vertices: 78084
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 103.63 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 47.36 ms
+Total Frame Time: 369.87 ms
+
+===== Frame 5 Done =====
+
+===== Frame 6 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.90 ms
+2. Primitive Assembly Time: 31.91 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 26164
+Assembled Vertices: 78492
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 106.60 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.70 ms
+Total Frame Time: 381.99 ms
+
+===== Frame 6 Done =====
+
+===== Frame 7 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.91 ms
+2. Primitive Assembly Time: 31.94 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 26035
+Assembled Vertices: 78105
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 102.45 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.26 ms
+Total Frame Time: 363.28 ms
+
+===== Frame 7 Done =====
+
+===== Frame 8 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.00 ms
+2. Primitive Assembly Time: 31.99 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25714
+Assembled Vertices: 77142
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 100.09 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 38.07 ms
+Total Frame Time: 360.31 ms
+
+===== Frame 8 Done =====
+
+===== Frame 9 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.17 ms
+2. Primitive Assembly Time: 33.14 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 25314
+Assembled Vertices: 75942
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 97.70 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 36.85 ms
+Total Frame Time: 348.87 ms
+
+===== Frame 9 Done =====
+
+===== Frame 10 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 32.30 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24720
+Assembled Vertices: 74160
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 95.82 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 32.93 ms
+Total Frame Time: 349.13 ms
+
+===== Frame 10 Done =====
+
+===== Frame 11 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 32.41 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24229
+Assembled Vertices: 72687
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.53 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 30.61 ms
+Total Frame Time: 338.78 ms
+
+===== Frame 11 Done =====
+
+===== Frame 12 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.03 ms
+2. Primitive Assembly Time: 32.76 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23887
+Assembled Vertices: 71661
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.94 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 28.64 ms
+Total Frame Time: 339.13 ms
+
+===== Frame 12 Done =====
+
+===== Frame 13 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.16 ms
+2. Primitive Assembly Time: 32.94 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23667
+Assembled Vertices: 71001
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.84 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 27.50 ms
+Total Frame Time: 342.93 ms
+
+===== Frame 13 Done =====
+
+===== Frame 14 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.03 ms
+2. Primitive Assembly Time: 33.61 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23785
+Assembled Vertices: 71355
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.46 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 25.99 ms
+Total Frame Time: 336.99 ms
+
+===== Frame 14 Done =====
+
+===== Frame 15 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.95 ms
+2. Primitive Assembly Time: 32.66 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24163
+Assembled Vertices: 72489
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.59 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 28.97 ms
+Total Frame Time: 338.73 ms
+
+===== Frame 15 Done =====
+
+===== Frame 16 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.12 ms
+2. Primitive Assembly Time: 32.63 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24606
+Assembled Vertices: 73818
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 92.39 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 28.46 ms
+Total Frame Time: 328.39 ms
+
+===== Frame 16 Done =====
+
+===== Frame 17 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 31.94 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24671
+Assembled Vertices: 74013
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.35 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 31.08 ms
+Total Frame Time: 344.31 ms
+
+===== Frame 17 Done =====
+
+===== Frame 18 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 32.95 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24657
+Assembled Vertices: 73971
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 92.92 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 29.68 ms
+Total Frame Time: 340.02 ms
+
+===== Frame 18 Done =====
+
+===== Frame 19 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.08 ms
+2. Primitive Assembly Time: 32.89 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24713
+Assembled Vertices: 74139
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.90 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 34.73 ms
+Total Frame Time: 347.78 ms
+
+===== Frame 19 Done =====
+
+===== Frame 20 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 31.77 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24887
+Assembled Vertices: 74661
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.17 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 32.00 ms
+Total Frame Time: 341.29 ms
+
+===== Frame 20 Done =====
+
+===== Frame 21 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 31.87 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24661
+Assembled Vertices: 73983
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 94.81 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 33.30 ms
+Total Frame Time: 342.22 ms
+
+===== Frame 21 Done =====
+
+===== Frame 22 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.95 ms
+2. Primitive Assembly Time: 31.60 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24551
+Assembled Vertices: 73653
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.31 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 36.60 ms
+Total Frame Time: 357.71 ms
+
+===== Frame 22 Done =====
+
+===== Frame 23 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.18 ms
+2. Primitive Assembly Time: 35.38 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24513
+Assembled Vertices: 73539
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 97.86 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 35.47 ms
+Total Frame Time: 369.76 ms
+
+===== Frame 23 Done =====
+
+===== Frame 24 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.43 ms
+2. Primitive Assembly Time: 35.07 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 24324
+Assembled Vertices: 72972
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 102.39 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 40.00 ms
+Total Frame Time: 388.07 ms
+
+===== Frame 24 Done =====
+
+===== Frame 25 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.30 ms
+2. Primitive Assembly Time: 33.90 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23872
+Assembled Vertices: 71616
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 100.84 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 41.59 ms
+Total Frame Time: 379.65 ms
+
+===== Frame 25 Done =====
+
+===== Frame 26 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 31.78 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23388
+Assembled Vertices: 70164
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 98.12 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 42.09 ms
+Total Frame Time: 368.58 ms
+
+===== Frame 26 Done =====
+
+===== Frame 27 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.93 ms
+2. Primitive Assembly Time: 31.26 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 22884
+Assembled Vertices: 68652
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 88.73 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 38.72 ms
+Total Frame Time: 350.12 ms
+
+===== Frame 27 Done =====
+
+===== Frame 28 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.01 ms
+2. Primitive Assembly Time: 30.47 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 22684
+Assembled Vertices: 68052
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 90.13 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 39.70 ms
+Total Frame Time: 340.43 ms
+
+===== Frame 28 Done =====
+
+===== Frame 29 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.96 ms
+2. Primitive Assembly Time: 30.83 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 22625
+Assembled Vertices: 67875
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 86.79 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 40.73 ms
+Total Frame Time: 340.34 ms
+
+===== Frame 29 Done =====
+
+===== Frame 30 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 29.55 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 22485
+Assembled Vertices: 67455
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 86.52 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 41.94 ms
+Total Frame Time: 350.02 ms
+
+===== Frame 30 Done =====
+
+===== Frame 31 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.91 ms
+2. Primitive Assembly Time: 30.50 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 22217
+Assembled Vertices: 66651
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 91.29 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 43.15 ms
+Total Frame Time: 348.94 ms
+
+===== Frame 31 Done =====
+
+===== Frame 32 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 29.11 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 21844
+Assembled Vertices: 65532
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 85.72 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.13 ms
+Total Frame Time: 358.61 ms
+
+===== Frame 32 Done =====
+
+===== Frame 33 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.00 ms
+2. Primitive Assembly Time: 29.13 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 20912
+Assembled Vertices: 62736
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 89.43 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.70 ms
+Total Frame Time: 362.26 ms
+
+===== Frame 33 Done =====
+
+===== Frame 34 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 27.73 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 19841
+Assembled Vertices: 59523
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 79.71 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.08 ms
+Total Frame Time: 345.57 ms
+
+===== Frame 34 Done =====
+
+===== Frame 35 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.95 ms
+2. Primitive Assembly Time: 26.39 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 19143
+Assembled Vertices: 57429
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 76.64 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.05 ms
+Total Frame Time: 333.59 ms
+
+===== Frame 35 Done =====
+
+===== Frame 36 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.01 ms
+2. Primitive Assembly Time: 26.87 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 18591
+Assembled Vertices: 55773
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 76.19 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 45.88 ms
+Total Frame Time: 334.79 ms
+
+===== Frame 36 Done =====
+
+===== Frame 37 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.01 ms
+2. Primitive Assembly Time: 25.67 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 18184
+Assembled Vertices: 54552
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 74.01 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 44.58 ms
+Total Frame Time: 327.60 ms
+
+===== Frame 37 Done =====
+
+===== Frame 38 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.95 ms
+2. Primitive Assembly Time: 27.22 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 17958
+Assembled Vertices: 53874
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 80.23 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 47.70 ms
+Total Frame Time: 337.37 ms
+
+===== Frame 38 Done =====
+
+===== Frame 39 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 25.77 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 17737
+Assembled Vertices: 53211
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 75.24 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 46.16 ms
+Total Frame Time: 336.26 ms
+
+===== Frame 39 Done =====
+
+===== Frame 40 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 25.86 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 17462
+Assembled Vertices: 52386
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 75.14 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 48.26 ms
+Total Frame Time: 333.27 ms
+
+===== Frame 40 Done =====
+
+===== Frame 41 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 26.16 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 17205
+Assembled Vertices: 51615
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 75.51 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 46.42 ms
+Total Frame Time: 333.78 ms
+
+===== Frame 41 Done =====
+
+===== Frame 42 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 25.81 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 16629
+Assembled Vertices: 49887
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 71.41 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 48.06 ms
+Total Frame Time: 340.29 ms
+
+===== Frame 42 Done =====
+
+===== Frame 43 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 26.40 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15946
+Assembled Vertices: 47838
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 70.24 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 46.85 ms
+Total Frame Time: 331.12 ms
+
+===== Frame 43 Done =====
+
+===== Frame 44 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 27.32 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15472
+Assembled Vertices: 46416
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 69.09 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 42.44 ms
+Total Frame Time: 318.05 ms
+
+===== Frame 44 Done =====
+
+===== Frame 45 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.01 ms
+2. Primitive Assembly Time: 25.93 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15133
+Assembled Vertices: 45399
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 66.75 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 43.59 ms
+Total Frame Time: 319.63 ms
+
+===== Frame 45 Done =====
+
+===== Frame 46 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.97 ms
+2. Primitive Assembly Time: 25.92 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15069
+Assembled Vertices: 45207
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 66.45 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 40.56 ms
+Total Frame Time: 316.60 ms
+
+===== Frame 46 Done =====
+
+===== Frame 47 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 25.67 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15316
+Assembled Vertices: 45948
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 66.99 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 43.38 ms
+Total Frame Time: 316.11 ms
+
+===== Frame 47 Done =====
+
+===== Frame 48 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 25.68 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 15966
+Assembled Vertices: 47898
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 72.38 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 43.04 ms
+Total Frame Time: 324.02 ms
+
+===== Frame 48 Done =====
+
+===== Frame 49 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.18 ms
+2. Primitive Assembly Time: 27.44 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 16787
+Assembled Vertices: 50361
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 74.11 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 47.32 ms
+Total Frame Time: 336.75 ms
+
+===== Frame 49 Done =====
+
+===== Frame 50 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 25.85 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 17804
+Assembled Vertices: 53412
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 78.96 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 48.85 ms
+Total Frame Time: 354.35 ms
+
+===== Frame 50 Done =====
+
+===== Frame 51 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.96 ms
+2. Primitive Assembly Time: 25.88 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 18788
+Assembled Vertices: 56364
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 89.74 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 51.00 ms
+Total Frame Time: 343.62 ms
+
+===== Frame 51 Done =====
+
+===== Frame 52 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.94 ms
+2. Primitive Assembly Time: 26.82 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 19351
+Assembled Vertices: 58053
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 83.81 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 56.48 ms
+Total Frame Time: 352.08 ms
+
+===== Frame 52 Done =====
+
+===== Frame 53 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 26.44 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 19864
+Assembled Vertices: 59592
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 83.73 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 54.28 ms
+Total Frame Time: 354.81 ms
+
+===== Frame 53 Done =====
+
+===== Frame 54 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 27.38 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 20243
+Assembled Vertices: 60729
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 84.15 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 53.49 ms
+Total Frame Time: 352.89 ms
+
+===== Frame 54 Done =====
+
+===== Frame 55 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 26.91 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 20388
+Assembled Vertices: 61164
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 85.17 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 54.32 ms
+Total Frame Time: 348.79 ms
+
+===== Frame 55 Done =====
+
+===== Frame 56 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.92 ms
+2. Primitive Assembly Time: 27.28 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 20990
+Assembled Vertices: 62970
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 88.69 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 53.26 ms
+Total Frame Time: 362.89 ms
+
+===== Frame 56 Done =====
+
+===== Frame 57 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.98 ms
+2. Primitive Assembly Time: 28.79 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 21959
+Assembled Vertices: 65877
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.60 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 53.44 ms
+Total Frame Time: 371.44 ms
+
+===== Frame 57 Done =====
+
+===== Frame 58 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 4.15 ms
+2. Primitive Assembly Time: 28.85 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23001
+Assembled Vertices: 69003
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 93.53 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 52.70 ms
+Total Frame Time: 361.54 ms
+
+===== Frame 58 Done =====
+
+===== Frame 59 =====
+Launched Vertex Shader 36 blocks
+1. Vertex Shader Time: 3.99 ms
+2. Primitive Assembly Time: 28.91 ms
+
+[Primitive Assembly Result]
+Input Triangles: 69451
+Output Triangles: 23808
+Assembled Vertices: 71424
+--- Triangle Test ---
+--- Triangle Test Done ---
+3. Triangle Kernel Time: 98.25 ms
+Launched Pixel Shader 625 blocks
+4. Pixel Kernel Time: 53.84 ms
+Total Frame Time: 367.33 ms
+
+===== Frame 59 Done =====
+

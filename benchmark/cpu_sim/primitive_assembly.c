@@ -54,7 +54,6 @@ static int reject_outside_frustum(vertex_t v0, vertex_t v1, vertex_t v2) {
     if (v0.coords.y < -v0.w && v1.coords.y < -v1.w && v2.coords.y < -v2.w) return 1; // bottom
     if (v0.coords.y >  v0.w && v1.coords.y >  v1.w && v2.coords.y >  v2.w) return 1; // top
     if (v0.coords.z < -v0.w && v1.coords.z < -v1.w && v2.coords.z < -v2.w) return 1; // near
-    // if (v0.coords.z < 0.0f && v1.coords.z < 0.0f && v2.coords.z < 0.0f) return 1; // near
     if (v0.coords.z >  v0.w && v1.coords.z >  v1.w && v2.coords.z >  v2.w) return 1; // far
     return 0;
 }

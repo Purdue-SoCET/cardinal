@@ -10,8 +10,11 @@
 
 void kernel_triangle(void* arg) {
     triangle_arg_t* args = (triangle_arg_t*) arg;
-    int ix = threadIdx % args->bb_size[0];
-    int iy = threadIdx / args->bb_size[0];
+    int i = blockIdx * blockDim + threadIdx;
+    int total_work = args->bb_size[0] * args->bb_size[1];
+    if (i >= total_work) return;
+    int ix = i % args->bb_size[0];
+    int iy = i / args->bb_size[0];
 
     int u = ix + args->bb_start[0];
     int v = iy + args->bb_start[1];

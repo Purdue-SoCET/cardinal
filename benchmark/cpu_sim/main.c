@@ -21,6 +21,8 @@ uint8_t* memory_ptr;
 #define OUTPUT_W 800
 #define OUTPUT_H 800
 
+#define THREADS_PER_BLOCK 1024
+
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
 #define PIXEL_DEBUG 0
@@ -41,7 +43,6 @@ int main(int argc, char** argv) {
     int frame = 0;
     
     uint8_t* memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
-    // uint8_t* memory_ptr = memory_base;
 
     // call obj_parser to load teapot geometry
     int num_verts = 0;
@@ -80,6 +81,7 @@ int main(int argc, char** argv) {
         vertex_input_buffer[i].v = uv_tile * (z - min_z) / range_z;
     }
 
+    // Scaling for bunny
     float model_scale = 300.0f; // bunny = 300.0f, teapot = 1.0f
     float offset_y    = -20.0f; // bunny = -20.0f, teapot = 0.0f
 
@@ -120,7 +122,7 @@ int main(int argc, char** argv) {
         memory_ptr = memory_base;
 
         // Texture
-        // const int text_w = 64, text_h = 64;
+        // const int text_w = 10, text_h = 10;
         // ALLOCATE_MEM(texture, texture_t, 1);
         // ALLOCATE_MEM(texture_buffer, vector_t, (text_w * text_h));
         // texture->w = text_w; texture->h = text_h;
@@ -264,7 +266,13 @@ int main(int argc, char** argv) {
         
         /*** Stage 1: Run vertex shader kernel ***/
         vertex_start = clock();
-        run_kernel(kernel_vertexShader, 1, num_verts, (void*)vertex_args);
+        /* Vertex Shader Kernel Launch */
+        {
+            int total_threads = num_verts;
+            int num_blocks = (total_threads + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+            run_kernel(kernel_vertexShader, num_blocks, THREADS_PER_BLOCK, (void*)vertex_args);
+            printf("Launched Vertex Shader %d blocks\n", num_blocks);
+        }
         vertex_end = clock();
         vertex_ms = (double)(vertex_end - vertex_start) * 1000.0 / CLOCKS_PER_SEC;
         printf("1. Vertex Shader Time: %.2f ms\n", vertex_ms);
@@ -333,7 +341,12 @@ int main(int argc, char** argv) {
             };
             matrix_inversion((float*)m, (float*) triangle_args->bc_im);
 
-            run_kernel(kernel_triangle, 1, bb_width * bb_height, (void*)triangle_args);
+            /* Triangle Kernel Launch */
+            {
+                int total_threads = bb_width * bb_height;
+                int num_blocks = (total_threads + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+                run_kernel(kernel_triangle, num_blocks, THREADS_PER_BLOCK, (void*)triangle_args);
+            }
         }
         printf("--- Triangle Test Done ---\n");
         triangle_end = clock();
@@ -359,7 +372,13 @@ int main(int argc, char** argv) {
         pixel_args->texture_buffer = *texture;
 
         pixel_start = clock();
-        run_kernel(kernel_pixel, 1, frame_w * frame_h, (void*)pixel_args);
+        /* Pixel Shader Kernel Launch */
+        {
+            int total_threads = frame_w * frame_h;
+            int num_blocks = (total_threads + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+            run_kernel(kernel_pixel, num_blocks, THREADS_PER_BLOCK, (void*)pixel_args);
+            printf("Launched Pixel Shader %d blocks\n", num_blocks);
+        }
         pixel_end = clock();
         pixel_ms = (double)(pixel_end - pixel_start) * 1000.0 / CLOCKS_PER_SEC;
         printf("4. Pixel Kernel Time: %.2f ms\n", pixel_ms);

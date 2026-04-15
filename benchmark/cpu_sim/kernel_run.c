@@ -18,7 +18,9 @@ void run_kernel(kernel_ptr_t kernel, int grid_dim, int block_dim, void* args) {
             // printf("Launching kernel %d\n", threadIdx);
             kernel(args);
         }
+        // printf("Finished block %d of %d\n", blockIdx - 1, grid_dim);
     }
+    // printf("Finished all %d blocks\n", grid_dim);
 }
 
 void createPPMFile(char* fileName, int* pixels){

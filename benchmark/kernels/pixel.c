@@ -8,15 +8,15 @@ void get_texture(vector_t* col, texture_t texture, float u, float v);
 
 void kernel_pixel(void* arg) {
     pixel_arg_t* args = (pixel_arg_t*) arg;
-
+    int i = blockIdx * blockDim + threadIdx;
     int pixel_count = args->buffer_w * args->buffer_h;
-    if (threadIdx >= pixel_count) return;
+    if (i >= pixel_count) return;
     
     int screen_x, screen_y;
-    screen_x = threadIdx % args->buffer_w;
-    screen_y = threadIdx / args->buffer_w;
+    screen_x = i % args->buffer_w;
+    screen_y = i / args->buffer_w;
 
-    int tag = args->tag_buffer[threadIdx];
+    int tag = args->tag_buffer[i];
     if(tag < 0) return;
 
     triangle_t tri = args->surviving_triangle_index_buffer[tag];
@@ -87,5 +87,5 @@ void kernel_pixel(void* arg) {
     if (final_color.z > 1.0f) final_color.z = 1.0f;
 
     // save final color to frame buffer
-    args->frame_buffer[threadIdx] = final_color;
+    args->frame_buffer[i] = final_color;
 }

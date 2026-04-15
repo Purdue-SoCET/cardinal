@@ -9,9 +9,12 @@ GPU_CC = python3 ../../gpu-ppci-compiler/compile_twig.py
 GPU_CFLAGS = 
 
 # CPU files
-CPU_SRCS = cpu_sim/main.c cpu_sim/primitive_assembly.c cpu_sim/obj_parser.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c \
-       kernels/vertexShader.c kernels/triangle.c kernels/pixel.c
+CPU_COMMON_SRCS = cpu_sim/primitive_assembly.c cpu_sim/obj_parser.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c \
+	kernels/vertexShader.c kernels/triangle.c kernels/pixel.c
+CPU_SRCS = cpu_sim/main.c $(CPU_COMMON_SRCS)
+CPU_CLIP_SRCS = cpu_sim/clipping_main.c $(CPU_COMMON_SRCS)
 CPU_TARGET = cpu_sim.out
+CPU_CLIP_TARGET = clipping_sim.out
 CPU_PPM = frame_000.ppm
 
 CPU_BUILD_DIR = build/
@@ -31,14 +34,23 @@ all: output.png
 
 run: $(CPU_PPM)
 
+run_clip: $(CPU_CLIP_TARGET)
+	./$(CPU_BUILD_DIR)$(CPU_CLIP_TARGET)
+
 # Compiles all found kernels
 gpu_all: $(GPU_TARGETS)
 
-$(CPU_TARGET): $(SRCS)
+$(CPU_TARGET): $(CPU_SRCS)
  	# Make build dir if it does not exist
 	mkdir -p $(CPU_BUILD_DIR)
 	mkdir -p $(CPU_OUTPUT_DIR)
 	$(CPU_CC) $(CPU_CFLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
+
+$(CPU_CLIP_TARGET): $(CPU_CLIP_SRCS)
+	# Make build dir if it does not exist
+	mkdir -p $(CPU_BUILD_DIR)
+	mkdir -p $(CPU_OUTPUT_DIR)
+	$(CPU_CC) $(CPU_CFLAGS) -o $(CPU_BUILD_DIR)$(CPU_CLIP_TARGET) $(CPU_CLIP_SRCS) $(CPU_LDFLAGS)
 
 $(CPU_PPM): $(CPU_TARGET)
 	./$(CPU_BUILD_DIR)$(CPU_TARGET)
@@ -52,11 +64,11 @@ clean:
 
 
 # Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'
-$(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)
+$(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRCS)
 	mkdir -p $(GPU_OUTPUT_DIR)
 	$(GPU_CC) $(GPU_CFLAGS) $^
 	mv kernels/*.ir $(GPU_OUTPUT_DIR)
 	mv kernels/*.s $(GPU_OUTPUT_DIR)
 
-# Tell 'make' that 'all', 'run', and 'clean' are not files
-.PHONY: all run clean
+# Tell 'make' that 'all', 'run', 'run_clip', and 'clean' are not files
+.PHONY: all run run_clip clean

@@ -52,7 +52,7 @@ int count_obj_elements(const char* filename, int* out_num_verts, int* out_num_tr
 
     int v_count = 0;
     int f_count = 0;
-    char line[128];
+    char line[1024];
 
     if (!out_num_verts || !out_num_tris) {
         printf("Error: Output pointers cannot be NULL\n");
@@ -88,7 +88,7 @@ int load_obj_data(const char* filename, vertex_t* vertex_input_buffer, triangle_
         return 0;
     }
 
-    char line[128];
+    char line[1024];
     int v_idx = 0;
     int f_idx = 0;
 
@@ -181,7 +181,7 @@ int obj_parser(const char* filename, vertex_t** vertex_input_buffer, int* out_nu
 // int main() {
 //     int v_count = 0;
 //     int f_count = 0;
-//     const char* filename = "teapot.obj";
+//     const char* filename = "xyzrgb_dragon.obj";
 
 //     printf("Test Start: %s reading\n", filename);
 
