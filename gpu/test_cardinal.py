@@ -745,10 +745,11 @@ class GPUTestRunner:
                 max_cycles = self.max_cycles if self.enable_cycle_limit else float('inf')
 
                 while cycle < max_cycles:
-                    if hasattr(sm.pipeline.get('scheduler'), 'system_finished'):
-                        if sm.pipeline['scheduler'].system_finished:
-                            break
-
+                    # Check if scheduler indicates completion
+                    if sm.pipeline['tbs'].kern_finished:
+                        break
+                    
+                    # Tick all pipeline stages
                     sm.tick()
                     cycle += 1
 

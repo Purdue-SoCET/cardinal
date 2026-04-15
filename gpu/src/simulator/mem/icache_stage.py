@@ -10,11 +10,13 @@ from simulator.stage import Stage
 from simulator.instruction import Instruction
 from simulator.mem_types import ICacheEntry, MemRequest, FetchRequest, DecodeType
 from simulator.mem.memory import Mem
+from simulator.utils.performance_counter.cache import CachePerfCount
+from simulator.utils.performance_counter.telemeter import Telemeter
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from collections import deque
 from datetime import datetime
-from bitstring import Bits 
+from bitstring import Bits
 
 
 class ICacheStage(Stage):
@@ -27,6 +29,7 @@ class ICacheStage(Stage):
         mem_resp_if,
         cache_config: Dict[str, int],
         forward_ifs_write: Optional[Dict[str, ForwardingIF]] = None,
+        telemeter: Optional[Telemeter] = None,
     ):
         super().__init__(
             name=name,
@@ -34,6 +37,10 @@ class ICacheStage(Stage):
             ahead_latch=ahead_latch,
             forward_ifs_write=forward_ifs_write or {},
         )
+
+        self.perf_count = CachePerfCount(name=name)
+        if telemeter is not None:
+            telemeter.register_unit(self.perf_count)
 
         # Cache geometry
         self.cache_size = cache_config.get("cache_size", 32 * 1024)
@@ -96,32 +103,35 @@ class ICacheStage(Stage):
 
     # ---------------- Main compute ----------------
     def compute(self):
-        # print(f"[ICache] Received request: {self.behind_latch.snoop()}")
+        # Perf counter signals for this cycle
+        _is_hit = False
+        _is_miss = False
+        _is_busy = False
+        _is_stalled = False
 
         # req in flight to memory
         if self.pending:
-            # memory returs value
+            _is_busy = True
+            # memory returns value
             if self.mem_resp_if.valid:
                 resp = self.mem_resp_if.pop()
-                # print(f"[I$] Recieved Response from Memory: {resp}")
 
                 pc_int_resp = resp.pc.int if isinstance(resp.pc, Bits) else int(resp.pc)
                 data_bits = Bits(resp.packet)
 
-                # if data_bits is None:
-                    # print("[I$] WARNING: MemResp has no data_bits")
-
                 self._fill_from_response(pc_int_resp, data_bits)
 
-                # print("[I$] Returned value from memory")
                 self._send_valid(True, data_bits[24], resp.warp_id)
                 self.pending = False
                 if self.ahead_latch.ready_for_push():
                     self.ahead_latch.push(resp)
+                else:
+                    _is_stalled = True
 
-            # still pending
+            # still pending — stalled waiting on memory
             else:
                 print(f"[I$] waiting on memory")
+                _is_stalled = True
                 self._send_valid(False, False, 0)
 
                 if self.req_latched:
@@ -133,22 +143,26 @@ class ICacheStage(Stage):
         else:
             # check to see if scheduler is even fetching
             if self.behind_latch.valid:
+                _is_busy = True
                 fetch = self.behind_latch.pop()
                 pc_int = fetch.pc.int if isinstance(fetch.pc, Bits) else int(fetch.pc)
 
                 line_lookup = self._lookup(pc_int)
-                
-                # in the cache
+
+                # in the cache — hit
                 if line_lookup:
+                    _is_hit = True
                     self._send_valid(True, line_lookup.data[24], fetch.warp_id)
                     fetch.packet = line_lookup.data
 
-                    # push
                     if self.ahead_latch.ready_for_push():
                         self.ahead_latch.push(fetch)
+                    else:
+                        _is_stalled = True
 
-                # not in cache
+                # not in cache — miss
                 else:
+                    _is_miss = True
                     self._send_valid(False, False, 0)
                     self.pending = True
 
@@ -172,9 +186,16 @@ class ICacheStage(Stage):
                         print("[I$] Memrequest STALLED due tobusy memory")
                         self.req_latched = True
 
-            # if scheduler isnt fetching and if theres no pending memory request
+            # scheduler not fetching and no pending request — idle
             else:
                 self._send_valid(True, False, 0)
+
+        self.perf_count.record_cycle(
+            is_stalled=_is_stalled,
+            is_busy=_is_busy,
+            is_hit=_is_hit,
+            is_miss=_is_miss,
+        )
 
         self.cycle += 1
         return

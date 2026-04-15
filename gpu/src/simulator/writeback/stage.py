@@ -34,7 +34,8 @@ class WritebackStage(Stage):
         pred_reg_file: PredicateRegFile,
         forward_ifs_write: Dict[str, ForwardingIF] = None,
         forward_ifs_read = None,
-        fsu_names: list[str] = None
+        fsu_names: list[str] = None,
+        telemeter = None
     ):
         super().__init__(name="Writeback_Stage")
         self.behind_latches = behind_latches
@@ -56,7 +57,8 @@ class WritebackStage(Stage):
             regfile_config=rf_config,
             pred_regfile_config=pred_rf_config,
             behind_latches=behind_latches,
-            fsu_names=fsu_names
+            fsu_names=fsu_names,
+            telemeter=telemeter
         )
 
     def compute(self) -> None:
@@ -165,6 +167,19 @@ class WritebackStage(Stage):
                 else:
                     raise ValueError("For BUFFER_PER_BANK scheme, target_bank must be an integer (or string) and target_regfile must be specified to determine the correct buffer.")              
 
+    def finalize_perf_counts(self, directory: str = ".") -> dict:
+        """Finalize and export all performance counters for writeback buffers.
+        
+        Parameters
+        ----------
+        directory : Output directory for performance counter files
+        
+        Returns
+        -------
+        dict : Combined performance counter summary for all buffers
+        """
+        return self.wb_buffer.finalize_perf_counts(directory)
+    
     @classmethod
     def create_pipeline_stage(
         cls, 
@@ -175,7 +190,8 @@ class WritebackStage(Stage):
         reg_file: RegisterFile, 
         pred_reg_file: PredicateRegFile, 
         forward_ifs_write: Dict[str, ForwardingIF],
-        fsu_names: list[str]
+        fsu_names: list[str],
+        telemeter = None
     ) -> WritebackStage:
         return cls(
             wb_config=wb_config, 
@@ -185,5 +201,6 @@ class WritebackStage(Stage):
             reg_file=reg_file, 
             pred_reg_file=pred_reg_file, 
             forward_ifs_write=forward_ifs_write, 
-            fsu_names=fsu_names
+            fsu_names=fsu_names,
+            telemeter=telemeter
         )

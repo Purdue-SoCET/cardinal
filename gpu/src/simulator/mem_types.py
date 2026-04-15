@@ -17,28 +17,7 @@ sys.path.append(str(parent))
 from common.custom_enums_multi import Op
 
 '''FROM DCACHE'''
-# --- Cache Configuration ---
-NUM_BANKS = 2           # Number of banks
-NUM_SETS_PER_BANK = 16  # Number of sets per bank
-NUM_WAYS = 8            # Number of ways in each set
-BLOCK_SIZE_WORDS = 32   # Number of words in each block
-WORD_SIZE_BYTES = 4     # Size of each word in BYTE
-CACHE_SIZE = 32768      # Cache size [Bytes]
-UUID_SIZE = 8           # From [UUID_SIZE-1:0] in lockup_free_cache.sv
-
-# Address bit lengths
-BYTE_OFF_BIT_LEN = (WORD_SIZE_BYTES - 1).bit_length()     # 4 - 1 = 3 -> 2 bits representation
-BLOCK_OFF_BIT_LEN = (BLOCK_SIZE_WORDS - 1).bit_length() # 32 - 1 = 31 -> 5 bits representation
-BANK_ID_BIT_LEN = (NUM_BANKS - 1).bit_length()          # 2 - 1 = 1 -> 1 bit representation
-SET_INDEX_BIT_LEN = (NUM_SETS_PER_BANK - 1).bit_length()  # 16 - 1 = 15 -> 4 bit representation
-
-# Tag = 32 - (2 + 5 + 1 + 4) = 20 bits
-TAG_BIT_LEN = 32 - (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)
-
-# Other constants
-MSHR_BUFFER_LEN = 16    # The number of latches inside each MSHR buffer/Number of miss requests that can fit in each buffer
-RAM_LATENCY_CYCLES = 200    # Static latency for each RAM access
-HIT_LATENCY = 2         # Parameterized cache hit latency
+# Cache configuration constants have been moved to config.toml / config.py [dcache] section.
 
 @dataclass
 class Addr:
@@ -51,31 +30,32 @@ class Addr:
     full_addr: int
     block_addr_val: int     # The block address of the request
 
-    def __init__(self, addr: int):
+    def __init__(self, addr: int, byte_off_bits: int, block_off_bits: int,
+                 bank_id_bits: int, set_idx_bits: int, tag_bits: int):
         self.full_addr = addr
-        
+
         # Gets the byte offset (which byte within a word)
         addr_temp = addr
-        self.byte_offset = addr_temp & ((1 << BYTE_OFF_BIT_LEN) - 1) # Gets the lowest BYTE_OFF_BIT_LEN bits
-        addr_temp >>= BYTE_OFF_BIT_LEN  # Removes the lowest BYTE_OFF_BIT_LEN bits for further processing
-        
+        self.byte_offset = addr_temp & ((1 << byte_off_bits) - 1)
+        addr_temp >>= byte_off_bits
+
         # Gets the block offset (which word within a cache line)
-        self.block_offset = addr_temp & ((1 << BLOCK_OFF_BIT_LEN) - 1)  # Gets the lowest BLOCK_OFF_BIT_LEN bits
-        addr_temp >>= BLOCK_OFF_BIT_LEN # Removes the lowest BLOCK_OFF_BIT_LEN bits
-        
+        self.block_offset = addr_temp & ((1 << block_off_bits) - 1)
+        addr_temp >>= block_off_bits
+
         # Gets the bank id (which bank to access into)
-        self.bank_id = addr_temp & ((1 << BANK_ID_BIT_LEN) - 1) #
-        addr_temp >>= BANK_ID_BIT_LEN
-        
+        self.bank_id = addr_temp & ((1 << bank_id_bits) - 1)
+        addr_temp >>= bank_id_bits
+
         # Gets the set index (which set to access within the bank)
-        self.set_index = addr_temp & ((1 << SET_INDEX_BIT_LEN) - 1) #
-        addr_temp >>= SET_INDEX_BIT_LEN
-        
+        self.set_index = addr_temp & ((1 << set_idx_bits) - 1)
+        addr_temp >>= set_idx_bits
+
         # Gets the tag
-        self.tag = addr_temp & ((1 << TAG_BIT_LEN) - 1)
-        
-        # Address of the start of the block (includes bank index, set index, and the tag, removes the byte and block offset)
-        self.block_addr_val = self.full_addr >> (BYTE_OFF_BIT_LEN + BLOCK_OFF_BIT_LEN) 
+        self.tag = addr_temp & ((1 << tag_bits) - 1)
+
+        # Address of the start of the block (removes byte and block offsets)
+        self.block_addr_val = self.full_addr >> (byte_off_bits + block_off_bits)
 
 @dataclass
 class dCacheRequest:
@@ -93,7 +73,8 @@ class dCacheRequest:
                 f"store_value={self.store_value}, halt={self.halt})")
 
     def __post_init__(self):
-        self.addr = Addr(self.addr_val) # Create an Addr object and assign it to self.addr
+        # addr is parsed and set externally by LockupFreeCacheStage using config bit lengths
+        pass
 
 @dataclass
 class dMemResponse: # D$ -> LDST
@@ -154,9 +135,8 @@ class dCacheFrame:
     dirty: bool = False # If the data is dirty
     tag: int = 0    # Tag of the data
 
-    # This contains the BLOCK_SIZE_WORDS number of words per frame
-    # The field function is to ensure that every CacheFrame object has separate block lists and that writing to one frame's block doesn't overwrite another one's block
-    block: List[int] = field(default_factory=lambda: [0] * BLOCK_SIZE_WORDS) 
+    # block holds BLOCK_SIZE_WORDS words; caller is responsible for sizing it correctly
+    block: List[int] = field(default_factory=list)
 
 @dataclass
 class MSHREntry:
@@ -164,8 +144,8 @@ class MSHREntry:
     valid: bool = True
     uuid: int = 0
     block_addr_val: int = 0
-    write_status: List[bool] = field(default_factory=lambda: [False] * BLOCK_SIZE_WORDS)    # If the missed request was write or not
-    write_block: List[int] = field(default_factory=lambda: [0] * BLOCK_SIZE_WORDS)      # The data to be written
+    write_status: List[bool] = field(default_factory=list)   # If the missed request was write or not
+    write_block: List[int] = field(default_factory=list)     # The data to be written
     original_request: dCacheRequest = None # CHECK THIS
     cycles_to_ready: int = 0    # Internal timer for each entry in the buffer
 

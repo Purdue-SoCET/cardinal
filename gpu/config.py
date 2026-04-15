@@ -141,11 +141,11 @@ class TestParametersConfig(BaseModel):
 
 class SMConfig(BaseModel):
     """Streaming Multiprocessor configuration.
-    
+
     When enable_tbs=False (default):
         - Uses kernel parameters from this config (tb_size, memory.start_pc)
         - Simple single-block kernel execution model
-    
+
     When enable_tbs=True:
         - Kernel parameters are read from MMIO in the meminit file
         - Parameters configured in [mmio] section are used as fallbacks
@@ -159,6 +159,10 @@ class SMConfig(BaseModel):
     enable_tbs: bool = False
     kernel_pointer_addr: int = 0x0
     tb_size: int = 32
+    scheduler_policy: str = Field(
+        default="RR",
+        description="Warp scheduling policy: RR (round-robin) or GTO (greedy-then-oldest)"
+    )
 
 
 class MemoryConfig(BaseModel):
@@ -186,15 +190,15 @@ class DCacheConfig(BaseModel):
     cache_size: int = 32768
     block_size: int = 4
     associativity: int = 1
-    num_banks: int = 2
-    num_sets_per_bank: int = 16
-    num_ways: int = 8
-    block_size_words: int = 32
-    word_size_bytes: int = 4
-    uuid_size: int = 8
-    mshr_buffer_len: int = 16
-    hit_latency: int = 2
-    ram_latency_cycles: int = 200
+    hit_latency: int = Field(default=2, description="Cache hit pipeline depth in cycles")
+    mshr_buffer_len: int = Field(default=16, description="Number of entries in each MSHR buffer")
+    num_banks: int = Field(default=2, description="Number of cache banks")
+    num_sets_per_bank: int = Field(default=16, description="Number of sets per bank")
+    num_ways: int = Field(default=8, description="Number of ways (associativity) per set")
+    block_size_words: int = Field(default=32, description="Cache line size in words (32-bit words)")
+    word_size_bytes: int = Field(default=4, description="Size of each word in bytes")
+    uuid_size: int = Field(default=8, description="UUID bit width (from lockup_free_cache.sv)")
+    ram_latency_cycles: int = Field(default=200, description="Static RAM access latency in cycles")
 
 
 class IntUnitConfigSettings(BaseModel):
@@ -236,6 +240,8 @@ class MemBranchJumpUnitConfigSettings(BaseModel):
     jump_count: int = Field(default=1, description="Number of jump units")
     ldst_buffer_size: int = Field(default=1, description="Writeback buffer size for LDST units")
     ldst_queue_size: int = Field(default=1, description="Queue size for LDST units")
+    block_size_words: int = Field(default=32, description="Cache line size in words (must match [dcache] block_size_words)")
+    word_size_bytes: int = Field(default=4, description="Size of each word in bytes (must match [dcache] word_size_bytes)")
 
 
 class FunctionalUnitsConfig(BaseModel):
@@ -472,14 +478,14 @@ class Settings(BaseSettings):
             "cache_size": self.dcache.cache_size,
             "block_size": self.dcache.block_size,
             "associativity": self.dcache.associativity,
+            "hit_latency": self.dcache.hit_latency,
+            "mshr_buffer_len": self.dcache.mshr_buffer_len,
             "num_banks": self.dcache.num_banks,
             "num_sets_per_bank": self.dcache.num_sets_per_bank,
             "num_ways": self.dcache.num_ways,
             "block_size_words": self.dcache.block_size_words,
             "word_size_bytes": self.dcache.word_size_bytes,
             "uuid_size": self.dcache.uuid_size,
-            "mshr_buffer_len": self.dcache.mshr_buffer_len,
-            "hit_latency": self.dcache.hit_latency,
             "ram_latency_cycles": self.dcache.ram_latency_cycles,
         }
     

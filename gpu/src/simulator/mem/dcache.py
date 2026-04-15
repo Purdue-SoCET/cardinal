@@ -131,16 +131,16 @@ class MSHRBuffer:
         self.buffer = deque()   # The buffer containing all the requests
         self.max_size = cfg["mshr_buffer_len"]  # The number of latches in the buffer
         self.bank_stall = False     # If the bank needs to be stalled if the MSHR buffer is full
-
-        self.bank_id = bank_id  # which bank the MSHR buffer belongs to
+        self.bank_id = bank_id      # which bank the MSHR buffer belongs to
+        self.block_size_words = block_size_words
 
         # Generating a range of unqiue UUID for each MSHR buffer in a bank
         local_uuid_bits = cfg["uuid_size"] - cfg["bank_id_bit_len"]
         self.uuid_base_offset = bank_id << local_uuid_bits
-        self.local_uuid_max = (2**local_uuid_bits)  # Max value for the local counter, e.g., 2**7 = 128
+        self.local_uuid_max = (2 ** local_uuid_bits)  # e.g., 2**7 = 128
 
-        self.local_uuid_counter = 0 # The current UUID
-        self.last_issued_uuid = 0   # The last issued UUID
+        self.local_uuid_counter = 0  # The current UUID
+        self.last_issued_uuid = 0    # The last issued UUID
     
     def cycle(self):
         """Ages the entry at the head of the queue."""
@@ -207,7 +207,7 @@ class MSHRBuffer:
         write_status = [False] * self.cfg["block_size_words"]   # Make a temporary false write_status
         write_block = [0] * self.cfg["block_size_words"]    # Prepopulate the write block with all 0s
         if req.rw_mode == 'write':  # If the request is write
-            write_status[req.addr.block_offset] = True  # Change the write status for that specfic block to be True
+            write_status[req.addr.block_offset] = True  # Change the write status for that specific block to be True
             write_block[req.addr.block_offset] = req.store_value    # Store the write value to that specific block
 
         entry = MSHREntry(
@@ -244,9 +244,20 @@ class CacheBank:
         self.num_sets = cfg["num_sets_per_bank"]    # Number of sets in a bank
         self.num_ways = cfg["num_ways"]    # Number of ways in each set
         self.mem_req_if = mem_req_if    # The memory request to memory
+        self.block_size_words = cfg["block_size_words"]
+        self.word_size_bytes = cfg["word_size_bytes"]
+        self.byte_off_bits = cfg["byte_off_bits"]
+        self.block_off_bits = cfg["block_off_bits"]
+        self.bank_id_bits = cfg["bank_id_bit_len"]
+        self.set_idx_bits = cfg["set_idx_bits"]
+        self.tag_bits = cfg["tag_bits"]
+        self.block_off_bits = cfg["block_off_bits"]
+        self.bank_id_bits = cfg["bank_id_bit_len"]
+        self.set_idx_bits = cfg["set_idx_bits"]
+        self.tag_bits = cfg["tag_bits"]
 
         self.sets: List[List[DCacheFrame]] = [
-            [DCacheFrame(block_size_words=self.cfg["block_size_words"]) for _ in range(self.num_ways)]
+            [DCacheFrame(block_size_words=[0] * self.cfg["block_size_words"]) for _ in range(self.num_ways)]
             for _ in range(self.num_sets)
         ]
         self.lru: List[List[int]] = [
@@ -572,12 +583,13 @@ class LockupFreeCacheStage(Stage):
     The main cache simulator
     """
     def __init__(
-            self, 
-            name: str, 
-            behind_latch: Optional[LatchIF], # LSU -> Cache
-            forward_ifs_write: Optional[Dict[str, ForwardingIF]], # Cache -> LSU
-            mem_req_if: LatchIF, # Cache -> Memory
-            mem_resp_if: LatchIF, # Memory -> Cache
+            self,
+            name: str,
+            behind_latch: Optional[LatchIF],           # LSU -> Cache
+            forward_ifs_write: Optional[Dict[str, ForwardingIF]],  # Cache -> LSU
+            mem_req_if: LatchIF,                       # Cache -> Memory
+            mem_resp_if: LatchIF,                      # Memory -> Cache
+            telemeter: Optional[Telemeter] = None,
             cache_config: Optional[Dict[str, Any]] = None,
         ):
         super().__init__(
@@ -589,11 +601,11 @@ class LockupFreeCacheStage(Stage):
         self.mem_resp_if = mem_resp_if # The interface used the memory to send data back to cache
         self.cfg = build_dcache_config(cache_config)
 
-        self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp" # Pick a name
+        self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp"
         if self.behind_latch and (self.DCACHE_LSU_IF_NAME in self.forward_ifs_write):
             self.behind_latch.forward_if = self.forward_ifs_write[self.DCACHE_LSU_IF_NAME]
-        
-        # Instantiate banks and MSHRs
+
+        # Instantiate banks and MSHRs with config-driven values
         self.banks = [
             CacheBank(self.cfg, i, mem_req_if) for i in range(self.cfg["num_banks"])
         ]
@@ -633,6 +645,12 @@ class LockupFreeCacheStage(Stage):
         self.stall = False
         self.behind_latch.forward_if.set_wait(0)
         input_data = None
+
+        # Perf counter signals for this cycle
+        _is_hit = False
+        _is_miss = False
+        _is_eviction = False
+        _is_busy = False  # computed after processing below
 
         # --- 1. Check for memory responses
         if (self.mem_resp_if.valid):
@@ -697,7 +715,9 @@ class LockupFreeCacheStage(Stage):
                 mshr_head = mshr.get_head() # Get the oldest MSHR request
                 if mshr_head: # <-- MODIFIED: Check if get_head() returned a ready entry
                     logging.info(f"Cache: Bank {i} is starting service for miss UUID {mshr_head.uuid}")
-                    bank.start_miss_service(mshr_head)  # Start the miss service method on the bank
+                    bank.start_miss_service(mshr_head)
+                    if bank.state == 'VICTIM_EJECT':
+                        _is_eviction = True
         
         # 3e. NEW: Generate the busy signals *after* new misses have started
         bank_busy_signals = [bank.busy for bank in self.banks]
@@ -769,6 +789,7 @@ class LockupFreeCacheStage(Stage):
                 if hit:
                     # This is Cycle 1 of the hit
                     logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}. Pipelining.")
+                    _is_hit = True
                     formatted_data = self.calc_data_size(data, req.addr_val, req.size)
 
                     target_bank.hit_pipeline[-1] = {'data': formatted_data, 'req': req}
@@ -782,7 +803,7 @@ class LockupFreeCacheStage(Stage):
                     logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
 
                     # This now works because bank_busy_signals was populated in Step 3
-                    bank_empty = not bank_busy_signals[bank_id] 
+                    bank_empty = not bank_busy_signals[bank_id]
 
                     if mshr.check_stall(bank_empty):
                         print(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
@@ -790,9 +811,10 @@ class LockupFreeCacheStage(Stage):
                         self.behind_latch.forward_if.set_wait(1)
                     else:
                         # It was an accepted miss
-                        uuid, is_new = mshr.add_miss(req) # No longer pass new_uuid
-                        if is_new: # Only track new primary misses
+                        uuid, is_new = mshr.add_miss(req)
+                        if is_new:  # Only count new primary misses
                             self.active_misses[uuid] = req
+                            _is_miss = True
                         self.output_buffer.append(dMemResponse(
                             type = 'MISS_ACCEPTED',
                             miss = True,
@@ -837,3 +859,13 @@ class LockupFreeCacheStage(Stage):
             else:
                 # The LSU is busy, hold the data
                 pass
+
+        # busy = hit/miss processed this cycle, or banks still doing memory work, or flushing
+        _is_busy = _is_hit or _is_miss or any(b.busy for b in self.banks) or self.flushing
+        self.perf_count.record_cycle(
+            is_stalled=self.stall,
+            is_busy=_is_busy,
+            is_hit=_is_hit,
+            is_miss=_is_miss,
+            is_eviction=_is_eviction,
+        )

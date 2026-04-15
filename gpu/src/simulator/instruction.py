@@ -31,6 +31,7 @@ class Instruction:
     packet: Optional[Bits] = None
     issued_cycle: Optional[int] = None
     wb_cycle: Optional[int] = None
+    wb_entry_cycle: Optional[int] = None
     target_bank: int = None 
     target_regfile: Optional[str] = None
 

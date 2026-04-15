@@ -104,6 +104,11 @@ kernel_pointer_addr = 0xE7CDDDB8
 # Number of threads in a thread block
 tb_size = 1024
 
+# Type: string, Options: "RR" (round-robin), "GTO" (greedy-then-oldest)
+# Default: "RR"
+# Warp scheduling policy
+scheduler_policy = "RR"
+
 # ════════════════════════════════════════════════════════════════════════════
 # MEMORY-MAPPED I/O (MMIO) CONFIGURATION FOR THREAD BLOCK SCHEDULER
 # ════════════════════════════════════════════════════════════════════════════
@@ -196,6 +201,42 @@ block_size = 4
 
 # Type: int
 associativity = 1
+
+# Type: int, Default: 2
+# Number of pipeline stages in the cache hit path (HIT_LATENCY)
+hit_latency = 2
+
+# Type: int, Default: 8
+# Number of entries in each bank's MSHR buffer (MSHR_BUFFER_LEN)
+mshr_buffer_len = 8
+
+# Type: int, Default: 2
+# Number of cache banks
+num_banks = 2
+
+# Type: int, Default: 16
+# Number of sets per bank
+num_sets_per_bank = 16
+
+# Type: int, Default: 8
+# Number of ways (associativity) per set
+num_ways = 8
+
+# Type: int, Default: 32
+# Cache line size in 32-bit words
+block_size_words = 32
+
+# Type: int, Default: 4
+# Size of each word in bytes
+word_size_bytes = 4
+
+# Type: int, Default: 8
+# UUID bit width (from lockup_free_cache.sv UUID_SIZE parameter)
+uuid_size = 8
+
+# Type: int, Default: 200
+# Static RAM access latency in cycles
+ram_latency_cycles = 200
 
 # ════════════════════════════════════════════════════════════════════════════
 # EXECUTION UNITS CONFIGURATION
@@ -340,9 +381,17 @@ jump_count = 1
 # Write-back buffer size for load/store results
 ldst_buffer_size = 1
 
-# Type: int, Default: 1
+# Type: int, Default: 32
 # Queue size for pending load/store operations
-ldst_queue_size = 1
+ldst_queue_size = 32
+
+# Type: int, Default: 32
+# Cache line size in words — must match [dcache] block_size_words
+block_size_words = 32
+
+# Type: int, Default: 4
+# Word size in bytes — must match [dcache] word_size_bytes
+word_size_bytes = 4
 
 # ════════════════════════════════════════════════════════════════════════════
 # WRITE-BACK STAGE CONFIGURATION

@@ -150,6 +150,8 @@ class SM:
             jump_count=fu_cfg.membranchjump_unit.jump_count,
             ldst_buffer_size=fu_cfg.membranchjump_unit.ldst_buffer_size,
             ldst_queue_size=fu_cfg.membranchjump_unit.ldst_queue_size,
+            block_size_words=fu_cfg.membranchjump_unit.block_size_words,
+            word_size_bytes=fu_cfg.membranchjump_unit.word_size_bytes,
         )
         
         # Create and return the FunctionalUnitConfig
@@ -308,6 +310,7 @@ class SM:
             forward_ifs_write={"DCache_LSU_Resp": dcache_lsu_forward},
             mem_req_if=dcache_mem_latch,
             mem_resp_if=mem_dcache_latch,
+            telemeter=self.telemeter,
             cache_config=self.config.to_dcache_dict(),
         )
 
@@ -359,8 +362,10 @@ class SM:
                 "LDST_Scheduler":      ldst_scheduler_fwif
             },
             forward_ifs_write=scheduler_fwif_write,
-            csrtable = csr_table,
+            csrtable=csr_table,
             warp_count=warp_count,
+            policy=self.config.sm.scheduler_policy,
+            telemeter=self.telemeter,
         )
 
         icache_stage = ICacheStage(
@@ -371,6 +376,7 @@ class SM:
             mem_resp_if=mem_icache_resp_if,
             cache_config=self.config.to_icache_dict(),
             forward_ifs_write={"ICache_Scheduler": icache_scheduler_fwif},
+            telemeter=self.telemeter,
         )
 
         prf = PredicateRegFile(
@@ -429,6 +435,7 @@ class SM:
             pred_reg_file=prf,
             forward_ifs_write=scheduler_stage.forward_ifs_read,
             fsu_names=list(fust.keys()),
+            telemeter=self.telemeter,
         )
 
         issue_stage = IssueStage(
