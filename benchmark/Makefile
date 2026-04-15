@@ -16,7 +16,7 @@ CPU_SRCS = cpu_sim/main_new.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_si
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
 
-CUSTOM_SRCS = cpu_sim/main_$(KERNEL).c cpu_sim/kernel_run.c kernels/$(KERNEL).c
+CUSTOM_SRCS = cpu_sim/main_$(KERNEL).c cpu_sim/kernel_run.c kernels/$(KERNEL).c cpu_sim/shader_memdump.c
 
 CPU_BUILD_DIR = build/
 CPU_OUTPUT_DIR = $(CPU_BUILD_DIR)output/
@@ -96,6 +96,13 @@ custom:
 custom32: 
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)/$(KERNEL)
+
+custom32_dump: 
+	twig kernels/$(KERNEL).c --bin-output compiled/$(KERNEL).bin -O2 --entry kernel_$(KERNEL) -DGPU_SIM
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)/$(KERNEL)
+	python cpu_sim/data/stitch_data_compute.py $(KERNEL) build/threads/$(KERNEL)Threads.txt
 
 # Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'
 $(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)

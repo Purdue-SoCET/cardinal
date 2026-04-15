@@ -122,8 +122,10 @@ void kernel_pixel(void* arg)
                     albedo = args->texture.color_arr[idx];
                 }
 
+                args->color[pixel_idx] = albedo;
+
+                /*
                 // 4. Branch based on 3D translation availability (replaces the final return)
-                printf("%p", (void*)args->threeDVertTrans);
                 if(args->threeDVertTrans == 0) {
                     args->color[pixel_idx] = albedo;
                 } else {
@@ -169,6 +171,7 @@ void kernel_pixel(void* arg)
                     args->color[pixel_idx].y = args->ambient.y + args->kd * diff * albedo.y + args->ks * spec;
                     args->color[pixel_idx].z = args->ambient.z + args->kd * diff * albedo.z + args->ks * spec;
                 }
+                    */
             }
         }
     }

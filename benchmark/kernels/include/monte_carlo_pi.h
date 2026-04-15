@@ -15,11 +15,16 @@ typedef struct {
 } int_pair_t;
 
 typedef struct {
-    int **circle_points;
+    int *circle_points;
     int base_seed;
     int num_points;
 } monte_carlo_pi_arg_t;
 
-void kernel_monte_carlo_pi(void*);
+
+#ifdef GPU_SIM
+void kernel_monte_carlo_pi();
+#else
+void kernel_monte_carlo_pi(void* arg);
+#endif
 
 #endif

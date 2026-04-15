@@ -1,14 +1,49 @@
 from pathlib import Path
+import argparse
+import re
+
+def parse_dimensions(file_path):
+    """
+    Parses a text file and returns two separate lists for 
+    Grid Dimensions and Block Dimensions.
+    """
+    grid_dims = []
+    block_dims = []
+    
+    pattern = r"Grid Dim:\s*(\d+),\s*Block Dim:\s*(\d+)"
+    
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                match = re.search(pattern, line)
+                if match:
+                    grid_dims.append(int(match.group(1)))
+                    block_dims.append(int(match.group(2)))
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return [], []
+    
+    return grid_dims, block_dims
+
+parser1 = argparse.ArgumentParser()
+
+parser1.add_argument("kernel", type=str)  
+parser1.add_argument("kernel_t", type=str)  
+parser1.add_argument("--big_endian", type=bool)
+args = parser1.parse_args()
+
+kernel_grid, kernel_block = parse_dimensions(args.kernel_t)
+
 
 # --- Configuration ---
 compiled = {
-    "saxpy": "compiled/saxpy.bin",
+    args.kernel: f"compiled/{args.kernel}.bin",
 }
 
-args_sizes = {"saxpy": 0x0C} 
-block_dims = {"saxpy": 1024} 
-grid_dims  = {"saxpy": 1} 
-big_endian_values = False
+args_sizes = {args.kernel: 0x0C} #need to fix this
+block_dims = {args.kernel: kernel_block} 
+grid_dims  = {args.kernel: kernel_grid} 
+big_endian_values = args.big_endian if args.big_endian is not None else False
 
 ARGS_BASE_ADDR = 0x00100000 
 DUMP_FOLDER = "build/mem_dump"
@@ -34,9 +69,7 @@ def stitch_system_memory(kernel_key, dump_dir, output_file, filter_prefix, is_in
     except FileNotFoundError:
         print(f"Warning: Could not find text file for {kernel_key} at {path}")
 
-    # 2. Load Args and Heap from the C-dump files
     dump_path = Path(dump_dir)
-    # We look for files like "vertexInput_args_dump.txt" or "triangleInput0_args_dump.txt"
     found_files = list(dump_path.glob(f"{filter_prefix}*"))
         
     for file_path in found_files:
@@ -86,9 +119,9 @@ for j in range(2):
     is_input = (j == 0)
     mode_str = "Input" if is_input else "Output"
     
-    s_prefix = f"saxpy{mode_str}"
-    stitch_system_memory("saxpy", DUMP_FOLDER, f"build/{s_prefix}_memDump_{block_dims["saxpy"]}.txt", 
-                         s_prefix, is_input, block_dims["saxpy"], grid_dims["saxpy"], 
-                         args_addr, args_sizes["saxpy"])
+    s_prefix = f"{args.kernel}{mode_str}"
+    stitch_system_memory(args.kernel, DUMP_FOLDER, f"build/{s_prefix}_memDump_{block_dims[args.kernel]}.txt", 
+                         s_prefix, is_input, block_dims[args.kernel][0], grid_dims[args.kernel][0], 
+                         args_addr, args_sizes[args.kernel])
 
   

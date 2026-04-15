@@ -35,7 +35,7 @@
 }
 
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_monte_carlo_pi()
 #else
 void kernel_monte_carlo_pi(void* arg) 
 #endif
@@ -43,13 +43,11 @@ void kernel_monte_carlo_pi(void* arg)
     #ifdef GPU_SIM
     monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) argPtr();
 
-    int i = blockIdx() * blockDim() + threadIdx();
     #else
     monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) arg;
-
-    int i = blockIdx * blockDim + threadIdx;
     #endif
-    
+    int i = blockIdx * blockDim + threadIdx;
+
     if (i < args->num_points) {
         float rand_x = 0.0;
         float rand_y = 0.0;
@@ -59,7 +57,9 @@ void kernel_monte_carlo_pi(void* arg)
         float origin_dist = rand_x * rand_x + rand_y * rand_y;
 
         if (origin_dist <= 1.0){
-            (*args->circle_points[i]) = 1;
+            args->circle_points[i] = 1;
+        } else {
+            args->circle_points[i] = 0;
         }
     }
 }
