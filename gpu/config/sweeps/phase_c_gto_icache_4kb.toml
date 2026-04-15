@@ -1,28 +1,7 @@
-# ════════════════════════════════════════════════════════════════════════════
-# GPU SIMULATOR CONFIGURATION FILE
-# ════════════════════════════════════════════════════════════════════════════
-#
-# This file controls the behavior of the GPU simulator and test suite.
-# For detailed documentation, see: CONFIG.md
-#
-# Configuration sections:
-#   [paths]                         - File paths for tools and scripts
-#   [directories]                   - Directory structure for tests
-#   [files]                         - Output file locations
-#   [test_parameters]               - Default test parameters
-#   [sm]                            - Streaming Multiprocessor configuration
-#   [memory]                        - Memory system configuration
-#   [kernel]                        - Kernel execution parameters
-#   [icache] / [dcache]             - Cache configuration
-#   [functional_units]              - Execution unit configuration
-#   [writeback]                     - Write-back stage configuration
-#   [register_file]                 - Register file configuration
-#   [test]                          - Test-specific settings
-#   [perf_counter]                  - Performance counter configuration
-#
-# ════════════════════════════════════════════════════════════════════════════
-# TEST SUITE CONFIGURATION
-# ════════════════════════════════════════════════════════════════════════════
+# Auto-generated phase C sweep config
+# TODO: ensure D$ geometry and LD/ST queue match the winners from phases A/B before running.
+# Placeholder fixed D$ = 16KB 4B4W; scheduler=GTO; ldst_queue_size=32; I$=4096B.
+
 
 # File paths for build tools and scripts
 [paths]
@@ -98,16 +77,11 @@ enable_tbs = true
 # Type: hex address
 # Base address where kernel code is loaded into memory
 # Only read if enable_tbs = false, otherwise kernel entry point is read from MMIO
-kernel_pointer_addr = 0xE7CE780C
+kernel_pointer_addr = 0xE7CE780C # NOTE: CHANGE KERNEL ARG POINTER FOR NON MMIO TEST CASES HERE 
 
 # Type: int
 # Number of threads in a thread block
 tb_size = 32
-
-# Type: string, Options: "RR" (round-robin), "GTO" (greedy-then-oldest)
-# Default: "RR"
-# Warp scheduling policy
-scheduler_policy = "RR"
 
 # ════════════════════════════════════════════════════════════════════════════
 # MEMORY-MAPPED I/O (MMIO) CONFIGURATION FOR THREAD BLOCK SCHEDULER
@@ -159,7 +133,7 @@ start_pc = 0x0
 
 # Type: int
 # Latency for memory operations
-latency = 2
+latency = 50
 
 # Type: string, Options: "rr" (round-robin)
 # Memory access arbitration policy
@@ -182,7 +156,7 @@ max_kernels_per_sm = 1
 [icache]
 # Type: int (bytes)
 # Instruction cache size in bytes
-cache_size = 32768
+cache_size = 4096
 
 # Type: int (bytes)
 block_size = 4
@@ -191,55 +165,24 @@ block_size = 4
 # Set associativity (1 = direct mapped, higher = more associativity)
 associativity = 1
 
-# Type: int, Default: 1
-# Number of pipeline stages in the cache hit path (effectively 1 cycle for ICache)
-hit_latency = 1
-
 [dcache]
 # Type: int (bytes)
 # Data cache size in bytes
-cache_size = 32768
+cache_size = 16384
 
 # Type: int (bytes)
 block_size = 4
 
 # Type: int
-associativity = 1
-
-# Type: int, Default: 2
-# Number of pipeline stages in the cache hit path (HIT_LATENCY)
-hit_latency = 2
-
-# Type: int, Default: 8
-# Number of entries in each bank's MSHR buffer (MSHR_BUFFER_LEN)
-mshr_buffer_len = 8
-
-# Type: int, Default: 2
-# Number of cache banks
-num_banks = 2
-
-# Type: int, Default: 16
-# Number of sets per bank
-num_sets_per_bank = 16
-
-# Type: int, Default: 8
-# Number of ways (associativity) per set
-num_ways = 8
-
-# Type: int, Default: 32
-# Cache line size in 32-bit words
+associativity = 4
+num_banks = 4
+num_sets_per_bank = 8
+num_ways = 4
 block_size_words = 32
-
-# Type: int, Default: 4
-# Size of each word in bytes
 word_size_bytes = 4
-
-# Type: int, Default: 8
-# UUID bit width (from lockup_free_cache.sv UUID_SIZE parameter)
 uuid_size = 8
-
-# Type: int, Default: 200
-# Static RAM access latency in cycles
+mshr_buffer_len = 16
+hit_latency = 2
 ram_latency_cycles = 200
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -385,17 +328,9 @@ jump_count = 1
 # Write-back buffer size for load/store results
 ldst_buffer_size = 1
 
-# Type: int, Default: 32
+# Type: int, Default: 1
 # Queue size for pending load/store operations
 ldst_queue_size = 32
-
-# Type: int, Default: 32
-# Cache line size in words — must match [dcache] block_size_words
-block_size_words = 32
-
-# Type: int, Default: 4
-# Word size in bytes — must match [dcache] word_size_bytes
-word_size_bytes = 4
 
 # ════════════════════════════════════════════════════════════════════════════
 # WRITE-BACK STAGE CONFIGURATION

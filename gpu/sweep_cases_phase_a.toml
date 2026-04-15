@@ -1,0 +1,39 @@
+# Phase A sweep: D$ size/layout exploration with I$ fixed at 64 KiB
+output_root = "results/sweeps/phase_a"
+
+[[cases]]
+id = "dcache_4kb_2b8w_icache_64kb"
+config = "config/sweeps/dcache_4kb_2b8w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_4kb_4b4w_icache_64kb"
+config = "config/sweeps/dcache_4kb_4b4w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_4kb_8b2w_icache_64kb"
+config = "config/sweeps/dcache_4kb_8b2w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_16kb_2b8w_icache_64kb"
+config = "config/sweeps/dcache_16kb_2b8w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_16kb_4b4w_icache_64kb"
+config = "config/sweeps/dcache_16kb_4b4w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_16kb_8b2w_icache_64kb"
+config = "config/sweeps/dcache_16kb_8b2w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_64kb_2b8w_icache_64kb"
+config = "config/sweeps/dcache_64kb_2b8w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_64kb_4b4w_icache_64kb"
+config = "config/sweeps/dcache_64kb_4b4w_icache_64kb.toml"
+
+[[cases]]
+id = "dcache_64kb_8b2w_icache_64kb"
+config = "config/sweeps/dcache_64kb_8b2w_icache_64kb.toml"
+

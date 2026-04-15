@@ -12,6 +12,8 @@ from collections import deque
 from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.stage import Stage
 from simulator.mem_types import dMemResponse
+from simulator.utils.performance_counter.cache import CachePerfCount
+from simulator.utils.performance_counter.telemeter import Telemeter
 
 @dataclass
 class DCacheAddr:
@@ -121,6 +123,13 @@ def build_dcache_config(cache_config: Optional[Dict[str, Any]] = None) -> Dict[s
         + cfg["block_off_bit_len"]
         + cfg["byte_off_bit_len"]
     )
+
+    # Legacy aliases still referenced in parts of the cache model.
+    cfg["byte_off_bits"] = cfg["byte_off_bit_len"]
+    cfg["block_off_bits"] = cfg["block_off_bit_len"]
+    cfg["bank_id_bits"] = cfg["bank_id_bit_len"]
+    cfg["set_idx_bits"] = cfg["set_index_bit_len"]
+    cfg["tag_bits"] = cfg["tag_bit_len"]
 
     return cfg
 
@@ -246,18 +255,14 @@ class CacheBank:
         self.mem_req_if = mem_req_if    # The memory request to memory
         self.block_size_words = cfg["block_size_words"]
         self.word_size_bytes = cfg["word_size_bytes"]
-        self.byte_off_bits = cfg["byte_off_bits"]
-        self.block_off_bits = cfg["block_off_bits"]
+        self.byte_off_bits = cfg["byte_off_bit_len"]
+        self.block_off_bits = cfg["block_off_bit_len"]
         self.bank_id_bits = cfg["bank_id_bit_len"]
-        self.set_idx_bits = cfg["set_idx_bits"]
-        self.tag_bits = cfg["tag_bits"]
-        self.block_off_bits = cfg["block_off_bits"]
-        self.bank_id_bits = cfg["bank_id_bit_len"]
-        self.set_idx_bits = cfg["set_idx_bits"]
-        self.tag_bits = cfg["tag_bits"]
+        self.set_idx_bits = cfg["set_index_bit_len"]
+        self.tag_bits = cfg["tag_bit_len"]
 
         self.sets: List[List[DCacheFrame]] = [
-            [DCacheFrame(block_size_words=[0] * self.cfg["block_size_words"]) for _ in range(self.num_ways)]
+            [DCacheFrame(block_size_words=self.cfg["block_size_words"]) for _ in range(self.num_ways)]
             for _ in range(self.num_sets)
         ]
         self.lru: List[List[int]] = [

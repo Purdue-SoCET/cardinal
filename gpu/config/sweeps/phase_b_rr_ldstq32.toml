@@ -1,3 +1,7 @@
+# Auto-generated phase B sweep config
+# TODO: ensure D$ geometry matches your selected phase A winner before running.
+# Placeholder fixed D$ = 16KB 4B4W; scheduler=RR; ldst_queue_size=32; I$=64KiB.
+
 
 # File paths for build tools and scripts
 [paths]
@@ -73,11 +77,11 @@ enable_tbs = true
 # Type: hex address
 # Base address where kernel code is loaded into memory
 # Only read if enable_tbs = false, otherwise kernel entry point is read from MMIO
-kernel_pointer_addr = 0xE7CDDDB8
+kernel_pointer_addr = 0xE7CE780C # NOTE: CHANGE KERNEL ARG POINTER FOR NON MMIO TEST CASES HERE 
 
 # Type: int
 # Number of threads in a thread block
-tb_size = 1024
+tb_size = 32
 
 # ════════════════════════════════════════════════════════════════════════════
 # MEMORY-MAPPED I/O (MMIO) CONFIGURATION FOR THREAD BLOCK SCHEDULER
@@ -129,7 +133,7 @@ start_pc = 0x0
 
 # Type: int
 # Latency for memory operations
-latency = 2
+latency = 50
 
 # Type: string, Options: "rr" (round-robin)
 # Memory access arbitration policy
@@ -152,7 +156,7 @@ max_kernels_per_sm = 1
 [icache]
 # Type: int (bytes)
 # Instruction cache size in bytes
-cache_size = 32768
+cache_size = 65536
 
 # Type: int (bytes)
 block_size = 4
@@ -164,21 +168,21 @@ associativity = 1
 [dcache]
 # Type: int (bytes)
 # Data cache size in bytes
-cache_size = 32768
+cache_size = 16384
 
 # Type: int (bytes)
 block_size = 4
 
 # Type: int
-associativity = 1
-num_banks = 2
-num_sets_per_bank = 16
-num_ways = 8
+associativity = 4
+num_banks = 4
+num_sets_per_bank = 8
+num_ways = 4
 block_size_words = 32
 word_size_bytes = 4
 uuid_size = 8
 mshr_buffer_len = 16
-hit_latency = 4
+hit_latency = 2
 ram_latency_cycles = 200
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -326,7 +330,7 @@ ldst_buffer_size = 1
 
 # Type: int, Default: 1
 # Queue size for pending load/store operations
-ldst_queue_size = 1
+ldst_queue_size = 32
 
 # ════════════════════════════════════════════════════════════════════════════
 # WRITE-BACK STAGE CONFIGURATION
