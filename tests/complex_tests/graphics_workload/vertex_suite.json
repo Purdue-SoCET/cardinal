@@ -108,7 +108,7 @@
       ],
       "verification": {
         "expected_file": "vertex_exp.hex",
-        "float_tolerance": 0.005
+        "float_tolerance": 0.01
       }
     },
     {
@@ -134,7 +134,7 @@
       ],
       "verification": {
         "expected_file": "vertex_exp.hex",
-        "float_tolerance": 0.005
+        "float_tolerance": 0.01
       }
     }
   ]

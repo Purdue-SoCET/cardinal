@@ -215,8 +215,8 @@ void kernel_vertexShader()
     //     return;
     // }
     if(q[2] >= 0.0){
-        args->twoDVert[i].coords.x = q[0] / q[2];
-        args->twoDVert[i].coords.y = q[1] / q[2];
+        args->twoDVert[i].coords.x = (q[0] / q[2] + 1) * args->viewport_w / 2.0;
+        args->twoDVert[i].coords.y = (1 - q[1] / q[2]) * args->viewport_h / 2.0;
         args->twoDVert[i].coords.z = 1.0 / q[2];
 
         args->twoDVert[i].s = args->threeDVert[i].s;

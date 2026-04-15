@@ -1,25 +1,26 @@
 import struct
 import math
 import argparse
+import numpy as np
 
 # ==========================================
 # Memory Map Layout
 # ==========================================
-ADDR_ARGS_VERT       = 0x20000000 # vertexShader_arg_t
-ADDR_ARGS_TRI        = 0x20000100 # triangle_arg_t
+ADDR_ARGS_VERT       = 0x20000000 
+ADDR_ARGS_TRI        = 0x20000100 
 
-ADDR_VERTS_IN        = 0x30000000 # Input array
+ADDR_VERTS_IN        = 0x30000000 
 ADDR_OA              = 0x30000100 
 ADDR_ADIST           = 0x30000110 
 ADDR_ALPHAR          = 0x30000120 
 ADDR_CAMERA          = 0x30000130 
 ADDR_INVTRANS        = 0x30000140 
 
-ADDR_VERTS_TRANS_OUT = 0x40000000 # 3D Transformed Output
-ADDR_VERTS_2D_OUT    = 0x40000200 # 2D Projected Output
+ADDR_VERTS_TRANS_OUT = 0x40000000 
+ADDR_VERTS_2D_OUT    = 0x40000200 
 
-ADDR_DEPTH_BUFF      = 0x50000000 # Z-Buffer
-ADDR_TAG_BUFF        = 0x51000000 # Tag Buffer
+ADDR_DEPTH_BUFF      = 0x50000000 
+ADDR_TAG_BUFF        = 0x51000000 
 
 # ==========================================
 # Helpers
@@ -29,8 +30,10 @@ def float_to_hex(f):
     return f"0x{packed.hex().upper()}"
 
 def int_to_hex(i):
-    packed = struct.pack('>i', int(i))
-    return f"0x{packed.hex().upper()}"
+    # Handle negative integers (like -1 -> 0xFFFFFFFF)
+    if i < 0:
+        i = (1 << 32) + i
+    return f"0x{i:08X}"
 
 def write_line(f_handle, addr, val_str):
     f_handle.write(f"0x{addr:08X} {val_str}\n")
@@ -72,36 +75,34 @@ def inv3x3(m):
 def main():
     parser = argparse.ArgumentParser()
     
-    # Test Architecture Setup
-    parser.add_argument("--mode", choices=['vertex', 'triangle', 'pipeline'], required=True)
+    parser.add_argument("--mode", choices=['vertex', 'triangle', 'pipeline', 'all_tris'], required=True)
     parser.add_argument("--out_init", default="init.hex")
     parser.add_argument("--out_exp", default="expected.hex")
     
-    # Simulation Parameters
+    parser.add_argument("--res", type=int, nargs=2, default=[800, 800])
     parser.add_argument("--angle", type=float, default=0.0)
     parser.add_argument("--camera", type=float, nargs=3, default=[0.0, 0.0, 0.0])
     parser.add_argument("--origin", type=float, nargs=3, default=[0.0, 0.0, -30.0])
     parser.add_argument("--axis", type=float, nargs=3, default=[1.0, 1.0, 0.0])
-    
-    # Triangle specific parameters
-    parser.add_argument("--buff_w", type=int, default=800)
-    parser.add_argument("--buff_h", type=int, default=800)
-    parser.add_argument("--tri_tag", type=int, default=7)
+    parser.add_argument("--tri_idx", type=int, default=0)
     
     args = parser.parse_args()
 
     num_verts = 8
-    viewport_w, viewport_h = args.buff_w, args.buff_h
+    viewport_w, viewport_h = args.res[0], args.res[1]
     alpha_r = args.angle
     Oa = args.origin
     a_dist = args.axis
     camera = args.camera
-    
-    invTrans = [
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, -1.0
-    ]
+
+    focal_range = 1.0
+    abc = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0 * (viewport_h / viewport_w), 0.0],
+        [0.0, 0.0, -focal_range * (viewport_h / viewport_w)]
+    ])
+    abcTranspose = abc.T
+    invTrans = inv3x3(abcTranspose.tolist())
 
     verts_in = [
         [-10, -10, -20, 0, 0], [-10,  10, -20, 0, 1],
@@ -110,16 +111,18 @@ def main():
         [ 10, -10, -40, 0, 0], [ 10,  10, -40, 1, 0]
     ]
 
-    # ---------------------------------------------------------
-    # STAGE 1: SIMULATE VERTEX SHADER
-    # ---------------------------------------------------------
+    tris_map = [
+        (0, 1, 2), (3, 1, 2), (1, 3, 5), (7, 3, 5), 
+        (0, 2, 4), (6, 2, 4), (4, 5, 6), (7, 5, 6), 
+        (0, 1, 4), (5, 1, 4), (2, 3, 6), (7, 3, 6)
+    ]
+
+    # --- STAGE 1: VERTEX SHADER ---
     verts_trans_out = []
     verts_2d_out = []
 
     selAxis = [0.0, 0.0, 0.0]
-    x2 = a_dist[0] * a_dist[0]
-    y2 = a_dist[1] * a_dist[1]
-    z2 = a_dist[2] * a_dist[2]
+    x2, y2, z2 = a_dist[0]**2, a_dist[1]**2, a_dist[2]**2
     if x2 < y2 and x2 < z2: selAxis[0] = 1.0
     elif y2 < z2: selAxis[1] = 1.0
     else: selAxis[2] = 1.0
@@ -130,15 +133,10 @@ def main():
     lcs = lcs_row0 + lcs_row1 + lcs_row2
     lcsInv = [lcs[0], lcs[3], lcs[6], lcs[1], lcs[4], lcs[7], lcs[2], lcs[5], lcs[8]]
 
-    rotMat = [
-        math.cos(alpha_r), 0, math.sin(alpha_r),
-        0, 1, 0,
-        -math.sin(alpha_r), 0, math.cos(alpha_r)
-    ]
+    rotMat = [math.cos(alpha_r), 0, math.sin(alpha_r), 0, 1, 0, -math.sin(alpha_r), 0, math.cos(alpha_r)]
 
     for v in verts_in:
-        coords = [v[0], v[1], v[2]]
-        p_temp = [coords[0]-Oa[0], coords[1]-Oa[1], coords[2]-Oa[2]]
+        p_temp = [v[0]-Oa[0], v[1]-Oa[1], v[2]-Oa[2]]
         p1 = mat_vec_mult(lcsInv, p_temp)
         p2 = mat_vec_mult(rotMat, p1)
         p_world = mat_vec_mult(lcs, p2)
@@ -149,73 +147,85 @@ def main():
         q = mat_vec_mult(invTrans, threeD_norm)
         
         if q[2] >= 0.0:
-            sx = q[0] / q[2]
-            sy = q[1] / q[2]
+            sx = (q[0]/q[2] + 1) * viewport_w / 2.0
+            sy = (1 - q[1]/q[2]) * viewport_h / 2.0
             sz = 1.0 / q[2]
             verts_2d_out.append([sx, sy, sz, v[3], v[4]])
         else:
             verts_2d_out.append([0.0, 0.0, 0.0, 0.0, 0.0])
 
-    # ---------------------------------------------------------
-    # STAGE 2: SIMULATE TRIANGLE SHADER
-    # ---------------------------------------------------------
-    pVs = [verts_2d_out[0], verts_2d_out[1], verts_2d_out[2]]
+    # --- STAGE 2: TRIANGLE SHADER(S) ---
     
-    # Calc Bounding Box
-    u_min = max(0, int(min(pVs[0][0], pVs[1][0], pVs[2][0]) - 0.5))
-    u_max = min(args.buff_w - 1, int(max(pVs[0][0], pVs[1][0], pVs[2][0]) + 0.5))
-    v_min = max(0, int(min(pVs[0][1], pVs[1][1], pVs[2][1]) - 0.5))
-    v_max = min(args.buff_h - 1, int(max(pVs[0][1], pVs[1][1], pVs[2][1]) + 0.5))
+    # Initialize physical buffers for the viewport
+    depth_buffer = [0.0] * (viewport_w * viewport_h)
+    tag_buffer = [-1] * (viewport_w * viewport_h)
     
-    bb_start = [u_min, v_min]
-    bb_size = [u_max - u_min, v_max - v_min]
+    tri_structs = {} 
+    tri_list = range(12) if args.mode == 'all_tris' else [args.tri_idx]
 
-    # Calc Barycentric Matrix
-    m = [
-        [1.0, 1.0, 1.0],
-        [pVs[0][0], pVs[1][0], pVs[2][0]],
-        [pVs[0][1], pVs[1][1], pVs[2][1]]
-    ]
-    bc_im = inv3x3(m)
+    if args.mode in ['triangle', 'pipeline', 'all_tris']:
+        for t_idx in tri_list:
+            target_tri = tris_map[t_idx]
+            pVs = [verts_2d_out[target_tri[0]], verts_2d_out[target_tri[1]], verts_2d_out[target_tri[2]]]
+            
+            u_min = max(0, int(min(pVs[0][0], pVs[1][0], pVs[2][0]) - 0.5))
+            u_max = min(viewport_w - 1, int(max(pVs[0][0], pVs[1][0], pVs[2][0]) + 0.5))
+            v_min = max(0, int(min(pVs[0][1], pVs[1][1], pVs[2][1]) - 0.5))
+            v_max = min(viewport_h - 1, int(max(pVs[0][1], pVs[1][1], pVs[2][1]) + 0.5))
+            
+            bb_start = [u_min, v_min]
+            bb_size = [max(0, u_max - u_min), max(0, v_max - v_min)]
 
-    # Rasterize
-    rendered_pixels = {}
-    for ix in range(bb_size[0]):
-        for iy in range(bb_size[1]):
-            u = ix + bb_start[0]
-            v = iy + bb_start[1]
-            
-            l0 = 1.0 * bc_im[0] + (u+0.5) * bc_im[1] + (v+0.5) * bc_im[2]
-            l1 = 1.0 * bc_im[3] + (u+0.5) * bc_im[4] + (v+0.5) * bc_im[5]
-            l2 = 1.0 * bc_im[6] + (u+0.5) * bc_im[7] + (v+0.5) * bc_im[8]
-            
-            if l0 < -0.0001 or l1 < -0.00001 or l2 < -0.00001 or (l0+l1+l2) > 1.01:
-                continue # Outside
-                
-            pix_z = l0*pVs[0][2] + l1*pVs[1][2] + l2*pVs[2][2]
-            
-            if pix_z >= 0.0:
-                rendered_pixels[(u, v)] = (pix_z, args.tri_tag)
+            m = [[1.0, 1.0, 1.0], [pVs[0][0], pVs[1][0], pVs[2][0]], [pVs[0][1], pVs[1][1], pVs[2][1]]]
+            bc_im = inv3x3(m)
 
-    # ---------------------------------------------------------
-    # STAGE 3: WRITE HEX FILES BASED ON ARCHITECTURE MODE
-    # ---------------------------------------------------------
-    print(f"Baking memory for MODE: {args.mode.upper()}")
+            for ix in range(bb_size[0]):
+                for iy in range(bb_size[1]):
+                    u = ix + bb_start[0]
+                    v = iy + bb_start[1]
+                    
+                    l0 = 1.0 * bc_im[0] + (u+0.5) * bc_im[1] + (v+0.5) * bc_im[2]
+                    l1 = 1.0 * bc_im[3] + (u+0.5) * bc_im[4] + (v+0.5) * bc_im[5]
+                    l2 = 1.0 * bc_im[6] + (u+0.5) * bc_im[7] + (v+0.5) * bc_im[8]
+                    
+                    if l0 < -0.00001 or l1 < -0.00001 or l2 < -0.00001 or (l0+l1+l2) > 1.01:
+                        continue 
+                        
+                    # Calculate Depth and cast to 32-bit float to precisely match C's Z-buffer jitter
+                    pix_z_64 = l0*pVs[0][2] + l1*pVs[1][2] + l2*pVs[2][2]
+                    pix_z = np.float32(pix_z_64)
+                    
+                    if pix_z >= 0.0:
+                        idx = v * viewport_w + u
+                        # Overwrite if background (-1) OR newer triangle is >= depth of old triangle
+                        if tag_buffer[idx] == -1 or pix_z >= depth_buffer[idx]:
+                            depth_buffer[idx] = pix_z
+                            tag_buffer[idx] = t_idx # NO OFFSET
+
+            # Pack structs
+            t_args = [(0, int_to_hex(bb_start[0])), (4, int_to_hex(bb_start[1])), (8, int_to_hex(bb_size[0])), (12, int_to_hex(bb_size[1]))]
+            for i, val in enumerate(bc_im): t_args.append((16 + i*4, float_to_hex(val)))
+            t_args.append((52, int_to_hex(t_idx))) # Tag perfectly matches Index
+            
+            pv_idx = 56
+            for vec in pVs:
+                for coord in vec[:3]:
+                    t_args.append((pv_idx, float_to_hex(coord)))
+                    pv_idx += 4
+                    
+            t_args.extend([(92, int_to_hex(viewport_w)), (96, int_to_hex(viewport_h)), (100, int_to_hex(ADDR_DEPTH_BUFF)), (104, int_to_hex(ADDR_TAG_BUFF))])
+            tri_structs[t_idx] = t_args
+
+    # --- STAGE 3: WRITE HEX FILES ---
+    print(f"Baking memory for MODE: {args.mode.upper()} | Res: {viewport_w}x{viewport_h}")
     
     with open(args.out_init, 'w') as f_init, open(args.out_exp, 'w') as f_exp:
         
-        # --- WRITE INITIALIZATION STATE ---
+        # Write Base Initialization
         if args.mode in ['vertex', 'pipeline']:
-            # Write Vertex Args (0x20000000)
-            v_args = [
-                (0, int_to_hex(ADDR_OA)), (4, int_to_hex(ADDR_ADIST)), (8, int_to_hex(ADDR_ALPHAR)),
-                (12, int_to_hex(ADDR_VERTS_IN)), (16, int_to_hex(ADDR_VERTS_TRANS_OUT)),
-                (20, int_to_hex(ADDR_CAMERA)), (24, int_to_hex(ADDR_INVTRANS)), (28, int_to_hex(ADDR_VERTS_2D_OUT)),
-                (32, int_to_hex(num_verts)), (36, float_to_hex(viewport_w)), (40, float_to_hex(viewport_h))
-            ]
+            v_args = [(0, int_to_hex(ADDR_OA)), (4, int_to_hex(ADDR_ADIST)), (8, int_to_hex(ADDR_ALPHAR)), (12, int_to_hex(ADDR_VERTS_IN)), (16, int_to_hex(ADDR_VERTS_TRANS_OUT)), (20, int_to_hex(ADDR_CAMERA)), (24, int_to_hex(ADDR_INVTRANS)), (28, int_to_hex(ADDR_VERTS_2D_OUT)), (32, int_to_hex(num_verts)), (36, float_to_hex(viewport_w)), (40, float_to_hex(viewport_h))]
             for offset, val in v_args: write_line(f_init, ADDR_ARGS_VERT + offset, val)
-
-            # Write Input Data Pointers
+    
             write_line(f_init, ADDR_OA, float_to_hex(Oa[0])); write_line(f_init, ADDR_OA+4, float_to_hex(Oa[1])); write_line(f_init, ADDR_OA+8, float_to_hex(Oa[2]))
             write_line(f_init, ADDR_ADIST, float_to_hex(a_dist[0])); write_line(f_init, ADDR_ADIST+4, float_to_hex(a_dist[1])); write_line(f_init, ADDR_ADIST+8, float_to_hex(a_dist[2]))
             write_line(f_init, ADDR_ALPHAR, float_to_hex(alpha_r))
@@ -227,45 +237,34 @@ def main():
                 for i in range(5): write_line(f_init, curr_addr + (i*4), float_to_hex(v[i]))
                 curr_addr += 20
 
-        if args.mode in ['triangle', 'pipeline']:
-            # Write Triangle Args Struct (0x20000100)
-            # This directly embeds the results of the Host CPU setup and Vertex math!
-            t_args = [
-                (0, int_to_hex(bb_start[0])), (4, int_to_hex(bb_start[1])),
-                (8, int_to_hex(bb_size[0])), (12, int_to_hex(bb_size[1]))
-            ]
-            for i, val in enumerate(bc_im): t_args.append((16 + i*4, float_to_hex(val)))
-            t_args.append((52, int_to_hex(args.tri_tag)))
-            
-            pv_idx = 56
-            for vec in pVs:
-                for coord in vec[:3]:
-                    t_args.append((pv_idx, float_to_hex(coord)))
-                    pv_idx += 4
+        # Write Triangle Structs and Initial -1 Background Buffer
+        if args.mode in ['triangle', 'pipeline', 'all_tris']:
+            for t_idx, struct_lines in tri_structs.items():
+                base_addr = ADDR_ARGS_TRI + (t_idx * 0x100) if args.mode == 'all_tris' else ADDR_ARGS_TRI
+                for offset, val in struct_lines:
+                    write_line(f_init, base_addr + offset, val)
                     
-            t_args.extend([
-                (92, int_to_hex(args.buff_w)), (96, int_to_hex(args.buff_h)),
-                (100, int_to_hex(ADDR_DEPTH_BUFF)), (104, int_to_hex(ADDR_TAG_BUFF))
-            ])
-            for offset, val in t_args: write_line(f_init, ADDR_ARGS_TRI + offset, val)
+            # Explicitly dump the -1 initialization to the input memory state
+            for idx in range(viewport_w * viewport_h):
+                write_line(f_init, ADDR_DEPTH_BUFF + (idx * 4), float_to_hex(0.0))
+                write_line(f_init, ADDR_TAG_BUFF + (idx * 4), int_to_hex(-1))
 
-
-        # --- WRITE EXPECTED OUTPUT STATE ---
+        # Write Expected Out
         if args.mode == 'vertex':
-            curr_trans = ADDR_VERTS_TRANS_OUT
-            curr_2d = ADDR_VERTS_2D_OUT
+            curr_trans, curr_2d = ADDR_VERTS_TRANS_OUT, ADDR_VERTS_2D_OUT
             for trans, p2d in zip(verts_trans_out, verts_2d_out):
                 for i in range(5): write_line(f_exp, curr_trans + (i*4), float_to_hex(trans[i]))
                 curr_trans += 20
                 for i in range(5): write_line(f_exp, curr_2d + (i*4), float_to_hex(p2d[i]))
                 curr_2d += 20
 
-        elif args.mode in ['triangle', 'pipeline']:
-            # For pipeline, the ultimate output is the depth/tag buffer
-            for (u, v), (depth, tag) in rendered_pixels.items():
-                idx = v * args.buff_w + u
-                write_line(f_exp, ADDR_DEPTH_BUFF + (idx * 4), float_to_hex(depth))
-                write_line(f_exp, ADDR_TAG_BUFF + (idx * 4), int_to_hex(tag))
+        elif args.mode in ['triangle', 'pipeline', 'all_tris']:
+            # Explicitly dump the finalized array (including the untouched -1 pixels)
+            for idx in range(viewport_w * viewport_h):
+                # We only write values that were touched to keep expected file sizes lean,
+                # unless they want the full array verified. Here we write the full array!
+                write_line(f_exp, ADDR_DEPTH_BUFF + (idx * 4), float_to_hex(depth_buffer[idx]))
+                write_line(f_exp, ADDR_TAG_BUFF + (idx * 4), int_to_hex(tag_buffer[idx]))
 
 if __name__ == "__main__":
     main()

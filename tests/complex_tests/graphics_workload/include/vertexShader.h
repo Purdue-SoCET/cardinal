@@ -26,7 +26,12 @@ typedef struct {
     /*output*/
     vertex_t* twoDVert;        //output 2D  vertors
     // float* debug_ptr;
+
     int num_verts;            //number of vertices
+
+    //viewport
+    float viewport_w;
+    float viewport_h;
 } vertexShader_arg_t;
 
 #ifdef CPU_SIM
