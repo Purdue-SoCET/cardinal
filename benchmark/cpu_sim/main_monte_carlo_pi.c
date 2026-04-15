@@ -65,20 +65,18 @@ int main(int argc, char** argv) {
 
     srand(time(NULL));
 
-    const int num_points = 1024 * 1024; 
+    const int num_points = 32 * 32; 
 
-    ALLOCATE_HEAP(circle_points_arr, int*, num_points);
+    ALLOCATE_HEAP(circle_points_arr, int, num_points);
     for (int i = 0; i < num_points; i++) {
-        ALLOCATE_HEAP(point_counter, int, 1);
-        *point_counter = 0;
-        circle_points_arr[i] = point_counter;
+        circle_points_arr[i] = 0;
     }
 
     monte_carlo_pi_arg_t* mcpi_args;
     ALLOCATE_ARGS(mcpi_args_mem, monte_carlo_pi_arg_t, 1);
     mcpi_args = mcpi_args_mem;
     mcpi_args->circle_points = circle_points_arr;
-    mcpi_args->base_seed = rand();
+    mcpi_args->base_seed = 1;//rand();
     mcpi_args->num_points = num_points;
 
     if(INPUT_MEM_DUMP){
@@ -89,10 +87,12 @@ int main(int argc, char** argv) {
     }
 
     {
-        int block_dim = 1024;
-        //int grid_dim = (num_points + block_dim - 1) / block_dim;
-        int grid_dim = 1;
+        int block_dim = 32;
+        int grid_dim = (num_points + block_dim - 1) / block_dim;
         run_kernel(kernel_monte_carlo_pi, grid_dim, block_dim, (void*)mcpi_args);
+        FILE* file_thread = fopen("build/threads/monte_carlo_piThreads.txt", "w");
+        fprintf(file_thread, "Grid Dim: %d, Block Dim: %d\n", grid_dim, block_dim);
+        fclose(file_thread);
     }
 
     if(OUTPUT_MEM_DUMP){
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
     int inside_circle = 0;
     for (int i = 0; i < num_points; i++) {
-        inside_circle += *(circle_points_arr[i]);
+        inside_circle += circle_points_arr[i];
     }
 
     float pi_estimate = (4.0f * inside_circle) / num_points;
