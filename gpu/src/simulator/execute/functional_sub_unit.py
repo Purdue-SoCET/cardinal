@@ -10,7 +10,7 @@ from simulator.utils.performance_counter.ldst import LdstPerfCount
 from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.instruction import Instruction
 from simulator.mem.dMemPackets import dMemResponse
-from simulator.mem_types import dCacheRequest, BLOCK_SIZE_WORDS, WORD_SIZE_BYTES
+from simulator.mem_types import dCacheRequest
 
 logger = logging.getLogger(__name__)
 
@@ -92,10 +92,13 @@ class FunctionalSubUnit(ABC):
         )
 
 class Ldst_Fu(FunctionalSubUnit):
-    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1, telemeter=None):
+    def __init__(self, num, ldst_q_size=4, wb_buffer_size=1, telemeter=None,
+                 block_size_words: int = 32, word_size_bytes: int = 4):
         self.ldst_q: list[pending_mem] = []
         self.ldst_q_size: int = ldst_q_size
         self.wb_buffer_size = wb_buffer_size
+        self.block_size_words = block_size_words
+        self.word_size_bytes = word_size_bytes
 
         self.wb_buffer = [] #completed dcache access buffer
 
@@ -205,7 +208,7 @@ class Ldst_Fu(FunctionalSubUnit):
                     pass
                 case 'MISS_COMPLETE':
                     # logger.info("Handling dcache MISS_COMPLETE")
-                    self.ldst_q[0].parseMshrHit(payload)
+                    self.ldst_q[0].parseMshrHit(payload, self.block_size_words, self.word_size_bytes)
                 case 'FLUSH_COMPLETE':
                     self.outstanding = False
                     self.waiting_for_flush = False
@@ -253,6 +256,8 @@ class Ldst_Fu(FunctionalSubUnit):
             is_busy=current_instr is not None,
             instr=current_instr,
             cycle=self.current_cycle,
+            q_occupancy=len(self.ldst_q),
+            q_capacity=self.ldst_q_size,
         )
         
         # Increment cycle counter for next iteration
@@ -377,8 +382,8 @@ class pending_mem():
                     self.instr.wdat[i] = Bits(uint = raw_val, length=32)
 
     
-    def parseMshrHit(self, payload):
-        num_bytes_block = BLOCK_SIZE_WORDS * WORD_SIZE_BYTES
+    def parseMshrHit(self, payload, block_size_words: int = 32, word_size_bytes: int = 4):
+        num_bytes_block = block_size_words * word_size_bytes
         block_mask = ~(num_bytes_block - 1)
         incoming_block_addr = payload.address & block_mask
 

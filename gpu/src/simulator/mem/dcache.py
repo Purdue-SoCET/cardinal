@@ -14,30 +14,30 @@ from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.stage import Stage
 from simulator.instruction import Instruction
 from simulator.mem_types import dMemResponse
+from simulator.utils.performance_counter.cache import CachePerfCount
+from simulator.utils.performance_counter.telemeter import Telemeter
 from simulator.mem_types import (
-    MSHR_BUFFER_LEN, MSHREntry, dCacheRequest, Addr, dCacheFrame,
-    NUM_BANKS, NUM_SETS_PER_BANK, NUM_WAYS, BLOCK_SIZE_WORDS,
-    WORD_SIZE_BYTES, HIT_LATENCY, RAM_LATENCY_CYCLES,
-    UUID_SIZE, BANK_ID_BIT_LEN, SET_INDEX_BIT_LEN, BLOCK_OFF_BIT_LEN, BYTE_OFF_BIT_LEN
+    MSHREntry, dCacheRequest, Addr, dCacheFrame,
 )
 
 
 class MSHRBuffer:
     """Simulates cache_mshr_buffer.sv."""
-    def __init__(self, buffer_len=MSHR_BUFFER_LEN, bank_id: int = 0):
-        self.buffer = deque()   # The buffer containing all the requests
+    def __init__(self, buffer_len: int = 16, bank_id: int = 0,
+                 block_size_words: int = 32, uuid_size: int = 8, bank_id_bits: int = 1):
+        self.buffer = deque()       # The buffer containing all the requests
         self.max_size = buffer_len  # The number of latches in the buffer
         self.bank_stall = False     # If the bank needs to be stalled if the MSHR buffer is full
+        self.bank_id = bank_id      # which bank the MSHR buffer belongs to
+        self.block_size_words = block_size_words
 
-        self.bank_id = bank_id  # which bank the MSHR buffer belongs to
-
-        # Generating a range of unqiue UUID for each MSHR buffer in a bank
-        local_uuid_bits = UUID_SIZE - BANK_ID_BIT_LEN
+        # Generating a range of unique UUIDs for each MSHR buffer in a bank
+        local_uuid_bits = uuid_size - bank_id_bits
         self.uuid_base_offset = bank_id << local_uuid_bits
-        self.local_uuid_max = (2**local_uuid_bits)  # Max value for the local counter, e.g., 2**7 = 128
+        self.local_uuid_max = (2 ** local_uuid_bits)  # e.g., 2**7 = 128
 
-        self.local_uuid_counter = 0 # The current UUID
-        self.last_issued_uuid = 0   # The last issued UUID
+        self.local_uuid_counter = 0  # The current UUID
+        self.last_issued_uuid = 0    # The last issued UUID
     
     def cycle(self):
         """Ages the entry at the head of the queue."""
@@ -101,10 +101,10 @@ class MSHRBuffer:
         
         self.last_issued_uuid = uuid    # The current UUID becomes the last assigned UUID
         
-        write_status = [False] * BLOCK_SIZE_WORDS   # Make a temporary false write_status
-        write_block = [0] * BLOCK_SIZE_WORDS    # Prepopulate the write block with all 0s
+        write_status = [False] * self.block_size_words   # Make a temporary false write_status
+        write_block = [0] * self.block_size_words    # Prepopulate the write block with all 0s
         if req.rw_mode == 'write':  # If the request is write
-            write_status[req.addr.block_offset] = True  # Change the write status for that specfic block to be True
+            write_status[req.addr.block_offset] = True  # Change the write status for that specific block to be True
             write_block[req.addr.block_offset] = req.store_value    # Store the write value to that specific block
 
         entry = MSHREntry(
@@ -114,7 +114,7 @@ class MSHRBuffer:
             write_status=write_status,  # The write status (write or read)
             write_block=write_block,    # The data to be written
             original_request=req,    # The original request
-            cycles_to_ready = MSHR_BUFFER_LEN # <-- MODIFIED: Set the timer
+            cycles_to_ready=self.max_size  # Timer = buffer depth
         )
         self.buffer.append(entry)   # Append the current MSHR entry to the buffer
         logging.debug(f"MSHR(B{req.addr.bank_id}): New primary miss (UUID {uuid}) for block 0x{req.addr.block_addr_val:X}")
@@ -134,14 +134,25 @@ class MSHRBuffer:
         return len(self.buffer) == 0
 
 class CacheBank:
-    def __init__(self, bank_id: int, num_sets: int, num_ways: int, mem_req_if: LatchIF):
-        self.bank_id = bank_id  # bank id
-        self.num_sets = num_sets    # Number of sets in a bank
-        self.num_ways = num_ways    # Number of ways in each set
-        self.mem_req_if = mem_req_if    # The memory request to memory
+    def __init__(self, bank_id: int, num_sets: int, num_ways: int, mem_req_if: LatchIF,
+                 hit_latency: int = 2, block_size_words: int = 32, word_size_bytes: int = 4,
+                 byte_off_bits: int = 2, block_off_bits: int = 5,
+                 bank_id_bits: int = 1, set_idx_bits: int = 4, tag_bits: int = 20):
+        self.bank_id = bank_id
+        self.num_sets = num_sets
+        self.num_ways = num_ways
+        self.mem_req_if = mem_req_if
+        self.block_size_words = block_size_words
+        self.word_size_bytes = word_size_bytes
+        self.byte_off_bits = byte_off_bits
+        self.block_off_bits = block_off_bits
+        self.bank_id_bits = bank_id_bits
+        self.set_idx_bits = set_idx_bits
+        self.tag_bits = tag_bits
 
         self.sets: List[List[dCacheFrame]] = [
-            [dCacheFrame() for _ in range(num_ways)] for _ in range(num_sets)    # Create a cache frame for every way in all the sets
+            [dCacheFrame(block=[0] * block_size_words) for _ in range(num_ways)]
+            for _ in range(num_sets)
         ]
         self.lru: List[List[int]] = [
             list(range(num_ways)) for _ in range(num_sets)  # Creates a list of integers for each set. The number to the left is the MRU and the number to the right is the LRU
@@ -152,7 +163,7 @@ class CacheBank:
         self.active_mshr: Optional[MSHREntry] = None    # Default is not active MSHR
         self.latched_victim: Optional[dCacheFrame] = None    # Default is not latched victim
         self.latched_victim_way = 0     # Default is way 0
-        self.fill_buffer = dCacheFrame()     # Used to hold the data for a miss
+        self.fill_buffer = dCacheFrame(block=[0] * block_size_words)  # Used to hold the data for a miss
         self.busy = False   # Default is that each bank is not busy
         
         # Defaulting Memory Interface States
@@ -164,7 +175,7 @@ class CacheBank:
         self.flush_way_idx = 0
 
         # Hit Pipeline for every single bank
-        self.hit_pipeline = deque([None] * HIT_LATENCY, maxlen=HIT_LATENCY)
+        self.hit_pipeline = deque([None] * hit_latency, maxlen=hit_latency)
         self.hit_pipeline_busy = False
     
     def start_flush(self):
@@ -235,7 +246,7 @@ class CacheBank:
             valid=True,
             dirty=any(mshr_entry.write_status), # Dirty if the request writes to any of the blocks
             tag=mshr_entry.original_request.addr.tag,
-            block=[0] * BLOCK_SIZE_WORDS    # The data is initialized to 0 for now
+            block=[0] * self.block_size_words    # The data is initialized to 0 for now
         )
         
         # Transition FSM
@@ -278,11 +289,11 @@ class CacheBank:
         elif self.state == 'BLOCK_PULL':    # Current state: BLOCK_PULL 
             if not self.waiting_for_mem and self.incoming_mem_data is None:     # (The RAM is ready to accept a new request)
                 if self.mem_req_if.ready_for_push():
-                    block_addr = self.active_mshr.block_addr_val << (BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)  # Calculating the block address in BYTE
+                    block_addr = self.active_mshr.block_addr_val << (self.block_off_bits + self.byte_off_bits)  # Calculating the block address in BYTE
                     # The request that's being sent to RAM
                     request = {
                         "addr": block_addr,
-                        "size": BLOCK_SIZE_WORDS * 4,
+                        "size": self.block_size_words * self.word_size_bytes,
                         "uuid": self.active_mshr.uuid,
                         "warp": self.bank_id,    # IMPORTANT: warp field stores the bank id
                         "rw_mode": "read",
@@ -300,9 +311,9 @@ class CacheBank:
                 logging.debug(f"Bank {self.bank_id}: BLOCK_PULL complete.")
                 raw_bytes = self.incoming_mem_data.tobytes()    # Convert the incoming data to bytes
 
-                for i in range(BLOCK_SIZE_WORDS):
-                    start = i * 4
-                    end = start + 4
+                for i in range(self.block_size_words):
+                    start = i * self.word_size_bytes
+                    end = start + self.word_size_bytes
                     if (start < len(raw_bytes)):
                         word_bytes = raw_bytes[start:end]
                         ram_word = int.from_bytes(word_bytes, byteorder='little')
@@ -335,13 +346,13 @@ class CacheBank:
                     victim_tag = self.latched_victim.tag
                     victim_set = self.active_mshr.original_request.addr.set_index
 
-                    addr = (victim_tag << (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
-                           (victim_set << (BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
-                           (self.bank_id << (BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN))
-                    
+                    addr = (victim_tag << (self.set_idx_bits + self.bank_id_bits + self.block_off_bits + self.byte_off_bits)) | \
+                           (victim_set << (self.bank_id_bits + self.block_off_bits + self.byte_off_bits)) | \
+                           (self.bank_id << (self.block_off_bits + self.byte_off_bits))
+
                     req_payload = {
                         "addr": addr,
-                        "size": BLOCK_SIZE_WORDS * 4,   # Size in bytes
+                        "size": self.block_size_words * self.word_size_bytes,   # Size in bytes
                         "uuid": self.active_mshr.uuid,
                         "warp_id": self.bank_id,
                         "rw_mode": "write",
@@ -360,7 +371,7 @@ class CacheBank:
         
         # Finished victinm eject and block pull
         elif self.state == 'FINISH':
-            for i in range(BLOCK_SIZE_WORDS):
+            for i in range(self.block_size_words):
                 if (self.active_mshr.write_status[i]):
                     req = self.active_mshr.original_request
                     data = self.active_mshr.write_block[i]
@@ -382,7 +393,7 @@ class CacheBank:
             outputs['uuid_ready'] = True
             outputs['uuid_out'] = self.active_mshr.uuid
             self.active_mshr = None
-            self.fill_buffer = dCacheFrame()
+            self.fill_buffer = dCacheFrame(block=[0] * self.block_size_words)
             self.latched_victim = None
             self.busy = False
             next_state = 'START'
@@ -417,14 +428,14 @@ class CacheBank:
                     
                     # 2. Reconstruct the full byte address
                     # Addr = [ Tag | Set | Bank | BlockOff | ByteOff ]
-                    addr = (victim_tag << (SET_INDEX_BIT_LEN + BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
-                           (self.flush_set_idx << (BANK_ID_BIT_LEN + BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN)) | \
-                           (self.bank_id << (BLOCK_OFF_BIT_LEN + BYTE_OFF_BIT_LEN))
-                    
+                    addr = (victim_tag << (self.set_idx_bits + self.bank_id_bits + self.block_off_bits + self.byte_off_bits)) | \
+                           (self.flush_set_idx << (self.bank_id_bits + self.block_off_bits + self.byte_off_bits)) | \
+                           (self.bank_id << (self.block_off_bits + self.byte_off_bits))
+
                     # 3. Define the payload
                     req_payload = {
                         "addr": addr,
-                        "size": BLOCK_SIZE_WORDS * 4,
+                        "size": self.block_size_words * self.word_size_bytes,
                         "uuid": 0, # Dummy UUID for flush operations
                         "warp": self.bank_id, # Used for routing response back to this bank
                         "rw_mode": "write",
@@ -465,12 +476,14 @@ class LockupFreeCacheStage(Stage):
     The main cache simulator
     """
     def __init__(
-            self, 
-            name: str, 
-            behind_latch: Optional[LatchIF], # LSU -> Cache
-            forward_ifs_write: Optional[Dict[str, ForwardingIF]], # Cache -> LSU
-            mem_req_if: LatchIF, # Cache -> Memory
-            mem_resp_if: LatchIF # Memory -> Cache
+            self,
+            name: str,
+            behind_latch: Optional[LatchIF],           # LSU -> Cache
+            forward_ifs_write: Optional[Dict[str, ForwardingIF]],  # Cache -> LSU
+            mem_req_if: LatchIF,                       # Cache -> Memory
+            mem_resp_if: LatchIF,                      # Memory -> Cache
+            telemeter: Optional[Telemeter] = None,
+            cache_config: Optional[Dict[str, Any]] = None,
         ):
         super().__init__(
             name = name,
@@ -478,20 +491,56 @@ class LockupFreeCacheStage(Stage):
             forward_ifs_write = forward_ifs_write or {}
         )
         self.mem_req_if = mem_req_if    # The interface used by the cache to send to the memory
-        self.mem_resp_if = mem_resp_if # The interface used the memory to send data back to cache
+        self.mem_resp_if = mem_resp_if  # The interface used by the memory to send data back to cache
 
-        self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp" # Pick a name
+        self.perf_count = CachePerfCount(name=name)
+        if telemeter is not None:
+            telemeter.register_unit(self.perf_count)
+
+        cfg = cache_config or {}
+        _hit_latency      = cfg.get("hit_latency",      2)
+        _mshr_buf_len     = cfg.get("mshr_buffer_len",  16)
+        _num_banks        = cfg.get("num_banks",         2)
+        _num_sets_per_bank= cfg.get("num_sets_per_bank", 16)
+        _num_ways         = cfg.get("num_ways",          8)
+        _block_size_words = cfg.get("block_size_words",  32)
+        _word_size_bytes  = cfg.get("word_size_bytes",   4)
+        _uuid_size        = cfg.get("uuid_size",         8)
+
+        # Derived address bit lengths
+        _byte_off_bits  = (_word_size_bytes   - 1).bit_length()
+        _block_off_bits = (_block_size_words  - 1).bit_length()
+        _bank_id_bits   = (_num_banks         - 1).bit_length()
+        _set_idx_bits   = (_num_sets_per_bank - 1).bit_length()
+        _tag_bits       = 32 - (_set_idx_bits + _bank_id_bits + _block_off_bits + _byte_off_bits)
+
+        # Store for use in compute()
+        self.num_banks        = _num_banks
+        self.block_size_words = _block_size_words
+        self.word_size_bytes  = _word_size_bytes
+        self.byte_off_bits    = _byte_off_bits
+        self.block_off_bits   = _block_off_bits
+        self.bank_id_bits     = _bank_id_bits
+        self.set_idx_bits     = _set_idx_bits
+        self.tag_bits         = _tag_bits
+
+        self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp"
         if self.behind_latch and (self.DCACHE_LSU_IF_NAME in self.forward_ifs_write):
             self.behind_latch.forward_if = self.forward_ifs_write[self.DCACHE_LSU_IF_NAME]
-        
-        # Instantiate banks and MSHRs
-        # Create NUM_BANKS number of banks each with NUM_SETS_PER_BANK of sets and NUM_WAYS of ways
+
+        # Instantiate banks and MSHRs with config-driven values
         self.banks = [
-            CacheBank(i, NUM_SETS_PER_BANK, NUM_WAYS, mem_req_if) for i in range(NUM_BANKS)
+            CacheBank(i, _num_sets_per_bank, _num_ways, mem_req_if,
+                      hit_latency=_hit_latency, block_size_words=_block_size_words,
+                      word_size_bytes=_word_size_bytes, byte_off_bits=_byte_off_bits,
+                      block_off_bits=_block_off_bits, bank_id_bits=_bank_id_bits,
+                      set_idx_bits=_set_idx_bits, tag_bits=_tag_bits)
+            for i in range(_num_banks)
         ]
-        # Create a MSHR buffer for each bank, PASSING IN THE BANK ID
         self.mshrs = [
-            MSHRBuffer(MSHR_BUFFER_LEN, i) for i in range(NUM_BANKS)
+            MSHRBuffer(_mshr_buf_len, i, block_size_words=_block_size_words,
+                       uuid_size=_uuid_size, bank_id_bits=_bank_id_bits)
+            for i in range(_num_banks)
         ]
         
         # State for the pipeline instruction this stage is processing
@@ -527,6 +576,12 @@ class LockupFreeCacheStage(Stage):
         self.behind_latch.forward_if.set_wait(0)
         input_data = None
 
+        # Perf counter signals for this cycle
+        _is_hit = False
+        _is_miss = False
+        _is_eviction = False
+        _is_busy = False  # computed after processing below
+
         # --- 1. Check for memory responses
         if (self.mem_resp_if.valid):
             resp = self.mem_resp_if.pop()
@@ -540,12 +595,12 @@ class LockupFreeCacheStage(Stage):
                 else:
                     data = None
                     
-                if (target_bank_id is not None) and (target_bank_id >= 0 and target_bank_id < NUM_BANKS):
+                if (target_bank_id is not None) and (target_bank_id >= 0 and target_bank_id < self.num_banks):
                     self.banks[target_bank_id].complete_mem_access(data)
         
         # --- 3. Advance all internal components (Miss Handling) ---
         bank_busy_signals = []  # A list of busy signal from each bank
-        for i in range(NUM_BANKS):  # Iterating throguh all the banks
+        for i in range(self.num_banks):  # Iterating through all the banks
             bank = self.banks[i]
             mshr = self.mshrs[i]
             mshr.cycle()
@@ -583,14 +638,16 @@ class LockupFreeCacheStage(Stage):
                         ))
                 
         # 3c. Service new misses if banks are ready
-        for i in range(NUM_BANKS):  # Iterating through all banks again
+        for i in range(self.num_banks):  # Iterating through all banks again
             bank = self.banks[i]    # Get the ith bank
             mshr = self.mshrs[i]    # Get the ith MSHR buffer
             if bank.state == 'START' and not mshr.is_empty():   # If the bank state is START and the MSHR is not empty
                 mshr_head = mshr.get_head() # Get the oldest MSHR request
                 if mshr_head: # <-- MODIFIED: Check if get_head() returned a ready entry
                     logging.info(f"Cache: Bank {i} is starting service for miss UUID {mshr_head.uuid}")
-                    bank.start_miss_service(mshr_head)  # Start the miss service method on the bank
+                    bank.start_miss_service(mshr_head)
+                    if bank.state == 'VICTIM_EJECT':
+                        _is_eviction = True
         
         # 3e. NEW: Generate the busy signals *after* new misses have started
         bank_busy_signals = [bank.busy for bank in self.banks]
@@ -647,6 +704,11 @@ class LockupFreeCacheStage(Stage):
                     store_value=getattr(input_data, 'store_value', 0),
                     halt = getattr(input_data, 'halt', False)
                 )
+                self.pending_request.addr = Addr(
+                    self.pending_request.addr_val,
+                    self.byte_off_bits, self.block_off_bits,
+                    self.bank_id_bits, self.set_idx_bits, self.tag_bits,
+                )
 
         if self.pending_request:    # If currently handling a request
             req = self.pending_request  # The request
@@ -661,6 +723,7 @@ class LockupFreeCacheStage(Stage):
                 if hit:
                     # This is Cycle 1 of the hit
                     logging.info(f"Cache: HIT for addr 0x{req.addr_val:X}. Pipelining.")
+                    _is_hit = True
                     formatted_data = self.calc_data_size(data, req.addr_val, req.size)
 
                     target_bank.hit_pipeline[-1] = {'data': formatted_data, 'req': req}
@@ -674,7 +737,7 @@ class LockupFreeCacheStage(Stage):
                     logging.info(f"Cache: MISS for addr 0x{req.addr_val:X}")
 
                     # This now works because bank_busy_signals was populated in Step 3
-                    bank_empty = not bank_busy_signals[bank_id] 
+                    bank_empty = not bank_busy_signals[bank_id]
 
                     if mshr.check_stall(bank_empty):
                         print(f"Cache: MSHR FULL for bank {bank_id}. Stalling pipeline.")
@@ -682,9 +745,10 @@ class LockupFreeCacheStage(Stage):
                         self.behind_latch.forward_if.set_wait(1)
                     else:
                         # It was an accepted miss
-                        uuid, is_new = mshr.add_miss(req) # No longer pass new_uuid
-                        if is_new: # Only track new primary misses
+                        uuid, is_new = mshr.add_miss(req)
+                        if is_new:  # Only count new primary misses
                             self.active_misses[uuid] = req
+                            _is_miss = True
                         self.output_buffer.append(dMemResponse(
                             type = 'MISS_ACCEPTED',
                             miss = True,
@@ -729,3 +793,13 @@ class LockupFreeCacheStage(Stage):
             else:
                 # The LSU is busy, hold the data
                 pass
+
+        # busy = hit/miss processed this cycle, or banks still doing memory work, or flushing
+        _is_busy = _is_hit or _is_miss or any(b.busy for b in self.banks) or self.flushing
+        self.perf_count.record_cycle(
+            is_stalled=self.stall,
+            is_busy=_is_busy,
+            is_hit=_is_hit,
+            is_miss=_is_miss,
+            is_eviction=_is_eviction,
+        )

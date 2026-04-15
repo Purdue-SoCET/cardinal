@@ -9,6 +9,7 @@ from common.custom_enums_multi import H_Op, I_Op, B_Op, P_Op, S_Op
 from simulator.interfaces import LatchIF
 from simulator.instruction import Instruction
 from simulator.utils.performance_counter.writeback import WritebackPerfCount as PerfCount
+from simulator.utils.performance_counter import Telemeter
 from simulator.writeback.config import (
     WritebackBufferCount,
     WritebackBufferSize,
@@ -26,7 +27,8 @@ class WritebackBuffer:
         regfile_config: RegisterFileConfig, 
         pred_regfile_config: PredicateRegisterFileConfig,
         behind_latches: Dict[str, LatchIF], 
-        fsu_names: Optional[List[str]]
+        fsu_names: Optional[List[str]],
+        telemeter: Optional[Telemeter] = None
     ):
         if buffer_config.count_scheme == WritebackBufferCount.BUFFER_PER_FSU:
             self.count_scheme = WritebackBufferCount.BUFFER_PER_FSU
@@ -87,8 +89,14 @@ class WritebackBuffer:
         self.behind_latches = behind_latches
         self.total_banks = regfile_config.num_banks + pred_regfile_config.num_banks
 
-        # Initialize performance counters for each buffer
-        self.perf_counts = {name: PerfCount(name=name) for name in buffer_names}
+        # Initialize performance counters for each buffer with "_wb_buffer" suffix
+        self.perf_counts = {name: PerfCount(name=f"{name}_wb_buffer") for name in buffer_names}
+        
+        # Register performance counters with telemeter if provided
+        if telemeter is not None:
+            for perf_count in self.perf_counts.values():
+                telemeter.register_unit(perf_count)
+        
         self.cycle = 0
             
     def push(self, buffer: str, in_data: Instruction) -> None:
@@ -120,10 +128,30 @@ class WritebackBuffer:
         """Export all performance counters to CSV files."""
         # Export individual buffer stats
         for buffer_name, perf_count in self.perf_counts.items():
-            perf_count.to_csv(directory=directory)
+            perf_count.to_parquet(directory=directory)
         
         # Export combined stats
-        PerfCount.to_combined_csv(list(self.perf_counts.values()), directory=directory)
+        PerfCount.to_combined_parquet(list(self.perf_counts.values()), path=f"{directory}/writeback_combined_perf_summary.parquet")
+    
+    def finalize_perf_counts(self, directory: str = ".") -> dict:
+        """Finalize all performance counters and return combined summary.
+        
+        Parameters
+        ----------
+        directory : Output directory for exporting performance counter files
+        
+        Returns
+        -------
+        dict : Dictionary mapping buffer names to their finalized statistics
+        """
+        summary = {}
+        for buffer_name, perf_count in self.perf_counts.items():
+            summary[buffer_name] = perf_count.finalize()
+        
+        # Export performance counters
+        self.export_perf_counts(directory)
+        
+        return summary
     
     def clear_all_buffers(self) -> None:
         """Clear all buffers and reset cycle counter (useful for testing)."""
@@ -150,32 +178,61 @@ class WritebackBuffer:
         values_to_store = {} # data coming from the execute stage that will be stored into the writeback buffer
         buffers_to_writeback = {} # buffers that have been selected to pop from and write back to the register file this cycle, keyed by buffer name
         values_to_writeback = {} # data from the buffers that will be written back to the register file this cycle, keyed by bank name
+        writeback_sources = {} # maps bank_name -> buffer_name for instructions exiting buffers
 
         values_to_store = self._select_values_to_store()
         buffers_to_writeback = self._select_buffers_for_writeback()
-        values_to_writeback = self._get_values_from_buffers(buffers_to_writeback)
+        values_to_writeback, writeback_sources = self._get_values_from_buffers(buffers_to_writeback)
 
+        # Store incoming data and mark entry cycles BEFORE updating perf counts
         for buffer_name, data in values_to_store.items():
             if data is not None:
                 self.buffers[buffer_name].push(data)
+                # Mark entry cycle for instructions entering buffer
+                data.wb_entry_cycle = self.cycle
 
-        self._update_perf_counts(values_to_writeback=values_to_writeback, values_to_store = values_to_store)
+        self._update_perf_counts(values_to_writeback=values_to_writeback, values_to_store=values_to_store, writeback_sources=writeback_sources)
 
         self.cycle += 1
         
         return values_to_writeback
            
-    def _update_perf_counts(self, values_to_writeback: Dict[str, Optional[Instruction]], values_to_store: Dict[str, Optional[Instruction]]) -> None:
-         # Update performance counters for each buffer
+    def _update_perf_counts(self, values_to_writeback: Dict[str, Optional[Instruction]], values_to_store: Dict[str, Optional[Instruction]], writeback_sources: Dict[str, str]) -> None:
+        """Update performance counters for each buffer.
+        
+        Parameters
+        ----------
+        values_to_writeback : Instructions being written back to register file (keyed by bank_name)
+        values_to_store : Instructions being stored to buffers (keyed by buffer_name)
+        writeback_sources : Maps bank_name -> buffer_name for buffers that were selected for writeback
+        """
         for buffer_name, buffer in self.buffers.items():
             writeback_this_cycle = False
             store_this_cycle = False
             
             buffer_occupancy = len(buffer)
-            buffer_capacity = buffer.capacity + 1  # +1 because capacity is stored as (size - 1)
+            
+            # Get buffer capacity based on buffer type
+            if hasattr(buffer, 'capacity'):
+                buffer_capacity = buffer.capacity + 1  # +1 because capacity is stored as (size - 1)
+            elif hasattr(buffer, 'length'):
+                buffer_capacity = buffer.length
+            else:
+                buffer_capacity = len(buffer) + 1
 
-            if buffer_name in values_to_writeback.keys() and values_to_writeback[buffer_name] is not None:
-                writeback_this_cycle = True
+            # Check if this buffer was selected for writeback this cycle
+            for bank_name, source_buffer_name in writeback_sources.items():
+                if source_buffer_name == buffer_name:
+                    # Record instruction latency only if an instruction actually exited
+                    instr_exiting = values_to_writeback[bank_name]
+                    if instr_exiting is not None:
+                        writeback_this_cycle = True
+                        if hasattr(instr_exiting, 'wb_entry_cycle'):
+                            self.perf_counts[buffer_name].record_instruction_latency(
+                                entry_cycle=instr_exiting.wb_entry_cycle,
+                                exit_cycle=self.cycle
+                            )
+            
             if buffer_name in values_to_store.keys() and values_to_store[buffer_name] is not None:
                 store_this_cycle = True
             
@@ -183,13 +240,15 @@ class WritebackBuffer:
             instructions_in_buffer = []
             if hasattr(buffer, 'queue'):
                 instructions_in_buffer = [instr for instr in buffer.queue if instr is not None]
-            elif hasattr(buffer, 'stack'):
-                instructions_in_buffer = [instr for instr in buffer.stack if instr is not None]
+            elif hasattr(buffer, 'items'):
+                instructions_in_buffer = [instr for instr in buffer.items if instr is not None]
             elif hasattr(buffer, 'buffer'):
                 instructions_in_buffer = [instr for instr in buffer.buffer if instr is not None]
             
-            self.perf_counts[buffer_name].increment(
-                cycle=self.cycle,
+            # Record cycle using the PerfCounterBase.record_cycle method
+            self.perf_counts[buffer_name].record_cycle(
+                is_stalled=False,  # Writeback stage doesn't stall in traditional sense
+                is_busy=store_this_cycle or writeback_this_cycle,
                 buffer_occupancy=buffer_occupancy,
                 buffer_capacity=buffer_capacity,
                 stored_this_cycle=store_this_cycle,
@@ -197,22 +256,35 @@ class WritebackBuffer:
                 instructions_in_buffer=instructions_in_buffer
             )
                             
-    def _get_values_from_buffers(self, buffers_to_writeback: Dict[str, Any]) -> Dict:
+    def _get_values_from_buffers(self, buffers_to_writeback: Dict[str, Any]) -> tuple[Dict, Dict]:
+        """Get values from buffers and track which buffers they came from.
         
-        values = {bank_name:None for bank_name in self.bank_names} 
-
+        Returns
+        -------
+        tuple[Dict, Dict]
+            - values: Data keyed by bank_name
+            - writeback_sources: Maps bank_name -> buffer_name for NON-None pops only
+        """
+        values = {bank_name: None for bank_name in self.bank_names}
+        writeback_sources = {}  # Maps bank_name -> buffer_name for perf tracking
+        
         for bank, buffer in buffers_to_writeback.items():
             if buffer is not None:
+                # Pop the value (may be None if buffer is empty)
                 values[bank] = buffer.pop()
 
-                if values[bank] is None:
-                    continue
+                # Only record writeback source if we actually got a non-None value
+                if values[bank] is not None:
+                    # Find which buffer_name this buffer object corresponds to
+                    for buffer_name, buf_obj in self.buffers.items():
+                        if buf_obj is buffer:
+                            writeback_sources[bank] = buffer_name
+                            break
+                    
+                    for i in range(32):
+                        values[bank].wdat[i] = None if values[bank].predicate[i].bin == "0" else values[bank].wdat[i]
 
-                for i in range(32):
-                    values[bank].wdat[i] = None if values[bank].predicate[i].bin == "0" else values[bank].wdat[i]
-
-
-        return values
+        return values, writeback_sources
 
     def _select_values_to_store(self) -> List[Instruction]:
         # Select values to store - for PER_BANK we iterate banks, for PER_FSU we iterate FSUs
