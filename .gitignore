@@ -28,8 +28,7 @@ Thumbs.db
 *.log
 *.txt
 *.hex
+!gpu/tests/exp/**/*.hex
 *.egg-info/
 results/
 
-# Configuration files
-config.toml
