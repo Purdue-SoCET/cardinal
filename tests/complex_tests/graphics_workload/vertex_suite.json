@@ -1,0 +1,141 @@
+{
+  "suite_name": "Graphics Pipeline - Vertex Stage",
+  "shared_config": {
+    "c_source": {
+      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/",
+      "source": "vertexShader_unrolled.c"
+    }
+  },
+  "tests": [
+    {
+      "name": "Vertex Projection - Baseline (0 deg)",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Cube Geometry",
+          "command": "python3 gen_graphics_test.py --mode vertex --angle 0.0 --out_init cube_init.hex --out_exp vertex_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": ["cube_init.hex"],
+            "produces_mem": "vertex_out.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "vertex_exp.hex",
+        "float_tolerance": 0.005
+      }
+    },
+    {
+      "name": "Vertex Projection - 90deg X-Axis Spin",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Cube Geometry",
+          "command": "python3 gen_graphics_test.py --mode vertex --angle 1.5708 --axis 1.0 0.0 0.0 --out_init cube_init.hex --out_exp vertex_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": ["cube_init.hex"],
+            "produces_mem": "vertex_out.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "vertex_exp.hex",
+        "float_tolerance": 0.005
+      }
+    },
+    {
+      "name": "Vertex Projection - 180deg Z-Axis Spin",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Cube Geometry",
+          "command": "python3 gen_graphics_test.py --mode vertex --angle 3.1416 --axis 0.0 0.0 1.0 --out_init cube_init.hex --out_exp vertex_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": ["cube_init.hex"],
+            "produces_mem": "vertex_out.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "vertex_exp.hex",
+        "float_tolerance": 0.005
+      }
+    },
+    {
+      "name": "Vertex Projection - Offset Camera",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Cube Geometry",
+          "command": "python3 gen_graphics_test.py --mode vertex --camera 10.0 5.0 -5.0 --out_init cube_init.hex --out_exp vertex_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": ["cube_init.hex"],
+            "produces_mem": "vertex_out.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "vertex_exp.hex",
+        "float_tolerance": 0.005
+      }
+    },
+    {
+      "name": "Vertex Projection - Offset Camera & 45deg Spin",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Cube Geometry",
+          "command": "python3 gen_graphics_test.py --mode vertex --angle 0.7854 --camera 10.0 5.0 -5.0 --out_init cube_init.hex --out_exp vertex_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": ["cube_init.hex"],
+            "produces_mem": "vertex_out.hex"
+          }
+        }
+      ],
+      "verification": {
+        "expected_file": "vertex_exp.hex",
+        "float_tolerance": 0.005
+      }
+    }
+  ]
+}
