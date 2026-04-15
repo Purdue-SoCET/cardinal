@@ -14,9 +14,12 @@ eviction_count  : int  – cycles a dirty line was evicted (writeback initiated)
 
 Derived statistics (computed in finalize())
 -------------------------------------------
-total_accesses  : int   – hit_count + miss_count
-hit_rate        : float – hit_count  / total_accesses
-miss_rate       : float – miss_count / total_accesses
+total_accesses      : int   – hit_count + miss_count
+hit_rate            : float – hit_count  / total_accesses
+miss_rate           : float – miss_count / total_accesses
+avg_service_latency : float – hit_rate * hit_latency + miss_rate * mem_latency
+                              Average cycles from request received in cache to
+                              response ready in cache.
 """
 
 from __future__ import annotations
@@ -43,11 +46,13 @@ class CachePerfCount(PerfCounterBase):
     All boolean kwargs default to False so callers only pass what changed.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, hit_latency: int = 1, mem_latency: int = 0) -> None:
         super().__init__(name)
         self.hit_count: int = 0
         self.miss_count: int = 0
         self.eviction_count: int = 0
+        self.hit_latency: int = hit_latency
+        self.mem_latency: int = mem_latency
 
     # ------------------------------------------------------------------
     # Extension hooks
@@ -70,13 +75,17 @@ class CachePerfCount(PerfCounterBase):
 
     def _extra_summary(self) -> dict[str, Any]:
         total_accesses = self.hit_count + self.miss_count
+        hit_rate = self._safe_div(self.hit_count, total_accesses)
+        miss_rate = self._safe_div(self.miss_count, total_accesses)
+        avg_service_latency = hit_rate * self.hit_latency + miss_rate * self.mem_latency
         return {
             "hit_count": self.hit_count,
             "miss_count": self.miss_count,
             "eviction_count": self.eviction_count,
             "total_accesses": total_accesses,
-            "hit_rate": self._safe_div(self.hit_count, total_accesses),
-            "miss_rate": self._safe_div(self.miss_count, total_accesses),
+            "hit_rate": hit_rate,
+            "miss_rate": miss_rate,
+            "avg_service_latency": avg_service_latency,
         }
 
     def _reset_unit_counters(self) -> None:

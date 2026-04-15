@@ -291,7 +291,9 @@ class SM:
         # Initialize memory
         mem = Mem(start_pc=start_pc, input_file=str(self.test_file), fmt=self.test_file_type)
                 
-        # Memory controller
+        # Memory controller — instantiated before cache stages so that
+        # telemeter.publish("Mem_Controller", "latency", ...) is called before
+        # ICacheStage and LockupFreeCacheStage call telemeter.receive().
         memc = MemController(
             name="Mem_Controller",
             ic_req_latch=icache_mem_req_if,
@@ -301,6 +303,7 @@ class SM:
             mem_backend=mem,
             latency=mem_latency,
             policy="rr",
+            telemeter=self.telemeter,
         )
 
         # D-Cache stage

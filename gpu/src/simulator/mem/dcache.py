@@ -132,7 +132,7 @@ class MSHRBuffer:
         self.max_size = cfg["mshr_buffer_len"]  # The number of latches in the buffer
         self.bank_stall = False     # If the bank needs to be stalled if the MSHR buffer is full
         self.bank_id = bank_id      # which bank the MSHR buffer belongs to
-        self.block_size_words = block_size_words
+        self.block_size_words = cfg["block_size_words"]
 
         # Generating a range of unqiue UUID for each MSHR buffer in a bank
         local_uuid_bits = cfg["uuid_size"] - cfg["bank_id_bit_len"]
@@ -600,7 +600,33 @@ class LockupFreeCacheStage(Stage):
         self.mem_req_if = mem_req_if    # The interface used by the cache to send to the memory
         self.mem_resp_if = mem_resp_if # The interface used the memory to send data back to cache
         self.cfg = build_dcache_config(cache_config)
+        self.mem_req_if = mem_req_if
+        self.mem_resp_if = mem_resp_if  # The interface used by memory to send data back to cache
+        self.cfg = build_dcache_config(cache_config)
 
+        _hit_latency = self.cfg["hit_latency"]
+        _mem_latency = (
+            telemeter.receive("Mem_Controller", "latency", default=0)
+            if telemeter is not None else 0
+        )
+
+        self.perf_count = CachePerfCount(
+            name=name,
+            hit_latency=_hit_latency,
+            mem_latency=_mem_latency,
+        )
+
+        if telemeter is not None:
+            telemeter.register_unit(self.perf_count)
+
+        self.num_banks = self.cfg["num_banks"]
+        self.block_size_words = self.cfg["block_size_words"]
+        self.word_size_bytes = self.cfg["word_size_bytes"]
+        self.byte_off_bits = self.cfg["byte_off_bit_len"]
+        self.block_off_bits = self.cfg["block_off_bit_len"]
+        self.bank_id_bits = self.cfg["bank_id_bit_len"]
+        self.set_idx_bits = self.cfg["set_index_bit_len"]
+        self.tag_bits = self.cfg["tag_bit_len"]
         self.DCACHE_LSU_IF_NAME = "DCache_LSU_Resp"
         if self.behind_latch and (self.DCACHE_LSU_IF_NAME in self.forward_ifs_write):
             self.behind_latch.forward_if = self.forward_ifs_write[self.DCACHE_LSU_IF_NAME]

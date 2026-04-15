@@ -38,7 +38,9 @@ class ICacheStage(Stage):
             forward_ifs_write=forward_ifs_write or {},
         )
 
-        self.perf_count = CachePerfCount(name=name)
+        _hit_latency = cache_config.get("hit_latency", 1)
+        _mem_latency = telemeter.receive("Mem_Controller", "latency", default=0) if telemeter is not None else 0
+        self.perf_count = CachePerfCount(name=name, hit_latency=_hit_latency, mem_latency=_mem_latency)
         if telemeter is not None:
             telemeter.register_unit(self.perf_count)
 

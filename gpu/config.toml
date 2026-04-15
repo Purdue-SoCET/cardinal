@@ -191,6 +191,10 @@ block_size = 4
 # Set associativity (1 = direct mapped, higher = more associativity)
 associativity = 1
 
+# Type: int, Default: 1
+# Number of pipeline stages in the cache hit path (effectively 1 cycle for ICache)
+hit_latency = 1
+
 [dcache]
 # Type: int (bytes)
 # Data cache size in bytes
