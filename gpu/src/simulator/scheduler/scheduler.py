@@ -13,12 +13,14 @@ from simulator.stage import Stage
 from simulator.scheduler.csrtable import CsrTable
 import math
 from simulator.interfaces import ForwardingIF, LatchIF
+from simulator.utils.performance_counter.scheduler import SchedulerPerfCount as PerfCount
+from simulator.utils.performance_counter.telemeter import Telemeter
 
 # comment/uncomment for printing out debug info
 # print = lambda *args, **kwargs: None
 
 class SchedulerStage(Stage):
-    def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: float = 32, policy: str = "RR", **kwargs):
+    def __init__(self, *args, csrtable, warp_count: int = 32, warp_size: float = 32, policy: str = "RR", telemeter: Telemeter, **kwargs):
         super().__init__(*args, **kwargs)
 
         # static shit
@@ -52,14 +54,15 @@ class SchedulerStage(Stage):
         # Kai Ze: create halt signal to only fire once
         self.halt_sent: bool = False
 
-        # debug
+        # debug / temp
         self.issued_warp_last_cycle: Optional[int] = None
-
-        # could add perf counters
         self.stop_fetching = False
-
-        # DELETE LATER
         self.system_finished: bool = False
+
+        # perf counters
+        self.telemeter = telemeter
+        self.perf_count = PerfCount(name=self.name)
+        self.telemeter.register_unit(self.perf_count)
 
     def dump(self):
         print(f"\n{'='*80}")
@@ -240,7 +243,6 @@ class SchedulerStage(Stage):
 
                 if self.warp_table[group].halt_mask_even.uint == 0 and self.warp_table[group].halt_mask_odd.uint == 0:
                     self.warp_table[group].halt = 1
-                    return
 
                 if self.warp_table[group].warps[warp_id % 2].in_flight == 0:
                     if self.warp_table[group].warps[warp_id % 2].state != WarpState.HALT:
@@ -296,19 +298,18 @@ class SchedulerStage(Stage):
             # if we can fetch this warp group
             if warp_group.issue:
                 self.fetch(warp_group=warp_group)
-                return
+                return True
                 
             else:
                 self.rr_index = (self.rr_index + 1) % self.num_groups
 
         # nothing can fetch here
-        return # NONE
+        return False # NONE
 
     # greedy policy WIP
     def greedy_oldest(self):
         # local bookeeping metrics
         oldest_max = len(self.oldest)
-        unissued_max = len(self.unissued)
         oldest_idx = 0
         unissued_idx = 0
         oldest_stall = False
@@ -325,11 +326,7 @@ class SchedulerStage(Stage):
                 # if we picked out of the unissued list
                 if oldest_stall:
                     self.oldest.append(self.unissued.pop(unissued_idx - 1))
-                return
-            
-            # # protection
-            # if(unissued_idx == unissued_max):
-            #     return
+                return True
             
             else:
                 # look through greedy
@@ -344,7 +341,7 @@ class SchedulerStage(Stage):
                 
 
         # nothing can fetch here
-        return
+        return False
 
     # warp scheduler compute method
     def compute(self):
@@ -368,13 +365,17 @@ class SchedulerStage(Stage):
             # print("[Scheduler] MISS in ICache, STALLING.")
             return # RETURN NOTHING DONT PUSH ANYTHING EITHER
 
+        fetch: bool
+        
         match self.policy:
             case "RR":
-                self.round_robin()
+                fetch = self.round_robin()
             case "GTO":
-                self.greedy_oldest()
+                fetch = self.greedy_oldest()
 
         # init from TBS if needed
         self.tbs_init()
+
+        self.perf_count.record_cycle(is_stalled=fetch, is_busy=not fetch, WarpTable=self.warp_table)
 
         # self.ahead_latch.push(instr)

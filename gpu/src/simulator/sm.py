@@ -361,6 +361,7 @@ class SM:
             forward_ifs_write=scheduler_fwif_write,
             csrtable = csr_table,
             warp_count=warp_count,
+            telemeter=self.telemeter
         )
 
         icache_stage = ICacheStage(
