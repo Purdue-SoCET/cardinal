@@ -183,6 +183,7 @@ class ICacheConfig(BaseModel):
     cache_size: int = 32768
     block_size: int = 4
     associativity: int = 1
+    hit_latency: int = Field(default=1, description="Cache hit pipeline depth in cycles")
 
 
 class DCacheConfig(BaseModel):
@@ -469,6 +470,7 @@ class Settings(BaseSettings):
             "cache_size": self.icache.cache_size,
             "block_size": self.icache.block_size,
             "associativity": self.icache.associativity,
+            "hit_latency": self.icache.hit_latency,
         }
 
     def to_dcache_dict(self) -> Dict[str, Any]:

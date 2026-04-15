@@ -9,8 +9,11 @@ from simulator.stage import Stage
 from simulator.instruction import Instruction
 from simulator.mem_types import MemRequest
 from simulator.mem.memory import Mem
-from typing import Any, Dict, Optional, Deque, Tuple
+from typing import Any, Dict, Optional, Deque, Tuple, TYPE_CHECKING
 from bitstring import Bits
+
+if TYPE_CHECKING:
+    from simulator.utils.performance_counter.telemeter import Telemeter
 
 
 class MemController(Stage):
@@ -40,6 +43,7 @@ class MemController(Stage):
         latency: int = 5,
         policy: str = "rr",
         max_inflight: int = 1,  # <= set to 1 for "no queueing" semantics
+        telemeter: Optional["Telemeter"] = None,
     ):
         self.name = name
         self.ic_req_latch = ic_req_latch
@@ -51,6 +55,9 @@ class MemController(Stage):
         self.latency = int(latency)
         self.policy = str(policy)
         self.max_inflight = int(max_inflight)
+
+        if telemeter is not None:
+            telemeter.publish(self.name, "latency", self.latency)
 
         # inflight requests being serviced by memory backend
         self.inflight: list[MemRequest] = []

@@ -493,12 +493,12 @@ class LockupFreeCacheStage(Stage):
         self.mem_req_if = mem_req_if    # The interface used by the cache to send to the memory
         self.mem_resp_if = mem_resp_if  # The interface used by the memory to send data back to cache
 
-        self.perf_count = CachePerfCount(name=name)
-        if telemeter is not None:
-            telemeter.register_unit(self.perf_count)
-
         cfg = cache_config or {}
         _hit_latency      = cfg.get("hit_latency",      2)
+        _mem_latency = telemeter.receive("Mem_Controller", "latency", default=0) if telemeter is not None else 0
+        self.perf_count = CachePerfCount(name=name, hit_latency=_hit_latency, mem_latency=_mem_latency)
+        if telemeter is not None:
+            telemeter.register_unit(self.perf_count)
         _mshr_buf_len     = cfg.get("mshr_buffer_len",  16)
         _num_banks        = cfg.get("num_banks",         2)
         _num_sets_per_bank= cfg.get("num_sets_per_bank", 16)

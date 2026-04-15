@@ -105,6 +105,10 @@ class Telemeter:
         if config.flight_recorder is not None:
             self._fr_deque = deque(maxlen=config.flight_recorder.max_pre_capture_depth)
 
+        # Cross-module data store for publish/receive
+        # Layout: { source_name: { key: value } }
+        self._published: Dict[str, Dict[str, Any]] = {}
+
     # ------------------------------------------------------------------
     # Unit registration
     # ------------------------------------------------------------------
@@ -123,6 +127,45 @@ class Telemeter:
     def get_unit(self, unit_name: str) -> Optional[PerfCounterBase]:
         """Return the registered counter for a unit, or None."""
         return self._units.get(unit_name)
+
+    # ------------------------------------------------------------------
+    # Cross-module data publish / receive
+    # ------------------------------------------------------------------
+
+    def publish(self, source_name: str, key: str, value: Any) -> None:
+        """
+        Publish a named value from a module so other modules can retrieve it.
+
+        Intended for sharing configuration-time constants that are needed by
+        performance counter computations in other modules.  Call this once
+        at construction time; the value is stored for the lifetime of the
+        simulation.
+
+        Parameters
+        ----------
+        source_name : Identifier of the publishing module (e.g. "Mem_Controller").
+        key         : Name of the value being published (e.g. "latency").
+        value       : The value to store.
+        """
+        if source_name not in self._published:
+            self._published[source_name] = {}
+        self._published[source_name][key] = value
+
+    def receive(self, source_name: str, key: str, default: Any = None) -> Any:
+        """
+        Retrieve a value previously published by another module.
+
+        Parameters
+        ----------
+        source_name : Identifier of the publishing module.
+        key         : Name of the value to retrieve.
+        default     : Value returned if the key has not been published yet.
+
+        Returns
+        -------
+        The published value, or *default* if not found.
+        """
+        return self._published.get(source_name, {}).get(key, default)
 
     # ------------------------------------------------------------------
     # Snapshot provider registration
