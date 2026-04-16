@@ -37,7 +37,7 @@ void barycentric_coordinates(vector_t* l, vector_t point, vector_t pVs[3]) {
     l->z = bc_im[2][0] * 1.0 + bc_im[2][1] * point.x + bc_im[2][2] * point.y;
 }
 
-
+/*
 void get_texture(vec4_t* col, texture_t texture, float s, float t) {
     s = s > 0 ? s : -s;
     t = t > 0 ? t : -t;
@@ -46,7 +46,7 @@ void get_texture(vec4_t* col, texture_t texture, float s, float t) {
 
     *col =  texture.color_arr[GET_1D_INDEX(texel_x, texel_y, texture.w)];
 }
-
+*/
 int matrix_inversion(const float *m, float *inv) {
     
     // ---- Calculate Determinent ---- 
@@ -160,6 +160,7 @@ vector_t findCenter(model_t model){
     return center;
 }
 
+/*
 texture_t load_jpg(char* FileName, int id) {
     texture_t text;
     text.id = id;
@@ -191,6 +192,8 @@ texture_t load_jpg(char* FileName, int id) {
 
     return text;
 }
+
+*/
     
 
 vec4_t quat_from_euler(float x, float y, float z, float angle) {
@@ -251,7 +254,7 @@ void build_rotation_matrix_from_euler(float pitch_x, float yaw_y, float roll_z, 
     quat_to_matrix(q_combined, out_matrix);
 }
 
-
+/*
 texture_t load_png(char* FileName, int id) {
     int width, height, bpp;
     
@@ -292,3 +295,4 @@ texture_t load_png(char* FileName, int id) {
     
     return tex;
 }
+*/

@@ -1,17 +1,17 @@
 #include "include/kernel.h"
 #include "include/triangle.h"
 
-#ifdef GPU_SIM
-void kernel_triangle()
-#else
+#ifdef CPU_SIM
 void kernel_triangle(void* arg)
+#else
+void kernel_triangle()
 #endif
 {
 
-    #ifdef GPU_SIM
-    triangle_arg_t* args = (triangle_arg_t*) argPtr();
-    #else
+    #ifdef CPU_SIM
     triangle_arg_t* args = (triangle_arg_t*) arg;
+    #else
+    triangle_arg_t* args = (triangle_arg_t*) argPtr();
     #endif
     int global_id = (blockIdx * blockDim) + threadIdx;
 
@@ -37,9 +37,9 @@ void kernel_triangle(void* arg)
 
     // Check if the pixel is inside the triangle bounding box
     if (l[0] >= -.00001 && l[1] >= -.00001 && l[2] >= -.00001 && (l[0] + l[1] + l[2]) <= 1.01) {
-        
+
         float pix_z = l[0]*args->pVs[0].z + l[1]*args->pVs[1].z + l[2]*args->pVs[2].z;
-        
+
         // Check if current pixel is closest (inverted from original '<' return check)
         if (pix_z >= args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) {
             // Current pixel is closest - set as so

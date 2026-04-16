@@ -20,8 +20,8 @@
 uint8_t* memory_ptr;
 
 // Defines
-#define OUTPUT_W 400
-#define OUTPUT_H 400
+#define OUTPUT_W 32
+#define OUTPUT_H 32
 
 #define VERTEX_DEBUG 0
 #define TRIANGLE_DEBUG 0
@@ -285,8 +285,8 @@ int main(int argc, char** argv) {
             //print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
             size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
             size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
-            dump_memory("build/mem_dump/vertexInput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-            dump_memory("build/mem_dump/vertexInput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+            dump_memory("build/mem_dump/vertexInput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory("build/mem_dump/vertexInput_heap_dump.txt", heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
 
         //printf("args size: %lu\n", sizeof(vertex_arg_t));
@@ -304,8 +304,8 @@ int main(int argc, char** argv) {
         //print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
-        dump_memory("build/mem_dump/vertexOutput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-        dump_memory("build/mem_dump/vertexOutput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+        dump_memory("build/mem_dump/vertexOutput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/vertexOutput_heap_dump.txt", heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     // Checking Vertex Output
@@ -384,8 +384,8 @@ int main(int argc, char** argv) {
             sprintf(filename_args, "build/mem_dump/triangleInput%d_args_dump.txt", tri); 
             sprintf(filename_heap, "build/mem_dump/triangleInput%d_heap_dump.txt", tri); 
             //print_triangle_args(filename, triangle_args);
-            dump_memory(filename_args, memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-            dump_memory(filename_heap, memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+            dump_memory(filename_args, args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory(filename_heap, heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
 
         // Running the Kernel
@@ -404,8 +404,8 @@ int main(int argc, char** argv) {
             sprintf(filename_args, "build/mem_dump/triangleOutput%d_args_dump.txt", tri); 
             sprintf(filename_heap, "build/mem_dump/triangleOutput%d_heap_dump.txt", tri); 
             //print_triangle_args(filename, triangle_args);
-            dump_memory(filename_args, memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-            dump_memory(filename_heap, memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+            dump_memory(filename_args, args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+            dump_memory(filename_heap, heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
     }
     fclose(file_thread);
@@ -461,7 +461,7 @@ int main(int argc, char** argv) {
         pixel_args->buff_h = frame_h;
         pixel_args->depth_buff = zbuff;
         pixel_args->tag_buff = tbuff;
-
+        pixel_args->threeDVertTrans = 0; //do not want lighting for now
         pixel_args->texture = *texture;
 
 
@@ -469,8 +469,8 @@ int main(int argc, char** argv) {
         //print_pixel_args("build/pixelInput.txt", pixel_args); 
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
-        dump_memory("build/mem_dump/pixelInput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-        dump_memory("build/mem_dump/pixelInput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+        dump_memory("build/mem_dump/pixelInput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/pixelInput_heap_dump.txt", heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
     }
     // Running the kernel
     {
@@ -489,8 +489,8 @@ int main(int argc, char** argv) {
         //print_pixel_args("build/pixelOutput.txt", pixel_args); 
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
-        dump_memory("build/mem_dump/pixelOutput_args_dump.txt", memory_base + ARGS_BASE_ADDR, ARGS_BASE_ADDR, current_args_bytes);
-        dump_memory("build/mem_dump/pixelOutput_heap_dump.txt", memory_base + HEAP_BASE_ADDR, HEAP_BASE_ADDR, current_heap_bytes);
+        dump_memory("build/mem_dump/pixelOutput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/pixelOutput_heap_dump.txt", heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     // --- Create Image from Data ---
