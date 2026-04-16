@@ -13,6 +13,10 @@ typedef struct {
     float* C; // Matrix C = A * B
 } gemm_arg_t;
 
+#ifdef GPU_SIM
+void kernel_gemm();
+#else
 void kernel_gemm(void*);
+#endif
 
 #endif

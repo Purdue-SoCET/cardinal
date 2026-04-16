@@ -119,7 +119,7 @@ for j in range(2):
     mode_str = "Input" if is_input else "Output"
     
     s_prefix = f"{args.kernel}{mode_str}"
-    stitch_system_memory(args.kernel, DUMP_FOLDER, f"build/{s_prefix}_memDump_t{block_dims[args.kernel][0]}_b{grid_dims[args.kernel][0]}.txt", 
+    stitch_system_memory(args.kernel, DUMP_FOLDER, f"build/{s_prefix}_memDump_t{block_dims[args.kernel][0]}_b{grid_dims[args.kernel][0]}.hex", 
                          s_prefix, is_input, block_dims[args.kernel][0], grid_dims[args.kernel][0], 
                          args_addr, args_sizes[args.kernel])
 
