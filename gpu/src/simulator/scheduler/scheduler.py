@@ -360,21 +360,20 @@ class SchedulerStage(Stage):
         self.halt()
         # determining next states
         self.collision()
-
+        fetch: bool
         if not icache_ctrl["fetch"]:
             # print("[Scheduler] MISS in ICache, STALLING.")
-            return # RETURN NOTHING DONT PUSH ANYTHING EITHER
+            # RETURN NOTHING DONT PUSH ANYTHING EITHER
+            fetch = False
+        else:        
+            match self.policy:
+                case "RR":
+                    fetch = self.round_robin()
+                case "GTO":
+                    fetch = self.greedy_oldest()
 
-        fetch: bool
-        
-        match self.policy:
-            case "RR":
-                fetch = self.round_robin()
-            case "GTO":
-                fetch = self.greedy_oldest()
-
-        # init from TBS if needed
-        self.tbs_init()
+            # init from TBS if needed
+            self.tbs_init()
 
         self.perf_count.record_cycle(is_stalled=fetch, is_busy=not fetch, WarpTable=self.warp_table)
 
