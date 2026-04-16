@@ -30,7 +30,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("vs_t", type=str)  
 parser.add_argument("tri_t", type=str)
 parser.add_argument("pix_t", type=str)
-parser.add_argument("--big_endian", type=bool)
 
 args = parser.parse_args()
 
@@ -40,16 +39,16 @@ pix_grid, pix_block = parse_dimensions(args.pix_t)
 
 # --- Configuration ---
 compiled = {
-    "vs": "compiled/vertex.bin",
-    "tri": "compiled/triangle.bin",
-    "pix": "compiled/pixel.bin"
+    "vs": "compiled/vertex.hex",
+    "tri": "compiled/triangle.hex",
+    "pix": "compiled/pixel.hex"
 }
 
 args_sizes = {"vs": 0x28, "tri": 108, "pix": 0x34} 
 block_dims = {"vs": vs_block, "tri": tri_block, "pix": pix_block} #[81,81,65,85,65,85,289,289,65,85,65,85]
 # [12,12,10,12,10,12,30,30,8,10,8,10]
 grid_dims  = {"vs": vs_grid, "tri": tri_grid, "pix": pix_grid} #[40,40,29,39,29,39,154,154,29,39,29,39]
-big_endian_values = args.big_endian if args.big_endian is not None else False
+big_endian_values = False # this does not have the expected behavior, keep false
 
 ARGS_BASE_ADDR = 0x00100000 
 DUMP_FOLDER = "build/mem_dump"
@@ -97,18 +96,18 @@ def stitch_system_memory(kernel_key, dump_dir, output_file, filter_prefix, is_in
     total_threads = block_dim * grid_dim
     
     # We write these to the map. If it's an output dump, status is "Done"
-    status  = "00000000000000000000000000000011" if not is_input else "00000000000000000000000000000000"
-    control = "00000000000000000000000000000000" if not is_input else "00000000000000000000000000000001"
+    status  = "00000003" if not is_input else "00000000"
+    control = "00000000" if not is_input else "00000001"
 
     memory_map[0x00] = control
     memory_map[0x04] = status
-    memory_map[0x08] = "00000000000000000000000000000000" 
-    memory_map[0x0C] = f"{entry_point:032b}"
-    memory_map[0x10] = f"{block_dim:032b}"
-    memory_map[0x14] = f"{grid_dim:032b}"
-    memory_map[0x18] = f"{total_threads:032b}"
-    memory_map[0x1C] = f"{args_addr:032b}"
-    memory_map[0x20] = f"{args_size:032b}"
+    memory_map[0x08] = "00000000" 
+    memory_map[0x0C] = f"{entry_point:08X}"
+    memory_map[0x10] = f"{block_dim:08X}"
+    memory_map[0x14] = f"{grid_dim:08X}"
+    memory_map[0x18] = f"{total_threads:08X}"
+    memory_map[0x1C] = f"{args_addr:08X}"
+    memory_map[0x20] = f"{args_size:08X}"
 
     # 4. Write sorted output
     output_path = Path(output_file)
@@ -116,7 +115,7 @@ def stitch_system_memory(kernel_key, dump_dir, output_file, filter_prefix, is_in
     
     with open(output_file, 'w') as f:
         for addr in sorted(memory_map.keys()):
-            f.write(f"0x{addr:08X} {memory_map[addr]}\n")
+            f.write(f"0x{addr:08X} 0x{memory_map[addr]}\n")
 
     print(f"Done: {output_file}")
 
@@ -129,7 +128,7 @@ for j in range(2):
     
     # --- 1. Vertex Stage ---
     v_prefix = f"vertex{mode_str}"
-    stitch_system_memory("vs", DUMP_FOLDER, f"build/{v_prefix}_memDump_{block_dims["vs"][0]}.txt", 
+    stitch_system_memory("vs", DUMP_FOLDER, f"build/{v_prefix}_memDump_{block_dims["vs"][0]}.hex", 
                          v_prefix, is_input, block_dims["vs"][0], grid_dims["vs"][0], 
                          args_addr, args_sizes["vs"])
 
@@ -138,13 +137,13 @@ for j in range(2):
     t_prefix_base = f"triangle{mode_str}"
     args_addr += args_sizes["vs"] # Vertex stage args come first, then triangle stage
     for i in range(12):
-        stitch_system_memory("tri", DUMP_FOLDER, f"build/{t_prefix_base}{i}_memDump_{grid_dims["tri"][i]}_{block_dims["tri"][i]}.txt", 
+        stitch_system_memory("tri", DUMP_FOLDER, f"build/{t_prefix_base}{i}_memDump_{grid_dims["tri"][i]}_{block_dims["tri"][i]}.hex", 
                              f"{t_prefix_base}{i}", is_input, block_dims["tri"][i], grid_dims["tri"][i], 
                              args_addr, args_sizes["tri"])
 
     # --- 3. Pixel Stage ---
     p_prefix = f"pixel{mode_str}"
     args_addr += args_sizes["tri"] # Triangle stage args come after vertex stage
-    stitch_system_memory("pix", DUMP_FOLDER, f"build/{p_prefix}_memDump_{block_dims["pix"][0]}.txt", 
+    stitch_system_memory("pix", DUMP_FOLDER, f"build/{p_prefix}_memDump_{block_dims["pix"][0]}.hex", 
                          p_prefix, is_input, block_dims["pix"][0], grid_dims["pix"][0], 
                          args_addr, args_sizes["pix"])

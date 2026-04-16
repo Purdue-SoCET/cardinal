@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
     if(INPUT_MEM_DUMP){
         size_t current_args_bytes = (size_t)args_ptr - (ARGS_BASE_ADDR);
         size_t current_heap_bytes = (size_t)heap_ptr - (HEAP_BASE_ADDR);
-        dump_memory("build/mem_dump/input_mcp_args_dump.txt", (uint8_t*)ARGS_BASE_ADDR, (uint32_t)ARGS_BASE_ADDR, current_args_bytes);
-        dump_memory("build/mem_dump/input_mcp_heap_dump.txt", (uint8_t*)HEAP_BASE_ADDR, (uint32_t)HEAP_BASE_ADDR, current_heap_bytes);
+        dump_memory("build/mem_dump/monte_carlo_piInput_args_dump.txt", (uint8_t*)ARGS_BASE_ADDR, (uint32_t)ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/monte_carlo_piInput_heap_dump.txt", (uint8_t*)HEAP_BASE_ADDR, (uint32_t)HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     {
@@ -93,13 +93,14 @@ int main(int argc, char** argv) {
         FILE* file_thread = fopen("build/threads/monte_carlo_piThreads.txt", "w");
         fprintf(file_thread, "Grid Dim: %d, Block Dim: %d\n", grid_dim, block_dim);
         fclose(file_thread);
+        
     }
 
     if(OUTPUT_MEM_DUMP){
         size_t current_args_bytes = (size_t)args_ptr - (ARGS_BASE_ADDR);
         size_t current_heap_bytes = (size_t)heap_ptr - (HEAP_BASE_ADDR);
-        dump_memory("build/mem_dump/output_mcp_args_dump.txt", (uint8_t*)ARGS_BASE_ADDR, (uint32_t)ARGS_BASE_ADDR, current_args_bytes);
-        dump_memory("build/mem_dump/output_mcp_heap_dump.txt", (uint8_t*)HEAP_BASE_ADDR, (uint32_t)HEAP_BASE_ADDR, current_heap_bytes);
+        dump_memory("build/mem_dump/monte_carlo_piOutput_args_dump.txt", (uint8_t*)ARGS_BASE_ADDR, (uint32_t)ARGS_BASE_ADDR, current_args_bytes);
+        dump_memory("build/mem_dump/monte_carlo_piOutput_heap_dump.txt", (uint8_t*)HEAP_BASE_ADDR, (uint32_t)HEAP_BASE_ADDR, current_heap_bytes);
     }
 
     int inside_circle = 0;

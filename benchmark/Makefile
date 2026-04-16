@@ -12,7 +12,7 @@ GPU_CFLAGS =
 # CPU files
 KERNEL ?= saxpy
 CPU_SRCS = cpu_sim/main_new.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
-       kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c kernels/blend.c
+       kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c 
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
 
@@ -41,7 +41,7 @@ run32: #need gcc-multilib
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)$(CPU_TARGET)
 
-run32_dump: #need gcc-multilib
+run32_dump_bin: #need gcc-multilib; also need to update mem_dump function for bin data
 	twig kernels/vertex.c --bin-output compiled/vertex.bin -O2 --entry kernel_vertex -DGPU_SIM
 	twig kernels/triangle.c --bin-output compiled/triangle.bin -O2 --entry kernel_triangle -DGPU_SIM
 	twig kernels/pixel.c --bin-output compiled/pixel.bin -O2 --entry kernel_pixel -DGPU_SIM
@@ -49,20 +49,18 @@ run32_dump: #need gcc-multilib
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)$(CPU_TARGET)
 	python cpu_sim/data/stitch_data.py \
-	--big_endian False \
 	build/threads/vertexThreads.txt \
 	build/threads/triangleThreads.txt \
 	build/threads/pixelThreads.txt
 
-run32_dump_em: #need gcc-multilib
-	twig kernels/vertex.c --bin-output compiled/vertex.bin -O2 --entry kernel_vertex -DGPU_SIM
-	twig kernels/triangle.c --bin-output compiled/triangle.bin -O2 --entry kernel_triangle -DGPU_SIM
-	twig kernels/pixel.c --bin-output compiled/pixel.bin -O2 --entry kernel_pixel -DGPU_SIM
+run32_dump: #need gcc-multilib
+	twig kernels/vertex.c --hex-output compiled/vertex.hex -O2 --entry kernel_vertex -DGPU_SIM
+	twig kernels/triangle.c --hex-output compiled/triangle.hex -O2 --entry kernel_triangle -DGPU_SIM
+	twig kernels/pixel.c --hex-output compiled/pixel.hex -O2 --entry kernel_pixel -DGPU_SIM
 	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)$(CPU_TARGET)
 	python cpu_sim/data/stitch_data.py \
-	--big_endian True \
 	build/threads/vertexThreads.txt \
 	build/threads/triangleThreads.txt \
 	build/threads/pixelThreads.txt
@@ -98,7 +96,7 @@ custom32:
 	./$(CPU_BUILD_DIR)/$(KERNEL)
 
 custom32_dump: 
-	twig kernels/$(KERNEL).c --bin-output compiled/$(KERNEL).bin -O2 --entry kernel_$(KERNEL) -DGPU_SIM
+	twig kernels/$(KERNEL).c --hex-output compiled/$(KERNEL).hex -O2 --entry kernel_$(KERNEL) -DGPU_SIM
 	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)/$(KERNEL)

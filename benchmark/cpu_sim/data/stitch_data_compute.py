@@ -29,7 +29,6 @@ parser1 = argparse.ArgumentParser()
 
 parser1.add_argument("kernel", type=str)  
 parser1.add_argument("kernel_t", type=str)  
-parser1.add_argument("--big_endian", type=bool)
 args = parser1.parse_args()
 
 kernel_grid, kernel_block = parse_dimensions(args.kernel_t)
@@ -37,13 +36,13 @@ kernel_grid, kernel_block = parse_dimensions(args.kernel_t)
 
 # --- Configuration ---
 compiled = {
-    args.kernel: f"compiled/{args.kernel}.bin",
+    args.kernel: f"compiled/{args.kernel}.hex",
 }
 
 args_sizes = {args.kernel: 0x0C} #need to fix this
-block_dims = {args.kernel: kernel_block} 
-grid_dims  = {args.kernel: kernel_grid} 
-big_endian_values = args.big_endian if args.big_endian is not None else False
+block_dims = {args.kernel: kernel_block}
+grid_dims  = {args.kernel: kernel_grid}
+big_endian_values = False # this does not have the expected behavior, keep false
 
 ARGS_BASE_ADDR = 0x00100000 
 DUMP_FOLDER = "build/mem_dump"
@@ -89,18 +88,18 @@ def stitch_system_memory(kernel_key, dump_dir, output_file, filter_prefix, is_in
     total_threads = block_dim * grid_dim
     
     # We write these to the map. If it's an output dump, status is "Done"
-    status  = "00000000000000000000000000000011" if not is_input else "00000000000000000000000000000000"
-    control = "00000000000000000000000000000000" if not is_input else "00000000000000000000000000000001"
+    status  = "00000003" if not is_input else "00000000"
+    control = "00000000" if not is_input else "00000001"
 
     memory_map[0x00] = control
     memory_map[0x04] = status
-    memory_map[0x08] = "00000000000000000000000000000000" 
-    memory_map[0x0C] = f"{entry_point:032b}"
-    memory_map[0x10] = f"{block_dim:032b}"
-    memory_map[0x14] = f"{grid_dim:032b}"
-    memory_map[0x18] = f"{total_threads:032b}"
-    memory_map[0x1C] = f"{args_addr:032b}"
-    memory_map[0x20] = f"{args_size:032b}"
+    memory_map[0x08] = "00000000" 
+    memory_map[0x0C] = f"{entry_point:08X}"
+    memory_map[0x10] = f"{block_dim:08X}"
+    memory_map[0x14] = f"{grid_dim:08X}"
+    memory_map[0x18] = f"{total_threads:08X}"
+    memory_map[0x1C] = f"{args_addr:08X}"
+    memory_map[0x20] = f"{args_size:08X}"
 
     # 4. Write sorted output
     output_path = Path(output_file)
@@ -108,7 +107,7 @@ def stitch_system_memory(kernel_key, dump_dir, output_file, filter_prefix, is_in
     
     with open(output_file, 'w') as f:
         for addr in sorted(memory_map.keys()):
-            f.write(f"0x{addr:08X} {memory_map[addr]}\n")
+            f.write(f"0x{addr:08X} 0x{memory_map[addr]}\n")
 
     print(f"Done: {output_file}")
 
@@ -120,7 +119,7 @@ for j in range(2):
     mode_str = "Input" if is_input else "Output"
     
     s_prefix = f"{args.kernel}{mode_str}"
-    stitch_system_memory(args.kernel, DUMP_FOLDER, f"build/{s_prefix}_memDump_{block_dims[args.kernel]}.txt", 
+    stitch_system_memory(args.kernel, DUMP_FOLDER, f"build/{s_prefix}_memDump_t{block_dims[args.kernel][0]}_b{grid_dims[args.kernel][0]}.txt", 
                          s_prefix, is_input, block_dims[args.kernel][0], grid_dims[args.kernel][0], 
                          args_addr, args_sizes[args.kernel])
 
