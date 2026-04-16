@@ -2,7 +2,7 @@
 #include "include/gemm.h"
 
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_gemm()
 #else
 void kernel_gemm(void* arg) 
 #endif
@@ -10,11 +10,11 @@ void kernel_gemm(void* arg)
 
 	#ifdef GPU_SIM
 	gemm_arg_t* args = (gemm_arg_t*)argPtr();
-    int idx = blockIdx() * blockDim() + threadIdx();
 	#else
 	gemm_arg_t* args = (gemm_arg_t*)arg;
-    int idx = blockIdx * blockDim + threadIdx;
 	#endif
+	int idx = blockIdx * blockDim + threadIdx;
+
 
 	int total = args->M * args->N;
 
