@@ -5,7 +5,7 @@ from PIL import Image
 # Memory Map Constants
 ADDR_DEPTH_BUFF = 0x50000000
 ADDR_TAG_BUFF   = 0x51000000
-ADDR_COLOR_BUFF = 0x60000000 # NEW: Base address for color vector array
+ADDR_COLOR_BUFF = 0x70000000 
 
 # Distinct colors for up to 16 different triangles/tags
 TAG_COLORS = [
@@ -23,19 +23,13 @@ TAG_COLORS = [
     (220, 190, 255), # Lavender
 ]
 
-def hex_to_float(hex_str):
-    """Converts a 32-bit hex string (e.g., '0x3F800000') to a Python float."""
-    try:
-        return struct.unpack('>f', bytes.fromhex(hex_str.replace('0x', '')))[0]
-    except ValueError:
-        return 0.0
-
-def hex_to_int(hex_str):
-    """Converts a 32-bit hex string to an integer, handling -1 (0xFFFFFFFF)."""
-    val = int(hex_str, 16)
-    if val == 0xFFFFFFFF:
-        return -1
-    return val
+def read_word(memory, addr):
+    """Reads 4 consecutive bytes from the memory map and returns them as a bytes object."""
+    b0 = memory.get(addr, 0)
+    b1 = memory.get(addr + 1, 0)
+    b2 = memory.get(addr + 2, 0)
+    b3 = memory.get(addr + 3, 0)
+    return bytes([b0, b1, b2, b3])
 
 def main():
     parser = argparse.ArgumentParser(description="Render emulator memory dump to PNG")
@@ -50,18 +44,24 @@ def main():
     # Initialize buffers 
     depth_buffer = [-1.0] * (w * h)
     tag_buffer = [-1] * (w * h)
-    color_buffer = [[0.0, 0.0, 0.0] for _ in range(w * h)] # Default black
+    color_buffer = [[0.0, 0.0, 0.0] for _ in range(w * h)]
     
     print(f"Parsing {args.input_hex} at {w}x{h}...")
+    
+    memory = {}
     
     # Parse the hex file
     with open(args.input_hex, 'r') as f:
         for line in f:
-            line = line.strip()
-            if not line or len(line.split()) < 2:
+            # Strip both ';' and '#' comments
+            line = line.split(';')[0].split('#')[0].strip()
+            if not line:
                 continue
                 
             parts = line.split()
+            if len(parts) < 2:
+                continue
+                
             addr_str = parts[0]
             val_str = parts[1]
             
@@ -70,25 +70,40 @@ def main():
                 continue
                 
             addr = int(addr_str, 16)
+            val_hex = val_str.replace('0x', '')
             
-            # Map Address -> Pixel Index
-            if ADDR_DEPTH_BUFF <= addr < (ADDR_DEPTH_BUFF + w * h * 4):
-                idx = (addr - ADDR_DEPTH_BUFF) // 4
-                depth_buffer[idx] = hex_to_float(val_str)
-                
-            elif ADDR_TAG_BUFF <= addr < (ADDR_TAG_BUFF + w * h * 4):
-                idx = (addr - ADDR_TAG_BUFF) // 4
-                tag_buffer[idx] = hex_to_int(val_str)
+            # Support both byte-addressable and word-level entries
+            if len(val_hex) <= 2:
+                memory[addr] = int(val_hex, 16)
+            else:
+                val_hex = val_hex.zfill(8)
+                memory[addr] = int(val_hex[0:2], 16)
+                memory[addr+1] = int(val_hex[2:4], 16)
+                memory[addr+2] = int(val_hex[4:6], 16)
+                memory[addr+3] = int(val_hex[6:8], 16)
 
-            elif ADDR_COLOR_BUFF <= addr < (ADDR_COLOR_BUFF + w * h * 12):
-                # 12 bytes per pixel (3 floats). Find which pixel and which channel (R/G/B)
-                offset = addr - ADDR_COLOR_BUFF
-                pixel_idx = offset // 12
-                channel_idx = (offset % 12) // 4 # 0=R, 1=G, 2=B
-                color_buffer[pixel_idx][channel_idx] = hex_to_float(val_str)
+    # Reconstruct buffers from the memory map
+    for idx in range(w * h):
+        # Depth Buffer Update
+        d_addr = ADDR_DEPTH_BUFF + (idx * 4)
+        if any(a in memory for a in range(d_addr, d_addr + 4)):
+            depth_buffer[idx] = struct.unpack('>f', read_word(memory, d_addr))[0]
+            
+        # Tag Buffer Update
+        t_addr = ADDR_TAG_BUFF + (idx * 4)
+        if any(a in memory for a in range(t_addr, t_addr + 4)):
+            tag_buffer[idx] = struct.unpack('>i', read_word(memory, t_addr))[0]
+            
+        # Color Buffer Update
+        c_addr = ADDR_COLOR_BUFF + (idx * 12)
+        if any(a in memory for a in range(c_addr, c_addr + 12)):
+            r = struct.unpack('>f', read_word(memory, c_addr))[0]
+            g = struct.unpack('>f', read_word(memory, c_addr + 4))[0]
+            b = struct.unpack('>f', read_word(memory, c_addr + 8))[0]
+            color_buffer[idx] = [r, g, b]
 
     # Render Image
-    img = Image.new('RGB', (w, h), color=(0, 0, 0)) # Black background
+    img = Image.new('RGB', (w, h), color=(0, 0, 0))
     pixels = img.load()
     
     rendered_pixels = 0

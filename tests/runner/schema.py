@@ -60,6 +60,7 @@ class ExecutionConfig:
 @dataclass
 class VerificationConfig:
     expected_file: str
+    actual_file: Optional[str] = None
     check_start: Optional[str] = None
     check_end: Optional[str] = None
     float_tolerance: Optional[float] = None
@@ -80,6 +81,7 @@ class VerificationConfig:
 
         return cls(
             expected_file=data["expected_file"],
+            actual_file=data.get("actual_file"),
             check_start=data.get("check_start"),
             check_end=data.get("check_end"),
             float_tolerance=float(float_tol) if float_tol is not None else None

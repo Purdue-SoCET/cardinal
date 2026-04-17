@@ -36,29 +36,79 @@ def setup_workspace(suite_name: str, test_name: str) -> Path:
     return workspace
 
 def merge_hex_files(output_file: Path, base_hex: Path, consumes: list, workspace: Path):
-    """Merges a compiled hex file with any consumed hex files into a single meminit."""
-    with open(output_file, 'w') as outfile:
-        # Write the main compiled program first
-        if base_hex.exists():
-            with open(base_hex, 'r') as infile:
-                outfile.write(infile.read())
-                outfile.write("\n")
+    """Merges a compiled hex file with any consumed hex files into a single meminit.
+    Overrides any consumed memory that overlaps with the new compiled code."""
+    
+    compiled_memory = {}
+    max_compiled_addr = -1
+    
+    # 1. Parse compiled code (Unaddressed -> Explicitly Addressed)
+    if base_hex.exists():
+        with open(base_hex, 'r') as infile:
+            addr = 0
+            for line in infile:
+                # Strip whitespace and comments
+                line = line.split('#')[0].split(';')[0].strip()
+                if not line:
+                    continue
                 
-        # Append all consumed data files
-        for consume_file in consumes:
-            # 1. First, check if it was generated dynamically in the workspace
-            consume_path = workspace / consume_file
-            
-            # 2. If not found locally, check if it's a static file in the main repo
-            if not consume_path.exists():
-                consume_path = REPO_ROOT / consume_file
+                # Format data to ensure it has a 0x prefix
+                data = line.split()[0]
+                if not data.lower().startswith("0x"):
+                    data = f"0x{data}"
+                    
+                compiled_memory[addr] = data
+                max_compiled_addr = addr
+                
+                # Assuming 32-bit instructions, increment address by 4 bytes. 
+                # (Change to += 1 if your architecture is purely word-addressed)
+                addr += 4 
 
-            if consume_path.exists():
-                with open(consume_path, 'r') as infile:
-                    outfile.write(infile.read())
-                    outfile.write("\n")
-            else:
-                print(f"{YELLOW}[WARN] Consumed file '{consume_file}' not found in workspace or repo.{RESET}")
+    # 2. Parse and filter consumed memory dumps
+    consumed_memory = {}
+    for consume_file in consumes:
+        consume_path = workspace / consume_file
+        
+        if not consume_path.exists():
+            # Fallback to main repo (requires REPO_ROOT to be defined in scope)
+            consume_path = REPO_ROOT / consume_file
+
+        if consume_path.exists():
+            with open(consume_path, 'r') as infile:
+                for line in infile:
+                    line = line.split('#')[0].split(';')[0].strip()
+                    if not line or len(line.split()) < 2:
+                        continue
+                        
+                    parts = line.split()
+                    addr_str = parts[0]
+                    data_str = parts[1]
+                    
+                    try:
+                        addr_val = int(addr_str, 16)
+                        # CRITICAL: Only keep consumed memory if it sits ABOVE the compiled code
+                        if addr_val > max_compiled_addr:
+                            consumed_memory[addr_val] = data_str
+                    except ValueError:
+                        continue # Skip badly formatted lines gracefully
+        else:
+            # Requires YELLOW and RESET to be defined in scope
+            print(f"{YELLOW}[WARN] Consumed file '{consume_file}' not found in workspace or repo.{RESET}")
+
+    # 3. Write the finalized, merged memory state
+    with open(output_file, 'w') as outfile:
+        # Write compiled code first in strict 0xADDRADDR 0xDATADATA format
+        for addr in sorted(compiled_memory.keys()):
+            outfile.write(f"0x{addr:08X} {compiled_memory[addr]}\n")
+            
+        # Add the debugging spacer if both segments exist
+        if compiled_memory and consumed_memory:
+            outfile.write("\n")
+            
+        # Write the filtered consumed data
+        for addr in sorted(consumed_memory.keys()):
+            # Ensure the address is zero-padded to 8 chars to match formatting
+            outfile.write(f"0x{addr:08X} {consumed_memory[addr]}\n")
 
 # Update the signature and the script block inside tests/runner/runner.py
 
@@ -188,9 +238,16 @@ def run_suite(json_path: Path):
             # --------------------------------------------------------
 
             # Locate the actual output (either the final 'produces_mem' or default dump)
+            
             final_stage = test.pipeline[-1]
-            if final_stage.execution and final_stage.execution.produces_mem:
+            if test.verification.actual_file is not None:
+                actual_path = workspace / test.verification.actual_file
+
+            elif final_stage.execution and final_stage.execution.produces_mem:
                 actual_path = workspace / final_stage.execution.produces_mem
+            
+            else:
+                actual_path = workspace / "mem_dump.hex"
 
             if not expected_path.exists():
                 print(f"  {RED}[FAIL]{RESET} Expected file not found: {expected_path}")

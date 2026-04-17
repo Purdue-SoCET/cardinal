@@ -76,10 +76,14 @@ def compile_c(source_file: Path, output_hex: Path, flags: str, cwd: Path) -> str
     """Compiles a C file to raw hex using twig."""
     # Note: We omit --asm and --hex here, letting twig default to C compilation
     cmd_list = [TWIG_BIN, str(source_file), "--hex-output", str(output_hex)]
+    cmd_list_s = [TWIG_BIN, str(source_file), "--output", "assembly.s", "-S"]
     
     if flags:
         cmd_list.extend(shlex.split(flags))
+        cmd_list_s.extend(shlex.split(flags))
         
+    _execute(cmd_list_s, cwd)
+    
     return _execute(cmd_list, cwd)
 
 def run_emulator(

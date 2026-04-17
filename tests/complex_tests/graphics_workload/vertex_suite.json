@@ -2,7 +2,7 @@
   "suite_name": "Graphics Pipeline - Vertex Stage",
   "shared_config": {
     "c_source": {
-      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/",
+      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/ --rfc-size 4",
       "source": "vertexShader_unrolled.c"
     }
   },
@@ -18,7 +18,7 @@
         {
           "type": "c_source",
           "name": "Run Vertex Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
           "execution": {
             "threads": 8,
             "blocks": 1,
@@ -44,7 +44,7 @@
         {
           "type": "c_source",
           "name": "Run Vertex Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
           "execution": {
             "threads": 8,
             "blocks": 1,
@@ -70,7 +70,7 @@
         {
           "type": "c_source",
           "name": "Run Vertex Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
           "execution": {
             "threads": 8,
             "blocks": 1,
@@ -96,7 +96,7 @@
         {
           "type": "c_source",
           "name": "Run Vertex Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
           "execution": {
             "threads": 8,
             "blocks": 1,
@@ -122,7 +122,7 @@
         {
           "type": "c_source",
           "name": "Run Vertex Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
           "execution": {
             "threads": 8,
             "blocks": 1,

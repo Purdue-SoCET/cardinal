@@ -1,0 +1,730 @@
+{
+  "suite_name": "Graphics Pipeline - Full Integration Integration",
+  "shared_config": {
+    "c_source": {
+      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/ --rfc-size 4"
+    }
+  },
+  "tests": [
+    {
+      "name": "Full Pipeline - Cube 50x50 (0 deg)",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Pipeline State",
+          "command": "python3 gen_graphics_test.py --mode pipeline --res 50 50 --angle 0.0 --out_init pipeline_init.hex --out_exp pipeline_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "source": "vertexShader_unrolled.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "pipeline_init.hex"
+            ],
+            "produces_mem": "out_vertex.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 0",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000100",
+            "consumes": [
+              "out_vertex.hex"
+            ],
+            "produces_mem": "out_tri_0.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 1",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000200",
+            "consumes": [
+              "out_tri_0.hex"
+            ],
+            "produces_mem": "out_tri_1.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 2",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000300",
+            "consumes": [
+              "out_tri_1.hex"
+            ],
+            "produces_mem": "out_tri_2.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 3",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000400",
+            "consumes": [
+              "out_tri_2.hex"
+            ],
+            "produces_mem": "out_tri_3.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 4",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000500",
+            "consumes": [
+              "out_tri_3.hex"
+            ],
+            "produces_mem": "out_tri_4.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 5",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000600",
+            "consumes": [
+              "out_tri_4.hex"
+            ],
+            "produces_mem": "out_tri_5.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 6",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000700",
+            "consumes": [
+              "out_tri_5.hex"
+            ],
+            "produces_mem": "out_tri_6.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 7",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000800",
+            "consumes": [
+              "out_tri_6.hex"
+            ],
+            "produces_mem": "out_tri_7.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 8",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000900",
+            "consumes": [
+              "out_tri_7.hex"
+            ],
+            "produces_mem": "out_tri_8.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 9",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000A00",
+            "consumes": [
+              "out_tri_8.hex"
+            ],
+            "produces_mem": "out_tri_9.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 10",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000B00",
+            "consumes": [
+              "out_tri_9.hex"
+            ],
+            "produces_mem": "out_tri_10.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 11",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000C00",
+            "consumes": [
+              "out_tri_10.hex"
+            ],
+            "produces_mem": "out_tri_11.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Run Pixel Shader",
+          "source": "pixel.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_pixel --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20010000",
+            "consumes": [
+              "out_tri_11.hex"
+            ],
+            "produces_mem": "out_pixel.hex"
+          }
+        },
+        {
+          "type": "script",
+          "name": "Output Depth Render",
+          "command": "python3 render_hex.py --mode depth --out depth_render.png --res 50 50 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Tag Render",
+          "command": "python3 render_hex.py --mode tag --out tag_render.png --res 50 50 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Color Render",
+          "command": "python3 render_hex.py --mode color --out color_render.png --res 50 50 out_pixel.hex"
+        }
+      ],
+      "verification": {
+        "expected_file": "pipeline_exp.hex",
+        "actual_file": "out_pixel.hex",
+        "float_tolerance": 0.015
+      }
+    },
+    {
+      "name": "Full Pipeline - Cube 50x50 (45 deg)",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Pipeline State",
+          "command": "python3 gen_graphics_test.py --mode pipeline --res 50 50 --angle 0.7853981633974483 --out_init pipeline_init.hex --out_exp pipeline_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "source": "vertexShader_unrolled.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "pipeline_init.hex"
+            ],
+            "produces_mem": "out_vertex.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 0",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000100",
+            "consumes": [
+              "out_vertex.hex"
+            ],
+            "produces_mem": "out_tri_0.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 1",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000200",
+            "consumes": [
+              "out_tri_0.hex"
+            ],
+            "produces_mem": "out_tri_1.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 2",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000300",
+            "consumes": [
+              "out_tri_1.hex"
+            ],
+            "produces_mem": "out_tri_2.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 3",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000400",
+            "consumes": [
+              "out_tri_2.hex"
+            ],
+            "produces_mem": "out_tri_3.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 4",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000500",
+            "consumes": [
+              "out_tri_3.hex"
+            ],
+            "produces_mem": "out_tri_4.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 5",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000600",
+            "consumes": [
+              "out_tri_4.hex"
+            ],
+            "produces_mem": "out_tri_5.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 6",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000700",
+            "consumes": [
+              "out_tri_5.hex"
+            ],
+            "produces_mem": "out_tri_6.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 7",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000800",
+            "consumes": [
+              "out_tri_6.hex"
+            ],
+            "produces_mem": "out_tri_7.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 8",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000900",
+            "consumes": [
+              "out_tri_7.hex"
+            ],
+            "produces_mem": "out_tri_8.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 9",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000A00",
+            "consumes": [
+              "out_tri_8.hex"
+            ],
+            "produces_mem": "out_tri_9.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 10",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000B00",
+            "consumes": [
+              "out_tri_9.hex"
+            ],
+            "produces_mem": "out_tri_10.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 11",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20000C00",
+            "consumes": [
+              "out_tri_10.hex"
+            ],
+            "produces_mem": "out_tri_11.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Run Pixel Shader",
+          "source": "pixel.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_pixel --rfc-size 4",
+          "execution": {
+            "threads": 2500,
+            "blocks": 1,
+            "arg_pointer": "0x20010000",
+            "consumes": [
+              "out_tri_11.hex"
+            ],
+            "produces_mem": "out_pixel.hex"
+          }
+        },
+        {
+          "type": "script",
+          "name": "Output Depth Render",
+          "command": "python3 render_hex.py --mode depth --out depth_render.png --res 50 50 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Tag Render",
+          "command": "python3 render_hex.py --mode tag --out tag_render.png --res 50 50 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Color Render",
+          "command": "python3 render_hex.py --mode color --out color_render.png --res 50 50 out_pixel.hex"
+        }
+      ],
+      "verification": {
+        "expected_file": "pipeline_exp.hex",
+        "actual_file": "out_pixel.hex",
+        "float_tolerance": 0.015
+      }
+    },
+    {
+      "name": "Full Pipeline - Cube 300x300 (45 deg)",
+      "pipeline": [
+        {
+          "type": "script",
+          "name": "Bake Pipeline State",
+          "command": "python3 gen_graphics_test.py --mode pipeline --res 300 300 --angle .7853981633974483 --out_init pipeline_init.hex --out_exp pipeline_exp.hex"
+        },
+        {
+          "type": "c_source",
+          "name": "Run Vertex Shader",
+          "source": "vertexShader_unrolled.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_vertexShader --rfc-size 4",
+          "execution": {
+            "threads": 8,
+            "blocks": 1,
+            "arg_pointer": "0x20000000",
+            "consumes": [
+              "pipeline_init.hex"
+            ],
+            "produces_mem": "out_vertex.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 0",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000100",
+            "consumes": [
+              "out_vertex.hex"
+            ],
+            "produces_mem": "out_tri_0.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 1",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000200",
+            "consumes": [
+              "out_tri_0.hex"
+            ],
+            "produces_mem": "out_tri_1.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 2",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000300",
+            "consumes": [
+              "out_tri_1.hex"
+            ],
+            "produces_mem": "out_tri_2.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 3",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000400",
+            "consumes": [
+              "out_tri_2.hex"
+            ],
+            "produces_mem": "out_tri_3.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 4",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000500",
+            "consumes": [
+              "out_tri_3.hex"
+            ],
+            "produces_mem": "out_tri_4.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 5",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000600",
+            "consumes": [
+              "out_tri_4.hex"
+            ],
+            "produces_mem": "out_tri_5.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 6",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000700",
+            "consumes": [
+              "out_tri_5.hex"
+            ],
+            "produces_mem": "out_tri_6.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 7",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000800",
+            "consumes": [
+              "out_tri_6.hex"
+            ],
+            "produces_mem": "out_tri_7.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 8",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000900",
+            "consumes": [
+              "out_tri_7.hex"
+            ],
+            "produces_mem": "out_tri_8.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 9",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000A00",
+            "consumes": [
+              "out_tri_8.hex"
+            ],
+            "produces_mem": "out_tri_9.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 10",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000B00",
+            "consumes": [
+              "out_tri_9.hex"
+            ],
+            "produces_mem": "out_tri_10.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Rasterize Tri 11",
+          "source": "triangle.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20000C00",
+            "consumes": [
+              "out_tri_10.hex"
+            ],
+            "produces_mem": "out_tri_11.hex"
+          }
+        },
+        {
+          "type": "c_source",
+          "name": "Run Pixel Shader",
+          "source": "pixel.c",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_pixel --rfc-size 4",
+          "execution": {
+            "threads": 90000,
+            "blocks": 1,
+            "arg_pointer": "0x20010000",
+            "consumes": [
+              "out_tri_11.hex"
+            ],
+            "produces_mem": "out_pixel.hex"
+          }
+        },
+        {
+          "type": "script",
+          "name": "Output Depth Render",
+          "command": "python3 render_hex.py --mode depth --out depth_render.png --res 300 300 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Tag Render",
+          "command": "python3 render_hex.py --mode tag --out tag_render.png --res 300 300 out_pixel.hex"
+        },
+        {
+          "type": "script",
+          "name": "Output Color Render",
+          "command": "python3 render_hex.py --mode color --out color_render.png --res 300 300 out_pixel.hex"
+        }
+      ],
+      "verification": {
+        "expected_file": "pipeline_exp.hex",
+        "actual_file": "out_pixel.hex",
+        "float_tolerance": 0.015
+      }
+    }
+  ]
+}

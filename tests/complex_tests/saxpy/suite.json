@@ -6,7 +6,7 @@
     },
     "c_source": {
       "source": "benchmark/kernels/saxpy.c",
-      "compiler_flags": "-O2 -DGPU_SIM"
+      "compiler_flags": "-O2 -DGPU_SIM --rfc-size 2"
     }
   },
   "tests": [

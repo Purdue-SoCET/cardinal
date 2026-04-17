@@ -2,7 +2,7 @@
   "suite_name": "Graphics Pipeline - Triangle Stage",
   "shared_config": {
     "c_source": {
-      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/",
+      "compiler_flags": "-O2 -DGPU_SIM -Itests/complex_tests/graphics_workload/include/ --rfc-size 4",
       "source": "triangle.c"
     }
   },
@@ -18,7 +18,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -44,7 +44,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -70,7 +70,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -96,7 +96,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -122,7 +122,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -148,7 +148,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -174,7 +174,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -200,7 +200,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -226,7 +226,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -252,7 +252,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -278,7 +278,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -304,7 +304,7 @@
         {
           "type": "c_source",
           "name": "Run Triangle Shader",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 2500,
             "blocks": 1,
@@ -330,7 +330,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 0",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000100",
@@ -340,7 +340,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 1",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000200",
@@ -350,7 +350,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 2",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000300",
@@ -360,7 +360,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 3",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000400",
@@ -370,7 +370,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 4",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000500",
@@ -380,7 +380,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 5",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000600",
@@ -390,7 +390,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 6",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000700",
@@ -400,7 +400,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 7",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000800",
@@ -410,7 +410,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 8",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000900",
@@ -420,7 +420,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 9",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000A00",
@@ -430,7 +430,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 10",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000B00",
@@ -440,7 +440,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 11",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000C00",
@@ -460,6 +460,7 @@
       ],
       "verification": {
         "expected_file": "triangle_exp.hex",
+        "actual_file": "final_render.hex",
         "float_tolerance": 0.015
       }
     },
@@ -474,7 +475,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 0",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000100",
@@ -484,7 +485,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 1",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000200",
@@ -494,7 +495,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 2",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000300",
@@ -504,7 +505,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 3",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000400",
@@ -514,7 +515,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 4",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000500",
@@ -524,7 +525,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 5",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000600",
@@ -534,7 +535,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 6",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000700",
@@ -544,7 +545,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 7",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000800",
@@ -554,7 +555,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 8",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000900",
@@ -564,7 +565,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 9",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000A00",
@@ -574,7 +575,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 10",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000B00",
@@ -584,7 +585,7 @@
         {
           "type": "c_source",
           "name": "Rasterize Tri 11",
-          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle",
+          "compiler_flags": "-O2 -DGPU_SIM --entry kernel_triangle --rfc-size 4",
           "execution": {
             "threads": 10000, "blocks": 1,
             "arg_pointer": "0x20000C00",
@@ -604,6 +605,7 @@
       ],
       "verification": {
         "expected_file": "triangle_exp.hex",
+        "actual_file": "final_render.hex",
         "float_tolerance": 0.015
       }
     }
