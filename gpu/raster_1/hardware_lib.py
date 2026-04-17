@@ -1,5 +1,4 @@
 from bits import Bits
-from numpy import inf as invalid
 
 class Table():
     def __init__(self, size : int = 12, blockSize : int = 64):
@@ -11,6 +10,7 @@ class Table():
     def read(self, index):
         return self.table[index]
 
+#NEED SPECIAL INDEX TABLE CLASS NEED VALID BIT!!
 
 class vertexTable(Table):
     def __init__(self, size : int = 12, blockSize : int = 64):
@@ -18,20 +18,27 @@ class vertexTable(Table):
         self.refCount = [Bits(size = 5)] * size
         self.valid = [Bits(size = 1)] * size
 
+    def getHandle(self): #FOR TRANS TABLE ONLY!!
+        for v, idx in enumerate(self.valid):
+            if v.getBits() == '0':
+                return idx
+            
+        return -1
+
     def getRefCount(self, index):
         return self.refCount[index]
     
     def validate(self, index):
-        self.valid[index] = 1
+        self.valid[index] = Bits(size=1, val=1)
     
     def invalidate(self, index):
-        self.valid[index] = 0
+        self.valid[index] = Bits(size=1)
 
     def increment(self, index):
-        self.refCount[index] += 1
+        self.refCount[index] = Bits(size=5, val=self.refCount[index].getInt() + 1)
 
     def decrement(self, index):
-        self.refCount[index] -= 1
+        self.refCount[index] = Bits(size=5, val=self.refCount[index].getInt() - 1)
 
     def checkValid(self, index):
         return self.valid[index]
@@ -43,7 +50,7 @@ class buffer():
         self.currSize = 0
         self.dataSize = dataSize
         self.buffer = []
-        self.out = invalid
+        self.out = None
 
     def insert(self, data : Bits):
         if (data.getSize() != self.dataSize):
@@ -53,7 +60,7 @@ class buffer():
             self.buffer.append(data)
             self.currSize += 1
         elif (self.currSize == self.size):
-            if (self.out == invalid):
+            if (self.out == None):
                 self.out = self.buffer.pop(0)
                 self.buffer.append(data)
                 return 0
@@ -68,10 +75,10 @@ class buffer():
         return 0
 
     def acked(self):
-        self.out = invalid
+        self.out = None
 
     def checkOut(self):
-        if (self.out != invalid):
+        if (self.out != None):
             return True
         
         return False

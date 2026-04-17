@@ -1,13 +1,15 @@
 from bits import Bits
 from hardware_lib import vertexTable, buffer, Table
 from base_class import ForwardingIF, LatchIF, Stage
+
 '''
 #Can hold worst case 8 triangles in flight (8 * 3 vert = 24)
-vertex_table = vertexTable(size = 24, blockSize = 8*12)
+vertex_table = vertexTable(size = 24, blockSize = 8*12) #12 bytes
 
-#Translation lookup table with 11 slots and indexing the size 24 vertex table so 5 bits ok
-tl_table = Table(size = 11, dataSize = 5)
+#Translation lookup table with 16 slots (for every vertex in buffer) and indexing the size 24 vertex table so 5 bits ok
+tl_table = Table(size = 16, dataSize = 5)
 '''
+
 class vertexBuffer(Stage):
     def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
         super().__init__(name, input_if, output_if)
@@ -68,6 +70,62 @@ class indexBuffer(Stage):
             self.ahead_latch.push(self.index_buffer.getOut())
             self.index_buffer.acked()
 
+class vert_trans_table(Stage):
+    def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
+        super().__init__(name, input_if, output_if)
+
+        self.TdSize = 5
+        self.Tsize = 16
+
+        self.VdSize = 8*12
+        self.Vsize = 24
+
+        self.Tcounter = -1
+        self.Vcounter = -1
+
+        #Translation lookup table with 16 slots (for every vertex in buffer) and indexing the size 24 vertex table so 5 bits ok
+        self.tl_table = Table(size = self.Tsize, dataSize = self.TdSize)
+
+        #Can hold worst case 8 triangles in flight (8 * 3 vert = 24)
+        self.vx_table = vertexTable(size = self.Vsize, blockSize = self.VdSize) #12 bytes
+
+    def compute(self):
+        vStatus = 'ok'
+        tStatus = 'ok'
+
+        if (self.Tcounter == self.Tsize - 1):
+            tStatus = 'clean'
+
+        if (self.Vcounter == self.Vsize - 1):
+            self.Vcounter = -1
+
+        input_data = self.behind_latch.pop()
+
+        if input_data is None:
+            return
+
+        Vinput = input_data['vertex']
+        Tinput = input_data['index']
+
+        if Vinput is not None:
+            self.Vcounter += 1
+            if self.vx_table.checkValid(self.Vcounter).getBits() == '0':
+                self.vx_table.insert(Vinput, self.Vcounter)
+                self.vx_table.validate(self.Vcounter)
+                self.vx_table.increment(self.Vcounter)
+            else:
+                vStatus = 'stall'
+
+        if Tinput is not None and tStatus != 'clean':
+            self.Tcounter += 1
+            handle = self.vx_table.getHandle()
+            if handle == -1:
+                tStatus = 'stall'
+            else:
+                self.tl_table.insert(index=Tinput, data=Bits(size=self.TdSize, val=handle))
+
+
+
 def setup_stage():
     in_latchV = LatchIF(name="vBuffer_inLatch")
     out_latchV = LatchIF(name="vBuffer_outLatch")
@@ -79,7 +137,7 @@ def setup_stage():
 
     return vBuffer, iBuffer, in_latchV, out_latchV, in_latchI, out_latchI
 
-def test_stage():
+def test_system():
     vBuffer, iBuffer, in_latchV, out_latchV, in_latchI, out_latchI = setup_stage()
 
     cycles = 35
@@ -129,7 +187,7 @@ def test_stage():
         print()
 
 def main():
-    test_stage()
+    test_system()
     
 
 if __name__ == "__main__":
