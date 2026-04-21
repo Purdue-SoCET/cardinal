@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from simulator.stage import Stage
 from simulator.interfaces import LatchIF
 from simulator.instruction import Instruction
-from simulator.execute.functional_unit import MemBranchJumpUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, IntUnit, FpUnit, SpecialUnit, MemBranchJumpUnit
+from simulator.execute.functional_unit import (
+    MemBranchJumpUnitConfig, IntUnitConfig, FpUnitConfig, SpecialUnitConfig, FusedUnitConfig,
+    IntUnit, FpUnit, SpecialUnit, MemBranchJumpUnit, FusedArithmeticUnit
+)
 from typing import Dict, Optional
 
 
@@ -14,11 +17,13 @@ class FunctionalUnitConfig:
     fp_unit_count: int
     special_unit_count: int
     membranchjump_unit_count: int
+    fused_unit_count: int
 
     int_config: IntUnitConfig
     fp_config: FpUnitConfig
     special_config: SpecialUnitConfig
     membranchjump_config: MemBranchJumpUnitConfig
+    fused_config: FusedUnitConfig
 
     @classmethod
     def get_default_config(cls) -> FunctionalUnitConfig:
@@ -27,25 +32,41 @@ class FunctionalUnitConfig:
             fp_unit_count=1,
             special_unit_count=1,
             membranchjump_unit_count=1,
+            fused_unit_count=1,
             int_config=IntUnitConfig.get_default_config(),
             fp_config=FpUnitConfig.get_default_config(),
             special_config=SpecialUnitConfig.get_default_config(),
-            membranchjump_config=MemBranchJumpUnitConfig.get_default_config()
+            membranchjump_config=MemBranchJumpUnitConfig.get_default_config(),
+            fused_config=FusedUnitConfig.get_default_config()
         )
-    
+
     @classmethod
-    def get_config(cls, int_config: IntUnitConfig, fp_config: FpUnitConfig, special_config: SpecialUnitConfig, membranchjump_config: MemBranchJumpUnitConfig, int_unit_count: int =1, fp_unit_count: int =1, special_unit_count: int =1, membranchjump_unit_count: int =1) -> FunctionalUnitConfig:
+    def get_config(
+        cls,
+        int_config: IntUnitConfig,
+        fp_config: FpUnitConfig,
+        special_config: SpecialUnitConfig,
+        membranchjump_config: MemBranchJumpUnitConfig,
+        fused_config: FusedUnitConfig,
+        int_unit_count: int = 1,
+        fp_unit_count: int = 1,
+        special_unit_count: int = 1,
+        membranchjump_unit_count: int = 1,
+        fused_unit_count: int = 1
+    ) -> FunctionalUnitConfig:
         return cls(
             int_unit_count=int_unit_count,
             fp_unit_count=fp_unit_count,
             special_unit_count=special_unit_count,
             membranchjump_unit_count=membranchjump_unit_count,
+            fused_unit_count=fused_unit_count,
             int_config=int_config,
             fp_config=fp_config,
             special_config=special_config,
-            membranchjump_config=membranchjump_config
+            membranchjump_config=membranchjump_config,
+            fused_config=fused_config
         )
-    
+
     def generate_fust_dict(self) -> Dict[str, bool]:
         fust = {}
         for i in range(self.int_unit_count):
@@ -64,13 +85,18 @@ class FunctionalUnitConfig:
             membranchjump_unit = MemBranchJumpUnit(config=self.membranchjump_config, num=i)
             for fsu_name in membranchjump_unit.subunits.keys():
                 fust[fsu_name] = True
-                
+        for i in range(self.fused_unit_count):
+            fused_unit = FusedArithmeticUnit(config=self.fused_config, num=i)
+            for fsu_name in fused_unit.subunits.keys():
+                fust[fsu_name] = True
+
         return fust
+
 
 class ExecuteStage(Stage):
     def __init__(self, config: FunctionalUnitConfig, fust: Dict[str, bool]):
         super().__init__(name="Execute_Stage")
-      
+
         self.behind_latch = LatchIF(name="IS_EX_Latch")
 
         self.ahead_latch = None
@@ -90,6 +116,8 @@ class ExecuteStage(Stage):
             functional_units_list.append(SpecialUnit(config=config.special_config, num=i))
         for i in range(config.membranchjump_unit_count):
             functional_units_list.append(MemBranchJumpUnit(config=config.membranchjump_config, num=i))
+        for i in range(config.fused_unit_count):
+            functional_units_list.append(FusedArithmeticUnit(config=config.fused_config, num=i))
 
         self.functional_units = {fu.name: fu for fu in functional_units_list}
 
@@ -100,22 +128,18 @@ class ExecuteStage(Stage):
             for fsu_name, fsu in fu.subunits.items():
                 self.ahead_latches[fsu.ex_wb_interface.name] = fsu.ex_wb_interface
                 self.fsu_perf_counts[fsu.name] = fsu.perf_count
-              
 
     def compute(self) -> None:
-        # Dispatch to functional units
         for fu in self.functional_units.values():
             fu.compute()
-        
 
     def tick(self) -> None:
-        # Tick all functional units
         for fu in self.functional_units.values():
             in_data = self.behind_latch.snoop()
 
             if isinstance(in_data, Instruction):
                 in_data.mark_stage_enter(self.name, self.cycle)
-            
+
             fu_out_data = fu.tick(self.behind_latch, fust=self.fust)
 
             new_in_data = self.behind_latch.snoop()
@@ -123,9 +147,7 @@ class ExecuteStage(Stage):
             if not (new_in_data is in_data) and isinstance(new_in_data, Instruction):
                 in_data.mark_stage_enter(self.name, self.cycle)
 
-
             for name, out_data in fu_out_data.items():
-                # print(f"[{self.name}] Cycle #{self.cycle}: FSU output on latch {name}: {out_data}")
                 if out_data is not False:
                     push_success = self.ahead_latches[name].push(out_data)
                     if not push_success:
@@ -134,17 +156,14 @@ class ExecuteStage(Stage):
                         out_data.mark_stage_exit(self.name, self.cycle)
 
         self.cycle += 1
-    
+
     def get_data(self) -> Optional[Instruction]:
         raise NotImplementedError()
-    
+
     def send_output(self) -> None:
         raise NotImplementedError()
- 
 
     @classmethod
     def create_pipeline_stage(cls, functional_unit_config: FunctionalUnitConfig, fust: Dict[str, bool]) -> ExecuteStage:
-        # execute stage
         ex_stage = ExecuteStage(config=functional_unit_config, fust=fust)
-
         return ex_stage
