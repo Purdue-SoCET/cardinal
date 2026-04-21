@@ -762,6 +762,10 @@ class GPUTestRunner:
 
                 sm.finalize()
 
+                # Dump the dcache 3C statistics if available
+                if "dcache" in sm.pipeline and hasattr(sm.pipeline["dcache"], "dump_stats"):
+                    sm.pipeline["dcache"].dump_stats()
+
                 self.last_sim_cycles = cycle
                 self.last_sim_finished = sm.finished
 

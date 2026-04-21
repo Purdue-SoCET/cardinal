@@ -554,7 +554,6 @@ class CacheBank:
                         "data": victim_frame.block, # The data to write back,
                         "src": "dcache"
                     }
-                    # --- END FIX ---
 
                     self.mem_req_if.push(req_payload)
                     self.waiting_for_mem = True
@@ -648,6 +647,16 @@ class LockupFreeCacheStage(Stage):
         self.pending_request: Optional[DCacheRequest] = None   # The current request
         # Map of in-flight misses, keyed by UUID
         self.active_misses: Dict[int, DCacheRequest] = {}
+
+        # Compulsor, conflict, and capacity misses trackers
+        self.compulsory_misses = 0
+        self.conflict_misses = 0
+        self.capacity_misses = 0
+        self.seen_blocks = set()
+        # Calculate total blocks: Cache Size / (Words per Block * Bytes per Word)
+        bytes_per_block = self.cfg["block_size_words"] * self.cfg["word_size_bytes"]
+        self.total_cache_blocks = self.cfg["cache_size"] // bytes_per_block
+        self.shadow_fa_queue = [] # Acts as our perfect Fully Associative LRU
         
         self.cycle_count = 0
         self.output_buffer = deque()
@@ -683,7 +692,7 @@ class LockupFreeCacheStage(Stage):
         _is_eviction = False
         _is_busy = False  # computed after processing below
 
-        # --- 1. Check for memory responses
+        # Check for memory responses
         if (self.mem_resp_if.valid):
             resp = self.mem_resp_if.pop()
             print(f"Cache: Received memory response: {resp}")
@@ -699,7 +708,7 @@ class LockupFreeCacheStage(Stage):
                 if (target_bank_id is not None) and (0 <= target_bank_id < self.cfg["num_banks"]):
                     self.banks[target_bank_id].complete_mem_access(data)
         
-        # --- 3. Advance all internal components (Miss Handling) ---
+        # Advance all internal components ---
         bank_busy_signals = []  # A list of busy signal from each bank
         for i in range(self.cfg["num_banks"]):
             bank = self.banks[i]
@@ -722,7 +731,7 @@ class LockupFreeCacheStage(Stage):
                     data = hit_info['data']
                 ))
 
-            # 3b. Check for completed misses & update outputs
+            # Check for completed misses & update outputs
             if bank_out['uuid_ready']:  # If the bank has finished serving a miss request
                 uuid = bank_out['uuid_out'] # Get the UUID for the finished miss request
                 if uuid in self.active_misses:  # if UUID is in the active misses list
@@ -738,7 +747,7 @@ class LockupFreeCacheStage(Stage):
                         replay = True
                         ))
                 
-        # 3c. Service new misses if banks are ready
+        # Service new misses if banks are ready
         for i in range(self.cfg["num_banks"]):
             bank = self.banks[i]    # Get the ith bank
             mshr = self.mshrs[i]    # Get the ith MSHR buffer
@@ -750,21 +759,21 @@ class LockupFreeCacheStage(Stage):
                     if bank.state == 'VICTIM_EJECT':
                         _is_eviction = True
         
-        # 3e. NEW: Generate the busy signals *after* new misses have started
+        # NEW: Generate the busy signals *after* new misses have started
         bank_busy_signals = [bank.busy for bank in self.banks]
 
         # Get Input if it exists
         if (self.behind_latch.valid) and (not self.stall):
             input_data = self.behind_latch.pop()
 
-        # --- NEW: Check for Flush/Halt Command from Input ---
+        # Check for Flush/Halt Command from Input ---
         if input_data and getattr(input_data, 'halt', False):
             print(f"Cache: Received HALT signal. Starting flush.")
             self.flushing = True
             self.stall = True # Stop accepting inputs immediately
             self.behind_latch.forward_if.set_wait(1)    # Set the wait signal high
             
-        # --- NEW: Manage Flushing Process ---
+        # Manage Flushing Process ---
         if self.flushing:
             all_halted = True
             for bank in self.banks:
@@ -794,7 +803,7 @@ class LockupFreeCacheStage(Stage):
                 for bank in self.banks:
                     bank.state = 'START' # Reset the state of each bank to START so they can accept new requests after flush
 
-        # --- 4. Handle new inputs ---
+        # Handle new inputs ---
         if self.pending_request is None and not self.flushing:    # if not handling any request
             if (input_data):  
                 print(f"Cache: Received new request: {input_data}")
@@ -846,6 +855,32 @@ class LockupFreeCacheStage(Stage):
                         if is_new:  # Only count new primary misses
                             self.active_misses[uuid] = req
                             _is_miss = True
+                            
+                            # 3 C's classification
+                            block_addr = req.addr.block_addr_val                            
+                            # At the point where you classify (before updating shadow queue):
+                            if block_addr not in self.seen_blocks:
+                                self.compulsory_misses += 1
+                                self.seen_blocks.add(block_addr)
+                            else:
+                                # Block was seen before, check if it would fit in a FA cache
+                                if block_addr in self.shadow_fa_queue:
+                                    # It's in the FA queue, so it's a CONFLICT miss
+                                    # (miss in set-assoc, would hit in FA)
+                                    self.conflict_misses += 1
+                                else:
+                                    # It's NOT in the FA queue, so it's a CAPACITY miss
+                                    # (evicted due to capacity, wouldn't fit in FA either)
+                                    self.capacity_misses += 1
+
+                            # Now update the shadow queue AFTER classification
+                            block_addr = req.addr.block_addr_val
+                            if block_addr in self.shadow_fa_queue:
+                                self.shadow_fa_queue.remove(block_addr)
+                            self.shadow_fa_queue.insert(0, block_addr)
+                            if len(self.shadow_fa_queue) > self.total_cache_blocks:
+                                self.shadow_fa_queue.pop()
+
                         self.output_buffer.append(dMemResponse(
                             type = 'MISS_ACCEPTED',
                             miss = True,
@@ -900,3 +935,17 @@ class LockupFreeCacheStage(Stage):
             is_miss=_is_miss,
             is_eviction=_is_eviction,
         )
+    
+    def dump_stats(self):
+        total_misses = self.compulsory_misses + self.conflict_misses + self.capacity_misses
+        print("\n" + "="*40)
+        print("   D-Cache 3 C's Miss Breakdown")
+        print("="*40)
+        if total_misses > 0:
+            print(f"Total Primary Misses: {total_misses}")
+            print(f"  Compulsory: {self.compulsory_misses:6} ({(self.compulsory_misses/total_misses)*100:.1f}%)")
+            print(f"  Conflict:   {self.conflict_misses:6} ({(self.conflict_misses/total_misses)*100:.1f}%)")
+            print(f"  Capacity:   {self.capacity_misses:6} ({(self.capacity_misses/total_misses)*100:.1f}%)")
+        else:
+            print("No misses recorded.")
+        print("="*40 + "\n")
