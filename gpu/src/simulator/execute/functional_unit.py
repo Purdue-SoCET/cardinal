@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from abc import ABC
 from typing import List
 from simulator.execute.functional_sub_unit import FunctionalSubUnit, Branch, Jump, Ldst_Fu
-from simulator.execute.arithmetic_sub_unit import Alu, Mul, Div, Sqrt, Trig, InvSqrt, Conv
 from simulator.utils.data_structures.compact_queue import CompactQueue
 from simulator.instruction import Instruction
+from simulator.execute.arithmetic_sub_unit import Alu, Div, Sqrt, Trig, InvSqrt, Conv, FusedMul, AddSub
+#from simulator.execute.arithmetic_sub_unit import Alu, Mul, Div, Sqrt, Trig, InvSqrt, Conv
+from simulator.interfaces import LatchIF
 
 @dataclass
 class MemBranchJumpUnitConfig:
@@ -14,7 +16,7 @@ class MemBranchJumpUnitConfig:
     jump_count: int
     
     ldst_buffer_size: int
-    ldst_queue_size: int
+    ldst_queue_size: int 
 
     @classmethod
     def get_default_config(cls) -> MemBranchJumpUnitConfig:
@@ -48,26 +50,60 @@ class IntUnitConfig:
         )
 
 @dataclass
+class FusedUnitConfig:
+    fused_mul_count: int
+    addsub_count: int
+    
+    fused_mul_latency: int
+    addsub_latency: int
+
+    @classmethod
+    def get_default_config(cls) -> FusedUnitConfig:
+        return cls(
+            fused_mul_count=1,
+            addsub_count=1,
+            fused_mul_latency=5,
+            addsub_latency=5,
+        )
+
+# @dataclass
+# class FpUnitConfig:
+#     alu_count: int
+#     mul_count: int
+#     div_count: int
+#     sqrt_count: int
+    
+#     alu_latency: int
+#     mul_latency: int
+#     div_latency: int
+#     sqrt_latency: int
+
+#     @classmethod
+#     def get_default_config(cls) -> FpUnitConfig:
+#         return cls(
+#             alu_count=1,
+#             mul_count=1,
+#             div_count=1,
+#             sqrt_count=1,
+#             alu_latency=1,
+#             mul_latency=4,
+#             div_latency=24,
+#             sqrt_latency=20
+#         )
+
+@dataclass
 class FpUnitConfig:
-    alu_count: int
-    mul_count: int
     div_count: int
     sqrt_count: int
     
-    alu_latency: int
-    mul_latency: int
     div_latency: int
     sqrt_latency: int
 
     @classmethod
     def get_default_config(cls) -> FpUnitConfig:
         return cls(
-            alu_count=1,
-            mul_count=1,
             div_count=1,
             sqrt_count=1,
-            alu_latency=1,
-            mul_latency=4,
             div_latency=24,
             sqrt_latency=20
         )
@@ -134,8 +170,8 @@ class IntUnit(FunctionalUnit):
         subunits = []
         for i in range(config.alu_count):
             subunits.append(Alu(latency=config.alu_latency, type_=int, num=i * (num + 1)))
-        for i in range(config.mul_count):
-            subunits.append(Mul(latency=config.mul_latency, type_=int, num=i * (num + 1)))
+        #for i in range(config.mul_count):
+        #    subunits.append(Mul(latency=config.mul_latency, type_=int, num=i * (num + 1)))
         for i in range(config.div_count):
             subunits.append(Div(latency=config.div_latency, type_=int, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
@@ -143,10 +179,10 @@ class IntUnit(FunctionalUnit):
 class FpUnit(FunctionalUnit):
     def __init__(self, config: FpUnitConfig, num: int):
         subunits = []
-        for i in range(config.alu_count):
-            subunits.append(Alu(latency=config.alu_latency, type_=float, num=i * (num + 1)))
-        for i in range(config.mul_count):
-            subunits.append(Mul(latency=config.mul_latency, type_=float, num=i * (num + 1)))
+       # for i in range(config.alu_count):
+       #     subunits.append(Alu(latency=config.alu_latency, type_=float, num=i * (num + 1)))
+        #for i in range(config.mul_count):
+        #    subunits.append(Mul(latency=config.mul_latency, type_=float, num=i * (num + 1)))
         for i in range(config.div_count):
             subunits.append(Div(latency=config.div_latency, type_=float, num=i * (num + 1)))
         for i in range(config.sqrt_count):
@@ -163,4 +199,15 @@ class SpecialUnit(FunctionalUnit):
         for i in range(config.conv_count):
             subunits.append(Conv(latency=config.conv_latency, num=i * (num + 1)))
 
+        super().__init__(subunits=subunits, num=num)
+
+class FusedArithmeticUnit(FunctionalUnit):
+    def __init__(self, config: FusedUnitConfig, num: int):
+        subunits = []
+        for i in range(config.fused_mul_count):
+            subunits.append(FusedMul(latency=config.fused_mul_latency, type_=int, num=i * (num + 1)))
+            subunits.append(FusedMul(latency=config.fused_mul_latency, type_=float, num=i * (num + 1)))
+        for i in range(config.addsub_count):
+            subunits.append(AddSub(latency=config.addsub_latency, type_=int, num=i * (num + 1)))
+            subunits.append(AddSub(latency=config.addsub_latency, type_=float, num=i * (num + 1)))
         super().__init__(subunits=subunits, num=num)
