@@ -4,6 +4,7 @@ void print_line(FILE* f, uintptr_t addr, uint32_t data) {
     fprintf(f, "0x%08X \t 0x%08X\n", (unsigned int)addr, data);
 }
 
+/*
 void print_vertex_args(char* fname, vertex_arg_t* vertex_args, int num_verts) {
     FILE *f = fopen(fname, "w");
     if (!f) return;
@@ -119,6 +120,7 @@ void print_pixel_args(char* fname, pixel_arg_t* pix_args) {
 
     fclose(f);
 }
+*/
 
 void dump_memory(const char* filename, uint8_t* host_memory_ptr, uint32_t simulated_base_address, size_t num_bytes) {
     FILE* file = fopen(filename, "w");
