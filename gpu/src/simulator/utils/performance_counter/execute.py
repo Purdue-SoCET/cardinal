@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Any
+from bitstring import Bits
 from common.custom_enums_multi import Op
 from simulator.instruction import Instruction
 from simulator.utils.performance_counter.perf_counter_base import PerfCounterBase
@@ -75,6 +76,43 @@ class ExecutePerfCount(PerfCounterBase):
             "overflow_details": overflow_details_str,
         }
     
+class BranchPerfCount(ExecutePerfCount):
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.divergent_branches: int = 0
+        self.non_divergent_branches: int = 0
+        self.total_branches: int = 0
+
+    def record_branch(self, wdat_pred: list) -> None:
+        """Call after compute() with the wdat_pred result to classify the branch."""
+        if wdat_pred is None:
+            return
+        self.total_branches += 1
+        all_one = all(b == Bits(uint=1, length=1) for b in wdat_pred)
+        all_zero = all(b == Bits(uint=0, length=1) for b in wdat_pred)
+        if all_one or all_zero:
+            self.non_divergent_branches += 1
+        else:
+            self.divergent_branches += 1
+
+    def _extra_summary(self) -> dict[str, Any]:
+        base = super()._extra_summary()
+        base.update({
+            "total_branches": self.total_branches,
+            "divergent_branches": self.divergent_branches,
+            "non_divergent_branches": self.non_divergent_branches,
+            "divergent_branch_rate": self._safe_div(self.divergent_branches, self.total_branches),
+            "non_divergent_branch_rate": self._safe_div(self.non_divergent_branches, self.total_branches),
+        })
+        return base
+
+    def _reset_unit_counters(self) -> None:
+        super()._reset_unit_counters()
+        self.divergent_branches = 0
+        self.non_divergent_branches = 0
+        self.total_branches = 0
+
+
     def increment(self, instr: Instruction, ready_out: bool = True, ex_wb_interface_ready: bool = True) -> None:
         self.total_instructions += 1
         self.total_cycles += 1

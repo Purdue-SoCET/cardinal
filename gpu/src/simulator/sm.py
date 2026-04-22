@@ -27,6 +27,7 @@ from simulator.mem.memory import Mem
 from simulator.decode.decode_class import DecodeStage
 from simulator.decode.predicate_reg_file import PredicateRegFile
 from simulator.utils.performance_counter import PerfConfig, Telemeter
+from simulator.utils.performance_counter.predicate_reg_file import PredicateRegFilePerfCount
 from simulator.tbs.tbs import ThreadBlockScheduler
 from config import Settings, get_settings
 
@@ -381,12 +382,20 @@ class SM:
         )
 
         prf = PredicateRegFile(
-            num_preds_per_warp=num_preds, 
+            num_preds_per_warp=num_preds,
             num_warps=warp_count
         )
         for warp in range(warp_count):
             for pred in range(num_preds):
                 prf.reg_file[warp][pred] = [True] * self.config.sm.threads_per_warp
+
+        prf_perf_count = PredicateRegFilePerfCount(
+            name="PredicateRegFile",
+            num_warps=warp_count,
+            num_preds_per_warp=num_preds,
+        )
+        if self.telemeter:
+            self.telemeter.register_unit(prf_perf_count)
 
         kernel_base_ptrs = KernelBasePointers(max_kernels_per_SM=1)
         kernel_base_ptrs.write(0, Bits(uint=kernel_pointer_addr, length=32))
@@ -477,8 +486,9 @@ class SM:
             "csr_table":   csr_table,
             "kbp":         kernel_base_ptrs,
             "fust":        fust,
-            "prf":         prf,
-            "mem":         mem,
+            "prf":             prf,
+            "prf_perf_count":  prf_perf_count,
+            "mem":             mem,
         }
         
         # Only add TBS to pipeline if enabled
@@ -504,6 +514,8 @@ class SM:
         if "tbs" in self.pipeline:
             self.pipeline["tbs"].compute()
         
+        self.pipeline["prf_perf_count"].sample(self.pipeline["prf"])
+
         self.cycle += 1
         self.finished = self.pipeline["scheduler"].system_finished
     
