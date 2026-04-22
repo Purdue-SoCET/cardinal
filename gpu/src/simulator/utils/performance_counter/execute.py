@@ -114,7 +114,10 @@ class BranchPerfCount(ExecutePerfCount):
 
 
     def increment(self, instr: Instruction, ready_out: bool = True, ex_wb_interface_ready: bool = True) -> None:
-        self.total_instructions += 1
+        
+        if instr is not None and instr.opcode is None:
+            self.total_instructions += 1
+            
         self.total_cycles += 1
 
         if not ex_wb_interface_ready:
