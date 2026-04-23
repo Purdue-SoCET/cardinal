@@ -41,8 +41,10 @@ class LdstPerfCount(PerfCounterBase):
         **kwargs : Any additional parameters
         """
         if instr is not None:
-            # Track instruction count
-            self.instruction_counts[instr.opcode] = self.instruction_counts.get(instr.opcode, 0) + 1
+            if self.unit_name not in [entry['fu'] for entry in instr.fu_entries]:
+                # Track instruction count
+                instr.mark_fu_enter(self.unit_name, cycle)  # Mark the instruction with the cycle it entered this unit
+                self.instruction_counts[instr.opcode] = self.instruction_counts.get(instr.opcode, 0) + 1
             
             # Track instruction entry (use id() as unique identifier)
             instr_id = id(instr)

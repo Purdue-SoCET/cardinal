@@ -19,3 +19,9 @@ class SchedulerPerfCount(PerfCounterBase):
         self.range.append(max(pcs) - min(pcs))
 
         # return super()._record_unit_cycle(**kwargs)
+    
+    def _extra_summary(self) -> dict[str, Any]:
+        return {
+            "std_dev": self.std_dev,
+            "range": self.range,
+        }

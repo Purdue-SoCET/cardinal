@@ -5,7 +5,7 @@ from typing import Optional, List
 from bitstring import Bits
 from simulator.utils.performance_counter.telemeter import Telemeter
 from common.custom_enums_multi import Op, R_Op, I_Op, F_Op, B_Op, P_Op, J_Op, C_Op, H_Op, U_Op, S_Op
-from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount
+from simulator.utils.performance_counter.execute import ExecutePerfCount as PerfCount, BranchPerfCount
 from simulator.utils.performance_counter.ldst import LdstPerfCount
 from simulator.interfaces import LatchIF, ForwardingIF
 from simulator.instruction import Instruction
@@ -162,6 +162,7 @@ class Ldst_Fu(FunctionalSubUnit):
         
     def tick(self, issue_if: Optional[LatchIF]) -> Optional[Instruction]:
         return_instr = False
+        current_instr = None
         if issue_if and hasattr(issue_if, 'valid'):
             print(f"[DEBUG] Cycle Start: QueueLen={len(self.ldst_q)}, LatchValid={issue_if.valid}")
 
@@ -172,7 +173,8 @@ class Ldst_Fu(FunctionalSubUnit):
                 print(f"Servicing instruction: op: {instr.opcode} rd: {instr.rd} rs1: {instr.rs1} rs2: {instr.rs2} rdat1: {instr.rdat1} rdat2: {instr.rdat2}")
                 pm = pending_mem(instr, self.block_size_words, self.word_size_bytes)
                 print(f"Formatting the instr into a pending mem type..: {pm.__dict__}")
-                self.ldst_q.append(pm)
+                self.ldst_q.append(pending_mem(instr))
+                current_instr = instr
         
         # Accept halt signal from the scheduler
         if self.sched_ldst_if.payload != None:
@@ -222,8 +224,6 @@ class Ldst_Fu(FunctionalSubUnit):
         if self.outstanding == False and len(self.ldst_q) > 0 and  self.ldst_q[0].readyWB() and len(self.wb_buffer) < self.wb_buffer_size:
             print(f"LDST_FU: Finished processing Instruction pc: {self.ldst_q[0].instr.pc}")
             completed_instr = self.ldst_q.pop(0).instr
-            # Record instruction completion for latency tracking
-            self.perf_count.record_instruction_completion(completed_instr, self.current_cycle)
             self.wb_buffer.append(completed_instr)
         
         #send req to cache if not waiting for response
@@ -245,12 +245,13 @@ class Ldst_Fu(FunctionalSubUnit):
         #send instr to wb if ready
         if self.ex_wb_interface.ready_for_push() and len(self.wb_buffer) > 0:
             return_instr = self.wb_buffer.pop(0)
+            if return_instr is not None:
+                self.perf_count.record_instruction_completion(return_instr, self.current_cycle)
             # self.ex_wb_interface.push(return_instr) # REMOVE THIS LATER, JUST FOR TESTING
             if (return_instr):
                 print(f"LDST_FU: Pushing Instruction for WB pc: {return_instr.pc}")
         
         # Record performance metrics this cycle
-        current_instr = self.ldst_q[0].instr if len(self.ldst_q) > 0 else None
         self.perf_count.record_cycle(
             is_stalled=not self.ready_out,
             is_busy=current_instr is not None,
@@ -413,6 +414,9 @@ class Branch(FunctionalSubUnit):
     def __init__(self, num: int, telemeter=None):
         super().__init__(num=num, telemeter=telemeter)
         self.data = None
+        self.perf_count = BranchPerfCount(name=self.name)
+        if telemeter:
+            telemeter.register_unit(self.perf_count)
     
     def compute(self):
         instr = self.data
@@ -464,12 +468,15 @@ class Branch(FunctionalSubUnit):
             out_data = False
             self.ready_out = False            
 
+        if isinstance(out_data, Instruction) and out_data.opcode in (B_Op.BEQ, B_Op.BNE):
+            self.perf_count.record_branch(out_data.wdat_pred)
+
         self._record_cycle(
-            instr=in_data, 
-            ready_out=self.ready_out, 
+            instr=in_data,
+            ready_out=self.ready_out,
             ex_wb_interface_ready=self.ex_wb_interface.ready_for_push(),
         )
-        
+
         return out_data
 
 class Jump(FunctionalSubUnit):
