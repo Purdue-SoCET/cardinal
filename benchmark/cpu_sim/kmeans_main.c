@@ -105,6 +105,7 @@ int main(void) {
     update_args.center_counts = center_counts;
 
     int assign_grid = (n_points + block_dim - 1) / block_dim;
+    int accum_grid = (k + block_dim - 1) / block_dim;
     int update_total = k * n_dims;
     int update_grid = (update_total + block_dim - 1) / block_dim;
 
@@ -116,7 +117,7 @@ int main(void) {
 
         // k-means pipeline: assign -> accumulate -> update.
         run_kernel(kernel_kmeans_assign, assign_grid, block_dim, (void*)&assign_args);
-        run_kernel(kernel_kmeans_accumulate, assign_grid, block_dim, (void*)&accum_args);
+        run_kernel(kernel_kmeans_accumulate, accum_grid, block_dim, (void*)&accum_args);
         run_kernel(kernel_kmeans_update, update_grid, block_dim, (void*)&update_args);
 
         // Converge when center movement (L2 norm) is small enough.

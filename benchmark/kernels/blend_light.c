@@ -111,7 +111,7 @@ void kernel_blend_light(void* arg)
         args->tris != 0 &&
         args->num_tris > 0 &&
         args->num_verts > 0 &&
-        args->tag >= 0 && args->tag < args->num_tris
+        args->tag >= 0 && args->tag < args->num_tris;
     
     if(phong_enable) {
         triangle_t tri = args->tris[args->tag];

@@ -35,16 +35,28 @@ void kernel_kmeans_assign(void* arg) {
 void kernel_kmeans_accumulate(void* arg) {
 	kmeans_accum_arg_t* args = (kmeans_accum_arg_t*)arg;
 
-	int idx = blockIdx * blockDim + threadIdx;
-	if (idx >= args->n_points)
+	int c = blockIdx * blockDim + threadIdx;
+	if (c >= args->k)
 		return;
 
-	int c = args->labels[idx];
-	args->center_counts[c] += 1;
-
+	int center_base = c * args->n_dims;
 	for (int d = 0; d < args->n_dims; d++) {
-		args->center_sums[c * args->n_dims + d] += args->points[idx * args->n_dims + d];
+		args->center_sums[center_base + d] = 0.0f;
 	}
+
+	int count = 0;
+	for (int idx = 0; idx < args->n_points; idx++) {
+		if (args->labels[idx] != c)
+			continue;
+
+		count += 1;
+		int point_base = idx * args->n_dims;
+		for (int d = 0; d < args->n_dims; d++) {
+			args->center_sums[center_base + d] += args->points[point_base + d];
+		}
+	}
+
+	args->center_counts[c] = count;
 }
 
 void kernel_kmeans_update(void* arg) {
