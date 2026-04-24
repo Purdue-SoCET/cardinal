@@ -1,7 +1,8 @@
 '''
 D-cache with MSHR (Non-Blocking), no Frag FIFO, tightly coupled tag/data, blocking on misses.
 T-cache with Miss Request FIFO and ROB, using tail register and duplicate requests in same cycle and  decoupled tag/data, allows coalescing of misses within ROB depth N.
-Both caches are 16KB, 128B line size, 4-way set associative.'''
+Both caches are 16KB, 128B line size, 4-way set associative.
+'''
 import sys
 import re
 import os
@@ -26,9 +27,6 @@ N_SIZE = 16          # Variable N for FIFO sizing
 
 # ==========================================
 # ADDRESS CALCULATION UTILITIES
-# ==========================================
-# ==========================================
-# TODO || VERIFIED
 # ==========================================
 def interleave_bits(x, y):
     """Interleave 16-bit x and y into a 32-bit Morton code."""
@@ -70,30 +68,23 @@ def get_morton_addr(u, v, mip_level=0):
 # ==========================================
 # MICROARCHITECTURAL CACHE MODELS
 # ==========================================
-# ==========================================
-# TODO || VERIFY
-# ==========================================
 class DCacheSimulator:
-    """
-    D-Cache with an MSHR (Non-Blocking).
-    Lacks Fragment FIFO and ROB (Tag/Data arrays are tightly coupled).
-    """
     def __init__(self, name):
         self.name = name
         self.sets = [[] for _ in range(NUM_SETS)]
         self.seen_blocks = set()
         self.unique_texels = set()
         
-        # MSHR for miss-under-miss behavior (Block Addr -> Ready Cycle)
-        self.mshr = {} 
+        # MSHR for miss-under-miss behavior
+        self.mshr = {} # block_addr -> ready_cycle
         self.mshr_size = N_SIZE
         
-        self.accesses = 0
-        self.hits = 0
-        self.misses = 0
-        self.compulsory_misses = 0
-        self.line_fills = 0
-        self.cycles = 0
+        # --- NEW VARIABLES ---
+        self.next_mem_avail = 0 
+        self.max_in_flight = 0
+        
+        self.accesses = 0; self.hits = 0; self.misses = 0
+        self.compulsory_misses = 0; self.line_fills = 0; self.cycles = 0
 
     def access_batch(self, texel_addrs):
         self.cycles += 1
@@ -123,7 +114,7 @@ class DCacheSimulator:
                 
             # 3. Miss Path (True Structural Miss)
             else:
-                # Stall pipeline if MSHR is full (head-of-line blocking resumes)
+                # Stall pipeline if MSHR is full
                 while len(self.mshr) >= self.mshr_size:
                     self.cycles += 1
                     completed = [a for a, r in self.mshr.items() if r <= self.cycles]
@@ -135,7 +126,16 @@ class DCacheSimulator:
                     self.seen_blocks.add(block_addr)
                 
                 self.line_fills += 1
-                self.mshr[block_addr] = self.cycles + MISS_PENALTY
+                
+                # --- NEW MEMORY CONTENTION LOGIC ---
+                start_fill_cycle = max(self.cycles, self.next_mem_avail)
+                ready_cycle = start_fill_cycle + MISS_PENALTY
+                
+                # Unpipelined memory: bus is locked for the entire miss penalty
+                self.next_mem_avail = start_fill_cycle + MISS_PENALTY 
+                
+                self.mshr[block_addr] = ready_cycle
+                self.max_in_flight = max(self.max_in_flight, len(self.mshr)) # --- NEW METRIC ---
                 
                 self.sets[set_idx].insert(0, tag)
                 if len(self.sets[set_idx]) > ASSOC:
@@ -149,35 +149,21 @@ class DCacheSimulator:
     def get_stats(self):
         bytes_fetched = self.line_fills * LINE_SIZE
         useful_bytes = len(self.unique_texels) * TEXEL_SIZE
-        bw_eff = (useful_bytes / max(1, bytes_fetched)) * 100
-        redundant_texels = (bytes_fetched - useful_bytes) / TEXEL_SIZE
-        
         return {
-            "accesses": self.accesses,
-            "hits": self.hits,
-            "misses": self.misses,
+            "accesses": self.accesses, "hits": self.hits, "misses": self.misses,
             "hit_rate": self.hits / max(1, self.accesses),
             "miss_rate": self.misses / max(1, self.accesses),
-            "compulsory_misses": self.compulsory_misses,
             "conflict_misses": self.misses - self.compulsory_misses,
-            "line_fills": self.line_fills,
-            "bytes_fetched": bytes_fetched,
+            "line_fills": self.line_fills, "bytes_fetched": bytes_fetched,
             "useful_bytes": useful_bytes,
-            "bw_efficiency": bw_eff,
-            "redundant_texels": redundant_texels,
+            "bw_efficiency": (useful_bytes / max(1, bytes_fetched)) * 100,
+            "max_in_flight": self.max_in_flight,
             "amat": HIT_LATENCY + ((self.misses / max(1, self.accesses)) * MISS_PENALTY),
             "total_cycles": self.cycles
         }
 
-# ==========================================
-# TODO || VERIFY
-# ==========================================
+
 class TCacheSimulator:
-    """
-    T-Cache using a Hybrid Coalescing approach:
-    1. Intra-cycle batch coalescing.
-    2. Inter-cycle Tail-check against the Miss Request FIFO.
-    """
     def __init__(self, name):
         self.name = name
         self.sets = [[] for _ in range(NUM_SETS)]
@@ -185,35 +171,34 @@ class TCacheSimulator:
         self.unique_texels = set()
         
         self.frag_fifo = []
-        self.miss_req_fifo = []      # Stores tuples of (block_addr, ready_cycle)
+        self.miss_req_fifo = [] 
         self.rob = []
-        self.last_pushed_addr = None # Tail register for inter-cycle coalescing
+        self.last_pushed_addr = None
         
-        self.frag_size = 2 * 50
-        self.fifo_size = 50
+        self.frag_size = 2 * N_SIZE
+        self.fifo_size = N_SIZE
         
-        self.accesses = 0
-        self.hits = 0
-        self.misses = 0
-        self.compulsory_misses = 0
-        self.line_fills = 0
-        self.cycles = 0
+        # --- NEW VARIABLES ---
+        self.next_mem_avail = 0
+        self.max_in_flight = 0
+        
+        self.accesses = 0; self.hits = 0; self.misses = 0
+        self.compulsory_misses = 0; self.line_fills = 0; self.cycles = 0
 
     def tick(self):
         self.cycles += 1
         
-        # Retire completed requests
         while self.miss_req_fifo and self.miss_req_fifo[0][1] <= self.cycles:
             self.miss_req_fifo.pop(0)
         while self.rob and self.rob[0] <= self.cycles:
             self.rob.pop(0)
 
         processed = 0
-        current_cycle_misses = {} # For intra-cycle coalescing
+        current_cycle_misses = {} 
 
         while processed < 4 and self.frag_fifo:
             if len(self.rob) >= self.fifo_size: 
-                break # ROB backpressure
+                break 
                 
             addr = self.frag_fifo[0]
             block_addr = addr // LINE_SIZE
@@ -233,7 +218,7 @@ class TCacheSimulator:
             else:
                 self.misses += 1
                 
-                # Coalescing A: Intra-cycle (did we already miss on this line THIS cycle?)
+                # Coalescing A: Intra-cycle
                 if block_addr in current_cycle_misses:
                     self.rob.append(current_cycle_misses[block_addr])
                     
@@ -244,16 +229,24 @@ class TCacheSimulator:
                 # True Miss (Requires Memory Fetch)
                 else:
                     if len(self.miss_req_fifo) >= self.fifo_size: 
-                        break # Miss FIFO full backpressure
+                        break 
                     
                     if block_addr not in self.seen_blocks:
                         self.compulsory_misses += 1
                         self.seen_blocks.add(block_addr)
                     
                     self.line_fills += 1
-                    ready_cyc = self.cycles + MISS_PENALTY
+                    
+                    # --- NEW MEMORY CONTENTION LOGIC ---
+                    start_fill_cycle = max(self.cycles, self.next_mem_avail)
+                    ready_cyc = start_fill_cycle + MISS_PENALTY
+                    
+                    # Unpipelined memory: bus is locked for the entire miss penalty
+                    self.next_mem_avail = start_fill_cycle + MISS_PENALTY
                     
                     self.miss_req_fifo.append((block_addr, ready_cyc))
+                    self.max_in_flight = max(self.max_in_flight, len(self.miss_req_fifo)) # --- NEW METRIC ---
+                    
                     self.last_pushed_addr = block_addr
                     current_cycle_misses[block_addr] = ready_cyc
                     self.rob.append(ready_cyc)
@@ -281,30 +274,23 @@ class TCacheSimulator:
     def get_stats(self):
         bytes_fetched = self.line_fills * LINE_SIZE
         useful_bytes = len(self.unique_texels) * TEXEL_SIZE
-        bw_eff = (useful_bytes / max(1, bytes_fetched)) * 100
-        redundant_texels = (bytes_fetched - useful_bytes) / TEXEL_SIZE
         return {
             "accesses": self.accesses, "hits": self.hits, "misses": self.misses,
             "hit_rate": self.hits / max(1, self.accesses),
             "miss_rate": self.misses / max(1, self.accesses),
-            "compulsory_misses": self.compulsory_misses,
             "conflict_misses": self.misses - self.compulsory_misses,
             "line_fills": self.line_fills, "bytes_fetched": bytes_fetched,
-            "useful_bytes": useful_bytes, "bw_efficiency": bw_eff,
-            "redundant_texels": redundant_texels,
+            "useful_bytes": useful_bytes,
+            "bw_efficiency": (useful_bytes / max(1, bytes_fetched)) * 100,
+            "max_in_flight": self.max_in_flight,
             "amat": HIT_LATENCY + ((self.misses / max(1, self.accesses)) * MISS_PENALTY),
             "total_cycles": self.cycles
         }
 
-
 # ==========================================
 # WORKLOAD GENERATION & FILTERING
 # ==========================================
-# ==========================================
-# TODO || VERIFIED : UV parsed correctly and texel requests generated correctly according to filter type.
-# ==========================================
 def get_texels_for_pixel(s, t, filter_type):
-    """Returns a list of (u, v, mip) tuples for a given ST coordinate."""
     s = max(0.0, min(1.0, s))
     t = max(0.0, min(1.0, t))
     u_float = s * (TEX_WIDTH - 1)
@@ -332,18 +318,14 @@ def get_texels_for_pixel(s, t, filter_type):
         
     return texels
 
-# ==========================================
-# TODO || VERIFIED : All texel requests are generated and fed into the simulators correctly. Stats are collected and printed.
-# ==========================================
 def parse_and_run(filepath, filter_type, workload_name):
     print(f"\n--- Running Workload: {workload_name} ({filter_type}) ---")
     
-    d_cache = DCacheSimulator("D-Cache (Row-Major)")
+    d_cache = DCacheSimulator("D-Cache (Row)")
     t_cache = TCacheSimulator("T-Cache (Morton)")
     
     uv_pairs = []
     
-    # Gracefully ignore binary encoding errors (0x89 PNG headers, etc)
     if os.path.exists(filepath):
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
@@ -366,7 +348,7 @@ def parse_and_run(filepath, filter_type, workload_name):
     for s, t in uv_pairs:
         texel_requests.extend(get_texels_for_pixel(s, t, filter_type))
 
-    # TMU sends 4 texel requests per cycle
+    # Flat iteration processing strictly 4 texels per cycle
     for i in range(0, len(texel_requests), 4):
         batch = texel_requests[i:i+4]
         
@@ -387,29 +369,26 @@ def parse_and_run(filepath, filter_type, workload_name):
 
 def print_stats(d_stats, t_stats):
     print("\nRESULTS SUMMARY:")
-    print(f"{'Metric':<20} | {'D-Cache (Row)':<15} | {'T-Cache (Morton)':<15}")
-    print("-" * 56)
+    print(f"{'Metric':<20} | {'D-Cache (Row)':<16} | {'T-Cache (Morton)':<16}")
+    print("-" * 58)
     
     keys = ["accesses", "hits", "misses", "hit_rate", "miss_rate", "conflict_misses", 
-            "bytes_fetched", "useful_bytes", "bw_efficiency", "redundant_texels", 
+            "bytes_fetched", "useful_bytes", "bw_efficiency", "max_in_flight", 
             "amat", "total_cycles"]
             
     for k in keys:
         v_d, v_t = d_stats[k], t_stats[k]
         if 'rate' in k or 'amat' in k or 'efficiency' in k:
-            print(f"{k:<20} | {v_d:<15.4f} | {v_t:<15.4f}")
+            print(f"{k:<20} | {v_d:<16.4f} | {v_t:<16.4f}")
         else:
-            print(f"{k:<20} | {v_d:<15} | {v_t:<15}")
+            print(f"{k:<20} | {v_d:<16} | {v_t:<16}")
 
     bw_ratio = t_stats['bytes_fetched'] / max(1, d_stats['bytes_fetched'])
-    conflict_d = max(1, d_stats['conflict_misses'])
-    conflict_ratio = t_stats['conflict_misses'] / conflict_d
     cyc_red = (1 - (t_stats['total_cycles'] / max(1, d_stats['total_cycles']))) * 100
     
-    print("\nCOMPARISON:")
+    print("\nCOMPARISON (vs D-Cache):")
     print(f"Bandwidth Reduction:   {(1 - bw_ratio) * 100:.2f}%")
-    print(f"Conflict Miss Reduc:   {(1 - conflict_ratio) * 100:.2f}%")
-    print(f"Cycle Reduction:       {cyc_red:.2f}% (Thanks to T-Cache Latency Hiding!)")
+    print(f"Cycle Reduction:       {cyc_red:.2f}%")
 
 # ==========================================
 # GRAPHING UTILITIES
@@ -419,9 +398,8 @@ def generate_graphs(results, filter_type):
     
     metrics = {
         'Bandwidth Efficiency (%)': 'bw_efficiency',
-        'Conflict Misses': 'conflict_misses',
-        'AMAT (Cycles)': 'amat',
-        'Total Execution Cycles': 'total_cycles'
+        'Total Execution Cycles': 'total_cycles',
+        'Max Requests In-Flight': 'max_in_flight'
     }
     
     for title, key in metrics.items():
