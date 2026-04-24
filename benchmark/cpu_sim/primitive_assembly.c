@@ -4,11 +4,15 @@
 #define SCREEN_H 800
 #define CLIP_EPS 1e-6f
 #define ENABLE_CLIPPING 1
+#define ENABLE_REJECT 1
+
+#define ENABLE_XY_CLIP 1
+#define ENABLE_FAR_CLIP 1
 
 // Primitive Assembly Unit
 // 1. Read one input triangle in clip space
 // 2. Reject triangles fully outside the clip-space frustum
-// 3. Clip the surviving polygon against all 6 frustum planes
+// 3. Clip the surviving polygon against only near plane for saving cost
 // 4. Triangulate the clipped polygon with triangle fan
 // 5. Perspective divide
 // 6. Viewport transform
@@ -47,17 +51,20 @@ static vertex_t interpolate_vertex(vertex_t a, vertex_t b, float t) {
     return out;
 }
 
+#if ENABLE_REJECT
 static int reject_outside_frustum(vertex_t v0, vertex_t v1, vertex_t v2) {
     // Entire triangle is outside one clip plane, so it can be rejected immediately.
     if (v0.coords.x < -v0.w && v1.coords.x < -v1.w && v2.coords.x < -v2.w) return 1; // left
-    if (v0.coords.x >  v0.w && v1.coords.x >  v1.w && v2.coords.x >  v2.w) return 1; // right
+    if (v0.coords.x > v0.w && v1.coords.x > v1.w && v2.coords.x > v2.w) return 1; // right
     if (v0.coords.y < -v0.w && v1.coords.y < -v1.w && v2.coords.y < -v2.w) return 1; // bottom
-    if (v0.coords.y >  v0.w && v1.coords.y >  v1.w && v2.coords.y >  v2.w) return 1; // top
+    if (v0.coords.y > v0.w && v1.coords.y > v1.w && v2.coords.y > v2.w) return 1; // top
     if (v0.coords.z < -v0.w && v1.coords.z < -v1.w && v2.coords.z < -v2.w) return 1; // near
-    if (v0.coords.z >  v0.w && v1.coords.z >  v1.w && v2.coords.z >  v2.w) return 1; // far
+    if (v0.coords.z > v0.w && v1.coords.z > v1.w && v2.coords.z > v2.w) return 1; // far
     return 0;
 }
+#endif
 
+#if ENABLE_XY_CLIP
 static int clip_left_plane(const vertex_t* in_poly, int in_count, vertex_t* out_poly) {
     int out_vertex_count = 0;
 
@@ -161,6 +168,7 @@ static int clip_top_plane(const vertex_t* in_poly, int in_count, vertex_t* out_p
 
     return out_vertex_count;
 }
+#endif
 
 static int clip_near_plane(const vertex_t* in_poly, int in_count, vertex_t* out_poly) {
     int out_vertex_count = 0;
@@ -190,6 +198,7 @@ static int clip_near_plane(const vertex_t* in_poly, int in_count, vertex_t* out_
     return out_vertex_count;
 }
 
+#if ENABLE_FAR_CLIP
 static int clip_far_plane(const vertex_t* in_poly, int in_count, vertex_t* out_poly) {
     int out_vertex_count = 0;
 
@@ -215,6 +224,7 @@ static int clip_far_plane(const vertex_t* in_poly, int in_count, vertex_t* out_p
 
     return out_vertex_count;
 }
+#endif
 
 static int perspective_divide_vertex(vertex_t* v) {
     if (absf_local(v->w) < CLIP_EPS) {
@@ -244,37 +254,50 @@ int primitive_assembly(const vertex_t* vertex_output_buffer, const triangle_t* t
         vertex_t clip_v2 = vertex_output_buffer[triangle_index_buffer[i].v3];
 
         // 2. Reject triangles fully outside the clip-space frustum
-        vertex_t clip_poly_a[10];
-        vertex_t clip_poly_b[10];
+        vertex_t clip_poly_a[10]; // input
+        vertex_t clip_poly_b[10]; // output
+        vertex_t* final_poly = clip_poly_a; // final data
         int clip_vertex_count = 3;
 
         clip_poly_a[0] = clip_v0;
         clip_poly_a[1] = clip_v1;
         clip_poly_a[2] = clip_v2;
 
-#if ENABLE_CLIPPING
+#if ENABLE_REJECT
         if (reject_outside_frustum(clip_v0, clip_v1, clip_v2)) continue;
+#endif
 
+#if ENABLE_CLIPPING
+        #if ENABLE_XY_CLIP
         // 3. Clip the surviving polygon against all 6 frustum planes
         clip_vertex_count = clip_left_plane(clip_poly_a, clip_vertex_count, clip_poly_b);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_b;
         clip_vertex_count = clip_right_plane(clip_poly_b, clip_vertex_count, clip_poly_a);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_a;
         clip_vertex_count = clip_bottom_plane(clip_poly_a, clip_vertex_count, clip_poly_b);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_b;
         clip_vertex_count = clip_top_plane(clip_poly_b, clip_vertex_count, clip_poly_a);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_a;
+        #endif
         clip_vertex_count = clip_near_plane(clip_poly_a, clip_vertex_count, clip_poly_b);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_b;
+        #if ENABLE_FAR_CLIP
         clip_vertex_count = clip_far_plane(clip_poly_b, clip_vertex_count, clip_poly_a);
         if (clip_vertex_count < 3) continue;
+        final_poly = clip_poly_a;
+        #endif
 #endif
 
         // 4. Triangulate the clipped polygon with triangle fan
         for (int j = 1; j < clip_vertex_count - 1; j++) {
-            vertex_t tri_v0 = clip_poly_a[0];
-            vertex_t tri_v1 = clip_poly_a[j];
-            vertex_t tri_v2 = clip_poly_a[j + 1];
+            vertex_t tri_v0 = final_poly[0];
+            vertex_t tri_v1 = final_poly[j];
+            vertex_t tri_v2 = final_poly[j + 1];
 
             // 5. Perspective divide after clipping
             if (!perspective_divide_vertex(&tri_v0)) continue;

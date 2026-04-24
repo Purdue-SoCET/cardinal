@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
     }
 
     // number of frames to render
-    int total_frames = 120;
+    int total_frames = 60;
 
     // frame loop
     for (frame = 0; frame < total_frames; frame++) {
@@ -150,15 +150,25 @@ int main(int argc, char** argv) {
         // For this benchmark, move the camera instead of the object.
         // In the current vertex shader path, Oa is not acting like a visible world-space translation,
         // so sweeping camera z is the reliable way to create the near-plane clipping stress case.
+        // {
+        //     float t = (float)frame / (float)(total_frames - 1);
+        //     float camera_z_start =300.0f;
+        //     float camera_z_end = -120.0f;
+        //     float camera_z = camera_z_start + t * (camera_z_end - camera_z_start);
+        //     camera_C->x = 0.0f;
+        //     camera_C->y = 0.0f;
+        //     camera_C->z = camera_z;
+        //     printf("Camera Z: %.2f\n", camera_z);
+        // }
         {
             float t = (float)frame / (float)(total_frames - 1);
-            float camera_z_start =500.0f;
-            float camera_z_end = -120.0f;
-            float camera_z = camera_z_start + t * (camera_z_end - camera_z_start);
-            camera_C->x = 0.0f;
+            float camera_x_start =110.0f;
+            float camera_x_end = -110.0f;
+            float camera_x = camera_x_start + t * (camera_x_end - camera_x_start);
+            camera_C->x = camera_x;
             camera_C->y = 0.0f;
-            camera_C->z = camera_z;
-            printf("Camera Z: %.2f\n", camera_z);
+            camera_C->z = 100.0f;
+            printf("Camera X: %.2f\n", camera_x);
         }
         matrix_inversion((float*)abcTranspose, cameraProjMatrix);
 
@@ -171,8 +181,8 @@ int main(int argc, char** argv) {
         float vertical_fov_deg = 60.0f;
         float vertical_fov_rad = vertical_fov_deg * 3.141592f / 180.0f;
         float aspect_ratio = (float)OUTPUT_W / (float)OUTPUT_H;
-        float near_clip = 10.0f;
-        float far_clip = 1000.0f;
+        float near_clip = 30.0f;
+        float far_clip = 500.0f;
         float focal_scale = 1.0f / tanf(vertical_fov_rad * 0.5f);
 
         for (int i = 0; i < 16; i++) project4x4[i] = 0.0f;
