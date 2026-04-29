@@ -13,8 +13,8 @@ int threadIdx; // Current thread in the block
 void run_kernel(kernel_ptr_t kernel, int grid_dim, int block_dim, void* args) {
     blockDim = block_dim;
     // Iterate through grids
-    for(blockIdx = 0; blockIdx < grid_dim; blockIdx++) {
-        for(threadIdx = 0; threadIdx < block_dim; threadIdx++) {
+    for(blockIdx = 0; blockIdx < (grid_dim); blockIdx++) {
+        for(threadIdx = 0; threadIdx < (block_dim); threadIdx++) {
             // printf("Launching kernel %d\n", threadIdx);
             kernel(args);
         }
@@ -39,6 +39,7 @@ void createPPMFile(char* fileName, int* pixels, int width, int height) {
     for(int i = 0; i < height; i++){     // Top to Bottom
         for(int j = 0; j < width; j++){ // Left to Right
             int idx = width * 3 * i + 3 * j;
+            /*
                 sprintf(R, "%d", pixels[idx + 0]);
                 sprintf(G, "%d", pixels[idx + 1]);
                 sprintf(B, "%d", pixels[idx + 2]);
@@ -48,6 +49,8 @@ void createPPMFile(char* fileName, int* pixels, int width, int height) {
                 fputs(" ", file);
                 fputs(B, file);
                 fputs("\n", file);
+            */
+                fprintf(file, "%d %d %d\n", pixels[idx + 0], pixels[idx + 1], pixels[idx + 2]);
         }
     }
     fclose(file);

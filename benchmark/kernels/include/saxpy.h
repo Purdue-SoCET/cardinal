@@ -9,7 +9,7 @@ typedef struct {
 } saxpy_arg_t;
 
 #ifdef GPU_SIM
-void main(void* arg);
+void kernel_saxpy();
 #else
 void kernel_saxpy(void* arg);
 #endif

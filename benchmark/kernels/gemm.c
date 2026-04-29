@@ -1,10 +1,21 @@
 #include "include/kernel.h"
 #include "include/gemm.h"
 
-void kernel_gemm(void* arg) {
+#ifdef GPU_SIM
+void kernel_gemm()
+#else
+void kernel_gemm(void* arg) 
+#endif
+{
 
-    gemm_arg_t* args = (gemm_arg_t*)arg;
-    int idx = blockIdx * blockDim + threadIdx;
+	#ifdef GPU_SIM
+	gemm_arg_t* args = (gemm_arg_t*)argPtr();
+	#else
+	gemm_arg_t* args = (gemm_arg_t*)arg;
+	#endif
+	int idx = blockIdx * blockDim + threadIdx;
+
+
 	int total = args->M * args->N;
 
 	if (idx < total) {

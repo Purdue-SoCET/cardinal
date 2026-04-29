@@ -1,24 +1,24 @@
 #include "include/kernel.h"
 #include "include/triangle.h"
 
-#ifdef GPU_SIM
-void main(void* arg)
-#else
+#ifdef CPU_SIM
 void kernel_triangle(void* arg)
-#endif    
+#else
+void kernel_triangle()
+#endif
 {
 
-    #ifdef GPU_SIM
-    triangle_arg_t* args = (triangle_arg_t*) argPtr();
-    int ix = (((threadIdx())) - (args->bb_size[0])*(((threadIdx()))/(args->bb_size[0])));
-    int iy = (((threadIdx()) / args->bb_size[0]) - (args->bb_size[1])*(((threadIdx()) / args->bb_size[0])/(args->bb_size[1])));
-
-    #else
+    #ifdef CPU_SIM
     triangle_arg_t* args = (triangle_arg_t*) arg;
-    int ix = (((threadIdx)) - (args->bb_size[0])*(((threadIdx))/(args->bb_size[0])));
-    int iy = (((threadIdx) / args->bb_size[0]) - (args->bb_size[1])*(((threadIdx) / args->bb_size[0])/(args->bb_size[1])));
-
+    #else
+    triangle_arg_t* args = (triangle_arg_t*) argPtr();
     #endif
+    int global_id = (blockIdx * blockDim) + threadIdx;
+
+
+    int ix = (((global_id)) - (args->bb_size[0])*(((global_id))/(args->bb_size[0])));
+    int iy = (((global_id) / args->bb_size[0]) - (args->bb_size[1])*(((global_id) / args->bb_size[0])/(args->bb_size[1])));
+
 
     int u = ix + args->bb_start[0];
     int v = iy + args->bb_start[1];
@@ -35,27 +35,16 @@ void kernel_triangle(void* arg)
         bc_col_vector[0] * args->bc_im[2][0] + bc_col_vector[1] * args->bc_im[2][1] + bc_col_vector[2] * args->bc_im[2][2]
     };
 
-    if (l[0] < -.00001) {
-        // Outside of triangle bounding box
-		return;
-	} else if (l[1] < -.00001) {
-        // Outside of triangle bounding box
-		return;
-    } else if (l[2] < -.00001) { 
-        // Outside of triangle bounding box
-		return;
-    } else if ((l[0] + l[1] + l[2]) > 1.01) {
-        // Outside of triangle bounding box
-		return;
-    }
+    // Check if the pixel is inside the triangle bounding box
+    if (l[0] >= -.00001 && l[1] >= -.00001 && l[2] >= -.00001 && (l[0] + l[1] + l[2]) <= 1.01) {
 
-    float pix_z = l[0]*args->pVs[0].z + l[1]*args->pVs[1].z + l[2]*args->pVs[2].z;
-    if(pix_z < args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) { // Check if current pixel is closer then known pixel
-        // current pixel is hidden
-        return;
-    }
+        float pix_z = l[0]*args->pVs[0].z + l[1]*args->pVs[1].z + l[2]*args->pVs[2].z;
 
-    // Current pixel is closest - set as so
-    args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)] = pix_z;
-    args->tag_buff[GET_1D_INDEX(u, v, args->buff_w)] = args->tag;
+        // Check if current pixel is closest (inverted from original '<' return check)
+        if (pix_z >= args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)]) {
+            // Current pixel is closest - set as so
+            args->depth_buff[GET_1D_INDEX(u, v, args->buff_w)] = pix_z;
+            args->tag_buff[GET_1D_INDEX(u, v, args->buff_w)] = args->tag;
+        }
+    }
 }

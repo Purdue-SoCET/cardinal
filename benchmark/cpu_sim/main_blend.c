@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
 
         // FIX LOAD PNG TO PUT MEM IN SHARED MEM
 
-        *texture = load_png("cpu_sim/data/textures/Hue_alpha.png",0);
+        *texture = load_png("cpu_sim/data/textures/red_0.25_alpha.png",0);
 
     // Camera
         const vector_t abc[3] = {
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
 
         // Running the Kernel
         int grid_dim = 1; int block_dim = (u_max-u_min)*(v_max-v_min);
-        run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
+        //run_kernel(kernel_triangle, grid_dim, block_dim, (void*)triangle_args);
     }
 
     // Checking TRIANGLE Output
@@ -397,7 +397,7 @@ int main(int argc, char** argv) {
     // Running the kernel
     {
         int grid_dim = 1; int block_dim = frame_w * frame_h;
-        run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
+        //run_kernel(kernel_pixel, grid_dim, block_dim, (void*)pixel_args);
     }
 
     if(PIXEL_DEBUG) 

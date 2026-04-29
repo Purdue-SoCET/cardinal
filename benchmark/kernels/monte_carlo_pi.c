@@ -34,36 +34,50 @@
     out_y = (float)(_v1 & 0xFFFFFF) / 16777216.0; \
 }
 
+#define GET_RANDOM_PAIR_UNROLLED(counter_index, seed, out_x, out_y) { \
+    unsigned int _v0 = (counter_index); \
+    unsigned int _v1 = V1_INIT; \
+    unsigned int _key = (seed); \
+    /* Round 1 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 2 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 3 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 4 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 5 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 6 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 7 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 8 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 9 */  PHILOX_ROUND(_v0, _v1, _key); _key += WEYL_C; \
+    /* Round 10 */ PHILOX_ROUND(_v0, _v1, _key); \
+    out_x = (float)(_v0 & 0xFFFFFF) / 16777216.0; \
+    out_y = (float)(_v1 & 0xFFFFFF) / 16777216.0; \
+}
+
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_monte_carlo_pi()
 #else
-void kernel_monte_carlo_pi(void* arg) {
+void kernel_monte_carlo_pi(void* arg) 
 #endif
 {
     #ifdef GPU_SIM
     monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) argPtr();
 
-    int i = blockIdx() * blockDim() + threadIdx();
     #else
     monte_carlo_pi_arg_t* args = (monte_carlo_pi_arg_t*) arg;
-
-    int i = blockIdx * blockDim + threadIdx;
     #endif
-    
-    if (i >= args->num_points) {
-        return;
+    int i = blockIdx * blockDim + threadIdx;
+
+    if (i < args->num_points) {
+        float rand_x = 0.0;
+        float rand_y = 0.0;
+
+        //GET_RANDOM_PAIR(i + args->base_seed, args->base_seed, rand_x, rand_y);
+        GET_RANDOM_PAIR_UNROLLED(i + args->base_seed, args->base_seed, rand_x, rand_y);
+        float origin_dist = rand_x * rand_x + rand_y * rand_y;
+
+        if (origin_dist <= 1.0){
+            args->circle_points[i] = 1;
+        } else {
+            args->circle_points[i] = 0;
+        }
     }
-
-    float rand_x = 0.0;
-    float rand_y = 0.0;
-
-    GET_RANDOM_PAIR(i + args->base_seed, args->base_seed, rand_x, rand_y);
-
-    float origin_dist = rand_x * rand_x + rand_y * rand_y;
-
-    if (origin_dist <= 1.0){
-        (*args->circle_points[i]) = 1;
-    }
-
-    return;
 }

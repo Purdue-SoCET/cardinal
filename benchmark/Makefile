@@ -11,15 +11,16 @@ GPU_CFLAGS =
 
 # CPU files
 KERNEL ?= saxpy
-CPU_SRCS = cpu_sim/main.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
-       kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c kernels/blend.c
+CPU_SRCS = cpu_sim/main_new.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
+       kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c 
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
 
-CUSTOM_SRCS = cpu_sim/main_$(KERNEL).c cpu_sim/kernel_run.c kernels/$(KERNEL).c
+CUSTOM_SRCS = cpu_sim/main_$(KERNEL).c cpu_sim/kernel_run.c kernels/$(KERNEL).c cpu_sim/shader_memdump.c
 
 CPU_BUILD_DIR = build/
 CPU_OUTPUT_DIR = $(CPU_BUILD_DIR)output/
+CPU_MEM_DUMP_DIR = $(CPU_BUILD_DIR)mem_dump/
 
 # GPU files
 GPU_LIB_SRCS = 
@@ -36,8 +37,33 @@ all: output.png
 run: $(CPU_PPM)
 
 run32: #need gcc-multilib
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)$(CPU_TARGET)
+
+run32_dump_bin: #need gcc-multilib; also need to update mem_dump function for bin data
+	twig kernels/vertex.c --bin-output compiled/vertex.bin -O2 --entry kernel_vertex -DGPU_SIM
+	twig kernels/triangle.c --bin-output compiled/triangle.bin -O2 --entry kernel_triangle -DGPU_SIM
+	twig kernels/pixel.c --bin-output compiled/pixel.bin -O2 --entry kernel_pixel -DGPU_SIM
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)$(CPU_TARGET)
+	python cpu_sim/data/stitch_data.py \
+	build/threads/vertexThreads.txt \
+	build/threads/triangleThreads.txt \
+	build/threads/pixelThreads.txt
+
+run32_dump: #need gcc-multilib
+	twig kernels/vertex.c --hex-output compiled/vertex.hex -O2 --entry kernel_vertex -DGPU_SIM
+	twig kernels/triangle.c --hex-output compiled/triangle.hex -O2 --entry kernel_triangle -DGPU_SIM
+	twig kernels/pixel.c --hex-output compiled/pixel.hex -O2 --entry kernel_pixel -DGPU_SIM
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(CPU_TARGET) $(CPU_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)$(CPU_TARGET)
+	python cpu_sim/data/stitch_data.py \
+	build/threads/vertexThreads.txt \
+	build/threads/triangleThreads.txt \
+	build/threads/pixelThreads.txt
 
 # Compiles all found kernels
 gpu_all: $(GPU_TARGETS)
@@ -68,6 +94,32 @@ custom:
 custom32: 
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)/$(KERNEL)
+
+custom32_dump: 
+	twig kernels/$(KERNEL).c --hex-output compiled/$(KERNEL).hex -O2 --entry kernel_$(KERNEL) -DGPU_SIM
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
+	./$(CPU_BUILD_DIR)/$(KERNEL)
+	python cpu_sim/data/stitch_data_compute.py $(KERNEL) build/threads/$(KERNEL)Threads.txt
+
+custom32_dump_BFS:
+	twig kernels/BFS_1.c --hex-output compiled/BFS_1.hex -O2 --entry kernel_BFS_1 -DGPU_SIM; \
+	twig kernels/BFS_2.c --hex-output compiled/BFS_2.hex -O2 --entry kernel_BFS_2 -DGPU_SIM; \
+
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) \
+	    -o $(CPU_BUILD_DIR)BFS \
+	    cpu_sim/main_BFS.c \
+	    cpu_sim/kernel_run.c \
+	    cpu_sim/shader_memdump.c \
+	    kernels/BFS_1.c \
+	    kernels/BFS_2.c \
+	    $(CPU_LDFLAGS)
+
+	./$(CPU_BUILD_DIR)BFS
+
+	python3 cpu_sim/data/stitch_data_compute_many.py BFS build/threads/BFSThreads.txt
 
 # Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'
 $(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)

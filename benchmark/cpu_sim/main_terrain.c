@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
 
         // Allocation
         ALLOCATE_MEM(texture, texture_t, 1);
-        ALLOCATE_MEM(color_map, vector_t, (text_w * text_h));
+        ALLOCATE_MEM(color_map, vec4_t, (text_w * text_h));
 
         // Definition
         texture->w = text_w; texture->h = text_h;
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
         for(int u = 0; u < text_w; u++) {
             for(int v = 0; v < text_h; v++) {
                 // Make red/blue checkerboard texture
-                const vector_t red = {1.0f, 1.0f, 1.0f}; const vector_t blue = {0.0f, 0.0f, 0.0f};
+                const vec4_t red = {1.0f, 1.0f, 1.0f, 1.0f}; const vec4_t blue = {0.0f, 0.0f, 0.0f, 1.0f};
                 texture->color_arr[GET_1D_INDEX(u, v, text_w)] = (u+v+1) % 2 ? red : blue;
             }
         }
@@ -371,8 +371,8 @@ int main(int argc, char** argv) {
     ALLOCATE_MEM(pixel_args, pixel_arg_t, 1);
 
     // Setup Output
-        ALLOCATE_MEM(color_output, vector_t, frame_w*frame_h);
-        vector_t color_default = {0.6f, 0.6f, 0.6f};
+        ALLOCATE_MEM(color_output, vec4_t, frame_w*frame_h);
+        vec4_t color_default = {0.6f, 0.6f, 0.6f, 1.0f};
         DEFAULT_ARR(color_output, frame_w*frame_h, color_default);
         pixel_args->color = color_output;
 
@@ -424,7 +424,7 @@ int main(int argc, char** argv) {
     char fname[30];
     snprintf(fname, sizeof(fname), "build/output/frame_%03d.ppm", frame);
 
-    createPPMFile(fname, int_color_output);
+    createPPMFile(fname, int_color_output, frame_w, frame_h);
     free(int_color_output);
 
     // --- Clean Up ---
