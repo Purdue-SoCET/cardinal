@@ -200,6 +200,7 @@ int main(int argc, char** argv) {
     }
 
     // Write to text files
+    /*
     save_text(A, M, K, "matrix_a.txt"); 
     save_text(B, K, N, "matrix_b.txt");
     save_text(C_ref, M, N, "matrix_c_output.txt");
@@ -208,6 +209,7 @@ int main(int argc, char** argv) {
     save_binary(A, M * K, "matrix_a.bin");
     save_binary(B, K * N, "matrix_b.bin");
     save_binary(C_ref, M * N, "matrix_c_output.bin");
+    */
 
     // Clean up
     free(C_ref);

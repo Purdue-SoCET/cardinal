@@ -24,7 +24,14 @@ typedef struct {
     int no_of_nodes;
 } bfs_kernel2_arg_t;
 
-void kernel_BFS_1(void*);
-void kernel_BFS_2(void*);
+
+#ifdef GPU_SIM
+void kernel_BFS_1();
+void kernel_BFS_2();
+#else
+void kernel_BFS_1(void* args);
+void kernel_BFS_2(void* args);
+#endif
+
 
 #endif
