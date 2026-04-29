@@ -95,7 +95,7 @@ class WritebackStage(Stage):
                 new_mask = instr.active_mask & ~pred_bits
                 print(new_mask)
             else:
-                new_mask = instr.active_mask
+                new_mask = None
             
             data_to_scheduler.append({"warp_group_id": instr.warp_group_id, "warp_id": instr.warp_id, "new_mask": new_mask})
             
