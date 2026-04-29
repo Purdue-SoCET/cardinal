@@ -44,7 +44,7 @@ compiled = {
     "pix": "compiled/pixel.hex"
 }
 
-args_sizes = {"vs": 0x28, "tri": 108, "pix": 0x34} 
+args_sizes = {"vs": 84, "tri": 84, "pix": 172} #vs: 0x28 tri: 108 pix:0x34
 block_dims = {"vs": vs_block, "tri": tri_block, "pix": pix_block} #[81,81,65,85,65,85,289,289,65,85,65,85]
 # [12,12,10,12,10,12,30,30,8,10,8,10]
 grid_dims  = {"vs": vs_grid, "tri": tri_grid, "pix": pix_grid} #[40,40,29,39,29,39,154,154,29,39,29,39]

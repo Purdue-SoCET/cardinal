@@ -7,6 +7,58 @@ void kernel_triangle(void* arg)
 void kernel_triangle()
 #endif
 {
+    #ifdef CPU_SIM
+    triangle_arg_t* args = (triangle_arg_t*) arg;
+    #else
+    triangle_arg_t* args = (triangle_arg_t*) argPtr();
+    #endif
+    
+    int global_id = (blockIdx * blockDim) + threadIdx;
+
+    // Mapping 1D thread ID to 2D Bounding Box coordinates
+    int ix = global_id % args->bb_size_x;
+    int iy = global_id / args->bb_size_x;
+
+    // Check if thread is within the triangle's bounding box
+    if (iy < args->bb_size_y) {
+        int u = ix + args->bb_start_x;
+        int v = iy + args->bb_start_y;
+
+        // Pixel center for sampling
+        float px = (float)u + 0.5;
+        float py = (float)v + 0.5;
+
+        // === Barycentric Calculation (Using Flattened Matrix) ===
+        // bc_col_vector is always 1.0, so we just use the first column directly
+        float l0 = args->bc_00 + px * args->bc_01 + py * args->bc_02;
+        float l1 = args->bc_10 + px * args->bc_11 + py * args->bc_12;
+        float l2 = args->bc_20 + px * args->bc_21 + py * args->bc_22;
+
+        // Edge test (including small epsilon for stability)
+        if (l0 >= -0.00001 && l1 >= -0.00001 && l2 >= -0.00001 && (l0 + l1 + l2) <= 1.01) {
+
+            // Interpolate Depth (pix_z) using SoA depths
+            float pix_z = l0 * args->v0z + l1 * args->v1z + l2 * args->v2z;
+
+            int pixel_idx = v * args->buff_w + u;
+
+            // Coalesced Read-Modify-Write
+            // Adjacent threads are writing to adjacent indices in the depth/tag buffers
+            if (pix_z >= args->depth_buff[pixel_idx]) {
+                args->depth_buff[pixel_idx] = pix_z;
+                args->tag_buff[pixel_idx] = args->tag;
+            }
+        }
+    }
+}
+
+/*
+#ifdef CPU_SIM
+void kernel_triangle(void* arg)
+#else
+void kernel_triangle()
+#endif
+{
 
     #ifdef CPU_SIM
     triangle_arg_t* args = (triangle_arg_t*) arg;
@@ -18,7 +70,6 @@ void kernel_triangle()
 
     int ix = (((global_id)) - (args->bb_size[0])*(((global_id))/(args->bb_size[0])));
     int iy = (((global_id) / args->bb_size[0]) - (args->bb_size[1])*(((global_id) / args->bb_size[0])/(args->bb_size[1])));
-
 
     int u = ix + args->bb_start[0];
     int v = iy + args->bb_start[1];
@@ -48,3 +99,4 @@ void kernel_triangle()
         }
     }
 }
+*/

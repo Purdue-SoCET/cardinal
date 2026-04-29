@@ -254,7 +254,7 @@ void build_rotation_matrix_from_euler(float pitch_x, float yaw_y, float roll_z, 
     quat_to_matrix(q_combined, out_matrix);
 }
 
-/*
+
 texture_t load_png(char* FileName, int id) {
     int width, height, bpp;
     
@@ -295,4 +295,3 @@ texture_t load_png(char* FileName, int id) {
     
     return tex;
 }
-*/

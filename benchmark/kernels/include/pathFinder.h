@@ -8,7 +8,11 @@ typedef struct {
     int  width; // width of the grid
 } pathfinder_arg_t;
 
+#ifdef GPU_SIM
+void kernel_pathFinder();   
+#else
 void kernel_pathFinder(void* arg);   
+#endif
 
 #endif
 

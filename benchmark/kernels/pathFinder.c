@@ -2,44 +2,42 @@
 #include "include/pathFinder.h"
 
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_pathFinder()
 #else
 void kernel_pathFinder(void* arg) 
 #endif
 {
     #ifdef GPU_SIM
     pathfinder_arg_t* args = (pathfinder_arg_t*)argPtr();
-    int idx = blockIdx() * blockDim() + threadIdx();
     #else
 	pathfinder_arg_t* args = (pathfinder_arg_t*)arg;
-	int idx = blockIdx * blockDim + threadIdx;
 	#endif
     //boundry check
-    if (idx >= args->width) 
-        return;
+    	int idx = blockIdx * blockDim + threadIdx;
 
-    //column index
-    int left = idx - 1;
-    int right = idx + 1;
-
-    //boundry check for left and right
-    if (left < 0) left = 0;
-    if (right >= args->width) right = args->width - 1;
-
-    //min (left,mid,right)
-    int min_val = args->input_row[idx];
-    if (args->input_row[left] < min_val) {
-        min_val = args->input_row[left];
+    if (idx >= args->width)
+    {
+        
     }
-    if (args->input_row[right] < min_val) {
-        min_val = args->input_row[right];
+    else{
+
+        //column index
+        int left = idx - 1;
+        int right = idx + 1;
+
+        //boundry check for left and right
+        if (left < 0) left = 0;
+        if (right >= args->width) right = args->width - 1;
+
+        //min (left,mid,right)
+        int min_val = args->input_row[idx];
+        if (args->input_row[left] < min_val) {
+            min_val = args->input_row[left];
+        }
+        if (args->input_row[right] < min_val) {
+            min_val = args->input_row[right];
+        }
+        //add the current cell weight to the minimum value
+        args->output_row[idx] = min_val + args->current_row_weight[idx];
     }
-    //add the current cell weight to the minimum value
-    args->output_row[idx] = min_val + args->current_row_weight[idx];
-    
-
-
-
-
-
 }

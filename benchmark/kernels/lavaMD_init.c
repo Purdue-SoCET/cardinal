@@ -9,20 +9,19 @@
 // Formula: rA.v + rB.v - (rA.x*rB.x + rA.y*rB.y + rA.z*rB.z)
 #define DOT(a, b) ((a).x * (b).x + (a).y * (b).y + (a).z * (b).z)
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_lavaMD_init()
 #else
 void kernel_lavaMD_init(void* arg)
 #endif
 {
     #ifdef GPU_SIM
     lavaMD_kernel_arg_t* kernel_args = (lavaMD_kernel_arg_t*)argPtr();
-    int bx = blockIdx();
-    int tx = threadIdx();
     #else
     lavaMD_kernel_arg_t* kernel_args = (lavaMD_kernel_arg_t*)args;
+    #endif
+
     int bx = blockIdx;
     int tx = threadIdx;
-    #endif
 
     if (bx < kernel_args->dim.number_boxes){
         int first_i = kernel_args->box[bx].offset;

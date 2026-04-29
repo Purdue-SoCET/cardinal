@@ -1,4 +1,3 @@
-
 // Standard Includes
 #include <stdlib.h>
 #include <stdint.h>
@@ -98,18 +97,10 @@ uint8_t* memory_ptr;
 
 int main(int argc, char** argv) {
     int frame = 0;
-    // for (int frame = 0; frame < 300; frame++)
+    // for (int frame = 0; frame < 300; frame++) //uncomment for multiple frames
     {
-    memory_base = (uint8_t*) malloc(MEMORY_SIZE - STACK_SIZE - TEXT_SIZE);
-    memory_ptr = memory_base;
-
     uint8_t* args_ptr;
     uint8_t* heap_ptr;
-    /*
-
-    args_ptr = memory_base + ARGS_BASE_ADDR;
-    heap_ptr = memory_base + HEAP_BASE_ADDR;
-    */
 
     // 1. Map the Arguments Space (Starts at 0x00100000, size ~15MB)
     size_t args_size = 15 * 1024 * 1024;
@@ -142,7 +133,6 @@ int main(int argc, char** argv) {
         const int num_verts = 8;
 
         // Allocation
-        //ALLOCATE_HEAP(verts, vertex_t, num_verts);
         ALLOCATE_HEAP(v_x, float, num_verts);
         ALLOCATE_HEAP(v_y, float, num_verts);
         ALLOCATE_HEAP(v_z, float, num_verts);
@@ -151,18 +141,6 @@ int main(int argc, char** argv) {
 
         // Definition
         // Front Face
-        /*
-        MAKE_VERTEX(verts[0], -10, -10, -20, 0, 0); // BL
-        MAKE_VERTEX(verts[1], -10,  10, -20, 0, 1); // TL
-        MAKE_VERTEX(verts[2],  10, -10, -20, 1, 0); // BR
-        MAKE_VERTEX(verts[3],  10,  10, -20, 1, 1); // TR
-
-        // Back Face
-        MAKE_VERTEX(verts[4], -10, -10, -40, 0, 1); // BL
-        MAKE_VERTEX(verts[5], -10,  10, -40, 1, 1); // TL
-        MAKE_VERTEX(verts[6],  10, -10, -40, 0, 0); // BR
-        MAKE_VERTEX(verts[7],  10,  10, -40, 1, 0); // TR
-        */
         MAKE_VERTEX_C(0, -10, -10, -20, 0, 0); // BL
         MAKE_VERTEX_C(1, -10,  10, -20, 0, 1); // TL
         MAKE_VERTEX_C(2,  10, -10, -20, 1, 0); // BR
@@ -179,37 +157,12 @@ int main(int argc, char** argv) {
         const int num_tris = 12;
 
         // Allocation
-        //ALLOCATE_HEAP(tris, triangle_t, num_tris);
         ALLOCATE_HEAP(tri_v1, int, num_tris);
         ALLOCATE_HEAP(tri_v2, int, num_tris);
         ALLOCATE_HEAP(tri_v3, int, num_tris);
 
         // Definition
         // Front of Cube
-        /*
-        MAKE_TRI(tris[0], 0, 1, 2);
-        MAKE_TRI(tris[1], 3, 1, 2);
-        
-        // Back of Cube
-        MAKE_TRI(tris[6], 4, 5, 6);
-        MAKE_TRI(tris[7], 7, 5, 6);
-
-        // Top of Cube
-        MAKE_TRI(tris[2], 1, 3, 5);
-        MAKE_TRI(tris[3], 7, 3, 5);
-
-        // Bottom of Cube
-        MAKE_TRI(tris[4], 0, 2, 4);
-        MAKE_TRI(tris[5], 6, 2, 4);
-
-        // Left of Cube
-        MAKE_TRI(tris[8], 0, 1, 4);
-        MAKE_TRI(tris[9], 5, 1, 4);
-
-        // Right of Cube
-        MAKE_TRI(tris[10], 2, 3, 6);
-        MAKE_TRI(tris[11], 7, 3, 6);
-        */
 
         MAKE_TRI_C(0, 0, 1, 2);
         MAKE_TRI_C(1, 3, 1, 2);
@@ -326,8 +279,6 @@ int main(int argc, char** argv) {
 
     // Give geometry inputs
 
-        //vertex_args->threeDVert = verts;
-        //vertex_args->camera = camera_C;
         vertex_args->invTrans = cameraProjMatrix;
 
         vertex_args->v_x = v_x; 
@@ -360,14 +311,12 @@ int main(int argc, char** argv) {
         vertex_args->px = px; vertex_args->py = py; vertex_args->pz = pz;
     
         if(INPUT_ARGS_DEBUG){
-            //print_vertex_args("build/vertexInput.txt", vertex_args, num_verts);
             size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
             size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
             dump_memory("build/mem_dump/vertexInput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
             dump_memory("build/mem_dump/vertexInput_heap_dump.txt", heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
 
-        //printf("args size: %lu\n", sizeof(vertex_arg_t));
     
     // Running the Kernel
     {
@@ -379,7 +328,6 @@ int main(int argc, char** argv) {
     }
 
     if(OUTPUT_ARGS_DEBUG){
-        //print_vertex_args("build/vertexOutput.txt", vertex_args, num_verts);
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
         dump_memory("build/mem_dump/vertexOutput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
@@ -388,7 +336,6 @@ int main(int argc, char** argv) {
 
 
     // --- Triangle Kernel ---
-    // Only one call - still implement multi triangle framework
     ALLOCATE_ARGS(triangle_args, triangle_arg_t, 1);
 
     // Setup Pixel Buffers
@@ -461,7 +408,6 @@ int main(int argc, char** argv) {
             char filename_heap[50];
             sprintf(filename_args, "build/mem_dump/triangleInput%d_args_dump.txt", tri); 
             sprintf(filename_heap, "build/mem_dump/triangleInput%d_heap_dump.txt", tri); 
-            //print_triangle_args(filename, triangle_args);
             dump_memory(filename_args, args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
             dump_memory(filename_heap, heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
@@ -481,43 +427,11 @@ int main(int argc, char** argv) {
             char filename_heap[50];
             sprintf(filename_args, "build/mem_dump/triangleOutput%d_args_dump.txt", tri); 
             sprintf(filename_heap, "build/mem_dump/triangleOutput%d_heap_dump.txt", tri); 
-            //print_triangle_args(filename, triangle_args);
             dump_memory(filename_args, args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
             dump_memory(filename_heap, heap_start_ptr, HEAP_BASE_ADDR, current_heap_bytes);
         }
     }
     fclose(file_thread);
-
-    // Checking TRIANGLE Output
-    if(TRIANGLE_DEBUG) 
-    {
-        printf(" --- Post Triangle Depths --- \n");
-        printf("\t[");
-        for(int i = 0; i < frame_w * frame_h; i++) {
-            printf("%+06.2f", (double) zbuff[i]);
-            if(((i+1) % frame_w)) {
-                printf(", ");
-            } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
-            } else {
-                printf("]\n");
-            }
-        }
-        printf(" --- Post Triangle Tags --- \n");
-        printf("\t[");
-        for(int i = 0; i < frame_w * frame_h; i++) {
-            if(tbuff[i]+1 > 0)
-            printf("%d", tbuff[i]+1);
-            if(((i+1) % frame_w)) {
-                printf("");
-            } else if (i+1 != frame_w*frame_h) {
-                printf("]\n\t[");
-            } else {
-                printf("]\n");
-            }
-        }
-        printf(" --- Triangle Printing DONE ---\n");
-    }
 
     // --- Pixel Kernel ---
     ALLOCATE_ARGS(pixel_args, pixel_arg_t, 1);
@@ -568,7 +482,6 @@ int main(int argc, char** argv) {
         pixel_args->texture = *texture;
 
     if(INPUT_ARGS_DEBUG){
-        //print_pixel_args("build/pixelInput.txt", pixel_args); 
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
         dump_memory("build/mem_dump/pixelInput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
@@ -588,7 +501,6 @@ int main(int argc, char** argv) {
     }
 
     if(OUTPUT_ARGS_DEBUG){
-        //print_pixel_args("build/pixelOutput.txt", pixel_args); 
         size_t current_args_bytes = (uintptr_t)args_ptr - (uintptr_t)args_start_ptr;
         size_t current_heap_bytes = (uintptr_t)heap_ptr - (uintptr_t)heap_start_ptr;
         dump_memory("build/mem_dump/pixelOutput_args_dump.txt", args_start_ptr, ARGS_BASE_ADDR, current_args_bytes);
@@ -603,21 +515,6 @@ int main(int argc, char** argv) {
         int_color_output[i*3 + 0] = pixel_args->color_r[i] * 255 + .5;
         int_color_output[i*3 + 1] = pixel_args->color_g[i] * 255 + .5;
         int_color_output[i*3 + 2] = pixel_args->color_b[i] * 255 + .5;
-        // int_color_output[i*3 + 0] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 1] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 2] = zbuff[i] != 0 ? ((zbuff[i]-5.0) / 8.0f * 255 + .5) : 0;
-        // int_color_output[i*3 + 0] = tbuff[i] != -1 ? (((tbuff[i]+1) % 3)+1.0f) / 3.0f * 255 : 0;
-        // int_color_output[i*3 + 1] = tbuff[i] != -1 ? (((tbuff[i]+2) % 4)+1.0f) / 4.0f * 255 : 0;
-        // int_color_output[i*3 + 2] = tbuff[i] != -1 ? (((tbuff[i]+3) % 5)+1.0f) / 5.0f * 255 : 0;
-        // if(tbuff[i] != -1) {
-        //     int_color_output[i*3 + 0] = 255;
-        //     int_color_output[i*3 + 1] = 255;
-        //     int_color_output[i*3 + 2] = 255;
-        // } else {
-        //     int_color_output[i*3 + 0] = 0;
-        //     int_color_output[i*3 + 1] = 0;
-        //     int_color_output[i*3 + 2] = 0;
-        // }
     }
 
     char fname[30];

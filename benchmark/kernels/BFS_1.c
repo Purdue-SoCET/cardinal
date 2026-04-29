@@ -6,7 +6,7 @@
 // Kernel 1
 // Checks current mask and updates neighbors
 #ifdef GPU_SIM
-void main(void* arg)
+void kernel_BFS_1()
 #else
 void kernel_BFS_1(void* arg) 
 #endif
@@ -15,12 +15,10 @@ void kernel_BFS_1(void* arg)
     #ifdef GPU_SIM
     bfs_kernel1_arg_t* args = (bfs_kernel1_arg_t*) argPtr();
 
-    int tid = blockIdx() * blockDim() + threadIdx();
     #else
     bfs_kernel1_arg_t* args = (bfs_kernel1_arg_t*) arg;
-
-    int tid = blockIdx * blockDim + threadIdx;
     #endif
+    int tid = blockIdx * blockDim + threadIdx;
     
     if (tid < args->no_of_nodes) {
         if (args->g_graph_mask[tid] != 0){

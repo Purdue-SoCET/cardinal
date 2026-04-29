@@ -11,7 +11,7 @@ GPU_CFLAGS =
 
 # CPU files
 KERNEL ?= saxpy
-CPU_SRCS = cpu_sim/main_new.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
+CPU_SRCS = cpu_sim/main_teapot_emu.c cpu_sim/kernel_run.c cpu_sim/graphics_lib.c cpu_sim/shader_memdump.c \
        kernels/vertex.c kernels/triangle.c kernels/pixel.c kernels/post.c kernels/vertexShader.c 
 CPU_TARGET = cpu_sim.out
 CPU_PPM = frame_000.ppm
@@ -101,6 +101,25 @@ custom32_dump:
 	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) -o $(CPU_BUILD_DIR)$(KERNEL) $(CUSTOM_SRCS) $(CPU_LDFLAGS)
 	./$(CPU_BUILD_DIR)/$(KERNEL)
 	python cpu_sim/data/stitch_data_compute.py $(KERNEL) build/threads/$(KERNEL)Threads.txt
+
+custom32_dump_BFS:
+	twig kernels/BFS_1.c --hex-output compiled/BFS_1.hex -O2 --entry kernel_BFS_1 -DGPU_SIM; \
+	twig kernels/BFS_2.c --hex-output compiled/BFS_2.hex -O2 --entry kernel_BFS_2 -DGPU_SIM; \
+
+	mkdir -p $(CPU_BUILD_DIR) $(CPU_OUTPUT_DIR) $(CPU_MEM_DUMP_DIR) build/threads
+
+	$(CPU_CC) $(CPU_CFLAGS) $(CPU_32BIT_FLAGS) \
+	    -o $(CPU_BUILD_DIR)BFS \
+	    cpu_sim/main_BFS.c \
+	    cpu_sim/kernel_run.c \
+	    cpu_sim/shader_memdump.c \
+	    kernels/BFS_1.c \
+	    kernels/BFS_2.c \
+	    $(CPU_LDFLAGS)
+
+	./$(CPU_BUILD_DIR)BFS
+
+	python3 cpu_sim/data/stitch_data_compute_many.py BFS build/threads/BFSThreads.txt
 
 # Pattern rule: How to build 'compiled/X.asm' from 'kernels/X.c' + 'graphics_lib.c'
 $(GPU_OUTPUT_DIR)%.asm: kernels/%.c $(GPU_LIB_SRC)
