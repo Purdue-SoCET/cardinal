@@ -60,7 +60,14 @@ typedef struct {
 	four_vec* fv; // particle forces 
 } lavaMD_kernel_arg_t;
 
-void kernel_lavaMD_init(void*);
-void kernel_lavaMD_calc(void*);
+
+#ifdef GPU_SIM
+void kernel_lavaMD_init();
+void kernel_lavaMD();
+#else
+void kernel_lavaMD_init(void* args);
+void kernel_lavaMD(void* args); 
+#endif
+
 
 #endif
