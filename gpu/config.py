@@ -199,7 +199,6 @@ class DCacheConfig(BaseModel):
     block_size_words: int = Field(default=32, description="Cache line size in words (32-bit words)")
     word_size_bytes: int = Field(default=4, description="Size of each word in bytes")
     uuid_size: int = Field(default=8, description="UUID bit width (from lockup_free_cache.sv)")
-    ram_latency_cycles: int = Field(default=200, description="Static RAM access latency in cycles")
 
 
 class IntUnitConfigSettings(BaseModel):
@@ -487,7 +486,6 @@ class Settings(BaseSettings):
             "block_size_words": self.dcache.block_size_words,
             "word_size_bytes": self.dcache.word_size_bytes,
             "uuid_size": self.dcache.uuid_size,
-            "ram_latency_cycles": self.dcache.ram_latency_cycles,
         }
     
     def read_mmio_from_meminit(self, meminit_path: Path) -> MMIOConfig:
