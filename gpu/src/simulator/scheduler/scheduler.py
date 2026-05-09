@@ -202,13 +202,15 @@ class SchedulerStage(Stage):
                 if self.warp_table[ibuffer].halt != 1:
                     # i buffer full, stop issuing
                     if issue_ctrl[ibuffer] == 1:
-                        self.warp_table[ibuffer].warps[0].state = WarpState.STALL
-                        self.warp_table[ibuffer].warps[1].state = WarpState.STALL
+                        if self.warp_table[ibuffer].warps[0].state != WarpState.HALT:
+                            self.warp_table[ibuffer].warps[0].state = WarpState.STALL
+                        if self.warp_table[ibuffer].warps[1].state != WarpState.HALT:
+                            self.warp_table[ibuffer].warps[1].state = WarpState.STALL
 
                     # i buffer opens up but you can only issue to it if you haven't finished scheduling ur current packet
                     else:
                         for warp in self.warp_table[ibuffer].warps:
-                            if not warp.finished_packet:
+                            if not warp.finished_packet and warp.state != WarpState.HALT:
                                 warp.state = WarpState.READY
 
         # decrement my in flight counter and go back to ready
@@ -228,20 +230,23 @@ class SchedulerStage(Stage):
 
                 if new_mask is not None:
                     if warp_id % 2 == 0:
-                        self.warp_table[group].halt_mask_even = new_mask
+                        self.warp_table[group].halt_mask_even &= new_mask
                         print(f"even mask: {new_mask}\n")
                         even_dead = self.warp_table[group].halt_mask_even.uint == 0
                         if even_dead:
                             self.warp_table[group].warps[0].state = WarpState.HALT
 
                     else:
-                        self.warp_table[group].halt_mask_odd = new_mask
+                        self.warp_table[group].halt_mask_odd &= new_mask
                         print(f"odd mask: {new_mask}\n")
                         odd_dead  = self.warp_table[group].halt_mask_odd.uint == 0
                         if odd_dead:
                             self.warp_table[group].warps[1].state = WarpState.HALT
 
-                if self.warp_table[group].halt_mask_even.uint == 0 and self.warp_table[group].halt_mask_odd.uint == 0:
+                # if self.warp_table[group].halt_mask_even.uint == 0 and self.warp_table[group].halt_mask_odd.uint == 0:
+                if (self.warp_table[group].halt_mask_even.uint == 0
+                    and self.warp_table[group].halt_mask_odd.uint == 0
+                    and all(warp.in_flight == 0 for warp in self.warp_table[group].warps)):
                     self.warp_table[group].halt = 1
 
                 if self.warp_table[group].warps[warp_id % 2].in_flight == 0:

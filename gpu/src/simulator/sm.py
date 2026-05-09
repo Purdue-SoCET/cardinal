@@ -503,7 +503,7 @@ class SM:
         if self.finished:
             print(f"Simulation finished in {self.cycle} cycles.")
             return
-         
+        print("here")
         self.pipeline["wb"].tick()
         self.pipeline["ex"].tick()
         self.pipeline["ex"].compute()
@@ -519,7 +519,7 @@ class SM:
         self.pipeline["prf_perf_count"].sample(self.pipeline["prf"])
 
         self.cycle += 1
-        self.finished = self.pipeline["scheduler"].system_finished
+        self.finished = self.pipeline["tbs"].kern_finished
     
     def finalize(self):
         """Finalize simulation and output performance counter data."""

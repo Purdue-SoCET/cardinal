@@ -122,12 +122,14 @@ class IssueStage(Stage):
         # 5) Create the ibuffer capacity flag bit vector for WS 
         for i in range(len(self.iBufferCapacity)):
             self.iBuff_Full_Flags[i] = 0
-            if   (self.iBufferCapacity[i] >= self.num_entries - 1): # check capacity
-                if self.iBuffer[i][(self.iBufferHead[i] + (self.iBufferCapacity[i]) - 1) % self.num_entries].warp_id % 2 == 1: # check if tail is even (ref tail eq in fill_ibuffer() func)
-                    self.iBuff_Full_Flags[i] = 1
-            elif (self.iBufferCapacity[i] >= self.num_entries - 2): # check capacity
-                if self.iBuffer[i][(self.iBufferHead[i] + (self.iBufferCapacity[i]) - 1) % self.num_entries].warp_id % 2 == 0: # check if tail is even (ref tail eq in fill_ibuffer() func)
-                    self.iBuff_Full_Flags[i] = 1
+            # if   (self.iBufferCapacity[i] >= self.num_entries - 1): # check capacity
+            #     if self.iBuffer[i][(self.iBufferHead[i] + (self.iBufferCapacity[i]) - 1) % self.num_entries].warp_id % 2 == 1: # check if tail is even (ref tail eq in fill_ibuffer() func)
+            #         self.iBuff_Full_Flags[i] = 1
+            # elif (self.iBufferCapacity[i] >= self.num_entries - 2): # check capacity
+            #     if self.iBuffer[i][(self.iBufferHead[i] + (self.iBufferCapacity[i]) - 1) % self.num_entries].warp_id % 2 == 0: # check if tail is even (ref tail eq in fill_ibuffer() func)
+            #         self.iBuff_Full_Flags[i] = 1
+            if self.iBufferCapacity[i] >= self.num_entries - 2:
+                self.iBuff_Full_Flags[i] = 1
 
         # Forwarding interface name should be provided by the caller via forward_ifs_write
         # Here, we forward to all available forward_ifs_write interfaces

@@ -159,7 +159,7 @@ start_pc = 0x0
 
 # Type: int
 # Latency for memory operations
-latency = 2
+latency = 50
 
 # Type: string, Options: "rr" (round-robin)
 # Memory access arbitration policy
@@ -237,10 +237,6 @@ word_size_bytes = 4
 # Type: int, Default: 8
 # UUID bit width (from lockup_free_cache.sv UUID_SIZE parameter)
 uuid_size = 8
-
-# Type: int, Default: 200
-# Static RAM access latency in cycles
-ram_latency_cycles = 200
 
 # ════════════════════════════════════════════════════════════════════════════
 # EXECUTION UNITS CONFIGURATION
