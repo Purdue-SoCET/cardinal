@@ -11,6 +11,7 @@
 #include "../kernels/include/vertexShader.h"
 #include "../kernels/include/triangle.h"
 #include "../kernels/include/pixel.h"
+#include "../kernels/include/post.h"
 
 // Globals
 uint8_t* memory_ptr;

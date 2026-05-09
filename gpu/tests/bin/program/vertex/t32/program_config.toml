@@ -1,0 +1,3 @@
+[program]
+diff_start_addr = 0xE7CE7010
+diff_end_addr = 0xFFFFFFFF

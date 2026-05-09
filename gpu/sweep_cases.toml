@@ -1,0 +1,27 @@
+# Sweep Case List
+#
+# This file is consumed by `test_cardinal.py` sweep mode.
+# Each `[[cases]]` entry points to a real, standalone simulator config TOML.
+#
+# Usage:
+#   python3 test_cardinal.py --sweep --sweep-config sweep_cases.toml --src bin --sweep-inputs unit/
+#
+# Notes:
+# - `output_root` is where per-test, per-case sweep artifacts are written.
+# - `id` becomes the case directory name in `results/sweeps/<test_name>/<id>/`.
+# - `config` should point to an existing config TOML for that case.
+# - Relative `config` paths are resolved relative to this file.
+
+output_root = "results/sweeps"
+
+[[cases]]
+id = "baseline"
+config = "config/sweeps/baseline.toml"
+
+[[cases]]
+id = "dcache_hitlat4"
+config = "config/sweeps/dcache_hitlat4.toml"
+
+[[cases]]
+id = "dcache_hitlat8"
+config = "config/sweeps/dcache_hitlat8.toml"

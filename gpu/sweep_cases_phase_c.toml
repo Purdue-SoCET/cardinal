@@ -1,0 +1,29 @@
+# Phase C sweep: smallest viable I$ search
+# Update phase_c_*.toml if phase A/B winners differ from the placeholder geometry.
+# RR and GTO are both kept, per request.
+output_root = "results/sweeps/phase_c"
+
+[[cases]]
+id = "rr_icache_8kb"
+config = "config/sweeps/phase_c_rr_icache_8kb.toml"
+
+[[cases]]
+id = "rr_icache_4kb"
+config = "config/sweeps/phase_c_rr_icache_4kb.toml"
+
+[[cases]]
+id = "rr_icache_2kb"
+config = "config/sweeps/phase_c_rr_icache_2kb.toml"
+
+[[cases]]
+id = "gto_icache_8kb"
+config = "config/sweeps/phase_c_gto_icache_8kb.toml"
+
+[[cases]]
+id = "gto_icache_4kb"
+config = "config/sweeps/phase_c_gto_icache_4kb.toml"
+
+[[cases]]
+id = "gto_icache_2kb"
+config = "config/sweeps/phase_c_gto_icache_2kb.toml"
+

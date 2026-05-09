@@ -1,0 +1,28 @@
+# Phase B sweep: scheduler and LD/ST queue exploration
+# Update phase_b_*.toml if your selected phase A D$ winner is not the placeholder geometry.
+output_root = "results/sweeps/phase_b"
+
+[[cases]]
+id = "rr_ldstq16"
+config = "config/sweeps/phase_b_rr_ldstq16.toml"
+
+[[cases]]
+id = "rr_ldstq32"
+config = "config/sweeps/phase_b_rr_ldstq32.toml"
+
+[[cases]]
+id = "rr_ldstq64"
+config = "config/sweeps/phase_b_rr_ldstq64.toml"
+
+[[cases]]
+id = "gto_ldstq16"
+config = "config/sweeps/phase_b_gto_ldstq16.toml"
+
+[[cases]]
+id = "gto_ldstq32"
+config = "config/sweeps/phase_b_gto_ldstq32.toml"
+
+[[cases]]
+id = "gto_ldstq64"
+config = "config/sweeps/phase_b_gto_ldstq64.toml"
+
