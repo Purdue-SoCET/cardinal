@@ -23,24 +23,33 @@ class vertexBuffer(Stage):
     def compute(self):
         input_data = self.behind_latch.pop()
 
-        if input_data is None:
-            return
+        if input_data is not None and input_data['data'] is not None:
+            wait = input_data['wait']
+            input_data = input_data['data']
 
-        wait = input_data['wait']
-        input_data = input_data['data']
+            if not isinstance(input_data, Bits):
+                raise ValueError("vBuffer -> input not bits")
+            
+            if input_data.getSize() != self.dSize:
+                raise ValueError(f"vBuffer -> input size incorrect should be {self.dSize}")
+            
+            if wait is False:
+                self.vertex_buffer.insert(input_data)
+                if self.vertex_buffer.checkOut() is True:
+                    self.ahead_latch.push(self.vertex_buffer.getOut())
+                    self.vertex_buffer.acked()
+        elif input_data is not None:
+            status = input_data['wait']
 
-        if not isinstance(input_data, Bits):
-            raise ValueError("vBuffer -> input not bits")
-        
-        if input_data.getSize() != self.dSize:
-            raise ValueError(f"vBuffer -> input size incorrect should be {self.dSize}")
-        
-        if wait is False:
-            self.vertex_buffer.insert(input_data)
-            if self.vertex_buffer.checkOut() is True:
+            self.vertex_buffer.shift()
+
+            if status is False:
+                if self.vertex_buffer.checkOut() is True:
+                    self.ahead_latch.push(self.vertex_buffer.getOut())
+                    self.vertex_buffer.acked()
+            '''if self.vertex_buffer.checkOut() is True:
                 self.ahead_latch.push(self.vertex_buffer.getOut())
-                self.vertex_buffer.acked()
-        
+                self.vertex_buffer.acked()'''
 
 class indexBuffer(Stage):
     def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
@@ -169,7 +178,10 @@ def test_system():
             in_latchV.push({'wait' : wait, 'data' : vData[cycle]})
             in_latchI.push(iData[cycle])
         elif cycle < 33:
+            in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push(iData[cycle])
+        elif cycle < 40:
+            in_latchV.push({'wait' : wait, 'data' : None})
 
         outI = out_latchI.pop()
         if wait is False:

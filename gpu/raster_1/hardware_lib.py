@@ -74,6 +74,14 @@ class buffer():
         
         return 0
 
+    def shift(self):
+        if (self.out == None and len(self.buffer) != 0):
+            self.out = self.buffer.pop(0)
+            self.currSize -= 1
+            return 0
+
+        return 1
+
     def acked(self):
         self.out = None
 
