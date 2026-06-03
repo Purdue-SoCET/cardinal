@@ -1,5 +1,5 @@
 from bits import Bits
-from hardware_lib import vertexTable, buffer, Table
+from hardware_lib import vertexTable, buffer, translationTable
 from base_class import ForwardingIF, LatchIF, Stage
 
 '''
@@ -100,7 +100,7 @@ class vert_trans_table(Stage):
         self.Vcounter = -1
 
         #Translation lookup table with 16 slots (for every vertex in buffer) and indexing the size 24 vertex table so 5 bits ok
-        self.tl_table = Table(size = self.Tsize, dataSize = self.TdSize)
+        self.tl_table = translationTable(size = self.Tsize, blockSize = self.TdSize)
 
         #Can hold worst case 8 triangles in flight (8 * 3 vert = 24)
         self.vx_table = vertexTable(size = self.Vsize, blockSize = self.VdSize) #12 bytes
@@ -109,36 +109,52 @@ class vert_trans_table(Stage):
         vStatus = 'ok'
         tStatus = 'ok'
 
-        if (self.Tcounter == self.Tsize - 1):
-            tStatus = 'clean'
-
         if (self.Vcounter == self.Vsize - 1):
             self.Vcounter = -1
 
         input_data = self.behind_latch.pop()
 
         if input_data is None:
+            #self.ahead_latch.push(None)
             return
 
-        Vinput = input_data['vertex']
-        Tinput = input_data['index']
+        Vinput : Bits = input_data['vertex']
+        Tinput : Bits = input_data['index']
+        satStat : bool = input_data['satStat'] #trans table saturation stat
 
-        if Vinput is not None:
-            self.Vcounter += 1
-            if self.vx_table.checkValid(self.Vcounter).getBits() == '0':
-                self.vx_table.insert(Vinput, self.Vcounter)
-                self.vx_table.validate(self.Vcounter)
-                self.vx_table.increment(self.Vcounter)
-            else:
-                vStatus = 'stall'
+        if (satStat == True):
+            tStatus = 'clean'
 
         if Tinput is not None and tStatus != 'clean':
             self.Tcounter += 1
             handle = self.vx_table.getHandle()
             if handle == -1:
                 tStatus = 'stall'
-            else:
-                self.tl_table.insert(index=Tinput, data=Bits(size=self.TdSize, val=handle))
+            
+            if tStatus != 'stall':
+                valid = self.tl_table.checkValid(index=Tinput)
+
+                if (valid == 1):
+                    idx = self.tl_table.read(index=Tinput.getInt()).getInt()
+                    vert : Bits = self.vx_table.read(index=idx)
+
+                    if (((Vinput is not None and Vinput.getBits() == vert.getBits()) or (Vinput is None)) and self.vx_table.checkValid(idx).getBits() == '1'):
+                        self.vx_table.increment(self.Vcounter)
+                    else:
+                        vStatus = 'stall'
+                else:
+                    self.tl_table.insert(index=Tinput, data=Bits(size=self.TdSize, val=handle))
+
+                    self.Vcounter += 1
+                    if self.vx_table.checkValid(self.Vcounter).getBits() == '0':
+                        self.vx_table.insert(Vinput, self.Vcounter)
+                        self.vx_table.validate(self.Vcounter)
+                        self.vx_table.increment(self.Vcounter)
+                    else:
+                        vStatus = 'stall'
+
+        outLoad = {'vStatus' : vStatus, 'tStatus' : tStatus}
+        self.ahead_latch.push(outLoad)
 
 
 
@@ -148,15 +164,19 @@ def setup_stage():
     in_latchI = LatchIF(name="iBuffer_inLatch")
     out_latchI = LatchIF(name="iBuffer_outLatch")
 
+    in_latchTLV = LatchIF(name="TLV_inLatch")
+    out_latchTLV = LatchIF(name="TLV_outLatch")
+
     vBuffer = vertexBuffer(name="vBuffer", input_if=in_latchV, output_if=out_latchV)
     iBuffer = indexBuffer(name="iBuffer", input_if=in_latchI, output_if=out_latchI)
+    tlv = vert_trans_table(name="TLV", input_if=in_latchTLV, output_if=out_latchTLV)
 
-    return vBuffer, iBuffer, in_latchV, out_latchV, in_latchI, out_latchI
+    return vBuffer, iBuffer, tlv, in_latchV, out_latchV, in_latchI, out_latchI, in_latchTLV, out_latchTLV
 
 def test_system():
-    vBuffer, iBuffer, in_latchV, out_latchV, in_latchI, out_latchI = setup_stage()
+    vBuffer, iBuffer, tlv, in_latchV, out_latchV, in_latchI, out_latchI, in_latchTLV, out_latchTLV = setup_stage()
 
-    cycles = 66
+    cycles = 75
 
     vDat = Bits(size=96, val='10101010101010101010101010101010101111')
     vData = [vDat] * 17
@@ -165,6 +185,7 @@ def test_system():
     iData = [iDat] * 33
 
     for cycle in range(cycles + 1):
+        checkSum = 0
         wait = False
         print(f"Cycle {cycle}:")
 
@@ -176,15 +197,19 @@ def test_system():
             else:
                 print('Vert waiting for I')
                 wait = True
-
         else:
             print(f"Ahead latch has data: {out_latchV.snoop()}")
          
+        if out_latchTLV.snoop() is not None:
+            tlv_status = out_latchTLV.pop()
+            print(f"Trans Status -> {tlv_status['tStatus']} | Vertex Table Status -> {tlv_status['vStatus']}") 
+
+
         if cycle < 16:
             print(f"Pushing data no.{cycle}")
             in_latchV.push({'wait' : wait, 'data' : vData[cycle]})
             in_latchI.push({'wait' : False, 'data' : iData[cycle]})
-        elif cycle < 33:
+        elif cycle < 33: #has to match no.elements in data packet you want to deal with
             in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push({'wait' : False, 'data' : iData[cycle]})
         else:
@@ -199,9 +224,19 @@ def test_system():
 
         if outI is not None:
             print(f"Got out index data on cycle {cycle}")
+            checkSum += 1
         if outV is not None:
             print(f"Got out vertex data on cycle {cycle}")
 
+        inLoad = {'vertex' : outV, 'index' : outI, 'satStat' : False}
+
+        if (checkSum == 1):
+            in_latchTLV.push(inLoad)
+        else:
+            inLoad['satStat'] = True
+            in_latchTLV.push(inLoad)
+
+        tlv.compute()
         vBuffer.compute()
         iBuffer.compute()
         print()

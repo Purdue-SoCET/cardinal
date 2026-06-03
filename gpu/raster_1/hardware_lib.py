@@ -5,12 +5,32 @@ class Table():
         self.table = [Bits(blockSize)] * size
 
     def insert(self, data, index):
-        self.table[index] = data
+        if isinstance(index, int):
+            self.table[index] = data
+        elif isinstance(index, Bits):
+            self.table[index.getInt()] = data
 
     def read(self, index):
         return self.table[index]
 
-#NEED SPECIAL INDEX TABLE CLASS NEED VALID BIT!!
+#NEED SPECIAL TRANS TABLE CLASS NEED VALID BIT!!
+
+class translationTable(Table):
+    def __init__(self, size : int = 12, blockSize : int = 64):
+        super().__init__(size, blockSize)
+        self.valid = [Bits(size = 1)] * size
+
+    def checkValid(self, index : Bits):
+        idx = index.getInt()
+        valid : Bits = self.valid[idx]
+
+        return valid.getInt()
+    
+    def insert(self, data, index : Bits):
+        super().insert(data, index)
+        self.valid[index.getInt()] = Bits(size=1, val='1')
+
+    
 
 class vertexTable(Table):
     def __init__(self, size : int = 12, blockSize : int = 64):
@@ -19,7 +39,7 @@ class vertexTable(Table):
         self.valid = [Bits(size = 1)] * size
 
     def getHandle(self): #FOR TRANS TABLE ONLY!!
-        for v, idx in enumerate(self.valid):
+        for idx, v in enumerate(self.valid):
             if v.getBits() == '0':
                 return idx
             
