@@ -47,9 +47,6 @@ class vertexBuffer(Stage):
                 if self.vertex_buffer.checkOut() is True:
                     self.ahead_latch.push(self.vertex_buffer.getOut())
                     self.vertex_buffer.acked()
-            '''if self.vertex_buffer.checkOut() is True:
-                self.ahead_latch.push(self.vertex_buffer.getOut())
-                self.vertex_buffer.acked()'''
 
 class indexBuffer(Stage):
     def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
@@ -64,20 +61,30 @@ class indexBuffer(Stage):
     def compute(self):
         input_data = self.behind_latch.pop()
 
-        if input_data is None:
-            return
+        if input_data is not None and input_data['data'] is not None:
+            wait = input_data['wait']
+            input_data = input_data['data']
 
-        if not isinstance(input_data, Bits):
-            raise ValueError("iBuffer -> input not bits")
-        
-        if input_data.getSize() != self.dSize:
-            raise ValueError(f"iBuffer -> input size incorrect should be {self.dSize}")
-        
-        self.index_buffer.insert(input_data)
+            if not isinstance(input_data, Bits):
+                raise ValueError("iBuffer -> input not bits")
+            
+            if input_data.getSize() != self.dSize:
+                raise ValueError(f"iBuffer -> input size incorrect should be {self.dSize}")
+            
+            if wait is False:
+                self.index_buffer.insert(input_data)
+                if self.index_buffer.checkOut() is True:
+                    self.ahead_latch.push(self.index_buffer.getOut())
+                    self.index_buffer.acked()
+        elif input_data is not None:
+            status = input_data['wait']
 
-        if self.index_buffer.checkOut() is True:
-            self.ahead_latch.push(self.index_buffer.getOut())
-            self.index_buffer.acked()
+            self.index_buffer.shift()
+
+            if status is False:
+                if self.index_buffer.checkOut() is True:
+                    self.ahead_latch.push(self.index_buffer.getOut())
+                    self.index_buffer.acked()
 
 class vert_trans_table(Stage):
     def __init__(self, name: str, input_if: ForwardingIF, output_if: ForwardingIF):
@@ -149,7 +156,7 @@ def setup_stage():
 def test_system():
     vBuffer, iBuffer, in_latchV, out_latchV, in_latchI, out_latchI = setup_stage()
 
-    cycles = 35
+    cycles = 66
 
     vDat = Bits(size=96, val='10101010101010101010101010101010101111')
     vData = [vDat] * 17
@@ -157,7 +164,7 @@ def test_system():
     iDat = Bits(size=4, val=2)
     iData = [iDat] * 33
 
-    for cycle in range(cycles):
+    for cycle in range(cycles + 1):
         wait = False
         print(f"Cycle {cycle}:")
 
@@ -176,12 +183,13 @@ def test_system():
         if cycle < 16:
             print(f"Pushing data no.{cycle}")
             in_latchV.push({'wait' : wait, 'data' : vData[cycle]})
-            in_latchI.push(iData[cycle])
+            in_latchI.push({'wait' : False, 'data' : iData[cycle]})
         elif cycle < 33:
             in_latchV.push({'wait' : wait, 'data' : None})
-            in_latchI.push(iData[cycle])
-        elif cycle < 40:
+            in_latchI.push({'wait' : False, 'data' : iData[cycle]})
+        else:
             in_latchV.push({'wait' : wait, 'data' : None})
+            in_latchI.push({'wait' : wait, 'data' : None})
 
         outI = out_latchI.pop()
         if wait is False:
