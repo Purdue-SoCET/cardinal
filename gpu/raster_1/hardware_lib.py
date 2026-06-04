@@ -82,7 +82,7 @@ class buffer():
         elif (self.currSize == self.size):
             if (self.out == None):
                 self.out = self.buffer.pop(0)
-                self.buffer.append(data)
+                self.buffer.append(data) #append and pop together so no change in currSize.
                 return 0
             else:
                 return -2 #Output has not yet been acknowledged, so nothing doing
@@ -95,10 +95,13 @@ class buffer():
         return 0
 
     def shift(self):
-        if (self.out == None and len(self.buffer) != 0):
+        if (self.out == None and len(self.buffer) != 0 and self.currSize == self.size):
             self.out = self.buffer.pop(0)
-            self.currSize -= 1
+            self.buffer.append(None)
             return 0
+        elif (self.currSize != self.size):
+            self.currSize += 1
+            self.buffer.append(None)
 
         return 1
 

@@ -1,6 +1,7 @@
 from bits import Bits
 from hardware_lib import vertexTable, buffer, translationTable
 from base_class import ForwardingIF, LatchIF, Stage
+import random as rand
 
 '''
 #Can hold worst case 8 triangles in flight (8 * 3 vert = 24)
@@ -15,7 +16,7 @@ class vertexBuffer(Stage):
         super().__init__(name, input_if, output_if)
 
         self.dSize = 96
-        self.size = 16
+        self.size = 15 #0 index
 
         #INT16 + INT16 (x, y) | INT32 (vertID addr) | FP32 (z value) = 96
         self.vertex_buffer = buffer(size = self.size, dataSize = self.dSize) 
@@ -39,11 +40,11 @@ class vertexBuffer(Stage):
                     self.ahead_latch.push(self.vertex_buffer.getOut())
                     self.vertex_buffer.acked()
         elif input_data is not None:
-            status = input_data['wait']
+            wait = input_data['wait']
 
-            self.vertex_buffer.shift()
+            if wait is False:
+                self.vertex_buffer.shift()
 
-            if status is False:
                 if self.vertex_buffer.checkOut() is True:
                     self.ahead_latch.push(self.vertex_buffer.getOut())
                     self.vertex_buffer.acked()
@@ -53,7 +54,7 @@ class indexBuffer(Stage):
         super().__init__(name, input_if, output_if)
 
         self.dSize = 4
-        self.size = 32
+        self.size = 31 #0 index
 
         #index size = 10 bits, pack and send 8 triangle's worth
         self.index_buffer = buffer(size = self.size, dataSize = self.dSize)
@@ -77,11 +78,11 @@ class indexBuffer(Stage):
                     self.ahead_latch.push(self.index_buffer.getOut())
                     self.index_buffer.acked()
         elif input_data is not None:
-            status = input_data['wait']
+            wait = input_data['wait']
 
-            self.index_buffer.shift()
+            if wait is False:
+                self.index_buffer.shift()
 
-            if status is False:
                 if self.index_buffer.checkOut() is True:
                     self.ahead_latch.push(self.index_buffer.getOut())
                     self.index_buffer.acked()
@@ -129,7 +130,7 @@ class vert_trans_table(Stage):
             self.Tcounter += 1
             handle = self.vx_table.getHandle()
             if handle == -1:
-                tStatus = 'stall'
+                tStatus = 'stall' #stall on vertex table being full
             
             if tStatus != 'stall':
                 valid = self.tl_table.checkValid(index=Tinput)
@@ -141,7 +142,7 @@ class vert_trans_table(Stage):
                     if (((Vinput is not None and Vinput.getBits() == vert.getBits()) or (Vinput is None)) and self.vx_table.checkValid(idx).getBits() == '1'):
                         self.vx_table.increment(self.Vcounter)
                     else:
-                        vStatus = 'stall'
+                        vStatus = 'stall' #stall on new packet detected
                 else:
                     self.tl_table.insert(index=Tinput, data=Bits(size=self.TdSize, val=handle))
 
@@ -151,7 +152,7 @@ class vert_trans_table(Stage):
                         self.vx_table.validate(self.Vcounter)
                         self.vx_table.increment(self.Vcounter)
                     else:
-                        vStatus = 'stall'
+                        vStatus = 'stall' #stall on vertex table handle not ready yet
 
         outLoad = {'vStatus' : vStatus, 'tStatus' : tStatus}
         self.ahead_latch.push(outLoad)
@@ -178,13 +179,21 @@ def test_system():
 
     cycles = 75
 
-    vDat = Bits(size=96, val='10101010101010101010101010101010101111')
-    vData = [vDat] * 17
+    vData = []
 
-    iDat = Bits(size=4, val=2)
-    iData = [iDat] * 33
+    for i in range(16):
+        vDat = Bits(size=96, val=rand.randint(0,(2**96) - 1))
+        vData.append(vDat)
+
+    iData = []
+
+    for i in range(20 + 1):
+        iDat = Bits(size=4, val=rand.randint(0,(2**4) - 1))
+        iData.append(iDat)
 
     for cycle in range(cycles + 1):
+        adj_stall = 0
+        stall = False
         checkSum = 0
         wait = False
         print(f"Cycle {cycle}:")
@@ -203,15 +212,25 @@ def test_system():
         if out_latchTLV.snoop() is not None:
             tlv_status = out_latchTLV.pop()
             print(f"Trans Status -> {tlv_status['tStatus']} | Vertex Table Status -> {tlv_status['vStatus']}") 
+            if (tlv_status['tStatus'] == 'stall' or tlv_status['vStatus'] == 'stall'):
+                stall = True
+                adj_stall += 1
 
 
-        if cycle < 16:
+
+        if cycle < 16 + adj_stall and stall != True:
             print(f"Pushing data no.{cycle}")
-            in_latchV.push({'wait' : wait, 'data' : vData[cycle]})
-            in_latchI.push({'wait' : False, 'data' : iData[cycle]})
-        elif cycle < 33: #has to match no.elements in data packet you want to deal with
+            in_latchV.push({'wait' : wait, 'data' : vData[cycle - adj_stall]})
+            in_latchI.push({'wait' : False, 'data' : iData[cycle - adj_stall]})
+        elif cycle < 20 + adj_stall and stall != True: #has to match no.elements in data packet you want to deal with
             in_latchV.push({'wait' : wait, 'data' : None})
-            in_latchI.push({'wait' : False, 'data' : iData[cycle]})
+            in_latchI.push({'wait' : False, 'data' : iData[cycle - adj_stall]})
+        elif cycle < 33 + adj_stall and stall != True: #has to match size of buffer max
+            in_latchV.push({'wait' : wait, 'data' : None})
+            in_latchI.push({'wait' : False, 'data' : None})
+        elif stall == True:
+            in_latchV.push({'wait' : True, 'data' : None})
+            in_latchI.push({'wait' : True, 'data' : None})
         else:
             in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push({'wait' : wait, 'data' : None})

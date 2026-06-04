@@ -5,11 +5,14 @@ class Bits():
         self.size = size
         self.mode = mode #Endianness 
 
-        if (mode != 'little' or mode != 'big'):
-            mode = 'little'
+        #if (mode != 'little' or mode != 'big'):
+            #mode = 'little'
 
         #Auto convert from int32 or fp32
         if (isinstance(val, int)):
+            if (val >= 2**self.size):
+                val = 0
+            
             val = format(val, 'b')
             if (mode == 'big'):
                 val = val[::-1]
@@ -38,6 +41,6 @@ class Bits():
         intCon = int(self.bits, 2)
         return intCon
 
-    def getFloats(self):
+    def getFloat(self):
         intCon = self.getInt()
         return struct.unpack('!f', struct.pack('!I', intCon))[0]
