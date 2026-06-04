@@ -187,7 +187,7 @@ def test_system():
 
     iData = []
 
-    for i in range(20 + 1):
+    for i in range(28):
         iDat = Bits(size=4, val=rand.randint(0,(2**4) - 1))
         iData.append(iDat)
 
@@ -222,15 +222,18 @@ def test_system():
             print(f"Pushing data no.{cycle}")
             in_latchV.push({'wait' : wait, 'data' : vData[cycle - adj_stall]})
             in_latchI.push({'wait' : False, 'data' : iData[cycle - adj_stall]})
-        elif cycle < 20 + adj_stall and stall != True: #has to match no.elements in data packet you want to deal with
+        elif cycle < 28 + adj_stall and stall != True: #has to match no.elements in data packet you want to deal with
             in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push({'wait' : False, 'data' : iData[cycle - adj_stall]})
         elif cycle < 33 + adj_stall and stall != True: #has to match size of buffer max
             in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push({'wait' : False, 'data' : None})
         elif stall == True:
-            in_latchV.push({'wait' : True, 'data' : None})
-            in_latchI.push({'wait' : True, 'data' : None})
+            inLoad = inLoad = {'vertex' : None, 'index' : None, 'satStat' : False}
+            in_latchTLV.push(inLoad)
+            tlv.compute()
+            print()
+            continue
         else:
             in_latchV.push({'wait' : wait, 'data' : None})
             in_latchI.push({'wait' : wait, 'data' : None})
