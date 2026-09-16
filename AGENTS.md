@@ -19,6 +19,8 @@ Understanding existing behavior takes priority over refactoring. Priorities are:
 
 Development rules:
 
+- **Never overwrite, edit, or remove user-authored comments.** Preserve their
+  exact text; add any explanation as a separate comment.
 - **Do not modify simulator source or other implementation code without explicit
   user permission.** The reconnaissance task authorizes only `AGENTS.md` and
   `COMMANDS.md`. It does not authorize configuration, build, test, or fixture edits.
